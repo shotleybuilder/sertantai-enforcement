@@ -365,8 +365,9 @@ defmodule EhsEnforcementWeb.DashboardLive do
       ]
       notices = Enforcement.list_notices!(notices_query_opts)
       
-      # Combine and sort by date
+      # Combine and sort by date, filtering out nil dates
       all_activity = (cases ++ notices)
+      |> Enum.filter(fn record -> record.offence_action_date != nil end)
       |> Enum.sort_by(& &1.offence_action_date, {:desc, Date})
       
       # Calculate total count

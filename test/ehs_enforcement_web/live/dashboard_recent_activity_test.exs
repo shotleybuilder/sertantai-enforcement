@@ -98,7 +98,7 @@ defmodule EhsEnforcementWeb.DashboardRecentActivityTest do
         {:ok, view, _html} = live(conn, "/dashboard")
 
         # Click the "Cases" filter button
-        view |> element("button", "Cases") |> render_click()
+        view |> element("button[phx-value-type='cases']", "Cases") |> render_click()
 
         html = render(view)
         
@@ -119,7 +119,7 @@ defmodule EhsEnforcementWeb.DashboardRecentActivityTest do
         {:ok, view, _html} = live(conn, "/dashboard")
 
         # Click the "Notices" filter button  
-        view |> element("button", "Notices") |> render_click()
+        view |> element("button[phx-value-type='notices']", "Notices") |> render_click()
 
         html = render(view)
         
