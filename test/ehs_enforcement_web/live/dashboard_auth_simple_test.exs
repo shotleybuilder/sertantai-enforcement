@@ -19,7 +19,7 @@ defmodule EhsEnforcementWeb.DashboardAuthSimpleTest do
 
       # Should show sign-in link
       assert html =~ "Sign In"
-      assert has_element?(view, "a[href='/sign-in']")
+      assert has_element?(view, "a[href='/auth/user/github']")
     end
 
     test "shows user information when authenticated as regular user", %{conn: conn} do

@@ -15,7 +15,7 @@
         <div class="mr-3 flex items-center">
           <%= if @current_user do %>
             <div class="flex items-center space-x-2">
-              <span class="text-sm text-gray-600">Welcome, <%= @current_user.name %></span>
+              <span class="text-sm text-gray-600">Welcome, <%= Map.get(@current_user, :display_name) || Map.get(@current_user, :name) || @current_user.email %></span>
               <%= if @current_user.is_admin do %>
                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                   ADMIN
@@ -24,7 +24,7 @@
               <a href="/sign-out" class="text-sm text-gray-500 hover:text-gray-700">Sign Out</a>
             </div>
           <% else %>
-            <a href="/sign-in" class="text-sm text-indigo-600 hover:text-indigo-500">Sign In</a>
+            <a href="/auth/user/github" class="text-sm text-indigo-600 hover:text-indigo-500">Sign In</a>
           <% end %>
         </div>
         

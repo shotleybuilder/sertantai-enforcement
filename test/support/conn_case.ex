@@ -35,4 +35,92 @@ defmodule EhsEnforcementWeb.ConnCase do
     EhsEnforcement.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
+
+  @doc """
+  Helper for testing authenticated LiveViews following AshAuthentication best practices.
+  
+  This creates a user and logs them in properly for LiveView tests.
+  Based on official AshAuthentication documentation.
+  """
+  def register_and_log_in_user(%{conn: conn} = context) do
+    email = "user@example.com"
+    name = "Test User"
+    github_login = "testuser"
+
+    # Create user using Ash.Seed for testing
+    user = Ash.Seed.seed!(EhsEnforcement.Accounts.User, %{
+      email: email,
+      name: name,
+      github_login: github_login,
+      is_admin: false,
+      admin_checked_at: DateTime.utc_now()
+    })
+
+    # For OAuth2 strategies, we don't use password authentication
+    # Instead, we directly store the user in the session
+    new_conn =
+      conn
+      |> Phoenix.ConnTest.init_test_session(%{})
+      |> AshAuthentication.Plug.Helpers.store_in_session(user)
+
+    %{context | conn: new_conn, user: user}
+  end
+
+  @doc """
+  Helper for testing admin LiveViews.
+  """
+  def register_and_log_in_admin(%{conn: conn} = context) do
+    email = "admin@example.com"
+    name = "Admin User"
+    github_login = "adminuser"
+
+    # Create admin user using Ash.Seed for testing
+    user = Ash.Seed.seed!(EhsEnforcement.Accounts.User, %{
+      email: email,
+      name: name,
+      github_login: github_login,
+      is_admin: true,
+      admin_checked_at: DateTime.utc_now()
+    })
+
+    new_conn =
+      conn
+      |> Phoenix.ConnTest.init_test_session(%{})
+      |> AshAuthentication.Plug.Helpers.store_in_session(user)
+
+    %{context | conn: new_conn, user: user}
+  end
+
+  @doc """
+  Creates a test user with basic attributes (for direct use).
+  """
+  def create_test_user(attrs \\ %{}) do
+    user_attrs = %{
+      email: "test@example.com",
+      name: "Test User",
+      github_login: "testuser",
+      is_admin: false,
+      admin_checked_at: DateTime.utc_now()
+    }
+    |> Map.merge(attrs)
+
+    {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, user_attrs)
+    Ash.load!(user, [:display_name])
+  end
+
+  @doc """
+  Creates a test admin user (for direct use).
+  """
+  def create_test_admin(attrs \\ %{}) do
+    admin_attrs = %{
+      email: "admin@example.com",
+      name: "Admin User",
+      github_login: "adminuser",
+      is_admin: true,
+      admin_checked_at: DateTime.utc_now()
+    }
+    |> Map.merge(attrs)
+
+    create_test_user(admin_attrs)
+  end
 end
