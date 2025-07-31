@@ -302,9 +302,9 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   end
 
   defp format_currency(amount) when is_struct(amount, Decimal) do
+    # Convert Decimal to float safely
     amount
-    |> Decimal.to_string()
-    |> String.to_float()
+    |> Decimal.to_float()
     |> :erlang.float_to_binary([{:decimals, 2}])
     |> then(&"£#{format_number(&1)}")
   end
