@@ -14,6 +14,12 @@ defmodule EhsEnforcement.Application do
       {Phoenix.PubSub, name: EhsEnforcement.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: EhsEnforcement.Finch},
+      # Start Oban for background job processing
+      {Oban,
+       AshOban.config(
+         Application.fetch_env!(:ehs_enforcement, :ash_domains),
+         Application.fetch_env!(:ehs_enforcement, Oban)
+       )},
       # Start a worker by calling: EhsEnforcement.Worker.start_link(arg)
       # {EhsEnforcement.Worker, arg},
       # Start to serve requests, typically the last entry

@@ -7,6 +7,8 @@
 # General application configuration
 import Config
 
+config :ash_oban, pro?: false
+
 config :ehs_enforcement,
   ecto_repos: [EhsEnforcement.Repo],
   generators: [timestamp_type: :utc_datetime]
@@ -66,15 +68,35 @@ config :ash, :utc_datetime_type, :datetime
 config :ash, :disable_async?, true
 
 # Configure AshPostgres
-config :ehs_enforcement, EhsEnforcement.Repo,
-  extensions: [AshPostgres.Repo]
+config :ehs_enforcement, EhsEnforcement.Repo, extensions: [AshPostgres.Repo]
 
 # Ash domain configuration
-config :ehs_enforcement, ash_domains: [
-  EhsEnforcement.Enforcement,
-  EhsEnforcement.Sync,
-  EhsEnforcement.Accounts
-]
+config :ehs_enforcement,
+  ash_domains: [
+    EhsEnforcement.Enforcement,
+    EhsEnforcement.Sync,
+    EhsEnforcement.Accounts,
+    EhsEnforcement.Events,
+    EhsEnforcement.Configuration
+  ]
+
+# Oban configuration for background job processing
+config :ehs_enforcement, Oban,
+  engine: Oban.Engines.Basic,
+  queues: [default: 10, scraping: 5],
+  repo: EhsEnforcement.Repo,
+  plugins: [{Oban.Plugins.Cron, []}]
+
+# Hammer rate limiting configuration
+config :hammer,
+  backend:
+    {Hammer.Backend.ETS,
+     [
+       # 2 hours
+       expiry_ms: 60_000 * 60 * 2,
+       # 10 minutes
+       cleanup_interval_ms: 60_000 * 10
+     ]}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

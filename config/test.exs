@@ -1,4 +1,5 @@
 import Config
+config :ehs_enforcement, Oban, testing: :manual
 
 # Set the environment
 config :ehs_enforcement, :environment, :test
