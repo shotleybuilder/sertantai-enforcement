@@ -55,6 +55,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
       current_session: nil,
       scraping_active: false,
       scraping_task: nil,
+      scraping_session_started_at: nil,  # Track when current scraping session began
       
       # Progress tracking
       progress: %{
@@ -85,9 +86,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
     if connected?(socket) do
       Logger.debug("UI: Setting up reactive case data with keep_live")
       
-      # Manual debug subscription to see if we receive anything
-      Logger.debug("🔵 UI: Manually subscribing to case:synced for debugging")
-      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:synced")
+      # Note: Removed manual subscription - using keep_live subscriptions only
       
       # Use pure Ash patterns for reactivity
       Logger.debug("🔴 UI: Setting up Ash reactive patterns")
@@ -100,7 +99,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
         |> Ash.Query.load([:agency, :offender])
         |> Ash.read!(actor: socket.assigns.current_user)
       end,
-        subscribe: ["case:created:*", "case:updated:*", "case:synced:*", "case:bulk_created"],
+        subscribe: ["case:created:*", "case:updated:*", "case:bulk_created"],
         results: :keep,
         load_until_connected?: true,
         refetch_window: :timer.seconds(5)
@@ -140,39 +139,51 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
       # 2. When notifications are received, the query function is re-executed
       # 3. The UI automatically updates with the new data
       #
-      # The query shows cases that were recently synced (last 2 minutes)
+      # The query shows cases that were synced during the current scraping session only
       # to display real-time scraping progress to the user
       socket = AshPhoenix.LiveView.keep_live(socket, :scraped_cases, fn socket ->
         # Debug - always run the query to test
-        Logger.debug("🔴 keep_live query triggered!")
+        Logger.debug("🔴🔴🔴 keep_live SCRAPED_CASES query triggered! PID: #{inspect(self())}")
         
-        # Show recently synced cases (last 2 minutes)
-        # This includes both newly created cases and existing cases that were updated
-        recent_cutoff = DateTime.add(DateTime.utc_now(), -2, :minute)
-        Logger.debug("🔴 Searching for cases synced after #{recent_cutoff}")
+        # Only show cases if we have an active scraping session
+        cases = if socket.assigns.scraping_session_started_at do
+          session_cutoff = socket.assigns.scraping_session_started_at
+          Logger.debug("🔴 Searching for cases synced after session start: #{session_cutoff}")
+          
+          cases = EhsEnforcement.Enforcement.Case
+          |> Ash.Query.filter(
+            # Filter for cases with last_synced_at after the current scraping session started
+            # This captures only cases updated during the current session
+            (not is_nil(last_synced_at) and last_synced_at >= ^session_cutoff)
+          )
+          |> Ash.Query.sort([last_synced_at: :desc])
+          |> Ash.Query.limit(50)  # Higher limit for scraping sessions
+          |> Ash.Query.load([:agency, :offender])
+          |> Ash.read!(actor: socket.assigns.current_user)
+          
+          # Debug each case found
+          Enum.each(cases, fn case ->
+            Logger.debug("🔴 Found session case: #{case.regulator_id} synced at #{case.last_synced_at}")
+          end)
+          
+          cases
+        else
+          # No active scraping session - return empty list
+          Logger.debug("🔴 No active scraping session - returning empty case list")
+          []
+        end
         
-        cases = EhsEnforcement.Enforcement.Case
-                |> Ash.Query.filter(
-                  # Filter for cases with last_synced_at in the last 2 minutes
-                  # This captures cases updated via the :sync action during scraping
-                  (not is_nil(last_synced_at) and last_synced_at > ^recent_cutoff)
-                )
-                |> Ash.Query.sort([last_synced_at: :desc])
-                |> Ash.Query.limit(20)
-                |> Ash.Query.load([:agency, :offender])
-                |> Ash.read!(actor: socket.assigns.current_user)
-        
-        Logger.debug("🔴 keep_live scraped_cases query returned #{length(cases)} recently synced cases")
+        Logger.debug("🔴🔴🔴 keep_live scraped_cases query returned #{length(cases)} session cases")
         cases
       end,
-        # PubSub topics to subscribe to - matches the Case resource's pub_sub config
-        subscribe: ["case:synced", "case:created"],
+        # PubSub topics to subscribe to - use scrape_session events for proper timing
+        subscribe: ["case:synced", "case:created", "scrape_session:updated"],
         # Keep previous results while new query runs (prevents UI flicker)
         results: :keep,
         # Load data even before WebSocket connection is established
         load_until_connected?: true,
-        # Debounce refetches to avoid overwhelming the system
-        refetch_window: :timer.seconds(2)
+        # Debounce refetches to avoid overwhelming the system and timing issues
+        refetch_window: :timer.seconds(1)
       )
       
       {:ok, socket}
@@ -217,6 +228,21 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
           actor: socket.assigns.current_user
         }
         
+        # Set session start time FIRST, before starting background task
+        # This ensures PubSub events from the task are captured
+        session_start_time = DateTime.add(DateTime.utc_now(), -5, :second)
+        Logger.debug("🟠 UI: Setting scraping session start time to: #{session_start_time}")
+        
+        # Update socket BEFORE starting background task
+        socket = assign(socket,
+          scraping_active: true,
+          scraping_session_started_at: session_start_time,  # Set BEFORE task starts
+          progress: Map.merge(socket.assigns.progress, %{
+            status: :running,
+            current_page: validated_params.start_page
+          })
+        )
+        
         # Start simple scraping task
         liveview_pid = self()
         Logger.info("Starting simple case scraping: pages #{scraping_opts.start_page}-#{scraping_opts.start_page + scraping_opts.max_pages - 1}")
@@ -249,14 +275,10 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
           current_page: validated_params.start_page
         }
         
+        # Final socket update with session and task info
         socket = assign(socket,
           current_session: session,
-          scraping_active: true,
-          scraping_task: task,
-          progress: Map.merge(socket.assigns.progress, %{
-            status: :running,
-            current_page: validated_params.start_page
-          })
+          scraping_task: task
         )
         
         {:noreply, socket}
@@ -286,6 +308,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
           scraping_active: false,
           current_session: nil,
           scraping_task: nil,
+          scraping_session_started_at: nil,  # Clear session start time
           progress: Map.put(socket.assigns.progress, :status, :stopped)
         )
         
@@ -301,6 +324,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
         socket = assign(socket,
           scraping_active: false,
           current_session: nil,
+          scraping_session_started_at: nil,  # Clear session start time
           progress: Map.put(socket.assigns.progress, :status, :stopped)
         )
         {:noreply, socket}
@@ -316,7 +340,11 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
 
   @impl true
   def handle_event("clear_scraped_cases", _params, socket) do
-    socket = assign(socket, scraped_cases: [])
+    # Clear the session start time to hide all scraped cases
+    socket = assign(socket, 
+      scraped_cases: [],
+      scraping_session_started_at: nil
+    )
     {:noreply, socket}
   end
   
@@ -570,43 +598,53 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   
   @doc """
   Handle PubSub notification when a case is synced (existing case updated during scraping).
-  
-  This handler receives notifications from the Case resource's `:sync` action when
-  existing cases are found and updated during scraping. The notification structure:
-  
-  - `topic`: "case:synced" - The PubSub topic
-  - `event`: "sync" - The event name
-  - `payload`: An `Ash.Notifier.Notification` struct containing:
-    - `data`: The updated case record with all fields
-    - `action`: The action that was performed (`:sync`)
-    - `resource`: `EhsEnforcement.Enforcement.Case`
-  
-  The handler triggers a `keep_live` refresh to update the UI with the synced case.
   """
   @impl true
   def handle_info(%Phoenix.Socket.Broadcast{topic: "case:synced", event: "sync", payload: %Ash.Notifier.Notification{} = notification}, socket) do
-    Logger.debug("🟠 UI: Received Case sync notification - triggering keep_live update")
+    Logger.debug("🟠🟠🟠 UI: Received Case sync notification! PID: #{inspect(self())}")
     Logger.debug("🟠 UI: Case ID: #{notification.data.id}, Regulator ID: #{notification.data.regulator_id}")
+    Logger.debug("🟠 UI: Case last_synced_at: #{notification.data.last_synced_at}")
+    Logger.debug("🟠 UI: Current session start time: #{socket.assigns.scraping_session_started_at}")
     
     # Use handle_live/3 to trigger keep_live refresh for scraped_cases
     {:noreply, AshPhoenix.LiveView.handle_live(socket, "case:synced", [:scraped_cases])}
   end
-  
+
   @doc """
   Handle PubSub notification when a new case is created during scraping.
-  
-  This handler receives notifications from the Case resource's `:create` action when
-  new cases are created. The notification contains the newly created case data.
-  
-  The handler triggers a `keep_live` refresh to add the new case to the UI display.
   """
   @impl true
   def handle_info(%Phoenix.Socket.Broadcast{topic: "case:created", event: "create", payload: %Ash.Notifier.Notification{} = notification}, socket) do
-    Logger.debug("🟠 UI: Received Case create notification - triggering keep_live update")
+    Logger.debug("🟠🟠🟠 UI: Received Case create notification! PID: #{inspect(self())}")
     Logger.debug("🟠 UI: Case ID: #{notification.data.id}, Regulator ID: #{notification.data.regulator_id}")
+    Logger.debug("🟠 UI: Case last_synced_at: #{notification.data.last_synced_at}")
+    Logger.debug("🟠 UI: Current session start time: #{socket.assigns.scraping_session_started_at}")
     
     # Use handle_live/3 to trigger keep_live refresh for scraped_cases
     {:noreply, AshPhoenix.LiveView.handle_live(socket, "case:created", [:scraped_cases])}
+  end
+
+  @doc """
+  Handle PubSub notification when a scrape session is updated.
+  
+  This handler triggers a refresh of the scraped_cases keep_live subscription
+  when the scrape session is updated. This ensures the Records component
+  updates after all case processing is complete, avoiding timing issues
+  with individual case events.
+  
+  This approach works because scrape_session:updated events happen AFTER
+  all the individual case sync operations are complete.
+  """
+  @impl true
+  def handle_info(%Phoenix.Socket.Broadcast{topic: "scrape_session:updated", event: "update", payload: %Ash.Notifier.Notification{} = notification}, socket) do
+    Logger.debug("🟠🟠🟠 UI: Received ScrapeSession update - triggering scraped_cases refresh! PID: #{inspect(self())}")
+    Logger.debug("🟠 UI: Session ID: #{notification.data.session_id}, Status: #{notification.data.status}")
+    Logger.debug("🟠 UI: Cases found: #{notification.data.cases_found}, Cases created: #{notification.data.cases_created}")
+    Logger.debug("🟠 UI: Current session start time: #{socket.assigns.scraping_session_started_at}")
+    
+    # Use handle_live/3 to trigger keep_live refresh for scraped_cases
+    # This happens after case processing is complete, ensuring proper timing
+    {:noreply, AshPhoenix.LiveView.handle_live(socket, "scrape_session:updated", [:scraped_cases])}
   end
 
   @doc """
@@ -623,6 +661,30 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
     {:noreply, socket}
   end
 
+  @impl true
+  def handle_info({:refetch, :active_sessions, opts}, socket) do
+    Logger.debug("🟢 UI: Received refetch request for active_sessions with opts: #{inspect(opts)}")
+    # This message is from AshPhoenix.LiveView telling us to refetch active scraping sessions
+    # The keep_live query should run automatically
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:refetch, :recent_cases, opts}, socket) do
+    Logger.debug("🟢 UI: Received refetch request for recent_cases with opts: #{inspect(opts)}")
+    # This message is from AshPhoenix.LiveView telling us to refetch recent cases
+    # The keep_live query should run automatically
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:refetch, :case_processing_log, opts}, socket) do
+    Logger.debug("🟢 UI: Received refetch request for case_processing_log with opts: #{inspect(opts)}")
+    # This message is from AshPhoenix.LiveView telling us to refetch case processing logs
+    # The keep_live query should run automatically
+    {:noreply, socket}
+  end
+
   # Note: Manual PubSub handlers removed - now using Ash notifications via keep_live
 
   # Task completion handlers
@@ -634,6 +696,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
       scraping_active: false,
       current_session: nil,
       scraping_task: nil,
+      # Don't clear scraping_session_started_at here - keep showing results after completion
       progress: Map.put(socket.assigns.progress, :status, :completed)
       # Keep scraped_cases after completion so user can see results
     )
@@ -647,6 +710,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
       scraping_active: false,
       current_session: nil,
       scraping_task: nil,
+      scraping_session_started_at: nil,  # Clear session start time on failure
       progress: Map.put(socket.assigns.progress, :status, :error)
     )
     {:noreply, put_flash(socket, :error, "Scraping failed: #{inspect(reason)}")}
@@ -668,6 +732,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
         scraping_active: false,
         current_session: nil,
         scraping_task: nil,
+        scraping_session_started_at: nil,  # Clear session start time on unexpected death
         progress: Map.put(socket.assigns.progress, :status, :error)
       )
       {:noreply, put_flash(socket, :error, "Scraping stopped unexpectedly")}
