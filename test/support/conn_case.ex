@@ -74,21 +74,38 @@ defmodule EhsEnforcementWeb.ConnCase do
     name = "Admin User"
     github_login = "adminuser"
 
-    # Create admin user using Ash.Seed for testing
-    user = Ash.Seed.seed!(EhsEnforcement.Accounts.User, %{
-      email: email,
-      name: name,
-      github_login: github_login,
+    # Create admin user using the proper OAuth2 registration action that generates tokens
+    user_info = %{
+      "email" => email,
+      "name" => name,
+      "login" => github_login,
+      "id" => 12345,
+      "avatar_url" => "https://github.com/images/avatars/#{github_login}",
+      "html_url" => "https://github.com/#{github_login}"
+    }
+    
+    oauth_tokens = %{
+      "access_token" => "test_access_token",
+      "token_type" => "Bearer"
+    }
+
+    {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, %{
+      user_info: user_info,
+      oauth_tokens: oauth_tokens
+    }, action: :register_with_github)
+    
+    # Update admin status after creation using the correct action
+    {:ok, admin_user} = Ash.update(user, %{
       is_admin: true,
       admin_checked_at: DateTime.utc_now()
-    })
+    }, action: :update_admin_status, actor: user)
 
     new_conn =
       conn
       |> Phoenix.ConnTest.init_test_session(%{})
-      |> AshAuthentication.Plug.Helpers.store_in_session(user)
+      |> AshAuthentication.Plug.Helpers.store_in_session(admin_user)
 
-    %{context | conn: new_conn, user: user}
+    %{context | conn: new_conn} |> Map.put(:user, admin_user)
   end
 
   @doc """

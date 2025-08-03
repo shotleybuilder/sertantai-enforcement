@@ -61,8 +61,10 @@ form = AshPhoenix.Form.validate(form, params)
 
 **⚠️ GOLDEN RULE**: After any code changes involving Ash resources, ALWAYS run:
 1. `mix ash.codegen --check` (generate any needed migrations)
-2. `mix ecto.migrate` (apply pending migrations)
+2. `mix ash.migrate` (apply pending Ash migrations)
 3. THEN start the server with `mix phx.server`
+
+**⚠️ CRITICAL**: Use `mix ash.migrate` NOT `mix ecto.migrate` for Ash-generated migrations!
 
 **Never let the app run ahead of the database schema!**
 
@@ -94,7 +96,8 @@ form = AshPhoenix.Form.validate(form, params)
 
 ### Database Operations
 - `mix ecto.create` - Create database
-- `mix ecto.migrate` - Run database migrations
+- `mix ash.migrate` - Run Ash-generated migrations (preferred for Ash resources)
+- `mix ecto.migrate` - Run standard Ecto migrations (use only for non-Ash tables)
 - `mix ecto.drop` - Drop database
 
 ## Architecture Overview

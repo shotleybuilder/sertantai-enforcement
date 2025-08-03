@@ -2,90 +2,151 @@ defmodule EhsEnforcement.Enforcement.Case do
   @moduledoc """
   Represents an enforcement case (court case) against an offender.
   """
-  
+
   use Ash.Resource,
     domain: EhsEnforcement.Enforcement,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshOban, AshEvents.Events],
+    notifiers: [Ash.Notifier.PubSub]
 
   postgres do
-    table "cases"
-    repo EhsEnforcement.Repo
+    table("cases")
+    repo(EhsEnforcement.Repo)
+
+    identity_wheres_to_sql(
+      unique_airtable_id: "airtable_id IS NOT NULL"
+    )
+  end
+
+  pub_sub do
+    # Use our PubSub module, not the Endpoint
+    module(EhsEnforcement.PubSub)
+    prefix("case")
     
-    identity_wheres_to_sql(unique_airtable_id: "airtable_id IS NOT NULL")
+    # Broadcast when a case is created
+    # Topics: "case:created" and "case:created:<id>"
+    publish(:create, ["created", :id])
+    publish(:create, ["created"])
+    
+    # Broadcast when a case is updated
+    # Topics: "case:updated" and "case:updated:<id>"
+    publish(:update, ["updated", :id])
+    publish(:update, ["updated"])
+    
+    # Broadcast when a case is synced (special update action)
+    # Topics: "case:synced" and "case:synced:<id>"
+    publish(:sync, ["synced", :id])
+    publish(:sync, ["synced"])
+    
+    # Broadcast when a case is destroyed
+    # Topics: "case:deleted" and "case:deleted:<id>"
+    publish(:destroy, ["deleted", :id])
+    
+    # Broadcast when cases are bulk created
+    # Topic: "case:bulk_created"
+    publish(:bulk_create, ["bulk_created"])
   end
 
   attributes do
-    uuid_primary_key :id
-    
-    attribute :airtable_id, :string
-    attribute :regulator_id, :string
-    attribute :offence_result, :string
-    attribute :offence_fine, :decimal
-    attribute :offence_costs, :decimal
-    attribute :offence_action_date, :date
-    attribute :offence_hearing_date, :date
-    attribute :offence_breaches, :string
-    attribute :offence_breaches_clean, :string
-    attribute :regulator_function, :string
-    attribute :regulator_url, :string
-    attribute :related_cases, :string
-    attribute :offence_action_type, :string
-    attribute :url, :string
-    attribute :last_synced_at, :utc_datetime
-    
-    create_timestamp :inserted_at
-    update_timestamp :updated_at
+    uuid_primary_key(:id)
+
+    attribute(:airtable_id, :string)
+    attribute(:regulator_id, :string)
+    attribute(:offence_result, :string)
+    attribute(:offence_fine, :decimal)
+    attribute(:offence_costs, :decimal)
+    attribute(:offence_action_date, :date)
+    attribute(:offence_hearing_date, :date)
+    attribute(:offence_breaches, :string)
+    attribute(:offence_breaches_clean, :string)
+    attribute(:regulator_function, :string)
+    attribute(:regulator_url, :string)
+    attribute(:related_cases, :string)
+    attribute(:offence_action_type, :string)
+    attribute(:url, :string)
+    attribute(:last_synced_at, :utc_datetime)
+
+    create_timestamp(:inserted_at)
+    update_timestamp(:updated_at)
   end
 
   relationships do
     belongs_to :agency, EhsEnforcement.Enforcement.Agency do
-      allow_nil? false
+      allow_nil?(false)
     end
-    
+
     belongs_to :offender, EhsEnforcement.Enforcement.Offender do
-      allow_nil? false
+      allow_nil?(false)
     end
-    
+
     has_many :breaches, EhsEnforcement.Enforcement.Breach
   end
 
   identities do
-    identity :unique_airtable_id, [:airtable_id], where: expr(not is_nil(airtable_id))
+    identity(:unique_airtable_id, [:airtable_id], where: expr(not is_nil(airtable_id)))
+    identity(:unique_regulator_id, [:regulator_id])
+  end
+
+  events do
+    # Reference the centralized event log resource
+    event_log EhsEnforcement.Events.Event
+    
+    # Track current action versions for schema evolution during replay
+    current_action_versions create: 1, sync: 1, bulk_create: 1
+    
+    # Only track core data operations (exclude scraping orchestration and read actions)
+    only_actions [:create, :sync, :bulk_create]
   end
 
   actions do
-    defaults [:read, :destroy]
-    
+    defaults([:read, :update, :destroy])
+
     create :create do
-      primary? true
-      accept [:airtable_id, :regulator_id, :offence_result, :offence_fine, :offence_costs,
-              :offence_action_date, :offence_hearing_date, :offence_breaches, 
-              :offence_breaches_clean, :regulator_function, :regulator_url, :related_cases,
-              :offence_action_type, :url, :last_synced_at]
-      
-      argument :agency_code, :atom
-      argument :offender_attrs, :map
-      argument :agency_id, :uuid
-      argument :offender_id, :uuid
-      
-      change fn changeset, context ->
+      primary?(true)
+
+      accept([
+        :airtable_id,
+        :regulator_id,
+        :offence_result,
+        :offence_fine,
+        :offence_costs,
+        :offence_action_date,
+        :offence_hearing_date,
+        :offence_breaches,
+        :offence_breaches_clean,
+        :regulator_function,
+        :regulator_url,
+        :related_cases,
+        :offence_action_type,
+        :url,
+        :last_synced_at
+      ])
+
+      argument(:agency_code, :atom)
+      argument(:offender_attrs, :map)
+      argument(:agency_id, :uuid)
+      argument(:offender_id, :uuid)
+
+      validate(present([:regulator_id]))
+
+      change(fn changeset, context ->
         cond do
           # Direct IDs provided
-          Ash.Changeset.get_argument(changeset, :agency_id) && 
-          Ash.Changeset.get_argument(changeset, :offender_id) ->
+          Ash.Changeset.get_argument(changeset, :agency_id) &&
+              Ash.Changeset.get_argument(changeset, :offender_id) ->
             agency_id = Ash.Changeset.get_argument(changeset, :agency_id)
             offender_id = Ash.Changeset.get_argument(changeset, :offender_id)
-            
+
             changeset
             |> Ash.Changeset.force_change_attribute(:agency_id, agency_id)
             |> Ash.Changeset.force_change_attribute(:offender_id, offender_id)
-          
+
           # Code and attrs provided
           Ash.Changeset.get_argument(changeset, :agency_code) &&
-          Ash.Changeset.get_argument(changeset, :offender_attrs) ->
+              Ash.Changeset.get_argument(changeset, :offender_attrs) ->
             agency_code = Ash.Changeset.get_argument(changeset, :agency_code)
             offender_attrs = Ash.Changeset.get_argument(changeset, :offender_attrs)
-            
+
             # Look up agency by code
             case EhsEnforcement.Enforcement.get_agency_by_code(agency_code) do
               {:ok, agency} when not is_nil(agency) ->
@@ -95,48 +156,309 @@ defmodule EhsEnforcement.Enforcement.Case do
                     changeset
                     |> Ash.Changeset.force_change_attribute(:agency_id, agency.id)
                     |> Ash.Changeset.force_change_attribute(:offender_id, offender.id)
-                  
-                  {:error, _} -> 
-                    Ash.Changeset.add_error(changeset, "Failed to create offender")
+
+                  {:error, error} ->
+                    # Preserve the actual error details for debugging
+                    error_msg = case error do
+                      %Ash.Error.Invalid{errors: errors} when is_list(errors) ->
+                        error_details = Enum.map_join(errors, ", ", fn err -> 
+                          "#{err.field || "unknown"}: #{err.message || inspect(err)}"
+                        end)
+                        "Failed to create offender: #{error_details}"
+                      
+                      %{message: msg} when is_binary(msg) ->
+                        "Failed to create offender: #{msg}"
+                      
+                      _ ->
+                        "Failed to create offender: #{inspect(error)}"
+                    end
+                    
+                    Ash.Changeset.add_error(changeset, error_msg)
                 end
-              
+
               {:ok, nil} ->
                 Ash.Changeset.add_error(changeset, "Agency not found: #{agency_code}")
-              
+
               {:error, _} ->
                 Ash.Changeset.add_error(changeset, "Failed to lookup agency: #{agency_code}")
             end
-          
-          true -> changeset
+
+          true ->
+            Ash.Changeset.add_error(changeset, 
+              field: :agency_id, 
+              message: "Either agency_id + offender_id OR agency_code + offender_attrs must be provided")
         end
-      end
+      end)
     end
+
+    @doc """
+    Synchronize a case with updated data from external sources.
     
+    This action is specifically designed to trigger PubSub notifications
+    when cases are updated during scraping operations. It automatically:
+    
+    1. Updates the `last_synced_at` timestamp
+    2. Broadcasts to "case:synced" and "case:synced:<id>" topics
+    3. Allows partial updates of case data
+    
+    ## PubSub Events
+    
+    When this action succeeds, it publishes to:
+    - `case:synced` - General sync event (all synced cases)
+    - `case:synced:<case_id>` - Specific case sync event
+    
+    ## Usage
+    
+        # In scraping when we find an existing case
+        {:ok, updated_case} = Ash.update(existing_case, %{}, action: :sync, actor: actor)
+    """
     update :sync do
-      accept [:offence_result, :offence_fine, :offence_costs, :offence_hearing_date]
-      
-      change set_attribute(:last_synced_at, &DateTime.utc_now/0)
+      accept([:offence_result, :offence_fine, :offence_costs, :offence_hearing_date])
+
+      change(set_attribute(:last_synced_at, &DateTime.utc_now/0))
     end
-    
+
+
     read :by_date_range do
-      argument :from_date, :date, allow_nil?: false
-      argument :to_date, :date, allow_nil?: false
-      
-      filter expr(
-        offence_action_date >= ^arg(:from_date) and 
-        offence_action_date <= ^arg(:to_date)
+      argument(:from_date, :date, allow_nil?: false)
+      argument(:to_date, :date, allow_nil?: false)
+
+      filter(
+        expr(
+          offence_action_date >= ^arg(:from_date) and
+            offence_action_date <= ^arg(:to_date)
+        )
       )
+    end
+
+    create :scrape_hse_cases do
+      description("Scheduled scraping of HSE cases - standard daily scrape")
+
+      argument(:max_pages, :integer, default: 20)
+      argument(:start_page, :integer, default: 1)
+      argument(:database, :string, default: "cases")
+
+      change(fn changeset, context ->
+        max_pages = Ash.Changeset.get_argument(changeset, :max_pages)
+        start_page = Ash.Changeset.get_argument(changeset, :start_page)
+        database = Ash.Changeset.get_argument(changeset, :database)
+
+        session_opts = %{
+          max_pages: max_pages,
+          start_page: start_page,
+          database: database
+        }
+
+        case EhsEnforcement.Scraping.ScrapeCoordinator.start_scraping_session(session_opts) do
+          {:ok, session_result} ->
+            Ash.Changeset.add_error(changeset,
+              field: :scraping_result,
+              message:
+                "Scraping completed: #{session_result.cases_created} cases created, #{session_result.cases_updated} updated"
+            )
+
+          {:error, error} ->
+            Ash.Changeset.add_error(changeset,
+              field: :scraping_error,
+              message: "Scraping failed: #{inspect(error)}"
+            )
+        end
+      end)
+    end
+
+    create :scrape_hse_cases_deep do
+      description("Deep scheduled scraping of HSE cases - weekly comprehensive scrape")
+
+      argument(:max_pages, :integer, default: 100)
+      argument(:start_page, :integer, default: 1)
+      argument(:database, :string, default: "cases")
+
+      change(fn changeset, context ->
+        max_pages = Ash.Changeset.get_argument(changeset, :max_pages)
+        start_page = Ash.Changeset.get_argument(changeset, :start_page)
+        database = Ash.Changeset.get_argument(changeset, :database)
+
+        session_opts = %{
+          max_pages: max_pages,
+          start_page: start_page,
+          database: database
+        }
+
+        case EhsEnforcement.Scraping.ScrapeCoordinator.start_scraping_session(session_opts) do
+          {:ok, session_result} ->
+            Ash.Changeset.add_error(changeset,
+              field: :scraping_result,
+              message:
+                "Deep scraping completed: #{session_result.cases_created} cases created, #{session_result.cases_updated} updated"
+            )
+
+          {:error, error} ->
+            Ash.Changeset.add_error(changeset,
+              field: :scraping_error,
+              message: "Deep scraping failed: #{inspect(error)}"
+            )
+        end
+      end)
+    end
+
+    create :handle_scrape_error do
+      description("Handle errors from scheduled scraping jobs")
+
+      argument(:error_details, :map)
+      argument(:job_name, :string)
+      argument(:attempt_number, :integer)
+
+      change(fn changeset, context ->
+        error_details = Ash.Changeset.get_argument(changeset, :error_details)
+        job_name = Ash.Changeset.get_argument(changeset, :job_name)
+        attempt_number = Ash.Changeset.get_argument(changeset, :attempt_number)
+
+        # Log the error for monitoring
+        require Logger
+
+        Logger.error("Scheduled scraping job failed", %{
+          job_name: job_name,
+          attempt: attempt_number,
+          error_details: error_details
+        })
+
+        # For now, just record the error - could extend to send notifications
+        Ash.Changeset.add_error(changeset,
+          field: :job_error,
+          message:
+            "Job #{job_name} failed on attempt #{attempt_number}: #{inspect(error_details)}"
+        )
+      end)
+    end
+
+    read :duplicate_detection do
+      description("Efficient duplicate checking by regulator_id for scraping operations")
+
+      argument(:regulator_ids, {:array, :string}, allow_nil?: false)
+
+      filter(expr(regulator_id in ^arg(:regulator_ids)))
+
+      prepare(fn query, _context ->
+        Ash.Query.select(query, [:id, :regulator_id])
+      end)
+    end
+
+    create :bulk_create do
+      description("Batch processing for creating multiple cases efficiently")
+
+      argument(:cases_data, {:array, :map}, allow_nil?: false)
+      argument(:batch_size, :integer, default: 50)
+
+      change(fn changeset, context ->
+        cases_data = Ash.Changeset.get_argument(changeset, :cases_data)
+        batch_size = Ash.Changeset.get_argument(changeset, :batch_size)
+
+        # Extract regulator_ids for duplicate detection
+        regulator_ids = Enum.map(cases_data, & &1[:regulator_id])
+        
+        # Check for existing cases to prevent duplicates
+        case Ash.read(__MODULE__, action: :duplicate_detection, regulator_ids: regulator_ids) do
+          {:ok, existing_cases} ->
+            existing_ids = MapSet.new(existing_cases, & &1.regulator_id)
+            new_cases_data = Enum.reject(cases_data, fn case_data ->
+              MapSet.member?(existing_ids, case_data[:regulator_id])
+            end)
+            
+            skipped_count = length(cases_data) - length(new_cases_data)
+            
+            # Process only new cases in batches
+            batches = Enum.chunk_every(new_cases_data, batch_size)
+            
+            results = %{
+              created: 0,
+              errors: [],
+              skipped: skipped_count
+            }
+
+            final_results = Enum.reduce(batches, results, fn batch, acc ->
+              batch_results = Enum.reduce(batch, acc, fn case_data, batch_acc ->
+                case Ash.create(__MODULE__, case_data, domain: EhsEnforcement.Enforcement) do
+                  {:ok, _case} ->
+                    %{batch_acc | created: batch_acc.created + 1}
+                  
+                  {:error, error} ->
+                    error_msg = "Failed to create case with regulator_id #{case_data[:regulator_id]}: #{inspect(error)}"
+                    %{batch_acc | errors: [error_msg | batch_acc.errors]}
+                end
+              end)
+              
+              # Brief pause between batches to prevent overwhelming the database
+              :timer.sleep(100)
+              batch_results
+            end)
+
+            success_msg = if final_results.created > 0 or final_results.skipped > 0 do
+              parts = []
+              if final_results.created > 0, do: parts = ["#{final_results.created} created" | parts]
+              if final_results.skipped > 0, do: parts = ["#{final_results.skipped} skipped (duplicates)" | parts]
+              "Bulk create completed: #{Enum.join(parts, ", ")}"
+            else
+              "No cases processed"
+            end
+
+            Ash.Changeset.add_error(changeset,
+              field: :bulk_result,
+              message: success_msg
+            )
+          
+          {:error, _duplicate_check_error} ->
+            Ash.Changeset.add_error(changeset,
+              field: :bulk_error,
+              message: "Bulk create failed: unable to check for duplicates"
+            )
+        end
+      end)
     end
   end
 
   calculations do
     calculate :total_penalty, :decimal do
-      calculation expr((offence_fine || 0) + (offence_costs || 0))
+      calculation(expr((offence_fine || 0) + (offence_costs || 0)))
+    end
+  end
+
+  oban do
+    triggers do
+      trigger :scheduled_scrape_hse do
+        action(:scrape_hse_cases)
+
+        # Daily at 2 AM
+        scheduler_cron("0 2 * * *")
+        max_attempts(3)
+        queue(:scraping)
+        on_error(:handle_scrape_error)
+        worker_module_name(EhsEnforcement.Enforcement.Case.AshOban.Worker.ScheduledScrapeHse)
+
+        scheduler_module_name(
+          EhsEnforcement.Enforcement.Case.AshOban.Scheduler.ScheduledScrapeHse
+        )
+      end
+
+      trigger :weekly_scrape_deep do
+        action(:scrape_hse_cases_deep)
+
+        # Weekly on Sunday at 3 AM
+        scheduler_cron("0 3 * * 0")
+        max_attempts(5)
+        queue(:scraping)
+        on_error(:handle_scrape_error)
+        worker_module_name(EhsEnforcement.Enforcement.Case.AshOban.Worker.WeeklyScrapeDeep)
+        scheduler_module_name(EhsEnforcement.Enforcement.Case.AshOban.Scheduler.WeeklyScrapeDeep)
+      end
     end
   end
 
   code_interface do
-    define :create
-    define :sync
+    define(:create)
+    define(:sync)
+    define(:scrape_hse_cases)
+    define(:scrape_hse_cases_deep)
+    define(:duplicate_detection)
+    define(:bulk_create)
   end
 end

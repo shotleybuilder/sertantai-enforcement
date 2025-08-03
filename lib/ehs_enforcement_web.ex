@@ -55,6 +55,10 @@ defmodule EhsEnforcementWeb do
       use Phoenix.LiveView,
         layout: {EhsEnforcementWeb.Layouts, :app}
 
+      # Import AshPhoenix utilities for LiveView
+      import AshPhoenix.LiveView
+      alias AshPhoenix.Form
+
       unquote(html_helpers())
     end
   end

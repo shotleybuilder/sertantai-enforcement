@@ -3,6 +3,9 @@ import Config
 # Set the environment
 config :ehs_enforcement, :environment, :dev
 
+# Debug Ash PubSub events
+config :ash, :pub_sub, debug?: true
+
 # Configure your database
 config :ehs_enforcement, EhsEnforcement.Repo,
   username: "postgres",
@@ -12,7 +15,8 @@ config :ehs_enforcement, EhsEnforcement.Repo,
   database: "ehs_enforcement_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  pool_size: 10,
+  log: false  # Disable Ecto query logging
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -72,6 +76,51 @@ config :ehs_enforcement, dev_routes: true
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
 
+# Configure logger to filter out noisy logs
+config :logger,
+  backends: [:console],
+  compile_time_purge_matching: [
+    [level_lower_than: :info]
+  ]
+
+# Add runtime filtering for Phoenix socket logs and Ecto queries
+config :logger, :default_handler,
+  filters: [
+    suppress_noisy_logs: {
+      fn log_event, _opts ->
+        case log_event do
+          # Suppress Phoenix LiveView Socket logs
+          %{meta: %{module: Phoenix.LiveView.Socket}} -> 
+            :stop
+          
+          # Suppress Ecto query logs
+          %{meta: %{module: module}} when is_atom(module) ->
+            module_str = Atom.to_string(module)
+            if String.starts_with?(module_str, "Elixir.Ecto.Adapters") do
+              :stop
+            else
+              log_event
+            end
+          
+          # Suppress specific message patterns
+          %{msg: {:string, msg}} when is_binary(msg) ->
+            cond do
+              String.contains?(msg, "CONNECTED TO Phoenix.LiveView.Socket") -> :stop
+              String.contains?(msg, "QUERY OK") -> :stop
+              String.contains?(msg, "MOUNT EhsEnforcementWeb") -> :stop
+              String.contains?(msg, "QUERY ERROR") -> log_event  # Keep query errors
+              true -> log_event
+            end
+          
+          # Default: let the log through
+          _ -> 
+            log_event
+        end
+      end,
+      :unused
+    }
+  ]
+
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
@@ -83,8 +132,12 @@ config :phoenix_live_view,
   # Include HEEx debug annotations as HTML comments in rendered markup
   debug_heex_annotations: true,
   # Enable helpful, but potentially expensive runtime checks
-  enable_expensive_runtime_checks: true
+  enable_expensive_runtime_checks: true,
+  # Disable mount debug logging
+  log_mount_errors: false
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
 
+# Enable Ash PubSub debug mode for development
+config :ash, :pub_sub, debug?: true

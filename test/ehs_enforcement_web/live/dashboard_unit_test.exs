@@ -3,6 +3,9 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
   import Phoenix.LiveViewTest
   import ExUnit.CaptureLog
 
+  require Ash.Query
+  import Ash.Expr
+
   alias EhsEnforcement.Enforcement
   alias EhsEnforcement.Repo
 
@@ -77,7 +80,9 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
     end
 
     test "loads cases with associations", %{cases: cases} do
-      loaded_cases = Enforcement.list_cases!(load: [:offender, :agency])
+      loaded_cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.load([:offender, :agency])
+        |> Ash.read!()
       
       assert length(loaded_cases) == 2
       
@@ -91,10 +96,10 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
     end
 
     test "orders cases by date descending", %{cases: cases} do
-      loaded_cases = Enforcement.list_cases!(
-        sort: [offence_action_date: :desc],
-        load: [:offender, :agency]
-      )
+      loaded_cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.sort(offence_action_date: :desc)
+        |> Ash.Query.load([:offender, :agency])
+        |> Ash.read!()
       
       assert length(loaded_cases) == 2
       
@@ -122,10 +127,10 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
       end)
 
       # Load with limit
-      recent_cases = Enforcement.list_cases!(
-        sort: [offence_action_date: :desc],
-        load: [:offender, :agency]
-      )
+      recent_cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.sort(offence_action_date: :desc)
+        |> Ash.Query.load([:offender, :agency])
+        |> Ash.read!()
       |> Enum.take(10) # Simulate dashboard limit
       
       assert length(recent_cases) == 10
@@ -306,17 +311,23 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
     end
 
     test "filters cases by agency", %{hse: hse, ea: ea} do
-      hse_cases = Enforcement.list_cases!(filter: [agency_id: hse.id])
+      hse_cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.filter(agency_id == ^hse.id)
+        |> Ash.read!()
       assert length(hse_cases) == 3
       
-      ea_cases = Enforcement.list_cases!(filter: [agency_id: ea.id])
+      ea_cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.filter(agency_id == ^ea.id)
+        |> Ash.read!()
       assert length(ea_cases) == 0 # No EA cases created
     end
 
     test "supports date range filtering" do
       # This would test future date range filtering functionality
       # For now, just verify the basic case loading works
-      all_cases = Enforcement.list_cases!(sort: [offence_action_date: :desc])
+      all_cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.sort(offence_action_date: :desc)
+        |> Ash.read!()
       assert length(all_cases) == 3
       
       # Verify they're sorted correctly
@@ -329,11 +340,11 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
     test "combines multiple filters", %{hse: hse} do
       # Test filtering by both agency and other criteria
       # This demonstrates the composable nature of Ash queries
-      filtered_cases = Enforcement.list_cases!(
-        filter: [agency_id: hse.id],
-        sort: [offence_action_date: :desc],
-        load: [:offender, :agency]
-      )
+      filtered_cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.filter(agency_id == ^hse.id)
+        |> Ash.Query.sort(offence_action_date: :desc)
+        |> Ash.Query.load([:offender, :agency])
+        |> Ash.read!()
       
       assert length(filtered_cases) == 3
       Enum.each(filtered_cases, fn case_record ->
@@ -390,10 +401,11 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
       
       # Simulate dashboard data loading
       dashboard_agencies = Enforcement.list_agencies!()
-      recent_cases = Enforcement.list_cases!(
-        sort: [offence_action_date: :desc],
-        load: [:offender, :agency]
-      ) |> Enum.take(10)
+      recent_cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.sort(offence_action_date: :desc)
+        |> Ash.Query.load([:offender, :agency])
+        |> Ash.read!()
+        |> Enum.take(10)
       
       # Calculate statistics
       stats = Enum.map(dashboard_agencies, fn agency ->
@@ -460,7 +472,10 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
       
       # Verify we can still load dashboard data efficiently
       agencies = Enforcement.list_agencies!()
-      cases = Enforcement.list_cases!(limit: 10, load: [:offender, :agency])
+      cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.limit(10)
+        |> Ash.Query.load([:offender, :agency])
+        |> Ash.read!()
       
       assert length(agencies) > 0
       assert length(cases) > 0
@@ -489,7 +504,9 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
       })
       
       # Should still load without errors
-      cases = Enforcement.list_cases!(load: [:offender, :agency])
+      cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.load([:offender, :agency])
+        |> Ash.read!()
       assert length(cases) == 1
       
       case_record = List.first(cases)
@@ -499,7 +516,9 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
 
     test "handles missing associations gracefully" do
       # This tests the robustness of the data loading
-      cases = Enforcement.list_cases!(load: [:offender, :agency])
+      cases = EhsEnforcement.Enforcement.Case
+        |> Ash.Query.load([:offender, :agency])
+        |> Ash.read!()
       
       # Should not crash even if no data exists
       assert is_list(cases)

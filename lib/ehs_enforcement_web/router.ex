@@ -88,6 +88,15 @@ defmodule EhsEnforcementWeb.Router do
       # Admin Notice Management Routes
       live "/notices/new", NoticeLive.Form, :new
       live "/notices/:id/edit", NoticeLive.Form, :edit
+      
+      # Admin Configuration Management Routes
+      live "/admin/config", Admin.ConfigLive.Index, :index
+      live "/admin/config/scraping", Admin.ConfigLive.Scraping, :edit
+      live "/admin/config/scraping/new", Admin.ConfigLive.Scraping, :new
+      
+      # Admin Scraping Management Routes (existing)
+      live "/admin/cases/scrape", Admin.CaseLive.Scrape, :scrape
+      live "/admin/scraping", Admin.ScrapingLive.Index, :index
     end
   end
 

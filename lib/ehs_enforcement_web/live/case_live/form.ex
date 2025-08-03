@@ -60,14 +60,6 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
   def handle_event("save", %{"case" => case_params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: case_params) do
       {:ok, case_record} ->
-        # Broadcast case creation/update
-        if socket.assigns[:case] do
-          Phoenix.PubSub.broadcast(EhsEnforcement.PubSub, "case_updates", {:case_updated, case_record})
-          Phoenix.PubSub.broadcast(EhsEnforcement.PubSub, "case:#{case_record.id}", {:case_updated, case_record})
-        else
-          Phoenix.PubSub.broadcast(EhsEnforcement.PubSub, "case_updates", {:case_created, case_record})
-        end
-        
         {:noreply,
          socket
          |> put_flash(:info, if(socket.assigns[:case], do: "Case updated successfully", else: "Case created successfully"))
@@ -151,9 +143,6 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
       
       case Enforcement.create_case(case_attrs) do
         {:ok, case_record} ->
-          # Broadcast case creation
-          Phoenix.PubSub.broadcast(EhsEnforcement.PubSub, "case_updates", {:case_created, case_record})
-          
           {:noreply,
            socket
            |> assign(:loading, false)
@@ -188,10 +177,6 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
       
       case Enforcement.update_case(case_record, case_attrs) do
         {:ok, updated_case} ->
-          # Broadcast case update
-          Phoenix.PubSub.broadcast(EhsEnforcement.PubSub, "case_updates", {:case_updated, updated_case})
-          Phoenix.PubSub.broadcast(EhsEnforcement.PubSub, "case:#{updated_case.id}", {:case_updated, updated_case})
-          
           {:noreply,
            socket
            |> assign(:loading, false)

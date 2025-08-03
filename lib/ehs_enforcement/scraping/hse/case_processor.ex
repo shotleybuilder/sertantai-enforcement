@@ -1,0 +1,430 @@
+defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
+  @moduledoc """
+  HSE case processing pipeline - transforms scraped data for Ash resource creation.
+  
+  Handles:
+  - Data transformation from HSE format to Ash resource format
+  - Integration with existing Breaches module for legislation linking  
+  - Offender matching/creation using existing OffenderMatcher
+  - Validation and error handling following Ash patterns
+  """
+  
+  require Logger
+  
+  alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
+  alias EhsEnforcement.Enforcement
+  alias EhsEnforcement.Sync.OffenderMatcher
+  
+  @hse_agency_code :hse
+  
+  defmodule ProcessedCase do
+    @moduledoc "Struct representing a case ready for Ash resource creation"
+    
+    @derive Jason.Encoder
+    defstruct [
+      :regulator_id,
+      :agency_code,
+      :offender_attrs,
+      :offence_result,
+      :offence_fine,
+      :offence_costs,
+      :offence_action_date,
+      :offence_hearing_date,
+      :offence_breaches,
+      :offence_breaches_clean,
+      :offence_lrt,
+      :regulator_function,
+      :regulator_url,
+      :related_cases,
+      :offence_action_type,
+      :source_metadata
+    ]
+  end
+  
+  @doc """
+  Process a single scraped case into format ready for Ash resource creation.
+  
+  Returns {:ok, %ProcessedCase{}} or {:error, reason}
+  """
+  def process_case(%ScrapedCase{} = scraped_case) do
+    Logger.debug("Processing scraped case: #{scraped_case.regulator_id}")
+    
+    try do
+      processed = %ProcessedCase{
+        regulator_id: scraped_case.regulator_id,
+        agency_code: @hse_agency_code,
+        offender_attrs: build_offender_attrs(scraped_case),
+        offence_result: scraped_case.offence_result,
+        offence_fine: scraped_case.offence_fine,
+        offence_costs: scraped_case.offence_costs,
+        offence_action_date: scraped_case.offence_action_date,
+        offence_hearing_date: scraped_case.offence_hearing_date,
+        offence_breaches: scraped_case.offence_breaches,
+        regulator_function: scraped_case.regulator_function,
+        regulator_url: build_regulator_url(scraped_case.regulator_id),
+        related_cases: scraped_case.related_cases,
+        offence_action_type: "Court Case",
+        source_metadata: build_source_metadata(scraped_case)
+      }
+      
+      # Process breaches with legislation linking if breaches exist
+      processed_with_breaches = case scraped_case.offence_breaches do
+        breaches when is_list(breaches) and length(breaches) > 0 ->
+          process_breaches(processed, breaches)
+        
+        breach when is_binary(breach) and breach != "" ->
+          process_breaches(processed, [breach])
+        
+        _ -> processed
+      end
+      
+      Logger.debug("Successfully processed case: #{scraped_case.regulator_id}")
+      {:ok, processed_with_breaches}
+      
+    rescue
+      error ->
+        Logger.error("Failed to process case #{scraped_case.regulator_id}: #{inspect(error)}")
+        {:error, {:processing_error, error}}
+    end
+  end
+  
+  @doc """
+  Process multiple scraped cases in batch.
+  
+  Returns {:ok, [%ProcessedCase{}]} or {:error, reason}
+  """
+  def process_cases(scraped_cases) when is_list(scraped_cases) do
+    Logger.info("Processing #{length(scraped_cases)} scraped cases")
+    
+    try do
+      processed_cases = Enum.reduce_while(scraped_cases, [], fn scraped_case, acc ->
+        case process_case(scraped_case) do
+          {:ok, processed_case} -> {:cont, [processed_case | acc]}
+          {:error, reason} -> 
+            Logger.warning("Skipping case #{scraped_case.regulator_id}: #{inspect(reason)}")
+            {:cont, acc} # Continue processing other cases
+        end
+      end)
+      
+      successful_count = length(processed_cases)
+      Logger.info("Successfully processed #{successful_count}/#{length(scraped_cases)} cases")
+      
+      {:ok, Enum.reverse(processed_cases)}
+      
+    rescue
+      error -> {:error, {:batch_processing_error, error}}
+    end
+  end
+  
+  @doc """
+  Process a single scraped case and create Ash resource immediately.
+  
+  Optimized for real-time scraping where each case should be saved individually.
+  Returns {:ok, case} or {:error, reason}
+  """
+  def process_and_create_case(%ScrapedCase{} = scraped_case, actor \\ nil) do
+    Logger.debug("🔄 Processing and creating case: #{scraped_case.regulator_id}")
+    
+    with {:ok, processed_case} <- (
+           Logger.debug("📝 About to process case: #{scraped_case.regulator_id}")
+           result = process_case(scraped_case)
+           Logger.debug("📝 Process case result: #{inspect(result)}")
+           result
+         ),
+         {:ok, case_record} <- (
+           Logger.debug("💾 About to create case: #{processed_case.regulator_id}")
+           result = create_case(processed_case, actor)
+           Logger.debug("💾 Create case result: #{inspect(result)}")
+           result
+         ) do
+      Logger.info("✅ Successfully processed and created case: #{case_record.regulator_id}")
+      {:ok, case_record}
+    else
+      {:error, reason} = error ->
+        # Only log as error if it's not a duplicate case
+        unless is_duplicate_error?(reason) do
+          Logger.error("❌ Failed to process and create case #{scraped_case.regulator_id}: #{inspect(reason)}")
+        end
+        error
+    end
+  end
+
+  @doc """
+  Create Ash case resource from processed case data.
+  
+  Returns {:ok, case} or {:error, ash_error}
+  """
+  def create_case(%ProcessedCase{} = processed_case, actor \\ nil) do
+    Logger.debug("Creating Ash case resource for: #{processed_case.regulator_id}")
+    
+    case_attrs = %{
+      agency_code: processed_case.agency_code,
+      regulator_id: processed_case.regulator_id,
+      offender_attrs: processed_case.offender_attrs,
+      offence_result: processed_case.offence_result,
+      offence_fine: processed_case.offence_fine,
+      offence_costs: processed_case.offence_costs,
+      offence_action_date: processed_case.offence_action_date,
+      offence_hearing_date: processed_case.offence_hearing_date,
+      offence_breaches: processed_case.offence_breaches,
+      offence_breaches_clean: processed_case.offence_breaches_clean,
+      regulator_function: processed_case.regulator_function,
+      regulator_url: processed_case.regulator_url,
+      related_cases: processed_case.related_cases,
+      offence_action_type: processed_case.offence_action_type
+    }
+    
+    # Add actor context if provided
+    create_opts = if actor, do: [actor: actor], else: []
+    
+    case Enforcement.create_case(case_attrs, create_opts) do
+      {:ok, case_record} ->
+        Logger.info("Successfully created case: #{case_record.regulator_id}")
+        {:ok, case_record}
+      
+      {:error, ash_error} ->
+        # Don't log as error if it's just a duplicate - that's handled at a higher level
+        if is_duplicate_error?(ash_error) do
+          Logger.debug("Case already exists: #{processed_case.regulator_id}")
+        else
+          Logger.error("Failed to create case #{processed_case.regulator_id}: #{inspect(ash_error)}")
+        end
+        {:error, ash_error}
+    end
+  end
+  
+  @doc """
+  Create multiple Ash case resources from processed cases using bulk operations.
+  
+  Returns {:ok, result} with summary stats or {:error, reason}
+  """
+  def create_cases(processed_cases, actor \\ nil) when is_list(processed_cases) do
+    Logger.info("📋 Processing #{length(processed_cases)} cases for database creation")
+    
+    # Convert processed cases to format expected by bulk_create action
+    cases_data = Enum.map(processed_cases, &processed_case_to_attrs/1)
+    
+    # Filter out cases that already exist using efficient duplicate detection
+    regulator_ids = Enum.map(processed_cases, & &1.regulator_id)
+    
+    case Ash.read(Enforcement.Case, actor: actor, action: :duplicate_detection, regulator_ids: regulator_ids) do
+      {:ok, existing_cases} ->
+        existing_ids = MapSet.new(existing_cases, & &1.regulator_id)
+        new_cases_data = Enum.reject(cases_data, fn case_data ->
+          MapSet.member?(existing_ids, case_data[:regulator_id])
+        end)
+        
+        skipped_count = length(cases_data) - length(new_cases_data)
+        if skipped_count > 0 do
+          Logger.info("⏭️ Skipped #{skipped_count} existing cases")
+        end
+        Logger.info("💾 Creating #{length(new_cases_data)} new cases")
+        
+        # Use bulk_create for performance if we have cases to create
+        if length(new_cases_data) > 0 do
+          create_cases_bulk(new_cases_data, processed_cases, actor, skipped_count)
+        else
+          Logger.info("No new cases to create")
+          {:ok, %{
+            created: [],
+            errors: [],
+            stats: %{created_count: 0, error_count: 0, skipped_count: skipped_count}
+          }}
+        end
+      
+      {:error, _duplicate_check_error} ->
+        Logger.warning("Duplicate detection failed, falling back to individual case creation")
+        create_cases_individual(processed_cases, actor)
+    end
+  end
+  
+  # Private functions
+  
+  defp build_offender_attrs(%ScrapedCase{} = scraped_case) do
+    base_attrs = %{
+      name: scraped_case.offender_name,
+      local_authority: scraped_case.offender_local_authority,
+      main_activity: scraped_case.offender_main_activity,
+      industry: scraped_case.offender_industry
+    }
+    
+    # Add business type using existing Common module logic
+    enhanced_attrs = base_attrs
+    |> Map.put(:business_type, normalize_business_type(determine_business_type(scraped_case.offender_name)))
+    
+    # Remove nil values to keep attrs clean
+    enhanced_attrs
+    |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
+    |> Map.new()
+  end
+  
+  defp build_regulator_url(regulator_id) do
+    "https://resources.hse.gov.uk/convictions/case/case_details.asp?SF=CN&SV=#{regulator_id}"
+  end
+  
+  defp build_source_metadata(%ScrapedCase{} = scraped_case) do
+    %{
+      scraped_at: scraped_case.scrape_timestamp,
+      source_page: scraped_case.page_number,
+      scraper_version: "1.0",
+      source: "hse_website"
+    }
+  end
+  
+  defp process_breaches(%ProcessedCase{} = processed_case, breaches) when is_list(breaches) do
+    Logger.debug("Processing #{length(breaches)} breaches for case #{processed_case.regulator_id}")
+    
+    try do
+      # Process breaches locally (simplified from legacy Breaches.enum_breaches)
+      processed_breach_data = process_breaches_locally(breaches)
+      
+      # Extract the processed breach information
+      %{processed_case |
+        offence_breaches: processed_breach_data.offence_breaches,
+        offence_breaches_clean: processed_breach_data.offence_breaches_clean,
+        offence_lrt: processed_breach_data.offence_lrt
+      }
+      
+    rescue
+      error ->
+        Logger.warning("Failed to process breaches for case #{processed_case.regulator_id}: #{inspect(error)}")
+        # Return original case if breach processing fails
+        processed_case
+    end
+  end
+  
+  # Helper functions for bulk operations
+  
+  defp processed_case_to_attrs(%ProcessedCase{} = processed_case) do
+    %{
+      agency_code: processed_case.agency_code,
+      regulator_id: processed_case.regulator_id,
+      offender_attrs: processed_case.offender_attrs,
+      offence_result: processed_case.offence_result,
+      offence_fine: processed_case.offence_fine,
+      offence_costs: processed_case.offence_costs,
+      offence_action_date: processed_case.offence_action_date,
+      offence_hearing_date: processed_case.offence_hearing_date,
+      offence_breaches: processed_case.offence_breaches,
+      offence_breaches_clean: processed_case.offence_breaches_clean,
+      regulator_function: processed_case.regulator_function,
+      regulator_url: processed_case.regulator_url,
+      related_cases: processed_case.related_cases,
+      offence_action_type: processed_case.offence_action_type
+    }
+  end
+  
+  defp create_cases_bulk(cases_data, _processed_cases, actor, skipped_count) do
+    Logger.info("Using bulk_create for #{length(cases_data)} cases")
+    
+    # Add actor context if provided - bulk_create handles actor internally
+    bulk_opts = if actor, do: [actor: actor], else: []
+    
+    case Enforcement.Case.bulk_create(cases_data: cases_data, batch_size: 50) do
+      {:ok, bulk_result} -> 
+        Logger.info("Bulk create completed successfully")
+        {:ok, %{
+          created: [],  # bulk_create doesn't return individual records
+          errors: [],
+          stats: %{
+            created_count: length(cases_data), # Assuming all succeeded
+            error_count: 0,
+            skipped_count: skipped_count
+          }
+        }}
+      
+      {:error, bulk_error} ->
+        Logger.error("Bulk create failed: #{inspect(bulk_error)}")
+        {:error, bulk_error}
+    end
+  end
+  
+  defp normalize_business_type(business_type_string) do
+    case business_type_string do
+      "LTD" -> :limited_company
+      "PLC" -> :plc
+      "LLP" -> :partnership  
+      "LLC" -> :limited_company
+      "INC" -> :limited_company
+      "CORP" -> :limited_company
+      "SOLE" -> :individual
+      _ -> :other
+    end
+  end
+  
+  defp create_cases_individual(processed_cases, actor) do
+    Logger.info("Using individual case creation for #{length(processed_cases)} cases")
+    
+    results = Enum.reduce(processed_cases, %{created: [], errors: []}, fn processed_case, acc ->
+      case create_case(processed_case, actor) do
+        {:ok, case_record} -> 
+          %{acc | created: [case_record | acc.created]}
+        
+        {:error, error} -> 
+          error_info = %{regulator_id: processed_case.regulator_id, error: error}
+          %{acc | errors: [error_info | acc.errors]}
+      end
+    end)
+    
+    created_count = length(results.created)
+    error_count = length(results.errors)
+    
+    Logger.info("Individual case creation complete: #{created_count} created, #{error_count} errors")
+    
+    if error_count > 0 do
+      Logger.warning("Errors creating cases: #{inspect(results.errors)}")
+    end
+    
+    {:ok, %{
+      created: Enum.reverse(results.created),
+      errors: Enum.reverse(results.errors),
+      stats: %{created_count: created_count, error_count: error_count, skipped_count: 0}
+    }}
+  end
+
+  # Local implementations to replace legacy Common/Breaches modules
+
+  defp determine_business_type(offender_name) do
+    cond do
+      Regex.match?(~r/LLC|llc/, offender_name) -> "LLC"
+      Regex.match?(~r/[Ii]nc$/, offender_name) -> "INC"
+      Regex.match?(~r/[ ][Cc]orp[. ]/, offender_name) -> "CORP"
+      Regex.match?(~r/PLC|[Pp]lc/, offender_name) -> "PLC"
+      Regex.match?(~r/[Ll]imited|LIMITED|Ltd|LTD|Lld/, offender_name) -> "LTD"
+      Regex.match?(~r/LLP|[Ll]lp/, offender_name) -> "LLP"
+      true -> "SOLE"
+    end
+  end
+
+  defp process_breaches_locally(breaches) when is_list(breaches) do
+    # Simplified breach processing - just concatenate and clean
+    breaches_text = Enum.join(breaches, "; ")
+    
+    %{
+      offence_breaches: breaches_text,
+      offence_breaches_clean: String.trim(breaches_text),
+      offence_lrt: nil  # Legislation linking would go here
+    }
+  end
+
+  defp process_breaches_locally(breach) when is_binary(breach) do
+    %{
+      offence_breaches: breach,
+      offence_breaches_clean: String.trim(breach),
+      offence_lrt: nil
+    }
+  end
+
+  defp process_breaches_locally(_), do: %{offence_breaches: nil, offence_breaches_clean: nil, offence_lrt: nil}
+
+  defp is_duplicate_error?(%Ash.Error.Invalid{errors: errors}) do
+    Enum.any?(errors, fn
+      %{field: :regulator_id, message: message} ->
+        String.contains?(message, "already been taken") or
+        String.contains?(message, "already exists")
+      _ -> false
+    end)
+  end
+  
+  defp is_duplicate_error?(_), do: false
+end

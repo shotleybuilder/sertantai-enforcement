@@ -41,8 +41,8 @@ defmodule EhsEnforcement.Accounts.User do
   authentication do
     strategies do
       oauth2 :github do
-        client_id fn _, _ -> {:ok, System.get_env("GITHUB_CLIENT_ID", "")} end
-        client_secret fn _, _ -> {:ok, System.get_env("GITHUB_CLIENT_SECRET", "")} end
+        client_id fn _, _ -> {:ok, System.get_env("EHS_ENFORCEMENT_GITHUB_CLIENT_ID") || System.get_env("GITHUB_CLIENT_ID", "")} end
+        client_secret fn _, _ -> {:ok, System.get_env("EHS_ENFORCEMENT_GITHUB_CLIENT_SECRET") || System.get_env("GITHUB_CLIENT_SECRET", "")} end
         redirect_uri fn _, _ -> {:ok, System.get_env("GITHUB_REDIRECT_URI", "http://localhost:4002/auth/github/callback")} end
         base_url "https://github.com"
         authorize_url "/login/oauth/authorize"

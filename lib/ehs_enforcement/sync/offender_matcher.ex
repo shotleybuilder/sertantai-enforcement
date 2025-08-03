@@ -154,14 +154,51 @@ defmodule EhsEnforcement.Sync.OffenderMatcher do
   defp get_postcode(candidate), do: Map.get(candidate, :postcode)
   
   defp normalize_attrs(attrs) when is_map(attrs) do
-    # Normalize postcode, ensure name is present as atom or string key
-    attrs
+    # Convert string keys to atom keys for consistent processing
+    normalized_attrs = attrs
+    |> convert_string_keys_to_atoms()
     |> Map.update(:postcode, nil, &normalize_postcode/1)
-    |> then(fn normalized_attrs ->
-      # Ensure we have a name field (handle both string and atom keys)
-      name = normalized_attrs[:name] || normalized_attrs["name"] || ""
-      Map.put(normalized_attrs, :name, name)
+    |> normalize_business_type()
+    
+    # Ensure we have a name field
+    name = String.trim(normalized_attrs[:name] || "")
+    Map.put(normalized_attrs, :name, name)
+  end
+  
+  defp convert_string_keys_to_atoms(attrs) do
+    # Convert common string keys to atoms to ensure consistency
+    key_mappings = %{
+      "name" => :name,
+      "postcode" => :postcode,
+      "local_authority" => :local_authority,
+      "main_activity" => :main_activity,
+      "business_type" => :business_type,
+      "industry" => :industry
+    }
+    
+    Enum.reduce(key_mappings, attrs, fn {string_key, atom_key}, acc ->
+      case Map.get(acc, string_key) do
+        nil -> acc
+        value -> 
+          acc
+          |> Map.put(atom_key, value)
+          |> Map.delete(string_key)
+      end
     end)
+  end
+  
+  defp normalize_business_type(attrs) do
+    case Map.get(attrs, :business_type) do
+      nil -> attrs
+      :limited_company -> attrs
+      :individual -> attrs
+      :partnership -> attrs
+      :plc -> attrs
+      :other -> attrs
+      invalid_type -> 
+        Logger.debug("Invalid business_type removed: #{inspect(invalid_type)}")
+        Map.delete(attrs, :business_type)
+    end
   end
   
   defp normalize_postcode(nil), do: nil
@@ -170,21 +207,37 @@ defmodule EhsEnforcement.Sync.OffenderMatcher do
   end
   
   defp create_offender_with_retry(attrs) do
+    Logger.info("Creating offender: #{attrs[:name]} (#{attrs[:postcode] || "no postcode"})")
+    
     case Enforcement.create_offender(attrs) do
       {:ok, offender} ->
+        Logger.info("✅ Created offender: #{offender.name} (ID: #{offender.id})")
         {:ok, offender}
         
-      {:error, %Ash.Error.Invalid{}} ->
+      {:error, %Ash.Error.Invalid{} = error} ->
+        Logger.warning("❌ Offender creation failed: #{attrs[:name]} - #{extract_error_message(error)}")
         # Handle race condition - try to find again
         case Enforcement.get_offender_by_name_and_postcode(attrs.name, attrs[:postcode]) do
-          {:ok, offender} -> {:ok, offender}
-          error -> error
+          {:ok, offender} -> 
+            Logger.info("♻️ Found existing offender after race condition: #{offender.name} (ID: #{offender.id})")
+            {:ok, offender}
+          error -> 
+            Logger.error("❌ Failed to find offender after creation error: #{inspect(error)}")
+            error
         end
         
       error ->
+        Logger.error("❌ Offender creation failed with unexpected error: #{inspect(error)}")
         error
     end
   end
+  
+  defp extract_error_message(%Ash.Error.Invalid{errors: errors}) when is_list(errors) do
+    errors
+    |> Enum.map(fn error -> "#{error.field || "unknown"}: #{error.message || inspect(error)}" end)
+    |> Enum.join(", ")
+  end
+  defp extract_error_message(error), do: inspect(error)
   
   defp calculate_similarity(str1, str2) do
     # Normalize both strings for comparison

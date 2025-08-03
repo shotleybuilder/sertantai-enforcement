@@ -41,8 +41,8 @@ if config_env() == :dev do
   
   # GitHub OAuth configuration
   config :ehs_enforcement, :github_oauth,
-    client_id: System.get_env("GITHUB_CLIENT_ID"),
-    client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
+    client_id: System.get_env("EHS_ENFORCEMENT_GITHUB_CLIENT_ID") || System.get_env("GITHUB_CLIENT_ID"),
+    client_secret: System.get_env("EHS_ENFORCEMENT_GITHUB_CLIENT_SECRET") || System.get_env("GITHUB_CLIENT_SECRET"),
     redirect_uri: System.get_env("GITHUB_REDIRECT_URI") || "http://localhost:4002/auth/user/github/callback"
   
   # GitHub admin configuration

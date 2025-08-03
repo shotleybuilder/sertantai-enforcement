@@ -73,7 +73,7 @@ defmodule EhsEnforcementWeb.Plugs.AuthHelpers do
   defp refresh_user_admin_status(user) do
     is_admin = check_github_repository_permissions(user)
     
-    case Ash.update(user, :update_admin_status, %{is_admin: is_admin}) do
+    case Ash.update(user, %{is_admin: is_admin}, action: :update_admin_status, actor: user) do
       {:ok, _updated_user} ->
         :ok
       {:error, error} ->
@@ -86,10 +86,20 @@ defmodule EhsEnforcementWeb.Plugs.AuthHelpers do
     config = Application.get_env(:ehs_enforcement, :github_admin, %{})
     
     case config do
-      %{owner: owner, repo: repo, access_token: token} when not is_nil(token) ->
-        check_user_repository_access(user.github_login, owner, repo, token)
-      %{allowed_users: allowed_users} when is_list(allowed_users) ->
-        user.github_login in allowed_users
+      config when is_list(config) ->
+        owner = Keyword.get(config, :owner)
+        repo = Keyword.get(config, :repo) 
+        access_token = Keyword.get(config, :access_token)
+        allowed_users = Keyword.get(config, :allowed_users, [])
+        
+        cond do
+          not is_nil(access_token) and not is_nil(owner) and not is_nil(repo) ->
+            check_user_repository_access(user.github_login, owner, repo, access_token)
+          is_list(allowed_users) and length(allowed_users) > 0 ->
+            user.github_login in allowed_users
+          true ->
+            false
+        end
       _ ->
         false
     end

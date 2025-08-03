@@ -5,13 +5,23 @@ defmodule EhsEnforcement.Enforcement.Notice do
   
   use Ash.Resource,
     domain: EhsEnforcement.Enforcement,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    notifiers: [Ash.Notifier.PubSub]
 
   postgres do
     table "notices"
     repo EhsEnforcement.Repo
     
     identity_wheres_to_sql(unique_airtable_id: "airtable_id IS NOT NULL")
+  end
+
+  pub_sub do
+    module(EhsEnforcementWeb.Endpoint)
+    prefix("notice")
+
+    publish(:create, ["created", :id])
+    publish(:update, ["updated", :id])
+    publish(:destroy, ["deleted", :id])
   end
 
   attributes do

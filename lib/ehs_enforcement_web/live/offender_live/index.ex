@@ -207,12 +207,16 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     |> apply_search_filter(socket.assigns.search_query)
 
     try do
-      offenders = Ash.read!(query)
+      # Use code interface instead of direct Ash.read
+      offenders = case Enforcement.list_offenders(query) do
+        {:ok, offenders} -> offenders
+        {:error, _} -> []
+      end
       
-      # Get total count separately for now
+      # Get total count using code interface
       total_count = case socket.assigns.filters do
         filters when map_size(filters) == 0 ->
-          Ash.count!(EhsEnforcement.Enforcement.Offender)
+          Enforcement.count_offenders!()
         _ ->
           length(offenders) # Simplified for now
       end

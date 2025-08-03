@@ -6,11 +6,21 @@ defmodule EhsEnforcement.Enforcement.Offender do
   
   use Ash.Resource,
     domain: EhsEnforcement.Enforcement,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    notifiers: [Ash.Notifier.PubSub]
 
   postgres do
     table "offenders"
     repo EhsEnforcement.Repo
+  end
+
+  pub_sub do
+    module(EhsEnforcementWeb.Endpoint)
+    prefix("offender")
+
+    publish(:create, ["created", :id])
+    publish(:update, ["updated", :id])
+    publish(:update_statistics, ["stats_updated", :id])
   end
 
   attributes do
@@ -125,6 +135,7 @@ defmodule EhsEnforcement.Enforcement.Offender do
   code_interface do
     define :create, args: [:name]
     define :update_statistics
+    define :search, args: [:query]
   end
 
   defp normalize_company_name(name) when is_binary(name) do

@@ -77,7 +77,8 @@ config :ehs_enforcement,
     EhsEnforcement.Sync,
     EhsEnforcement.Accounts,
     EhsEnforcement.Events,
-    EhsEnforcement.Configuration
+    EhsEnforcement.Configuration,
+    EhsEnforcement.Scraping
   ]
 
 # Oban configuration for background job processing

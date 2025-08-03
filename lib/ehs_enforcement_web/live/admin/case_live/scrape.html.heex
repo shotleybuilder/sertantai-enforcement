@@ -1,0 +1,441 @@
+<div class="max-w-6xl mx-auto p-6">
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">HSE Case Scraping</h1>
+    <p class="mt-2 text-gray-600">Manually trigger HSE case scraping with real-time progress monitoring</p>
+  </div>
+
+  <!-- Form Errors from AshPhoenix.Form are displayed automatically in the form inputs -->
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Scraping Configuration Panel -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Scraping Configuration</h2>
+        
+        <.simple_form for={@form} phx-change="validate" phx-submit="submit">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+              <.input 
+                field={@form[:start_page]} 
+                type="number" 
+                label="Start Page"
+                min="1"
+                max="1000"
+                disabled={@scraping_active}
+              />
+            </div>
+            
+            <div>
+              <.input 
+                field={@form[:max_pages]} 
+                type="number" 
+                label="Max Pages"
+                min="1"
+                max="100"
+                disabled={@scraping_active}
+              />
+            </div>
+            
+            <div>
+              <.input 
+                field={@form[:database]} 
+                type="select" 
+                label="Database"
+                options={[{"Convictions", "convictions"}, {"Notices", "notices"}]}
+                disabled={@scraping_active}
+              />
+            </div>
+          </div>
+          
+          <div class="flex items-center justify-between">
+            <%= if @scraping_active do %>
+              <button
+                type="button"
+                phx-click="stop_scraping"
+                class="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Stop Scraping
+              </button>
+            <% else %>
+              <.button
+                type="submit"
+                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h6m2 5H7a2 2 0 01-2-2V9a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2z" />
+                </svg>
+                Start Scraping
+              </.button>
+            <% end %>
+            
+            <div class="text-sm text-gray-500">
+              Will scrape <%= Phoenix.HTML.Form.input_value(@form, :max_pages) || 10 %> page<%= if (Phoenix.HTML.Form.input_value(@form, :max_pages) || 10) != 1, do: "s" %> starting from page <%= Phoenix.HTML.Form.input_value(@form, :start_page) || 1 %>
+            </div>
+          </div>
+        </.simple_form>
+      </div>
+    </div>
+
+    <!-- Progress Panel -->
+    <div>
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Progress</h2>
+        
+        <!-- Debug Info (temporary) -->
+        <div class="text-xs text-gray-400 mb-2">
+          Debug: <%= inspect(@progress) %> | Last: <%= @last_update %>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="mb-4">
+          <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+            <span><%= status_text(@progress.status) %></span>
+            <span><%= trunc(progress_percentage(@progress)) %>%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              class={"h-2 rounded-full transition-all duration-300 #{status_color(@progress.status)}"}
+              style={"width: #{progress_percentage(@progress)}%"}
+            ></div>
+          </div>
+        </div>
+        
+        <!-- Current Status -->
+        <%= if @progress.current_page do %>
+          <div class="text-sm text-gray-600 mb-4">
+            Currently processing page: <span class="font-medium"><%= @progress.current_page %></span>
+          </div>
+        <% end %>
+        
+        <!-- Statistics -->
+        <div class="space-y-3">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Pages Processed:</span>
+            <span class="font-medium"><%= @progress.pages_processed %></span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Cases Found:</span>
+            <span class="font-medium"><%= @progress.cases_found %></span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Cases Created:</span>
+            <span class="font-medium text-green-600"><%= @progress.cases_created %></span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Cases Exist (Total):</span>
+            <span class="font-medium text-blue-600"><%= @progress.cases_exist_total %></span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Cases Exist (Current Page):</span>
+            <span class="font-medium text-orange-600"><%= @progress.cases_exist_current_page %></span>
+          </div>
+          <%= if @progress.errors_count > 0 do %>
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-600">Errors:</span>
+              <span class="font-medium text-red-600"><%= @progress.errors_count %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Case Processing Details -->
+  <%= if @case_processing_log != [] do %>
+    <div class="mt-8">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Live Processing Details</h2>
+        
+        <div class="space-y-4 max-h-96 overflow-y-auto">
+          <%= for details <- @case_processing_log do %>
+            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Page <%= details.page %>
+                  </span>
+                  <span class="text-sm text-gray-500">
+                    <%= Calendar.strftime(details.timestamp, "%H:%M:%S") %>
+                  </span>
+                </div>
+                <div class="flex items-center space-x-4 text-sm">
+                  <span class="text-gray-600">
+                    <span class="font-medium"><%= details.cases_scraped %></span> scraped
+                  </span>
+                  <span class="text-green-600">
+                    <span class="font-medium"><%= details.cases_created %></span> created
+                  </span>
+                  <%= if details.existing_count > 0 do %>
+                    <span class="text-blue-600">
+                      <span class="font-medium"><%= details.existing_count %></span> existing
+                    </span>
+                  <% end %>
+                  <%= if details.cases_skipped > 0 do %>
+                    <span class="text-red-600">
+                      <span class="font-medium"><%= details.cases_skipped %></span> failed
+                    </span>
+                  <% end %>
+                </div>
+              </div>
+              
+              <!-- Case Details -->
+              <%= if details.scraped_cases != [] do %>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <%= for case_info <- Enum.take(details.scraped_cases, 6) do %>
+                    <div class="bg-white rounded p-3 border border-gray-200">
+                      <div class="text-xs text-gray-500 mb-1">ID: <%= case_info.regulator_id %></div>
+                      <div class="text-sm font-medium text-gray-900 truncate">
+                        <%= case_info.offender_name %>
+                      </div>
+                      <div class="text-xs text-gray-500 mt-1">
+                        <%= if case_info.case_date do %>
+                          <%= Calendar.strftime(case_info.case_date, "%Y-%m-%d") %>
+                        <% end %>
+                        <%= if case_info.fine_amount && Decimal.positive?(case_info.fine_amount) do %>
+                          • £<%= Decimal.to_string(case_info.fine_amount) %>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                  
+                  <%= if length(details.scraped_cases) > 6 do %>
+                    <div class="bg-gray-100 rounded p-3 border border-gray-200 flex items-center justify-center">
+                      <span class="text-sm text-gray-500">
+                        +<%= length(details.scraped_cases) - 6 %> more
+                      </span>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+              
+              <!-- Creation Errors -->
+              <%= if details.creation_errors != [] do %>
+                <div class="mt-3 pt-3 border-t border-gray-200">
+                  <div class="text-sm font-medium text-red-700 mb-2">Creation Errors:</div>
+                  <div class="space-y-1">
+                    <%= for error <- Enum.take(details.creation_errors, 3) do %>
+                      <div class="text-xs text-red-600 bg-red-50 rounded px-2 py-1">
+                        <%= if error.case_id do %>
+                          Case <%= error.case_id %>: <%= error.error %>
+                        <% else %>
+                          <%= error.error %>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+        
+        <%= if length(@case_processing_log) > 10 do %>
+          <div class="mt-4 text-center">
+            <button
+              type="button"
+              phx-click="clear_processing_log"
+              class="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Clear Processing Log
+            </button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Processed Cases List -->
+  <!-- Debug info -->
+  <div class="text-xs text-gray-400 mb-2">
+    Debug scraped_cases: <%= inspect(length(@scraped_cases || [])) %> cases
+  </div>
+  
+  <%= if @scraped_cases != [] do %>
+    <div class="mt-8">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-900">Scraped Cases</h2>
+          <div class="flex items-center space-x-4">
+            <div class="text-sm text-gray-500">
+              Showing <%= length(@scraped_cases) %> scraped cases
+            </div>
+            <%= if length(@scraped_cases) > 0 do %>
+              <button
+                type="button"
+                phx-click="clear_scraped_cases"
+                class="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Clear List
+              </button>
+            <% end %>
+          </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regulator ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offender</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processing</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Database</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processed</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <%= for case <- Enum.take(@scraped_cases, 50) do %>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                    <%= case.regulator_id %>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-900">
+                    <div class="max-w-48 truncate">
+                      <%= (case.offender && case.offender.name) || "N/A" %>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <%= if case.offence_action_date do %>
+                      <%= Calendar.strftime(case.offence_action_date, "%Y-%m-%d") %>
+                    <% else %>
+                      N/A
+                    <% end %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <%= if case.offence_fine && Decimal.positive?(case.offence_fine) do %>
+                      £<%= Decimal.to_string(case.offence_fine, :normal) %>
+                    <% else %>
+                      N/A
+                    <% end %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Scraped
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <%= if case.last_synced_at do %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Updated
+                      </span>
+                    <% else %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Created
+                      </span>
+                    <% end %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <%= if case.last_synced_at do %>
+                      <%= Calendar.strftime(case.last_synced_at, "%H:%M:%S") %>
+                    <% else %>
+                      <%= Calendar.strftime(case.inserted_at, "%H:%M:%S") %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        
+        <%= if length(@scraped_cases) > 50 do %>
+          <div class="mt-4 text-center text-sm text-gray-500">
+            Showing latest 50 of <%= length(@scraped_cases) %> scraped cases
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Session Results -->
+  <%= if @session_results != [] do %>
+    <div class="mt-8">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-900">Recent Sessions</h2>
+          <button
+            type="button"
+            phx-click="clear_results"
+            class="text-sm text-gray-500 hover:text-gray-700"
+          >
+            Clear Results
+          </button>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pages</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cases Created</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Errors</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <%= for result <- Enum.take(@session_results, 10) do %>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                    <%= String.slice(result.session_id, 0, 8) %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <%= Calendar.strftime(result.completed_at, "%Y-%m-%d %H:%M") %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <%= result.pages_processed %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                    <%= result.cases_created %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <%= if result.errors_count > 0 do %>
+                      <span class="text-red-600 font-medium"><%= result.errors_count %></span>
+                    <% else %>
+                      <span class="text-gray-400">0</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Recent Errors -->
+  <%= if @recent_errors != [] do %>
+    <div class="mt-8">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Recent Errors</h2>
+        
+        <div class="space-y-3">
+          <%= for error <- Enum.take(@recent_errors, 5) do %>
+            <div class="bg-red-50 border border-red-200 rounded-md p-3">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <svg class="h-4 w-4 text-red-400 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                  </svg>
+                </div>
+                <div class="ml-3 flex-1">
+                  <div class="text-sm text-red-800">
+                    <span class="font-medium">Page <%= error.page %>:</span> <%= error.message %>
+                  </div>
+                  <div class="text-xs text-red-600 mt-1">
+                    <%= Calendar.strftime(error.timestamp, "%H:%M:%S") %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -11,7 +11,9 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    # Subscribe to real-time updates
+    # Subscribe to real-time updates from Ash pub_sub
+    # Note: Ash pub_sub publishes to topics like "case:created:#{id}"
+    # We use a broader subscription for list views
     Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case_updates")
 
     {:ok,

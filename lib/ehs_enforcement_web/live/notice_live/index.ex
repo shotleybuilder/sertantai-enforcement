@@ -281,9 +281,11 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     filter = build_filter(socket.assigns.filters, socket.assigns.search_query)
     query_opts = if filter != [], do: [filter: filter], else: []
     
-    case Ash.count(EhsEnforcement.Enforcement.Notice, query_opts) do
-      {:ok, count} -> count
-      {:error, _} -> 0
+    # Use code interface for counting
+    try do
+      Enforcement.count_notices!(query_opts)
+    rescue
+      _ -> 0
     end
   end
 

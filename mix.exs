@@ -68,6 +68,8 @@ defmodule EhsEnforcement.MixProject do
       {:ash_graphql, "~> 1.0"},
       {:ash_json_api, "~> 1.0"},
       {:ash_admin, "~> 0.11"},
+      {:ash_rate_limiter, "~> 0.1"},
+      {:hammer, "~> 7.0"},
       # Additional dependencies from original project
       {:req, "~> 0.5"},
       {:tesla, "~> 1.4"},
@@ -80,7 +82,12 @@ defmodule EhsEnforcement.MixProject do
       {:ash_authentication, "~> 4.0"},
       {:ash_authentication_phoenix, "~> 2.0"},
       # SAT solver for Ash policies
-      {:picosat_elixir, "~> 0.2"}
+      {:picosat_elixir, "~> 0.2"},
+      # Background job processing for Ash
+      {:ash_oban, "~> 0.2"},
+      {:oban, "~> 2.17"},
+      # Event tracking for Ash
+      {:ash_events, "~> 0.1"}
     ]
   end
 
