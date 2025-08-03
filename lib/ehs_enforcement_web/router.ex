@@ -63,6 +63,9 @@ defmodule EhsEnforcementWeb.Router do
       live "/offenders", OffenderLive.Index, :index
       live "/offenders/:id", OffenderLive.Show, :show
       
+      # Agency Management Routes (Open Access)
+      live "/agencies", AgencyLive, :index
+      
       # Reports & Analytics Routes (Open Access)
       live "/reports", ReportsLive.Index, :index
     end

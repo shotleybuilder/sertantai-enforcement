@@ -30,7 +30,7 @@ defmodule EhsEnforcementWeb.Components.NoticesActionCard do
     ~H"""
     <.dashboard_action_card 
       title="ENFORCEMENT NOTICES" 
-      icon="🔔" 
+      icon="📄" 
       theme="yellow" 
       loading={@loading}
       class={@class}

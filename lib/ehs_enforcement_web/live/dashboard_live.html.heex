@@ -172,30 +172,83 @@
     </.dashboard_card_grid>
 
     <!-- Summary Statistics -->
-    <div class="bg-white overflow-hidden shadow rounded-lg mb-8">
-      <div class="px-4 py-5 sm:p-6">
-        <div class="flex items-center justify-between">
-          <div class="text-lg font-medium text-gray-900">
-            <%= @stats.active_agencies %> Agencies • <%= @stats.total_cases %> Total Cases
+
+    <!-- Quick Actions -->
+    <div class="mb-8">
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg leading-6 font-medium text-gray-900">Quick Actions</h3>
+              <p class="mt-1 text-sm text-gray-500">Access detailed views and management tools</p>
+            </div>
           </div>
-          <div class="text-sm text-gray-500">
-            All time statistics
+          <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <.link 
+              navigate="/agencies" 
+              class="relative block p-4 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            >
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <h4 class="text-sm font-medium text-gray-900">Agency Management</h4>
+                  <p class="text-sm text-gray-500">View agency details and statistics</p>
+                </div>
+              </div>
+            </.link>
+            
+            <.link 
+              navigate="/cases" 
+              class="relative block p-4 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            >
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <span class="text-lg">⚖️</span>
+                </div>
+                <div class="ml-3">
+                  <h4 class="text-sm font-medium text-gray-900">All Cases</h4>
+                  <p class="text-sm text-gray-500">Browse enforcement cases</p>
+                </div>
+              </div>
+            </.link>
+            
+            <.link 
+              navigate="/notices" 
+              class="relative block p-4 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            >
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <span class="text-lg">📄</span>
+                </div>
+                <div class="ml-3">
+                  <h4 class="text-sm font-medium text-gray-900">All Notices</h4>
+                  <p class="text-sm text-gray-500">Browse enforcement notices</p>
+                </div>
+              </div>
+            </.link>
+            
+            <.link 
+              navigate="/reports" 
+              class="relative block p-4 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+            >
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <h4 class="text-sm font-medium text-gray-900">Reports & Analytics</h4>
+                  <p class="text-sm text-gray-500">Generate insights and reports</p>
+                </div>
+              </div>
+            </.link>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Agency Cards -->
-    <div class="mb-8">
-      <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Agency Overview</h3>
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <%= for agency <- @agencies do %>
-          <.agency_card
-            agency={agency}
-            stats={Enum.find(@stats.agency_stats, %{}, & &1.agency_id == agency.id)}
-            sync_status={Map.get(@sync_status, agency.code, %{})}
-          />
-        <% end %>
       </div>
     </div>
 

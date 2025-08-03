@@ -6,6 +6,8 @@ defmodule EhsEnforcementWeb.DashboardLive do
   alias EhsEnforcement.Sync.SyncManager
   alias Phoenix.PubSub
   
+  require Ash.Query
+  
   import EhsEnforcementWeb.Components.CasesActionCard
   import EhsEnforcementWeb.Components.NoticesActionCard
   import EhsEnforcementWeb.Components.OffendersActionCard
@@ -159,22 +161,22 @@ defmodule EhsEnforcementWeb.DashboardLive do
         load_recent_cases_paginated(socket.assigns.filter_agency, 1, socket.assigns.recent_activity_page_size)
       :cases ->
         # Load only cases
-        filter = if socket.assigns.filter_agency, do: [agency_id: socket.assigns.filter_agency], else: []
-        cases = EhsEnforcement.Enforcement.list_cases!(
-          filter: filter,
+        filter_conditions = if socket.assigns.filter_agency, do: [agency_id: socket.assigns.filter_agency], else: []
+        cases = EhsEnforcement.Enforcement.list_cases_with_filters!([
+          filter: filter_conditions,
           sort: [offence_action_date: :desc],
           load: [:offender, :agency]
-        )
+        ])
         paginated_cases = Enum.take(cases, socket.assigns.recent_activity_page_size)
         {paginated_cases, length(cases)}
       :notices ->
         # Load only notices
-        filter = if socket.assigns.filter_agency, do: [agency_id: socket.assigns.filter_agency], else: []
-        notices = EhsEnforcement.Enforcement.list_notices!(
-          filter: filter,
+        filter_conditions = if socket.assigns.filter_agency, do: [agency_id: socket.assigns.filter_agency], else: []
+        notices = EhsEnforcement.Enforcement.list_notices_with_filters!([
+          filter: filter_conditions,
           sort: [offence_action_date: :desc],
           load: [:offender, :agency]
-        )
+        ])
         paginated_notices = Enum.take(notices, socket.assigns.recent_activity_page_size)
         {paginated_notices, length(notices)}
     end
@@ -345,25 +347,25 @@ defmodule EhsEnforcementWeb.DashboardLive do
   # end
 
   defp load_recent_cases_paginated(filter_agency, page, page_size) do
-    filter = if filter_agency, do: [agency_id: filter_agency], else: []
+    filter_conditions = if filter_agency, do: [agency_id: filter_agency], else: []
     offset = (page - 1) * page_size
     
     try do
-      # Load cases
+      # Load cases using the proper filter function
       cases_query_opts = [
-        filter: filter,
+        filter: filter_conditions,
         sort: [offence_action_date: :desc],
         load: [:offender, :agency]
       ]
-      cases = Enforcement.list_cases!(cases_query_opts)
+      cases = Enforcement.list_cases_with_filters!(cases_query_opts)
       
-      # Load notices  
+      # Load notices using the proper filter function
       notices_query_opts = [
-        filter: filter,
+        filter: filter_conditions,
         sort: [offence_action_date: :desc],
         load: [:offender, :agency]
       ]
-      notices = Enforcement.list_notices!(notices_query_opts)
+      notices = Enforcement.list_notices_with_filters!(notices_query_opts)
       
       # Combine and sort by date, filtering out nil dates
       all_activity = (cases ++ notices)
@@ -383,6 +385,17 @@ defmodule EhsEnforcementWeb.DashboardLive do
       error ->
         require Logger
         Logger.error("Failed to load paginated recent activity: #{inspect(error)}")
+        
+        # Provide more specific error handling
+        case error do
+          %Ash.Error.Invalid{} ->
+            Logger.warning("Invalid filter provided for recent activity loading")
+          %Ash.Error.Query.NotFound{} ->
+            Logger.info("No records found for recent activity query")
+          _ ->
+            Logger.error("Unexpected error loading recent activity: #{inspect(error)}")
+        end
+        
         {[], 0}
     end
   end
@@ -392,21 +405,28 @@ defmodule EhsEnforcementWeb.DashboardLive do
     ceil(total_items / page_size)
   end
 
-  defp calculate_stats(agencies, _recent_cases, _period) do
-    # Calculate date range (last 30 days)
-    thirty_days_ago = Date.add(Date.utc_today(), -30)
+  defp calculate_stats(agencies, _recent_cases, period) do
+    # Calculate date range based on selected period
+    {days_ago, timeframe_label} = case period do
+      "week" -> {7, "Last 7 Days"}
+      "month" -> {30, "Last 30 Days"}
+      "year" -> {365, "Last 365 Days"}
+      _ -> {30, "Last 30 Days"}  # default fallback
+    end
+    
+    cutoff_date = Date.add(Date.utc_today(), -days_ago)
     
     # Get all cases and notices (for comprehensive stats)
-    all_cases = EhsEnforcement.Enforcement.list_cases!()
-    all_notices = EhsEnforcement.Enforcement.list_notices!()
+    all_cases = EhsEnforcement.Enforcement.list_cases_with_filters!([])
+    all_notices = EhsEnforcement.Enforcement.list_notices_with_filters!([])
     
-    # Filter for recent items (last 30 days)
+    # Filter for recent items (based on selected period)
     recent_cases_list = Enum.filter(all_cases, fn case_record ->
-      case_record.offence_action_date && Date.compare(case_record.offence_action_date, thirty_days_ago) != :lt
+      case_record.offence_action_date && Date.compare(case_record.offence_action_date, cutoff_date) != :lt
     end)
     
     recent_notices_list = Enum.filter(all_notices, fn notice_record ->
-      notice_record.offence_action_date && Date.compare(notice_record.offence_action_date, thirty_days_ago) != :lt
+      notice_record.offence_action_date && Date.compare(notice_record.offence_action_date, cutoff_date) != :lt
     end)
     
     recent_cases_count = length(recent_cases_list)
@@ -417,7 +437,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
     |> Enum.map(& &1.offence_fine || Decimal.new(0))
     |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
     
-    # Get agency-specific stats for recent cases (last 30 days)
+    # Get agency-specific stats for recent cases (based on selected period)
     agency_stats = Enum.map(agencies, fn agency ->
       agency_recent_cases = Enum.count(recent_cases_list, & &1.agency_id == agency.id)
       
@@ -438,8 +458,8 @@ defmodule EhsEnforcementWeb.DashboardLive do
       total_fines: recent_total_fines,
       active_agencies: Enum.count(agencies, & &1.enabled),
       agency_stats: agency_stats,
-      period: "30 days", 
-      timeframe: "Last 30 Days"
+      period: "#{days_ago} days", 
+      timeframe: timeframe_label
     }
   end
 
