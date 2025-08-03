@@ -25,13 +25,15 @@ defmodule EhsEnforcement.PubSub do
   For example:
   - `case:created:123e4567-e89b-12d3-a456-426614174000`
   - `case:updated:123e4567-e89b-12d3-a456-426614174000`
-  - `case:synced` (broadcast without ID)
+  - `case:scraped:updated` (scraping workflow - broadcast without ID)
+  - `case:synced` (Airtable sync - broadcast without ID)
   
   ## Subscribing to Events
   
   In LiveViews or processes:
   
       Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:created")
+      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:scraped:updated")
       Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:synced:specific-id")
   """
   
@@ -87,12 +89,13 @@ defmodule EhsEnforcement.PubSub do
   
   ## Parameters
   
-  - `topic` - The topic to subscribe to (e.g., "case:created", "case:synced")
+  - `topic` - The topic to subscribe to (e.g., "case:created", "case:scraped:updated", "case:synced")
   
   ## Examples
   
       # In a LiveView mount callback
       EhsEnforcement.PubSub.subscribe("case:created")
+      EhsEnforcement.PubSub.subscribe("case:scraped:updated")
       EhsEnforcement.PubSub.subscribe("case:synced")
   """
   def subscribe(topic) do

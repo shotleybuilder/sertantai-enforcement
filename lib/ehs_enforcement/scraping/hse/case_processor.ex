@@ -10,6 +10,8 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
   """
   
   require Logger
+  require Ash.Query
+  import Ash.Expr
   
   alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
   alias EhsEnforcement.Enforcement
@@ -183,13 +185,49 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
         {:ok, case_record}
       
       {:error, ash_error} ->
-        # Don't log as error if it's just a duplicate - that's handled at a higher level
+        # Handle duplicate by updating existing case with new scraping data
         if is_duplicate_error?(ash_error) do
-          Logger.debug("Case already exists: #{processed_case.regulator_id}")
+          Logger.debug("Case already exists, updating with :update_from_scraping: #{processed_case.regulator_id}")
+          
+          # Find the existing case and update it
+          query_opts = if actor, do: [actor: actor], else: []
+          case EhsEnforcement.Enforcement.Case 
+               |> Ash.Query.filter(regulator_id == ^processed_case.regulator_id)
+               |> Ash.read_one(query_opts) do
+            {:ok, existing_case} when not is_nil(existing_case) ->
+              # Update with the new data using our scraping action
+              update_attrs = %{
+                offence_result: case_attrs.offence_result,
+                offence_fine: case_attrs.offence_fine,
+                offence_costs: case_attrs.offence_costs,
+                offence_hearing_date: case_attrs.offence_hearing_date,
+                url: case_attrs.regulator_url,
+                related_cases: case_attrs.related_cases
+              }
+              
+              update_opts = if actor, do: [actor: actor], else: []
+              case Enforcement.update_case_from_scraping(existing_case, update_attrs, update_opts) do
+                {:ok, updated_case} ->
+                  Logger.info("Successfully updated existing case via :update_from_scraping: #{updated_case.regulator_id}")
+                  # Still return the original duplicate error to preserve existing counting logic
+                  {:error, ash_error}
+                {:error, update_error} ->
+                  Logger.error("Failed to update existing case #{processed_case.regulator_id}: #{inspect(update_error)}")
+                  {:error, ash_error}
+              end
+            
+            {:ok, nil} ->
+              Logger.warning("Case marked as duplicate but not found: #{processed_case.regulator_id}")
+              {:error, ash_error}
+            
+            {:error, query_error} ->
+              Logger.error("Failed to query existing case #{processed_case.regulator_id}: #{inspect(query_error)}")
+              {:error, ash_error}
+          end
         else
           Logger.error("Failed to create case #{processed_case.regulator_id}: #{inspect(ash_error)}")
+          {:error, ash_error}
         end
-        {:error, ash_error}
     end
   end
   

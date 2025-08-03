@@ -85,10 +85,6 @@
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Progress</h2>
         
-        <!-- Debug Info (temporary) -->
-        <div class="text-xs text-gray-400 mb-2">
-          Debug: <%= inspect(@progress) %> | Last: <%= @last_update %>
-        </div>
         
         <!-- Progress Bar -->
         <div class="mb-4">
@@ -248,11 +244,7 @@
     </div>
   <% end %>
 
-  <!-- Processed Cases List -->
-  <!-- Debug info -->
-  <div class="text-xs text-gray-400 mb-2">
-    Debug scraped_cases: <%= inspect(length(@scraped_cases || [])) %> cases
-  </div>
+  <!-- Records Component -->
   
   <%= if @scraped_cases != [] do %>
     <div class="mt-8">
@@ -283,8 +275,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offender</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processing</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Database</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processed</th>
               </tr>
             </thead>
@@ -314,27 +305,30 @@
                     <% end %>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Scraped
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <%= if case.last_synced_at do %>
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Updated
-                      </span>
-                    <% else %>
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Created
-                      </span>
+                    <% 
+                      today = Date.utc_today()
+                      case_updated_date = DateTime.to_date(case.updated_at)
+                      case_created_date = DateTime.to_date(case.inserted_at)
+                      is_updated_today = Date.compare(case_updated_date, today) == :eq
+                      is_created_today = Date.compare(case_created_date, today) == :eq
+                    %>
+                    <%= cond do %>
+                      <% is_created_today -> %>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Created
+                        </span>
+                      <% is_updated_today -> %>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          Updated
+                        </span>
+                      <% true -> %>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          Exists
+                        </span>
                     <% end %>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <%= if case.last_synced_at do %>
-                      <%= Calendar.strftime(case.last_synced_at, "%H:%M:%S") %>
-                    <% else %>
-                      <%= Calendar.strftime(case.inserted_at, "%H:%M:%S") %>
-                    <% end %>
+                    <%= Calendar.strftime(case.updated_at, "%H:%M:%S") %>
                   </td>
                 </tr>
               <% end %>

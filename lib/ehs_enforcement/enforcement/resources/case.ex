@@ -33,10 +33,15 @@ defmodule EhsEnforcement.Enforcement.Case do
     publish(:update, ["updated", :id])
     publish(:update, ["updated"])
     
-    # Broadcast when a case is synced (special update action)
+    # Broadcast when a case is updated from scraping (HSE website → Postgres)
+    # Topics: "case:scraped:updated" and "case:scraped:updated:<id>"
+    publish(:update_from_scraping, ["scraped:updated", :id])
+    publish(:update_from_scraping, ["scraped:updated"])
+    
+    # Broadcast when a case is synced from Airtable (Airtable → Postgres)
     # Topics: "case:synced" and "case:synced:<id>"
-    publish(:sync, ["synced", :id])
-    publish(:sync, ["synced"])
+    publish(:sync_from_airtable, ["synced", :id])
+    publish(:sync_from_airtable, ["synced"])
     
     # Broadcast when a case is destroyed
     # Topics: "case:deleted" and "case:deleted:<id>"
@@ -92,10 +97,10 @@ defmodule EhsEnforcement.Enforcement.Case do
     event_log EhsEnforcement.Events.Event
     
     # Track current action versions for schema evolution during replay
-    current_action_versions create: 1, sync: 1, bulk_create: 1
+    current_action_versions create: 1, update_from_scraping: 1, sync_from_airtable: 1, bulk_create: 1
     
     # Only track core data operations (exclude scraping orchestration and read actions)
-    only_actions [:create, :sync, :bulk_create]
+    only_actions [:create, :update_from_scraping, :sync_from_airtable, :bulk_create]
   end
 
   actions do
@@ -192,14 +197,32 @@ defmodule EhsEnforcement.Enforcement.Case do
     end
 
     @doc """
-    Synchronize a case with updated data from external sources.
+    Update a case with data from HSE website scraping operations.
     
-    This action is specifically designed to trigger PubSub notifications
-    when cases are updated during scraping operations. It automatically:
+    This action is specifically for scraping workflow (HSE website → Postgres).
+    It does NOT set `last_synced_at` since that's reserved for Airtable syncing.
     
-    1. Updates the `last_synced_at` timestamp
-    2. Broadcasts to "case:synced" and "case:synced:<id>" topics
-    3. Allows partial updates of case data
+    ## PubSub Events
+    
+    When this action succeeds, it publishes to:
+    - `case:scraped:updated` - General scraping event (all scraped cases)
+    - `case:scraped:updated:<case_id>` - Specific case scraping event
+    
+    ## Usage
+    
+        # In scraping when we find an existing case
+        {:ok, updated_case} = Ash.update(existing_case, case_data, action: :update_from_scraping, actor: actor)
+    """
+    update :update_from_scraping do
+      accept([:offence_result, :offence_fine, :offence_costs, :offence_hearing_date, :url, :related_cases])
+      # No last_synced_at change - this is scraping, not Airtable syncing
+    end
+
+    @doc """
+    Synchronize a case with data from Airtable (for bulk migration).
+    
+    This action is specifically for Airtable → Postgres synchronization during
+    the initial 30K record migration. It sets `last_synced_at` to track sync status.
     
     ## PubSub Events
     
@@ -209,11 +232,11 @@ defmodule EhsEnforcement.Enforcement.Case do
     
     ## Usage
     
-        # In scraping when we find an existing case
-        {:ok, updated_case} = Ash.update(existing_case, %{}, action: :sync, actor: actor)
+        # During Airtable migration
+        {:ok, synced_case} = Ash.update(case, airtable_data, action: :sync_from_airtable, actor: actor)
     """
-    update :sync do
-      accept([:offence_result, :offence_fine, :offence_costs, :offence_hearing_date])
+    update :sync_from_airtable do
+      accept([:offence_result, :offence_fine, :offence_costs, :offence_hearing_date, :url, :related_cases])
 
       change(set_attribute(:last_synced_at, &DateTime.utc_now/0))
     end
@@ -455,7 +478,8 @@ defmodule EhsEnforcement.Enforcement.Case do
 
   code_interface do
     define(:create)
-    define(:sync)
+    define(:update_from_scraping)
+    define(:sync_from_airtable)
     define(:scrape_hse_cases)
     define(:scrape_hse_cases_deep)
     define(:duplicate_detection)

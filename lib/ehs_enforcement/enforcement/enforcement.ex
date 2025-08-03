@@ -33,7 +33,8 @@ defmodule EhsEnforcement.Enforcement do
       define :get_case, action: :read, get_by: [:id]
       define :create_case, action: :create
       define :update_case, action: :update
-      define :sync_case, action: :sync
+      define :update_case_from_scraping, action: :update_from_scraping
+      define :sync_case_from_airtable, action: :sync_from_airtable
       define :destroy_case, action: :destroy
       define :list_cases_by_date_range, action: :by_date_range, args: [:from_date, :to_date]
       define :bulk_create_cases, action: :bulk_create
@@ -57,7 +58,8 @@ defmodule EhsEnforcement.Enforcement do
 
   forms do
     form :create_case, args: []
-    form :sync_case, args: []
+    form :update_case_from_scraping, args: []
+    form :sync_case_from_airtable, args: []
     form :create_offender, args: []
     form :update_offender, args: []
     form :create_notice, args: []
@@ -89,7 +91,8 @@ defmodule EhsEnforcement.Enforcement do
   - `list_cases_with_filters/1` - List cases with complex filtering (custom function)
   - `get_case/2` - Get case by ID
   - `create_case/2` - Create new case
-  - `sync_case/3` - Sync case data (update equivalent)
+  - `update_case_from_scraping/3` - Update case from HSE scraping
+  - `sync_case_from_airtable/3` - Sync case from Airtable migration
   - `destroy_case/2` - Delete case
   - `list_cases_by_date_range/3` - List cases in date range
   - `bulk_create_cases/2` - Bulk create multiple cases
@@ -130,9 +133,14 @@ defmodule EhsEnforcement.Enforcement do
   end
 
 
-  def change_case(case_record, attrs \\ %{}) do
+  def change_case_for_scraping(case_record, attrs \\ %{}) do
     case_record
-    |> Ash.Changeset.for_update(:sync, attrs)
+    |> Ash.Changeset.for_update(:update_from_scraping, attrs)
+  end
+
+  def change_case_for_airtable_sync(case_record, attrs \\ %{}) do
+    case_record
+    |> Ash.Changeset.for_update(:sync_from_airtable, attrs)
   end
 
   def list_cases_with_filters(opts \\ []) do
