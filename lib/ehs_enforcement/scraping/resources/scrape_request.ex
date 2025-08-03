@@ -28,7 +28,12 @@ defmodule EhsEnforcement.Scraping.ScrapeRequest do
   end
 
   actions do
-    defaults [:create, :read, :update, :destroy]
+    defaults [:read, :update, :destroy]
+    
+    create :create do
+      accept [:start_page, :max_pages, :database]
+      primary? true
+    end
   end
 
   validations do
