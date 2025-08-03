@@ -36,8 +36,10 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
     
     # Ash PubSub handles scraping progress updates automatically via keep_live
     
-    # Create AshPhoenix.Form for scraping parameters
-    form = Form.for_create(ScrapeRequest, :create, as: "scrape_request", forms: [auto?: false]) |> to_form()
+    # Create AshPhoenix.Form for scraping parameters with convictions database default
+    form = Form.for_create(ScrapeRequest, :create, as: "scrape_request", forms: [auto?: false]) 
+    |> Form.validate(%{"database" => "convictions"})
+    |> to_form()
     
     socket = assign(socket,
       # Feature flags
@@ -138,7 +140,9 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   
   @impl true 
   def handle_event("validate", %{"scrape_request" => params}, socket) do
-    form = Form.validate(socket.assigns.form, params) |> to_form()
+    # Ensure database is always "convictions" for this interface
+    params_with_convictions = Map.put(params, "database", "convictions")
+    form = Form.validate(socket.assigns.form, params_with_convictions) |> to_form()
     {:noreply, assign(socket, form: form)}
   end
 
