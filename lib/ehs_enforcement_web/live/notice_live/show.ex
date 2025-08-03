@@ -15,14 +15,8 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
       PubSub.subscribe(EhsEnforcement.PubSub, "notice:#{id}")
     end
 
-    case Enforcement.get_notice!(id, load: [:agency, :offender]) do
-      nil ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Notice not found")
-         |> push_navigate(to: ~p"/notices")}
-      
-      notice ->
+    case Enforcement.get_notice(id, load: [:agency, :offender]) do
+      {:ok, notice} ->
         {:noreply,
          socket
          |> assign(:page_title, "Notice Details")
@@ -31,6 +25,12 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
          |> assign(:compliance_status, calculate_compliance_status(notice))
          |> assign(:timeline_data, build_timeline_data(notice))
          |> assign(:loading, false)}
+      
+      {:error, _error} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Notice not found")
+         |> push_navigate(to: ~p"/notices")}
     end
   rescue
     error ->
@@ -100,7 +100,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
           days_overdue: nil
         }
       
-      Date.compare(notice.compliance_date, today) == :gt ->
+      notice.compliance_date && Date.compare(notice.compliance_date, today) == :gt ->
         days_remaining = Date.diff(notice.compliance_date, today)
         
         status = cond do
@@ -147,7 +147,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
       %{
         date: notice.notice_date,
         label: "Notice Issued",
-        status: if(Date.compare(today, notice.notice_date) != :lt, do: "completed", else: "future"),
+        status: if(notice.notice_date && Date.compare(today, notice.notice_date) != :lt, do: "completed", else: "future"),
         description: "Notice #{notice.regulator_id} issued"
       }
     ]
@@ -157,7 +157,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
         %{
           date: notice.operative_date,
           label: "Operative Date",
-          status: if(Date.compare(today, notice.operative_date) != :lt, do: "completed", else: "future"),
+          status: if(notice.operative_date && Date.compare(today, notice.operative_date) != :lt, do: "completed", else: "future"),
           description: "Notice becomes legally enforceable"
         }
       ]
@@ -170,7 +170,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
         %{
           date: notice.compliance_date,
           label: "Compliance Due",
-          status: if(Date.compare(today, notice.compliance_date) != :lt, do: "completed", else: "future"),
+          status: if(notice.compliance_date && Date.compare(today, notice.compliance_date) != :lt, do: "completed", else: "future"),
           description: "All required actions must be completed"
         }
       ]

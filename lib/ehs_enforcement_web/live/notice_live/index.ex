@@ -151,27 +151,21 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   defp load_notices(socket) do
     query_opts = build_query_opts(socket)
     
-    case Enforcement.list_notices(query_opts) do
-      {:ok, %Ash.Page.Offset{results: notices, count: count}} ->
-        socket
-        |> assign(:notices, notices)
-        |> assign(:total_notices, count || length(notices))
-        |> assign(:loading, false)
-        
-      {:ok, notices} when is_list(notices) ->
-        total = count_notices(socket)
-        
-        socket
-        |> assign(:notices, notices)
-        |> assign(:total_notices, total)
-        |> assign(:loading, false)
+    try do
+      notices = Enforcement.list_notices_with_filters!(query_opts)
+      total = count_notices(socket)
       
-      {:error, _error} ->
+      socket
+      |> assign(:notices, notices)
+      |> assign(:total_notices, total)
+      |> assign(:loading, false)
+    rescue
+      error ->
         socket
         |> assign(:notices, [])
         |> assign(:total_notices, 0)
         |> assign(:loading, false)
-        |> put_flash(:error, "Failed to load notices")
+        |> put_flash(:error, "Failed to load notices: #{inspect(error)}")
     end
   end
 
@@ -198,9 +192,13 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     sort = [{params.sort_by, params.sort_order}]
     opts = [{:sort, sort} | opts]
     
-    # Add pagination
+    # Add limit for pagination (not page option)
+    limit = params.page_size
+    opts = [{:limit, limit} | opts]
+    
+    # Add offset for pagination
     offset = (params.page - 1) * params.page_size
-    opts = [{:page, [limit: params.page_size, offset: offset]} | opts]
+    opts = if offset > 0, do: [{:offset, offset} | opts], else: opts
     
     # Load relationships
     [{:load, [:agency, :offender]} | opts]
@@ -216,7 +214,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     # Add date range filters
     filter = if filters[:date_from] do
       case Date.from_iso8601(filters[:date_from]) do
-        {:ok, date} -> [{:notice_date, {:>=, date}} | filter]
+        {:ok, date} -> [{:date_from, date} | filter]
         {:error, _} -> filter  # Ignore invalid dates
       end
     else
@@ -225,38 +223,16 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     
     filter = if filters[:date_to] do
       case Date.from_iso8601(filters[:date_to]) do
-        {:ok, date} -> [{:notice_date, {:<=, date}} | filter]
+        {:ok, date} -> [{:date_to, date} | filter]
         {:error, _} -> filter  # Ignore invalid dates
       end
     else
       filter
     end
     
-    # Add compliance status filter
-    filter = if filters[:compliance_status] do
-      add_compliance_filter(filter, filters[:compliance_status])
-    else
-      filter
-    end
-    
-    # Add region filter
-    filter = if filters[:region] do
-      # This requires a join with offender
-      [{:offender, {:local_authority, {:ilike, "%#{filters[:region]}%"}}} | filter]
-    else
-      filter
-    end
-    
     # Add search
     if search_query != "" do
-      search_filter = [
-        or: [
-          [regulator_id: [ilike: "%#{search_query}%"]],
-          [notice_body: [ilike: "%#{search_query}%"]],
-          [offender: [name: [ilike: "%#{search_query}%"]]]
-        ]
-      ]
-      search_filter ++ filter
+      [{:search, "%#{search_query}%"} | filter]
     else
       filter
     end
@@ -281,7 +257,6 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     filter = build_filter(socket.assigns.filters, socket.assigns.search_query)
     query_opts = if filter != [], do: [filter: filter], else: []
     
-    # Use code interface for counting
     try do
       Enforcement.count_notices!(query_opts)
     rescue
@@ -295,7 +270,6 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     |> parse_if_present(params, "offence_action_type")
     |> parse_if_present(params, "date_from")
     |> parse_if_present(params, "date_to")
-    |> parse_if_present(params, "compliance_status")
     |> parse_if_present(params, "region")
   end
 
@@ -336,24 +310,6 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
 
   defp format_date(nil), do: ""
   defp format_date(date), do: Calendar.strftime(date, "%d %B %Y")
-
-  defp compliance_status(notice) do
-    today = Date.utc_today()
-    
-    cond do
-      is_nil(notice.compliance_date) -> "N/A"
-      Date.compare(notice.compliance_date, today) == :gt -> "pending"
-      true -> "overdue"
-    end
-  end
-
-  defp compliance_status_class(notice) do
-    case compliance_status(notice) do
-      "pending" -> "text-yellow-600"
-      "overdue" -> "text-red-600"
-      _ -> "text-gray-600"
-    end
-  end
 
   defp notice_type_class(type) do
     case type do
