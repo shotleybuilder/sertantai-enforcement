@@ -40,7 +40,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
      |> assign(:sync_status, %{})
      |> assign(:filter_agency, nil)
      |> assign(:recent_activity_filter, :all)
-     |> assign(:time_period, "week")}
+     |> assign(:time_period, "month")}
   end
 
   @impl true
@@ -138,15 +138,35 @@ defmodule EhsEnforcementWeb.DashboardLive do
   @impl true
   def handle_event("change_time_period", %{"period" => period}, socket) do
     agencies = socket.assigns.agencies
-    {recent_cases, total_recent_cases} = load_recent_cases_paginated(socket.assigns.filter_agency, socket.assigns.recent_activity_page, socket.assigns.recent_activity_page_size)
-    recent_activity = format_cases_as_recent_activity(recent_cases)
-    stats = calculate_stats(agencies, recent_cases, period)
+    
+    # Apply time-based filtering based on the new period
+    {days_ago, _timeframe_label} = case period do
+      "week" -> {7, "Last 7 Days"}
+      "month" -> {30, "Last 30 Days"}
+      "year" -> {365, "Last 365 Days"}
+      _ -> {30, "Last 30 Days"}
+    end
+    
+    cutoff_date = Date.add(Date.utc_today(), -days_ago)
+    
+    # Load all recent data first
+    {all_recent_cases, _total_all} = load_recent_cases_paginated(socket.assigns.filter_agency, socket.assigns.recent_activity_page, socket.assigns.recent_activity_page_size)
+    
+    # Filter by time period
+    filtered_cases = Enum.filter(all_recent_cases, fn case_record ->
+      case_record.offence_action_date && Date.compare(case_record.offence_action_date, cutoff_date) != :lt
+    end)
+    
+    # Take only the page size amount
+    paginated_cases = Enum.take(filtered_cases, socket.assigns.recent_activity_page_size)
+    recent_activity = format_cases_as_recent_activity(paginated_cases)
+    stats = calculate_stats(agencies, filtered_cases, period)
     
     {:noreply,
      socket
      |> assign(:time_period, period)
-     |> assign(:recent_cases, recent_cases)
-     |> assign(:total_recent_cases, total_recent_cases)
+     |> assign(:recent_cases, paginated_cases)
+     |> assign(:total_recent_cases, length(filtered_cases))
      |> assign(:recent_activity, recent_activity)
      |> assign(:stats, stats)}
   end
@@ -201,24 +221,46 @@ defmodule EhsEnforcementWeb.DashboardLive do
 
   @impl true
   def handle_event("browse_recent_cases", _params, socket) do
-    {:noreply, push_navigate(socket, to: "/cases?filter=recent&page=1")}
+    # Apply the same filtering logic as the filter_recent_activity event for cases
+    filter_conditions = if socket.assigns.filter_agency, do: [agency_id: socket.assigns.filter_agency], else: []
+    cases = EhsEnforcement.Enforcement.list_cases_with_filters!([
+      filter: filter_conditions,
+      sort: [offence_action_date: :desc],
+      load: [:offender, :agency]
+    ])
+    paginated_cases = Enum.take(cases, socket.assigns.recent_activity_page_size)
+    recent_activity = format_cases_as_recent_activity(paginated_cases)
+    
+    # Scroll to Recent Activity section and filter to show only cases
+    socket = 
+      socket
+      |> assign(:recent_activity_filter, :cases)
+      |> assign(:recent_activity, recent_activity)
+      |> assign(:recent_cases, paginated_cases)
+      |> assign(:total_recent_cases, length(cases))
+      |> assign(:recent_activity_page, 1)
+      |> push_event("scroll_to_element", %{id: "recent-activity-section"})
+    
+    {:noreply, socket}
   end
 
   @impl true
   def handle_event("search_cases", _params, socket) do
-    {:noreply, push_navigate(socket, to: "/cases?filter=search")}  
+    # Navigate to cases page with recent filter based on current time period
+    time_period = Map.get(socket.assigns, :time_period, "month")
+    {:noreply, push_navigate(socket, to: "/cases?filter=recent&period=#{time_period}")}  
   end
 
   @impl true
-  def handle_event("add_new_case", _params, socket) do
+  def handle_event("scrape_cases", _params, socket) do
     current_user = socket.assigns[:current_user]
     
     # Check admin privileges
     case current_user do
       %{is_admin: true} ->
-        {:noreply, push_navigate(socket, to: "/cases/new")}
+        {:noreply, push_navigate(socket, to: "/admin/cases/scrape")}
       _ ->
-        {:noreply, put_flash(socket, :error, "Admin privileges required to create new cases")}
+        {:noreply, put_flash(socket, :error, "Admin privileges required to scrape cases")}
     end
   end
 
@@ -233,15 +275,15 @@ defmodule EhsEnforcementWeb.DashboardLive do
   end
 
   @impl true
-  def handle_event("add_new_notice", _params, socket) do
+  def handle_event("scrape_notices", _params, socket) do
     current_user = socket.assigns[:current_user]
     
     # Check admin privileges
     case current_user do
       %{is_admin: true} ->
-        {:noreply, push_navigate(socket, to: "/notices/new")}
+        {:noreply, push_navigate(socket, to: "/admin/notices/scrape")}
       _ ->
-        {:noreply, put_flash(socket, :error, "Admin privileges required to create new notices")}
+        {:noreply, put_flash(socket, :error, "Admin privileges required to scrape notices")}
     end
   end
 

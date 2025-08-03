@@ -62,7 +62,7 @@ defmodule EhsEnforcementWeb.Components.CasesActionCard do
         
         <.card_secondary_button phx-click="search_cases">
           <div class="flex items-center justify-between w-full">
-            <span>Search Cases</span>
+            <span>Search Recent Cases</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
@@ -72,14 +72,14 @@ defmodule EhsEnforcementWeb.Components.CasesActionCard do
       
       <:admin_actions :if={is_admin?(@current_user)} visible={true}>
         <.card_secondary_button 
-          phx-click="add_new_case" 
+          phx-click="scrape_cases" 
           admin_only={true}
           disabled={false}
         >
           <div class="flex items-center justify-between w-full">
-            <span>Add New Case</span>
+            <span>Scrape Cases</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
             </svg>
           </div>
         </.card_secondary_button>

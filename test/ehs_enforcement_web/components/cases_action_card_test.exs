@@ -26,10 +26,10 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
       assert html =~ "phx-click=\"browse_recent_cases\""
     end
 
-    test "renders Search Cases button" do
+    test "renders Search Recent Cases button" do
       html = render_component(&cases_action_card/1, %{current_user: nil})
       
-      assert html =~ "Search Cases"
+      assert html =~ "Search Recent Cases"
       assert html =~ "phx-click=\"search_cases\""
     end
 
@@ -37,8 +37,8 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
       admin_user = %{id: 1, is_admin: true, name: "Admin User"}
       html = render_component(&cases_action_card/1, %{current_user: admin_user})
       
-      assert html =~ "Add New Case"
-      assert html =~ "phx-click=\"add_new_case\""
+      assert html =~ "Scrape Cases"
+      assert html =~ "phx-click=\"scrape_cases\""
       assert html =~ "ADMIN"
     end
 
@@ -46,13 +46,13 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
       regular_user = %{id: 2, is_admin: false, name: "Regular User"}
       html = render_component(&cases_action_card/1, %{current_user: regular_user})
       
-      refute html =~ "Add New Case"
+      refute html =~ "Scrape Cases"
     end
 
     test "hides admin actions for nil user" do
       html = render_component(&cases_action_card/1, %{current_user: nil})
       
-      refute html =~ "Add New Case"
+      refute html =~ "Scrape Cases"
     end
 
     test "displays loading state" do

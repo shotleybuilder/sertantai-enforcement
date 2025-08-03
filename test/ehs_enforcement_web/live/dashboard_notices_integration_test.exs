@@ -100,7 +100,7 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
         |> live("/dashboard")
 
       # Admin button should be visible
-      assert html =~ "Add New Notice"
+      assert html =~ "Scrape Notices"
       assert html =~ "ADMIN"
     end
 
@@ -116,7 +116,7 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
 
       # Admin button should not be visible
       assert html =~ "ENFORCEMENT NOTICES"
-      refute html =~ "Add New Notice"
+      refute html =~ "Scrape Notices"
       refute html =~ "ADMIN"
     end
 
@@ -130,9 +130,9 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
         |> put_session(:current_user, admin_user)
         |> live("/dashboard")
 
-      # Click on add new notice button - this will trigger a navigation
+      # Click on scrape notices button - this will trigger a navigation
       result = view
-               |> element("[phx-click='add_new_notice']")
+               |> element("[phx-click='scrape_notices']")
                |> render_click()
 
       # The click should be processed without error
@@ -153,7 +153,7 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
       # the event handler would still work correctly if called directly
       # This tests the admin privilege checking logic
       try do
-        send(view.pid, {:handle_event, "add_new_notice", %{}, %{}})
+        send(view.pid, {:handle_event, "scrape_notices", %{}, %{}})
         # If no error is raised, check that no redirect occurred
         :timer.sleep(50)  # Give time for potential redirect
         assert render(view) =~ "ENFORCEMENT NOTICES"  # Still on dashboard
