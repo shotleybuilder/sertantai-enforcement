@@ -15,7 +15,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapeProgressTest do
   alias EhsEnforcement.Scraping.ScrapeCoordinator
   alias Phoenix.PubSub
 
-  @pubsub_topic "scraping_progress"
+  @pubsub_topic "case:scraped:updated"
 
   describe "Progress update functionality" do
     setup do
@@ -213,6 +213,36 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapeProgressTest do
       # Check that the view received and processed the broadcast
       html = render(view)
       assert html =~ "running" or html =~ "Scraping in progress"
+    end
+
+    test "handles case update events from scraping", %{conn: conn, admin_user: admin_user, agency: agency} do
+      conn = conn |> assign(:current_user, admin_user)
+      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+
+      # Create a test case first
+      {:ok, test_case} = EhsEnforcement.Enforcement.create_case(%{
+        agency_id: agency.id,
+        offender_attrs: %{name: "Test Company Ltd"},
+        regulator_id: "HSE_TEST_001",
+        offence_result: "Under investigation"
+      })
+
+      # Simulate a case update event from scraping
+      case_update_event = %Phoenix.Socket.Broadcast{
+        topic: "case:scraped:updated",
+        event: "update_from_scraping",
+        payload: test_case
+      }
+
+      # Send the event to the LiveView
+      send(view.pid, case_update_event)
+      
+      # Allow time for message processing
+      Process.sleep(50)
+      
+      # The view should handle the update properly without crashing
+      html = render(view)
+      assert html =~ "Scraping" # Should still show scraping interface
     end
   end
 

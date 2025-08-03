@@ -122,7 +122,6 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
   end
 
   defp breaches_clean(breaches) do
-    # |> IO.inspect(label: "Breaches")
 
     breaches_clean =
       split_breach_into_title_year_article(breaches)
@@ -278,7 +277,6 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
 
     case Map.get(@lrt, search_term) do
       nil ->
-        IO.inspect(breach, label: "Breach")
 
         breach
         |> Map.put(:type_code, type_code(breach))
@@ -387,7 +385,6 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
 
   defp debug_url,
     do: fn request ->
-      IO.inspect(URI.to_string(request.url), label: "URL")
       request
     end
 

@@ -163,7 +163,6 @@ defmodule EhsEnforcement.Agencies.Hse.NoticeScraper do
         Map.put(acc, :offence_result, String.trim(result))
 
       _notice, acc ->
-        # IO.inspect(notice, label: "NO MATCH")
         acc
     end)
   end
@@ -181,7 +180,6 @@ defmodule EhsEnforcement.Agencies.Hse.NoticeScraper do
         [String.trim(breach) | acc]
 
       _breach, acc ->
-        # IO.inspect(breach, label: "NO MATCH")
         acc
     end)
     |> (&Map.put(%{}, :offence_breaches, &1)).()
@@ -189,7 +187,6 @@ defmodule EhsEnforcement.Agencies.Hse.NoticeScraper do
 
   defp debug_url,
     do: fn request ->
-      IO.inspect(URI.to_string(request.url), label: "URL")
       request
     end
 end

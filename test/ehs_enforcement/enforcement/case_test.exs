@@ -4,12 +4,20 @@ defmodule EhsEnforcement.Enforcement.CaseTest do
   alias EhsEnforcement.Enforcement
   
   setup do
-    # Create agency for testing
-    {:ok, agency} = Enforcement.create_agency(%{
-      code: :hse,
-      name: "Health and Safety Executive"
-    })
-
+    # Use predefined agency code (hse is allowed)
+    # Check if agency already exists and reuse it, otherwise create it
+    agency = case Ash.get(EhsEnforcement.Enforcement.Agency, code: :hse) do
+      {:ok, agency} -> 
+        agency
+      {:error, _} ->
+        {:ok, agency} = Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive"
+        })
+        agency
+    end
+    
+    # Always create a new offender for each test
     {:ok, offender} = Enforcement.create_offender(%{
       name: "Test Company Ltd",
       local_authority: "Manchester"
@@ -42,9 +50,9 @@ defmodule EhsEnforcement.Enforcement.CaseTest do
       assert case_record.offender_id == offender.id
     end
 
-    test "creates case with agency code and offender attributes" do
+    test "creates case with agency code and offender attributes", %{agency: agency} do
       case_attrs = %{
-        agency_code: :hse,
+        agency_code: agency.code,
         offender_attrs: %{
           name: "New Company Ltd",
           local_authority: "Birmingham"
@@ -63,7 +71,7 @@ defmodule EhsEnforcement.Enforcement.CaseTest do
         load: [:agency, :offender]
       )
       
-      assert case_with_relations.agency.code == :hse
+      assert case_with_relations.agency.code == agency.code
       assert case_with_relations.offender.name == "New Company Ltd"  # original preserved
       assert case_with_relations.offender.normalized_name == "new company limited"
     end
@@ -77,9 +85,9 @@ defmodule EhsEnforcement.Enforcement.CaseTest do
       assert {:error, %Ash.Error.Invalid{}} = Enforcement.create_case(attrs)
     end
 
-    test "enforces unique airtable_id constraint" do
+    test "enforces unique airtable_id constraint", %{agency: agency} do
       attrs = %{
-        agency_code: :hse,
+        agency_code: agency.code,
         offender_attrs: %{name: "Test Company"},
         airtable_id: "rec123456",
         regulator_id: "HSE004"
@@ -88,7 +96,7 @@ defmodule EhsEnforcement.Enforcement.CaseTest do
       assert {:ok, _case1} = Enforcement.create_case(attrs)
       
       attrs2 = %{
-        agency_code: :hse,
+        agency_code: agency.code,
         offender_attrs: %{name: "Different Company"},
         airtable_id: "rec123456",
         regulator_id: "HSE005"
@@ -97,10 +105,10 @@ defmodule EhsEnforcement.Enforcement.CaseTest do
       assert {:error, %Ash.Error.Invalid{}} = Enforcement.create_case(attrs2)
     end
 
-    test "filters cases by date range" do
+    test "filters cases by date range", %{agency: agency} do
       # Create cases with different dates
       attrs_base = %{
-        agency_code: :hse,
+        agency_code: agency.code,
         offender_attrs: %{name: "Test Company"}
       }
 
@@ -128,9 +136,9 @@ defmodule EhsEnforcement.Enforcement.CaseTest do
       assert hd(cases).regulator_id == "HSE002"
     end
 
-    test "calculates total penalty" do
+    test "calculates total penalty", %{agency: agency} do
       attrs = %{
-        agency_code: :hse,
+        agency_code: agency.code,
         offender_attrs: %{name: "Test Company"},
         regulator_id: "HSE001",
         offence_fine: Decimal.new("10000.00"),
@@ -148,9 +156,9 @@ defmodule EhsEnforcement.Enforcement.CaseTest do
       assert Decimal.equal?(case_with_calc.total_penalty, expected_total)
     end
 
-    test "updates sync timestamp" do
+    test "updates sync timestamp with sync_from_airtable action", %{agency: agency} do
       attrs = %{
-        agency_code: :hse,
+        agency_code: agency.code,
         offender_attrs: %{name: "Test Company"},
         regulator_id: "HSE001"
       }
@@ -163,9 +171,153 @@ defmodule EhsEnforcement.Enforcement.CaseTest do
         offence_fine: Decimal.new("15000.00")
       }
 
-      assert {:ok, updated_case} = Enforcement.sync_case(case_record, sync_attrs)
+      assert {:ok, updated_case} = Enforcement.sync_case_from_airtable(case_record, sync_attrs)
       assert updated_case.offence_result == "Updated result"
       assert updated_case.last_synced_at != nil
+    end
+
+    test "update_from_scraping action does not modify sync timestamp", %{agency: agency} do
+      attrs = %{
+        agency_code: agency.code,
+        offender_attrs: %{name: "Test Company"},
+        regulator_id: "HSE001"
+      }
+
+      assert {:ok, case_record} = Enforcement.create_case(attrs)
+      assert case_record.last_synced_at == nil
+
+      scraping_attrs = %{
+        offence_result: "Guilty",
+        offence_fine: Decimal.new("8000.00"),
+        offence_costs: Decimal.new("1500.00"),
+        url: "https://hse.gov.uk/prosecutions/case/123"
+      }
+
+      assert {:ok, updated_case} = Enforcement.update_case_from_scraping(case_record, scraping_attrs)
+      assert updated_case.offence_result == "Guilty"
+      assert Decimal.equal?(updated_case.offence_fine, Decimal.new("8000.00"))
+      assert updated_case.url == "https://hse.gov.uk/prosecutions/case/123"
+      # Should not set last_synced_at - this is scraping, not Airtable sync
+      assert updated_case.last_synced_at == nil
+    end
+
+    test "sync_from_airtable action sets sync timestamp", %{agency: agency} do
+      attrs = %{
+        agency_code: agency.code,
+        offender_attrs: %{name: "Test Company"},
+        regulator_id: "HSE001"
+      }
+
+      assert {:ok, case_record} = Enforcement.create_case(attrs)
+      assert case_record.last_synced_at == nil
+
+      airtable_attrs = %{
+        offence_result: "Not guilty",
+        offence_fine: Decimal.new("0.00"),
+        offence_costs: Decimal.new("500.00")
+      }
+
+      assert {:ok, updated_case} = Enforcement.sync_case_from_airtable(case_record, airtable_attrs)
+      assert updated_case.offence_result == "Not guilty"
+      assert Decimal.equal?(updated_case.offence_fine, Decimal.new("0.00"))
+      # Should set last_synced_at - this is Airtable sync
+      assert updated_case.last_synced_at != nil
+      assert DateTime.diff(updated_case.last_synced_at, DateTime.utc_now(), :second) < 5
+    end
+  end
+
+  describe "PubSub event publishing" do
+    # Uses agency from main setup block
+
+    test "update_from_scraping publishes case:scraped:updated events", %{agency: agency} do
+      # Subscribe to the PubSub topic
+      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:scraped:updated")
+
+      attrs = %{
+        agency_code: agency.code,
+        offender_attrs: %{name: "Test Company"},
+        regulator_id: "HSE001"
+      }
+
+      {:ok, case_record} = Enforcement.create_case(attrs)
+
+      scraping_attrs = %{
+        offence_result: "Guilty",
+        offence_fine: Decimal.new("5000.00")
+      }
+
+      {:ok, updated_case} = Enforcement.update_case_from_scraping(case_record, scraping_attrs)
+
+      # Should receive scraped:updated events
+      assert_receive %Phoenix.Socket.Broadcast{
+        topic: "case:scraped:updated",
+        event: "update_from_scraping",
+        payload: payload
+      }, 1000
+      
+      # Verify the payload contains the updated case data
+      assert payload.data.id == updated_case.id
+    end
+
+    test "sync_from_airtable publishes case:synced events", %{agency: agency} do
+      # Subscribe to the PubSub topic
+      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:synced")
+
+      attrs = %{
+        agency_code: agency.code,
+        offender_attrs: %{name: "Test Company"},
+        regulator_id: "HSE001"
+      }
+
+      {:ok, case_record} = Enforcement.create_case(attrs)
+
+      sync_attrs = %{
+        offence_result: "Not guilty",
+        offence_fine: Decimal.new("0.00")
+      }
+
+      {:ok, updated_case} = Enforcement.sync_case_from_airtable(case_record, sync_attrs)
+
+      # Should receive synced events
+      assert_receive %Phoenix.Socket.Broadcast{
+        topic: "case:synced",
+        event: "sync_from_airtable",
+        payload: payload
+      }, 1000
+      
+      # Verify the payload contains the updated case data
+      assert payload.data.id == updated_case.id
+    end
+
+    test "different actions publish to different topics", %{agency: agency} do
+      # Subscribe to both topics
+      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:scraped:updated")
+      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:synced")
+
+      attrs = %{
+        agency_code: agency.code,
+        offender_attrs: %{name: "Test Company"},
+        regulator_id: "HSE001"
+      }
+
+      {:ok, case_record} = Enforcement.create_case(attrs)
+
+      # Update from scraping should only publish to scraped topic
+      {:ok, scraped_case} = Enforcement.update_case_from_scraping(case_record, %{
+        offence_result: "Guilty"
+      })
+
+      # Should receive scraped event but not synced event
+      assert_receive %Phoenix.Socket.Broadcast{topic: "case:scraped:updated"}, 1000
+      refute_receive %Phoenix.Socket.Broadcast{topic: "case:synced"}, 100
+
+      # Sync from Airtable should only publish to synced topic
+      {:ok, _synced_case} = Enforcement.sync_case_from_airtable(scraped_case, %{
+        offence_result: "Not guilty"
+      })
+
+      # Should receive synced event
+      assert_receive %Phoenix.Socket.Broadcast{topic: "case:synced"}, 1000
     end
   end
 end

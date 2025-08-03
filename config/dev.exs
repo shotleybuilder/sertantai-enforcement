@@ -78,10 +78,9 @@ config :logger, :console, format: "[$level] $message\n"
 
 # Configure logger to filter out noisy logs
 config :logger,
-  backends: [:console],
-  compile_time_purge_matching: [
-    [level_lower_than: :info]
-  ]
+  backends: [:console]
+  # Note: Removed compile_time_purge_matching to allow debug logs after cleanup
+  # Runtime filtering below still suppresses noisy Phoenix/Ecto logs
 
 # Add runtime filtering for Phoenix socket logs and Ecto queries
 config :logger, :default_handler,
@@ -108,6 +107,7 @@ config :logger, :default_handler,
               String.contains?(msg, "CONNECTED TO Phoenix.LiveView.Socket") -> :stop
               String.contains?(msg, "QUERY OK") -> :stop
               String.contains?(msg, "MOUNT EhsEnforcementWeb") -> :stop
+              String.contains?(msg, "Broadcasting to topics") -> :stop  # Suppress verbose Ash PubSub broadcast logs
               String.contains?(msg, "QUERY ERROR") -> log_event  # Keep query errors
               true -> log_event
             end

@@ -296,12 +296,10 @@ defmodule EhsEnforcement.Utility do
   def duplicate_records(list) do
     list
     |> Enum.group_by(& &1)
-    # |> IO.inspect()
     |> Enum.filter(fn
       {_, [_, _ | _]} -> true
       _ -> false
     end)
-    # |> IO.inspect()
     |> Enum.map(fn {x, _} -> x end)
     |> Enum.sort()
   end
@@ -431,7 +429,6 @@ defmodule EhsEnforcement.Utility do
 
     delta_lists(String.split(x, ","), String.split(y, ","))
     |> Enum.sort(:desc)
-    |> IO.inspect()
     |> Enum.join(",")
   end
 

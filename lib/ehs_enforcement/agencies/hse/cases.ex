@@ -140,7 +140,7 @@ defmodule EhsEnforcement.Agencies.Hse.Cases do
         Post.post(@base, @table, kase)
 
       {:ok, record_id} ->
-        kase = Map.put(kase, :record_id, record_id) |> IO.inspect(label: "KASE")
+        kase = Map.put(kase, :record_id, record_id)
         Patch.patch(@base, @table, kase)
     end
   end

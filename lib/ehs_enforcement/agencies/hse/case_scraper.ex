@@ -54,7 +54,6 @@ defmodule EhsEnforcement.Agencies.Hse.CaseScraper do
   end
 
   defp extract_cases(cases) do
-    # IO.inspect(cases, label: "Cases")
 
     Enum.reduce(cases, [], fn
       [
@@ -89,7 +88,6 @@ defmodule EhsEnforcement.Agencies.Hse.CaseScraper do
   end
 
   defp extract_case_details(case_details, database) do
-    # Enum.each(case_details, &IO.inspect(&1, label: "Case Details"))
 
     Enum.reduce(case_details, %{}, fn
       [
@@ -128,7 +126,6 @@ defmodule EhsEnforcement.Agencies.Hse.CaseScraper do
          ]}
       ] = _td,
       acc ->
-        # IO.inspect(td)
 
         Map.merge(acc, case_breaches(String.trim_leading(url_breaches, "../"), database))
 
@@ -142,7 +139,6 @@ defmodule EhsEnforcement.Agencies.Hse.CaseScraper do
          ]}
       ] = _td,
       acc ->
-        # IO.inspect(td)
 
         acc = Map.merge(acc, case_breaches(String.trim_leading(url_breaches, "../"), database))
 
@@ -209,7 +205,6 @@ defmodule EhsEnforcement.Agencies.Hse.CaseScraper do
     end)
 
     #
-    # |> IO.inspect(label: "Case")
   end
 
   defp case_breach("breach/breach_details.asp?SF=BID&SV=" <> case_number = _url, database) do
@@ -232,7 +227,6 @@ defmodule EhsEnforcement.Agencies.Hse.CaseScraper do
       |> parse_tr()
       |> extract_td()
 
-    # Enum.each(tds, &IO.inspect(&1, label: "BREACHES"))
 
     Enum.reduce(tds, %{offence_number: 0, offence_breaches: []}, fn
       [
@@ -244,7 +238,6 @@ defmodule EhsEnforcement.Agencies.Hse.CaseScraper do
         {"td", _, [offence_breach]}
       ] = _td,
       acc ->
-        # IO.inspect(td, label: "TD")
 
         Map.merge(acc, %{
           offence_number: acc.offence_number + 1,
@@ -274,7 +267,6 @@ defmodule EhsEnforcement.Agencies.Hse.CaseScraper do
       |> parse_tr()
       |> extract_td()
 
-    # Enum.each(tds, &IO.inspect(&1, label: "RELATED CASES"))
 
     Enum.reduce(tds, [], fn
       [
@@ -304,7 +296,6 @@ defmodule EhsEnforcement.Agencies.Hse.CaseScraper do
 
   defp debug_url,
     do: fn request ->
-      IO.inspect(URI.to_string(request.url), label: "URL")
       request
     end
 
