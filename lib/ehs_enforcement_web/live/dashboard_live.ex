@@ -47,8 +47,8 @@ defmodule EhsEnforcementWeb.DashboardLive do
   def handle_params(params, _url, socket) do
     recent_activity_page = String.to_integer(params["recent_activity_page"] || "1")
     
-    # Load data first to get total count
-    {recent_cases, total_recent_cases} = load_recent_cases_paginated(socket.assigns.filter_agency, recent_activity_page, socket.assigns.recent_activity_page_size)
+    # Load data first to get total count, with time period filtering
+    {recent_cases, total_recent_cases} = load_recent_cases_paginated(socket.assigns.filter_agency, recent_activity_page, socket.assigns.recent_activity_page_size, socket.assigns.time_period)
     
     # Convert cases to recent activity format for the table
     _recent_activity = format_cases_as_recent_activity(recent_cases)
@@ -62,7 +62,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
     
     # If page was out of range, reload with valid page
     final_data = if valid_page != recent_activity_page do
-      load_recent_cases_paginated(socket.assigns.filter_agency, valid_page, socket.assigns.recent_activity_page_size)
+      load_recent_cases_paginated(socket.assigns.filter_agency, valid_page, socket.assigns.recent_activity_page_size, socket.assigns.time_period)
     else
       {recent_cases, total_recent_cases}
     end
@@ -97,7 +97,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
   @impl true
   def handle_event("filter_by_agency", %{"agency" => agency_id}, socket) do
     filter_agency = if agency_id == "", do: nil, else: agency_id
-    {recent_cases, total_recent_cases} = load_recent_cases_paginated(filter_agency, 1, socket.assigns.recent_activity_page_size)
+    {recent_cases, total_recent_cases} = load_recent_cases_paginated(filter_agency, 1, socket.assigns.recent_activity_page_size, socket.assigns.time_period)
     recent_activity = format_cases_as_recent_activity(recent_cases)
     
     {:noreply,
@@ -137,68 +137,78 @@ defmodule EhsEnforcementWeb.DashboardLive do
 
   @impl true
   def handle_event("change_time_period", %{"period" => period}, socket) do
-    agencies = socket.assigns.agencies
+    # Update time period and reload data using same logic as handle_params
+    # Reset to page 1 since we're changing the filter
+    updated_socket = socket
+    |> assign(:time_period, period)
+    |> assign(:recent_activity_page, 1)
     
-    # Apply time-based filtering based on the new period
-    {days_ago, _timeframe_label} = case period do
-      "week" -> {7, "Last 7 Days"}
-      "month" -> {30, "Last 30 Days"}
-      "year" -> {365, "Last 365 Days"}
-      _ -> {30, "Last 30 Days"}
-    end
-    
-    cutoff_date = Date.add(Date.utc_today(), -days_ago)
-    
-    # Load all recent data first
-    {all_recent_cases, _total_all} = load_recent_cases_paginated(socket.assigns.filter_agency, socket.assigns.recent_activity_page, socket.assigns.recent_activity_page_size)
-    
-    # Filter by time period
-    filtered_cases = Enum.filter(all_recent_cases, fn case_record ->
-      case_record.offence_action_date && Date.compare(case_record.offence_action_date, cutoff_date) != :lt
-    end)
-    
-    # Take only the page size amount
-    paginated_cases = Enum.take(filtered_cases, socket.assigns.recent_activity_page_size)
-    recent_activity = format_cases_as_recent_activity(paginated_cases)
-    stats = calculate_stats(agencies, filtered_cases, period)
+    # Load data using the same approach as handle_params, but with time period filtering
+    {recent_cases, total_recent_cases} = load_recent_cases_paginated(updated_socket.assigns.filter_agency, 1, updated_socket.assigns.recent_activity_page_size, period)
+    recent_activity = format_cases_as_recent_activity(recent_cases)
+    stats = calculate_stats(updated_socket.assigns.agencies, recent_cases, period)
     
     {:noreply,
-     socket
-     |> assign(:time_period, period)
-     |> assign(:recent_cases, paginated_cases)
-     |> assign(:total_recent_cases, length(filtered_cases))
+     updated_socket
+     |> assign(:stats, stats)
+     |> assign(:recent_cases, recent_cases)
+     |> assign(:total_recent_cases, total_recent_cases)
      |> assign(:recent_activity, recent_activity)
-     |> assign(:stats, stats)}
+     |> put_flash(:info, "Time period changed to #{period}")}
   end
 
   @impl true
   def handle_event("filter_recent_activity", %{"type" => type}, socket) do
     filter_type = String.to_existing_atom(type)
     
+    # Get current time period for filtering
+    time_period = socket.assigns.time_period
+    {days_ago, _timeframe_label} = case time_period do
+      "week" -> {7, "Last 7 Days"}
+      "month" -> {30, "Last 30 Days"}
+      "year" -> {365, "Last 365 Days"}
+      _ -> {30, "Last 30 Days"}
+    end
+    cutoff_date = Date.add(Date.utc_today(), -days_ago)
+    
     # Load recent activity based on filter type
     {filtered_activity, total_filtered_count} = case filter_type do
       :all -> 
-        load_recent_cases_paginated(socket.assigns.filter_agency, 1, socket.assigns.recent_activity_page_size)
+        # Load all data and filter by time period
+        {all_data, _total} = load_recent_cases_paginated(socket.assigns.filter_agency, 1, 1000, socket.assigns.time_period) # Load more to filter
+        time_filtered_data = Enum.filter(all_data, fn record ->
+          record.offence_action_date && Date.compare(record.offence_action_date, cutoff_date) != :lt
+        end)
+        paginated_data = Enum.take(time_filtered_data, socket.assigns.recent_activity_page_size)
+        {paginated_data, length(time_filtered_data)}
       :cases ->
-        # Load only cases
+        # Load only cases and filter by time period
         filter_conditions = if socket.assigns.filter_agency, do: [agency_id: socket.assigns.filter_agency], else: []
         cases = EhsEnforcement.Enforcement.list_cases_with_filters!([
           filter: filter_conditions,
           sort: [offence_action_date: :desc],
           load: [:offender, :agency]
         ])
-        paginated_cases = Enum.take(cases, socket.assigns.recent_activity_page_size)
-        {paginated_cases, length(cases)}
+        # Filter by time period
+        time_filtered_cases = Enum.filter(cases, fn case_record ->
+          case_record.offence_action_date && Date.compare(case_record.offence_action_date, cutoff_date) != :lt
+        end)
+        paginated_cases = Enum.take(time_filtered_cases, socket.assigns.recent_activity_page_size)
+        {paginated_cases, length(time_filtered_cases)}
       :notices ->
-        # Load only notices
+        # Load only notices and filter by time period
         filter_conditions = if socket.assigns.filter_agency, do: [agency_id: socket.assigns.filter_agency], else: []
         notices = EhsEnforcement.Enforcement.list_notices_with_filters!([
           filter: filter_conditions,
           sort: [offence_action_date: :desc],
           load: [:offender, :agency]
         ])
-        paginated_notices = Enum.take(notices, socket.assigns.recent_activity_page_size)
-        {paginated_notices, length(notices)}
+        # Filter by time period
+        time_filtered_notices = Enum.filter(notices, fn notice_record ->
+          notice_record.offence_action_date && Date.compare(notice_record.offence_action_date, cutoff_date) != :lt
+        end)
+        paginated_notices = Enum.take(time_filtered_notices, socket.assigns.recent_activity_page_size)
+        {paginated_notices, length(time_filtered_notices)}
     end
     
     recent_activity = format_cases_as_recent_activity(filtered_activity)
@@ -221,6 +231,16 @@ defmodule EhsEnforcementWeb.DashboardLive do
 
   @impl true
   def handle_event("browse_recent_cases", _params, socket) do
+    # Get current time period for filtering
+    time_period = socket.assigns.time_period
+    {days_ago, _timeframe_label} = case time_period do
+      "week" -> {7, "Last 7 Days"}
+      "month" -> {30, "Last 30 Days"}
+      "year" -> {365, "Last 365 Days"}
+      _ -> {30, "Last 30 Days"}
+    end
+    cutoff_date = Date.add(Date.utc_today(), -days_ago)
+    
     # Apply the same filtering logic as the filter_recent_activity event for cases
     filter_conditions = if socket.assigns.filter_agency, do: [agency_id: socket.assigns.filter_agency], else: []
     cases = EhsEnforcement.Enforcement.list_cases_with_filters!([
@@ -228,7 +248,13 @@ defmodule EhsEnforcementWeb.DashboardLive do
       sort: [offence_action_date: :desc],
       load: [:offender, :agency]
     ])
-    paginated_cases = Enum.take(cases, socket.assigns.recent_activity_page_size)
+    
+    # Filter by time period
+    time_filtered_cases = Enum.filter(cases, fn case_record ->
+      case_record.offence_action_date && Date.compare(case_record.offence_action_date, cutoff_date) != :lt
+    end)
+    
+    paginated_cases = Enum.take(time_filtered_cases, socket.assigns.recent_activity_page_size)
     recent_activity = format_cases_as_recent_activity(paginated_cases)
     
     # Scroll to Recent Activity section and filter to show only cases
@@ -237,7 +263,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
       |> assign(:recent_activity_filter, :cases)
       |> assign(:recent_activity, recent_activity)
       |> assign(:recent_cases, paginated_cases)
-      |> assign(:total_recent_cases, length(cases))
+      |> assign(:total_recent_cases, length(time_filtered_cases))
       |> assign(:recent_activity_page, 1)
       |> push_event("scroll_to_element", %{id: "recent-activity-section"})
     
@@ -339,7 +365,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
   def handle_info({:sync_complete, agency_code}, socket) do
     # Reload data after sync
     agencies = Enforcement.list_agencies!()
-    {recent_cases, total_recent_cases} = load_recent_cases_paginated(socket.assigns.filter_agency, socket.assigns.recent_activity_page, socket.assigns.recent_activity_page_size)
+    {recent_cases, total_recent_cases} = load_recent_cases_paginated(socket.assigns.filter_agency, socket.assigns.recent_activity_page, socket.assigns.recent_activity_page_size, socket.assigns.time_period)
     recent_activity = format_cases_as_recent_activity(recent_cases)
     stats = calculate_stats(agencies, recent_cases, socket.assigns.time_period)
     
@@ -365,7 +391,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
   @impl true
   def handle_info({:case_created, _case}, socket) do
     # Reload recent cases when a new case is created
-    {recent_cases, total_recent_cases} = load_recent_cases_paginated(socket.assigns.filter_agency, socket.assigns.recent_activity_page, socket.assigns.recent_activity_page_size)
+    {recent_cases, total_recent_cases} = load_recent_cases_paginated(socket.assigns.filter_agency, socket.assigns.recent_activity_page, socket.assigns.recent_activity_page_size, socket.assigns.time_period)
     recent_activity = format_cases_as_recent_activity(recent_cases)
     stats = calculate_stats(socket.assigns.agencies, recent_cases, socket.assigns.time_period)
     
@@ -388,9 +414,22 @@ defmodule EhsEnforcementWeb.DashboardLive do
   #   )
   # end
 
-  defp load_recent_cases_paginated(filter_agency, page, page_size) do
+  defp load_recent_cases_paginated(filter_agency, page, page_size, time_period \\ nil) do
     filter_conditions = if filter_agency, do: [agency_id: filter_agency], else: []
     offset = (page - 1) * page_size
+    
+    # Calculate cutoff date if time_period is provided
+    cutoff_date = if time_period do
+      days_ago = case time_period do
+        "week" -> 7
+        "month" -> 30
+        "year" -> 365
+        _ -> 30
+      end
+      Date.add(Date.utc_today(), -days_ago)
+    else
+      nil
+    end
     
     try do
       # Load cases using the proper filter function
@@ -414,11 +453,20 @@ defmodule EhsEnforcementWeb.DashboardLive do
       |> Enum.filter(fn record -> record.offence_action_date != nil end)
       |> Enum.sort_by(& &1.offence_action_date, {:desc, Date})
       
+      # Apply time period filter if provided
+      filtered_activity = if cutoff_date do
+        Enum.filter(all_activity, fn record ->
+          Date.compare(record.offence_action_date, cutoff_date) != :lt
+        end)
+      else
+        all_activity
+      end
+      
       # Calculate total count
-      total_count = length(all_activity)
+      total_count = length(filtered_activity)
       
       # Apply pagination
-      paginated_activity = all_activity
+      paginated_activity = filtered_activity
       |> Enum.drop(offset)
       |> Enum.take(page_size)
       

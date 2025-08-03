@@ -29,15 +29,16 @@
         </div>
         
         <div class="mr-3">
-          <select
-            phx-change="change_time_period"
-            name="period"
-            class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-          >
-            <option value="week" selected={@time_period == "week"}>Last Week</option>
-            <option value="month" selected={@time_period == "month"}>Last Month</option>
-            <option value="year" selected={@time_period == "year"}>Last Year</option>
-          </select>
+          <form phx-change="change_time_period">
+            <select
+              name="period"
+              class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+            >
+              <option value="week" selected={@time_period == "week"}>Last Week</option>
+              <option value="month" selected={@time_period == "month"}>Last Month</option>
+              <option value="year" selected={@time_period == "year"}>Last Year</option>
+            </select>
+          </form>
         </div>
         <button
           phx-click="export_data"

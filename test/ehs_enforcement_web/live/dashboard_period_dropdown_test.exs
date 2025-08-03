@@ -2,6 +2,9 @@ defmodule EhsEnforcementWeb.DashboardPeriodDropdownTest do
   use EhsEnforcementWeb.ConnCase
   import Phoenix.LiveViewTest
   
+  require Ash.Query
+  import Ash.Expr
+  
   alias EhsEnforcement.Enforcement
 
   describe "Dashboard Period Dropdown Functionality" do
@@ -80,12 +83,13 @@ defmodule EhsEnforcementWeb.DashboardPeriodDropdownTest do
       # Initial state - should show month
       assert html =~ "30 days"
       
-      # Change to "Last Week"
-      render_change(view, "change_time_period", %{"period" => "week"})
+      # Change to "Last Week" by interacting with the form
+      view |> form("form", %{"period" => "week"}) |> render_change()
       updated_html = render(view)
       
       # Period card should update to "7 days"
       assert updated_html =~ "7 days"
+      refute updated_html =~ "30 days"  # Should no longer show month
       
       # Should show flash message
       assert updated_html =~ "Time period changed to week"
@@ -98,12 +102,16 @@ defmodule EhsEnforcementWeb.DashboardPeriodDropdownTest do
     test "changing to year period shows all cases", %{conn: conn} do
       {:ok, view, html} = live(conn, "/dashboard")
       
-      # Change to "Last Year"
-      render_change(view, "change_time_period", %{"period" => "year"})
+      # Verify initial state shows month
+      assert html =~ "30 days"  # String.capitalize("30 days") = "30 days"
+      
+      # Change to "Last Year" by interacting with the form
+      view |> form("form", %{"period" => "year"}) |> render_change()
       updated_html = render(view)
       
-      # Period card should update to "365 days"
+      # Period card should update to "365 days" 
       assert updated_html =~ "365 days"
+      refute updated_html =~ "30 days"  # Should no longer show month
       
       # Should show flash message
       assert updated_html =~ "Time period changed to year"
@@ -121,7 +129,7 @@ defmodule EhsEnforcementWeb.DashboardPeriodDropdownTest do
       {:ok, view, _html} = live(conn, "/dashboard")
       
       # Change to year period
-      render_change(view, "change_time_period", %{"period" => "year"})
+      view |> form("form", %{"period" => "year"}) |> render_change()
       
       # Click search recent cases button
       assert_navigation_redirect(view, "search_cases", fn path ->
@@ -134,7 +142,7 @@ defmodule EhsEnforcementWeb.DashboardPeriodDropdownTest do
       {:ok, view, _html} = live(conn, "/dashboard")
       
       # Change to week period
-      render_change(view, "change_time_period", %{"period" => "week"})
+      view |> form("form", %{"period" => "week"}) |> render_change()
       
       # Click browse recent cases button
       render_click(view, "browse_recent_cases")
@@ -154,7 +162,7 @@ defmodule EhsEnforcementWeb.DashboardPeriodDropdownTest do
       {:ok, view, _html} = live(conn, "/dashboard")
       
       # Change to year period
-      render_change(view, "change_time_period", %{"period" => "year"})
+      view |> form("form", %{"period" => "year"}) |> render_change()
       year_html = render(view)
       assert year_html =~ "365 days"
       
@@ -178,13 +186,19 @@ defmodule EhsEnforcementWeb.DashboardPeriodDropdownTest do
       render_click(view, event)
       flunk("Expected redirect but LiveView did not redirect")
     rescue
-      error in Phoenix.LiveViewTest.LiveViewError ->
-        case error do
-          %{message: "LiveView redirected with " <> redirect_info} ->
+      error ->
+        case Exception.message(error) do
+          "LiveView redirected with " <> redirect_info ->
             path = extract_path_from_redirect(redirect_info)
             assertion_fn.(path)
-          _ -> 
-            reraise error, __STACKTRACE__
+          message ->
+            if String.contains?(message, "redirect") do
+              # Try to extract path from different redirect message formats
+              path = extract_path_from_redirect(message)
+              assertion_fn.(path)
+            else
+              reraise error, __STACKTRACE__
+            end
         end
     end
   end
