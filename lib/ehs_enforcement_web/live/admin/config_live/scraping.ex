@@ -2,12 +2,34 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   @moduledoc """
   Admin interface for scraping configuration management.
   
-  Features:
-  - Edit active scraping configuration
-  - Create new configuration profiles
-  - Activate/deactivate configurations
-  - Real-time validation and preview
-  - Feature flag management
+  Provides comprehensive management of HSE scraping configurations including
+  rate limiting, feature flags, scheduling, and error handling thresholds.
+  Administrators can:
+  
+  - Edit the active scraping configuration parameters
+  - Create new configuration profiles with different settings
+  - Activate/deactivate configurations as needed
+  - Preview configuration changes with calculated impact
+  - Manage feature flags (manual scraping, scheduled scraping, etc.)
+  - Configure rate limiting and error handling thresholds
+  
+  ## Routes
+  
+  - `GET /admin/config/scraping` - Edit active configuration
+  - `GET /admin/config/scraping/new` - Create new configuration
+  
+  ## Configuration Parameters
+  
+  - **Rate Limiting**: requests per minute, pause between pages
+  - **Timeouts**: network timeout, consecutive error thresholds  
+  - **Batch Processing**: batch size, max pages per session
+  - **Feature Flags**: manual/scheduled scraping, real-time progress
+  - **Scheduling**: cron expressions for automated scraping
+  
+  ## Authentication
+  
+  Requires admin authentication for configuration modifications.
+  Reads are allowed without authentication for system functionality.
   """
   
   use EhsEnforcementWeb, :live_view
@@ -20,6 +42,27 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   
   # LiveView callbacks
   
+  @doc """
+  Mounts the scraping configuration management page.
+  
+  Initializes the page with configuration state and loads all available
+  scraping configurations. Sets up form state for potential editing/creation
+  operations.
+  
+  ## Socket Assigns
+  
+  - `active_config` - Currently active configuration (if any)
+  - `all_configs` - List of all available configurations
+  - `form` - AshPhoenix form for configuration editing
+  - `editing/creating` - Boolean flags for current mode
+  - `loading` - Loading state for UI feedback
+  - `preview_data` - Real-time preview of configuration impact
+  
+  ## Returns
+  
+  - `{:ok, socket}` with initialized state and loaded configurations
+  - Falls back to unauthenticated reads if current_user is nil
+  """
   @impl true
   def mount(_params, _session, socket) do
     socket = assign(socket,
@@ -43,12 +86,59 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
     )
     
     if connected?(socket) do
-      load_scraping_configurations(socket)
+      # Load configurations synchronously - it's a simple read operation
+      try do
+        actor = socket.assigns[:current_user]
+        
+        {:ok, all_configs} = if actor do
+          Ash.read(ScrapingConfig, actor: actor)
+        else
+          Ash.read(ScrapingConfig)
+        end
+        
+        # Find active configuration
+        active_config = Enum.find(all_configs, & &1.is_active)
+        
+        socket = assign(socket,
+          active_config: active_config,
+          all_configs: all_configs,
+          loading: false,
+          errors: []
+        )
+        
+        {:ok, socket}
+      rescue
+        error ->
+          Logger.error("Failed to load scraping configurations: #{inspect(error)}")
+          socket = assign(socket,
+            loading: false,
+            errors: ["Failed to load configuration data"]
+          )
+          {:ok, socket}
+      end
     else
       {:ok, socket}
     end
   end
   
+  @doc """
+  Handles URL parameter changes to switch between edit/create modes.
+  
+  Responds to different actions in the URL parameters:
+  - `action=new` - Enters creation mode with fresh form
+  - `action=edit` - Enters editing mode for active configuration
+  - No action - Displays configuration overview
+  
+  ## Parameters
+  
+  - `params` - URL parameters containing action
+  - `_uri` - Full URI (unused)
+  - `socket` - Current socket state
+  
+  ## Returns
+  
+  - `{:noreply, socket}` with updated mode and form state
+  """
   @impl true
   def handle_params(params, _uri, socket) do
     case params do
@@ -84,6 +174,21 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
     {:noreply, socket}
   end
   
+  @doc """
+  Validates configuration parameters in real-time as user types.
+  
+  Provides immediate feedback on form validation and generates preview
+  data showing the calculated impact of the configuration changes.
+  
+  ## Parameters
+  
+  - `config_params` - Form parameters from user input
+  - `socket` - Current socket state with form
+  
+  ## Returns
+  
+  - `{:noreply, socket}` with updated form errors and preview data
+  """
   @impl true
   def handle_event("validate", %{"scraping_config" => config_params}, socket) do
     form = Form.validate(socket.assigns.form, config_params, errors: true)
@@ -205,8 +310,14 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   defp load_scraping_configurations(socket) do
     Task.start_link(fn ->
       try do
-        # Load all configurations
-        {:ok, all_configs} = Ash.read(ScrapingConfig, actor: socket.assigns.current_user)
+        # Load all configurations - handle case where current_user might be nil
+        actor = socket.assigns[:current_user]
+        
+        {:ok, all_configs} = if actor do
+          Ash.read(ScrapingConfig, actor: actor)
+        else
+          Ash.read(ScrapingConfig)
+        end
         
         # Find active configuration
         active_config = Enum.find(all_configs, & &1.is_active)
@@ -246,9 +357,10 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   
   defp refresh_configurations(socket) do
     load_scraping_configurations(socket)
-    socket
   end
   
+  # Generates real-time preview data for configuration parameters.
+  # Calculates rate limiting delays, requests per hour, and feature flag summaries.
   defp generate_preview_data(config_params) do
     %{
       rate_limit_delay: calculate_rate_limit_delay(config_params),

@@ -1,11 +1,23 @@
 defmodule EhsEnforcementWeb.Admin.ConfigLive.Index do
   @moduledoc """
-  Admin interface for configuration management overview.
+  Admin configuration management overview page.
   
-  Provides navigation to different configuration sections:
-  - Scraping configuration
-  - Feature flags overview
-  - System settings
+  Displays all scraping configurations with their current status and provides
+  navigation to detailed configuration management. Administrators can:
+  
+  - View all scraping configurations and their active status
+  - Navigate to scraping configuration editor
+  - Create default configurations if none exist
+  - See feature flag summaries for each configuration
+  
+  ## Routes
+  
+  - `GET /admin/config` - Configuration overview page
+  
+  ## Authentication
+  
+  Requires admin authentication. Uses `current_user` from socket assigns
+  for authorization of configuration access.
   """
   
   use EhsEnforcementWeb, :live_view
@@ -18,15 +30,47 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Index do
   
   # LiveView callbacks
   
+  @doc """
+  Mounts the configuration overview page.
+  
+  Loads all scraping configurations synchronously and displays their status.
+  Handles cases where current_user might be nil by falling back to
+  unauthenticated reads.
+  
+  ## Returns
+  
+  - `{:ok, socket}` with loaded configurations and loading state cleared
+  - Sets `errors` if configuration loading fails
+  """
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
-      load_configuration_overview(socket)
+      # Load configurations synchronously - it's a simple read operation
+      try do
+        actor = socket.assigns[:current_user]
+        
+        {:ok, configs} = if actor do
+          Ash.read(ScrapingConfig, actor: actor)
+        else
+          Ash.read(ScrapingConfig)
+        end
+        
+        {:ok, assign(socket, loading: false, configs: configs, errors: [])}
+      rescue
+        error ->
+          Logger.error("Failed to load configuration overview: #{inspect(error)}")
+          {:ok, assign(socket, loading: false, configs: [], errors: ["Failed to load configurations"])}
+      end
     else
       {:ok, assign(socket, loading: true, configs: [], errors: [])}
     end
   end
   
+  @doc """
+  Navigates to the scraping configuration editor.
+  
+  Uses `push_navigate/2` for client-side navigation without page reload.
+  """
   @impl true
   def handle_event("navigate_to_scraping", _params, socket) do
     {:noreply, push_navigate(socket, to: ~p"/admin/config/scraping")}
@@ -75,8 +119,14 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Index do
   defp load_configuration_overview(socket) do
     Task.start_link(fn ->
       try do
-        # Load all scraping configurations
-        {:ok, configs} = Ash.read(ScrapingConfig, actor: socket.assigns.current_user)
+        # Load all scraping configurations - handle case where current_user might be nil
+        actor = socket.assigns[:current_user]
+        
+        {:ok, configs} = if actor do
+          Ash.read(ScrapingConfig, actor: actor)
+        else
+          Ash.read(ScrapingConfig)
+        end
         
         send(self(), {:config_data_loaded, %{configs: configs}})
         
