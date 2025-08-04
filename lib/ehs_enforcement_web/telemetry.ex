@@ -116,19 +116,20 @@ defmodule EhsEnforcementWeb.Telemetry do
   end
 
   def dispatch_memory_metrics do
-    :telemetry.execute([:vm, :memory], :erlang.memory())
+    memory_data = :erlang.memory() |> Enum.into(%{})
+    :telemetry.execute([:vm, :memory], memory_data, %{})
   end
 
   def dispatch_application_metrics do
     # Dispatch custom application metrics
     case EhsEnforcement.Repo.query("SELECT 1", []) do
       {:ok, _} ->
-        :telemetry.execute([:ehs_enforcement, :database], %{connected: 1})
+        :telemetry.execute([:ehs_enforcement, :database], %{connected: 1}, %{})
       {:error, _} ->
-        :telemetry.execute([:ehs_enforcement, :database], %{connected: 0})
+        :telemetry.execute([:ehs_enforcement, :database], %{connected: 0}, %{})
     end
   rescue
     _ ->
-      :telemetry.execute([:ehs_enforcement, :database], %{connected: 0})
+      :telemetry.execute([:ehs_enforcement, :database], %{connected: 0}, %{})
   end
 end

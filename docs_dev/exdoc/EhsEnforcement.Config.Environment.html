@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>EhsEnforcement.Config.Environment — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-4C488ADB.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">EhsEnforcement.Config.Environment</span> 
+      <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
+
+    </h1>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Environment variable management and documentation.</p><p>Handles loading, validation, and documentation of all environment
+variables used by the EHS Enforcement application.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#check_missing_required/0" data-no-tooltip="" translate="no">check_missing_required()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Checks for missing required environment variables.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#detect_environment/0" data-no-tooltip="" translate="no">detect_environment()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Detects the current environment.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#export_template/1" data-no-tooltip="" translate="no">export_template(atom)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Exports environment variable template in specified format.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_environment_documentation/0" data-no-tooltip="" translate="no">get_environment_documentation()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Generates comprehensive documentation for all environment variables.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_optional_vars/0" data-no-tooltip="" translate="no">get_optional_vars()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns list of all optional environment variables with defaults.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_required_vars/0" data-no-tooltip="" translate="no">get_required_vars()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns list of all required environment variables with descriptions.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_validation_rules/1" data-no-tooltip="" translate="no">get_validation_rules(arg1)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Returns validation rules for the specified environment.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#load_from_file/1" data-no-tooltip="" translate="no">load_from_file(file_path)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Loads environment variables from a .env file.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#validate_var/2" data-no-tooltip="" translate="no">validate_var(var_name, value)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Validates an environment variable value.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="check_missing_required/0">
+
+  <div class="detail-header">
+    <a href="#check_missing_required/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">check_missing_required()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Checks for missing required environment variables.</p>
+  </section>
+</section>
+<section class="detail" id="detect_environment/0">
+
+  <div class="detail-header">
+    <a href="#detect_environment/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">detect_environment()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Detects the current environment.</p>
+  </section>
+</section>
+<section class="detail" id="export_template/1">
+
+  <div class="detail-header">
+    <a href="#export_template/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">export_template(atom)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Exports environment variable template in specified format.</p>
+  </section>
+</section>
+<section class="detail" id="get_environment_documentation/0">
+
+  <div class="detail-header">
+    <a href="#get_environment_documentation/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_environment_documentation()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Generates comprehensive documentation for all environment variables.</p>
+  </section>
+</section>
+<section class="detail" id="get_optional_vars/0">
+
+  <div class="detail-header">
+    <a href="#get_optional_vars/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_optional_vars()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Returns list of all optional environment variables with defaults.</p>
+  </section>
+</section>
+<section class="detail" id="get_required_vars/0">
+
+  <div class="detail-header">
+    <a href="#get_required_vars/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_required_vars()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Returns list of all required environment variables with descriptions.</p>
+  </section>
+</section>
+<section class="detail" id="get_validation_rules/1">
+
+  <div class="detail-header">
+    <a href="#get_validation_rules/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_validation_rules(arg1)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Returns validation rules for the specified environment.</p>
+  </section>
+</section>
+<section class="detail" id="load_from_file/1">
+
+  <div class="detail-header">
+    <a href="#load_from_file/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">load_from_file(file_path)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Loads environment variables from a .env file.</p>
+  </section>
+</section>
+<section class="detail" id="validate_var/2">
+
+  <div class="detail-header">
+    <a href="#validate_var/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validate_var(var_name, value)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Validates an environment variable value.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

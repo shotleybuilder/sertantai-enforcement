@@ -20,16 +20,17 @@ defmodule EhsEnforcement.Release do
   def migrate_ash do
     load_app()
     
-    # Get all Ash domains and run their migrations
-    domains = Application.fetch_env!(@app, :ash_domains)
-    
-    for domain <- domains do
-      try do
-        Ash.DataLayer.migrate(domain, :up)
-      rescue
-        # Some domains might not have migrations, continue silently
-        _ -> :ok
-      end
+    # Run Ash migrations using the mix task functionality
+    try do
+      Mix.Tasks.Ash.Migrate.run([])
+    rescue
+      # If Mix.Tasks.Ash.Migrate is not available, skip silently
+      UndefinedFunctionError -> 
+        IO.puts("Ash migrate task not available, skipping Ash migrations...")
+        :ok
+      error -> 
+        IO.puts("Error running Ash migrations: #{inspect(error)}")
+        :ok
     end
   end
 

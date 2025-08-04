@@ -14,7 +14,6 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   
   require Logger
   require Ash.Query
-  import Ash.Expr
   
   alias EhsEnforcement.Configuration.ScrapingConfig
   alias AshPhoenix.Form

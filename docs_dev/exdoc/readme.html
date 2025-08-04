@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>EHS Enforcement — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-4C488ADB.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>EHS Enforcement</h1>
+
+
+  </div>
+
+
+<p>UK enforcement agency activity data collection and publishing system for Airtable integration.</p><h2 id="quick-start" class="section-heading"><a href="#quick-start" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Quick Start</span></h2><h3 id="database-setup-required" class="section-heading"><a href="#database-setup-required" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Database Setup (Required)</span></h3><p><strong>First time setup:</strong> See <a href="./README_DATABASE.md">Database Setup Guide</a> for PostgreSQL configuration.</p><p><strong>Quick start after setup:</strong></p><pre><code class="makeup bash" translate="no"><span class="">ehs-dev       # Start server
+</span><span class="">ehs-dev iex   # Start in interactive mode
+</span></code></pre><h3 id="manual-start" class="section-heading"><a href="#manual-start" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Manual Start</span></h3><p>To start your Phoenix server:</p><ul><li>Start PostgreSQL: <code class="inline">docker-compose up -d postgres</code></li><li>Run <code class="inline">mix setup</code> to install and setup dependencies</li><li>Start Phoenix endpoint with <a href="https://hexdocs.pm/phoenix/1.7.21/Mix.Tasks.Phx.Server.html"><code class="inline">mix phx.server</code></a> or inside IEx with <code class="inline">iex -S mix phx.server</code></li></ul><p>Now you can visit <a href="http://localhost:4000"><code class="inline">localhost:4000</code></a> from your browser.</p><h2 id="testing-hse-scrapers" class="section-heading"><a href="#testing-hse-scrapers" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Testing HSE Scrapers</span></h2><p>Once database is running, test in iex:</p><pre><code class="makeup elixir" translate="no"><span class="c1"># Test HSE Notices</span><span class="w">
+</span><span class="nc">EhsEnforcement.Agencies.Hse.Notices</span><span class="o">.</span><span class="n">api_get_hse_notices</span><span class="p" data-group-id="3356946632-1">(</span><span class="p" data-group-id="3356946632-2">[</span><span class="ss">pages</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p" data-group-id="3356946632-2">]</span><span class="p" data-group-id="3356946632-1">)</span><span class="w">
+
+</span><span class="c1"># Test HSE Cases</span><span class="w">
+</span><span class="nc">EhsEnforcement.Agencies.Hse.Cases</span><span class="o">.</span><span class="n">api_get_hse_cases</span><span class="p" data-group-id="3356946632-3">(</span><span class="p" data-group-id="3356946632-4">[</span><span class="ss">pages</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p" data-group-id="3356946632-4">]</span><span class="p" data-group-id="3356946632-3">)</span></code></pre><h2 id="documentation" class="section-heading"><a href="#documentation" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Documentation</span></h2><ul><li><a href="./docs/IMPLEMENTATION_PLAN.md">Implementation Plan</a></li><li><a href="./docs/AIRTABLE_CLIENT_REFACTOR.md">Airtable Client Refactor</a></li><li><a href="./README_DATABASE.md">Database Setup</a></li></ul><h2 id="learn-more" class="section-heading"><a href="#learn-more" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Learn more</span></h2><ul><li>Official website: <a href="https://www.phoenixframework.org/">https://www.phoenixframework.org/</a></li><li>Guides: <a href="https://hexdocs.pm/phoenix/overview.html">https://hexdocs.pm/phoenix/overview.html</a></li><li>Docs: <a href="https://hexdocs.pm/phoenix">https://hexdocs.pm/phoenix</a></li><li>Forum: <a href="https://elixirforum.com/c/phoenix-forum">https://elixirforum.com/c/phoenix-forum</a></li><li>Source: <a href="https://github.com/phoenixframework/phoenix">https://github.com/phoenixframework/phoenix</a></li></ul>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+  </div>
+  <div class="bottom-actions-item">
+
+  </div>
+</div>
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

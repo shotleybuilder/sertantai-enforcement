@@ -9,7 +9,41 @@ defmodule EhsEnforcement.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      
+      # ExDoc configuration
+      docs: [
+        main: "EhsEnforcement",
+        output: "docs_dev/exdoc",
+        extras: ["README.md"],
+        groups_for_modules: [
+          "Enforcement Domain": [
+            ~r/EhsEnforcement.Enforcement/
+          ],
+          "Scraping System": [
+            ~r/EhsEnforcement.Scraping/,
+            ~r/EhsEnforcement.Agencies/
+          ],
+          "Integration & Sync": [
+            ~r/EhsEnforcement.Integrations/,
+            ~r/EhsEnforcement.Sync/
+          ],
+          "Configuration": [
+            ~r/EhsEnforcement.Configuration/
+          ],
+          "Web Interface": [
+            ~r/EhsEnforcementWeb/
+          ],
+          "Authentication": [
+            ~r/EhsEnforcement.Accounts/
+          ],
+          "Utilities": [
+            ~r/EhsEnforcement.Logger/,
+            ~r/EhsEnforcement.Telemetry/,
+            ~r/EhsEnforcement.Utility/
+          ]
+        ]
+      ]
     ]
   end
 
@@ -87,7 +121,9 @@ defmodule EhsEnforcement.MixProject do
       {:ash_oban, "~> 0.2"},
       {:oban, "~> 2.17"},
       # Event tracking for Ash
-      {:ash_events, "~> 0.1"}
+      {:ash_events, "~> 0.1"},
+      # Documentation generation
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false}
     ]
   end
 

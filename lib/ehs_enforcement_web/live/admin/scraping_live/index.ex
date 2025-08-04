@@ -19,11 +19,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   
   require Logger
   require Ash.Query
-  import Ash.Expr
   
   alias EhsEnforcement.Enforcement.Case
   alias EhsEnforcement.Enforcement
-  alias EhsEnforcement.Agencies.Agency
   
   # LiveView Callbacks
   
@@ -54,7 +52,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
     )
     
     if connected?(socket) do
-      load_scraping_data(socket)
+      socket = load_scraping_data(socket)
+      {:ok, socket}
     else
       {:ok, socket}
     end
@@ -109,11 +108,29 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   
   @impl true
   def handle_info({:scraping_data_loaded, data}, socket) do
-    socket = assign(socket,
-      scraping_sessions: data.sessions,
-      system_metrics: data.metrics,
-      loading: false
-    )
+    # Handle both sessions and cases data loading
+    socket = socket
+    |> assign(loading: false)
+    |> then(fn socket ->
+      if Map.has_key?(data, :sessions) do
+        assign(socket,
+          scraping_sessions: data.sessions,
+          system_metrics: data.metrics
+        )
+      else
+        socket
+      end
+    end)
+    |> then(fn socket ->
+      if Map.has_key?(data, :recent_cases) do
+        assign(socket,
+          recent_cases: data.recent_cases,
+          case_stats: data.case_stats
+        )
+      else
+        socket
+      end
+    end)
     
     {:noreply, socket}
   end
@@ -139,13 +156,12 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   defp load_scraping_data(socket) do
     Task.start_link(fn ->
       try do
-        # Load recent cases using code interface
-        recent_cases = Enforcement.list_cases!(
-          sort: [inserted_at: :desc],
-          limit: 20,
-          load: [:agency, :offender],
-          actor: socket.assigns.current_user
-        )
+        # Load recent cases using proper Ash query syntax
+        recent_cases = Case
+        |> Ash.Query.sort(inserted_at: :desc)
+        |> Ash.Query.limit(20)
+        |> Ash.Query.load([:agency, :offender])
+        |> Ash.read!(actor: socket.assigns.current_user)
         
         # Calculate statistics from actual case data
         stats = calculate_case_statistics(recent_cases, socket.assigns.date_range)
@@ -177,7 +193,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
         # Apply agency filter if not "all"
         cases_query = if agency_filter != "all" do
           agency_atom = String.to_atom(agency_filter)
-          Ash.Query.filter(cases_query, agency_code == ^agency_atom)
+          Ash.Query.filter(cases_query, agency.code == ^agency_atom)
         else
           cases_query
         end
@@ -185,12 +201,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
         # Apply date range filter
         cases_query = apply_date_filter(cases_query, socket.assigns.date_range)
         
-        filtered_cases = Enforcement.list_cases!(
-          sort: [inserted_at: :desc],
-          limit: 20,
-          load: [:agency, :offender],
-          actor: socket.assigns.current_user
-        )
+        filtered_cases = Ash.read!(cases_query, actor: socket.assigns.current_user)
         stats = calculate_case_statistics(filtered_cases, socket.assigns.date_range)
         
         send(self(), {:filtered_cases_loaded, %{
@@ -206,15 +217,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
     end)
     
     socket
-  end
-  
-  defp build_cases_query(date_range) do
-    query = Case
-    |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.Query.limit(100)
-    |> Ash.Query.load([:agency, :offender])
-    
-    apply_date_filter(query, date_range)
   end
   
   defp apply_date_filter(query, date_range) do
@@ -240,7 +242,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
     total_cases = length(cases)
     
     # Count cases by agency
-    hse_cases_count = Enum.count(cases, fn case -> case.agency_code == :hse end)
+    hse_cases_count = Enum.count(cases, fn case -> case.agency.code == :hse end)
     
     # Calculate recent activity based on date range
     recent_cases_count = case date_range do
@@ -275,22 +277,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   
   # Update message handlers for proper Ash data loading
   
-  @impl true
-  def handle_info({:scraping_data_loaded, data}, socket) do
-    socket = assign(socket,
-      recent_cases: data.recent_cases,
-      case_stats: data.case_stats,
-      loading: false
-    )
-    
-    {:noreply, socket}
-  end
-  
-  @impl true
-  def handle_info({:scraping_data_error, _error}, socket) do
-    socket = assign(socket, loading: false)
-    {:noreply, put_flash(socket, :error, "Failed to load case data")}
-  end
   
   @impl true
   def handle_info({:filtered_cases_loaded, data}, socket) do
@@ -306,27 +292,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   defp format_datetime(nil), do: "N/A"
   defp format_datetime(datetime) do
     Calendar.strftime(datetime, "%Y-%m-%d %H:%M:%S")
-  end
-  
-  defp format_currency(nil), do: "N/A"
-  defp format_currency(amount) when is_struct(amount, Decimal) do
-    "£" <> Decimal.to_string(amount, :normal)
-  end
-  
-  defp truncate_text(nil, _length), do: ""
-  defp truncate_text(text, length) when byte_size(text) <= length, do: text
-  defp truncate_text(text, length) do
-    String.slice(text, 0, length) <> "..."
-  end
-  
-  defp case_status_badge(case) do
-    # Simple status based on data completeness
-    cond do
-      is_nil(case.offence_result) -> {"Draft", "bg-gray-100 text-gray-800"}
-      case.offence_result == "Convicted" -> {"Convicted", "bg-red-100 text-red-800"}
-      case.offence_result == "Fined" -> {"Fined", "bg-yellow-100 text-yellow-800"}
-      true -> {"Complete", "bg-green-100 text-green-800"}
-    end
   end
   
   defp agency_name(agency_code) do

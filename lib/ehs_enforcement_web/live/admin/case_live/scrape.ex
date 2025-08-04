@@ -14,7 +14,6 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   
   require Logger
   require Ash.Query
-  import Ash.Expr
   
   alias EhsEnforcement.Scraping.ScrapeCoordinator
   alias EhsEnforcement.Scraping.ScrapeRequest

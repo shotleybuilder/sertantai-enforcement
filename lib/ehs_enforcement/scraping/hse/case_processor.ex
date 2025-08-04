@@ -11,11 +11,9 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
   
   require Logger
   require Ash.Query
-  import Ash.Expr
   
   alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
   alias EhsEnforcement.Enforcement
-  alias EhsEnforcement.Sync.OffenderMatcher
   
   @hse_agency_code :hse
   

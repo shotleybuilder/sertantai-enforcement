@@ -1,0 +1,189 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'lib/**'           # Any changes in lib/ directory
+      - 'mix.exs'          # Dependency or config changes
+      - 'README.md'        # README changes affect ExDoc
+      - '.github/workflows/docs.yml'  # Workflow changes
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'lib/**'
+      - 'mix.exs'
+      - 'README.md'
+      - '.github/workflows/docs.yml'
+
+jobs:
+  # Check if ExDoc regeneration is needed
+  check-docs-needed:
+    runs-on: ubuntu-latest
+    outputs:
+      docs-needed: ${{ steps.changes.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history to check changes
+      
+      - name: Check for documentation-relevant changes
+        id: changes
+        run: |
+          # Get list of changed files
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+          else
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }})
+          fi
+          
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          # Check if any changed files should trigger ExDoc regeneration
+          DOCS_NEEDED=false
+          for file in $CHANGED_FILES; do
+            if [[ $file =~ ^lib/ ]] || [[ $file == "mix.exs" ]] || [[ $file == "README.md" ]]; then
+              echo "Documentation trigger found: $file"
+              DOCS_NEEDED=true
+              break
+            fi
+          done
+          
+          echo "docs=$DOCS_NEEDED" >> $GITHUB_OUTPUT
+          echo "Documentation regeneration needed: $DOCS_NEEDED"
+
+  # Generate ExDoc documentation
+  generate-exdoc:
+    runs-on: ubuntu-latest
+    needs: check-docs-needed
+    if: needs.check-docs-needed.outputs.docs-needed == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '26.0'
+          
+      - name: Restore dependencies cache
+        uses: actions/cache@v3
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+          
+      - name: Install dependencies
+        run: mix deps.get
+        
+      - name: Generate ExDoc
+        run: |
+          echo "Generating ExDoc documentation..."
+          mix docs
+          echo "ExDoc generation completed"
+        
+      - name: Check for documentation changes
+        id: doc-changes
+        run: |
+          if [ -n "$(git status --porcelain docs_dev/exdoc)" ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "Documentation files were updated"
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "No changes in generated documentation"
+          fi
+        
+      - name: Commit updated documentation
+        if: steps.doc-changes.outputs.changes == 'true' && github.event_name == 'push'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs_dev/exdoc/
+          git commit -m "docs: update ExDoc documentation
+
+Generated from commit ${{ github.sha }}
+Triggered by changes to source code
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+          git push
+        
+      - name: Comment on PR with documentation status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('📚 ExDoc Documentation')
+            );
+            
+            const changesDetected = '${{ steps.doc-changes.outputs.changes }}' === 'true';
+            const status = changesDetected ? 
+              '✅ Documentation has been regenerated and is up to date' : 
+              'ℹ️ No changes needed in generated documentation';
+            
+            const body = `📚 **ExDoc Documentation Status**
+
+${status}
+
+The ExDoc API documentation has been checked and ${changesDetected ? 'updated' : 'confirmed current'} based on the changes in this PR.
+
+Generated documentation includes:
+- Module documentation from \`@moduledoc\` attributes
+- Function documentation from \`@doc\` attributes  
+- Type specifications from \`@spec\` attributes
+- Cross-referenced links between modules
+
+<details>
+<summary>View generated documentation files</summary>
+
+\`\`\`
+docs_dev/exdoc/index.html          # Main entry point
+docs_dev/exdoc/api-reference.html  # Complete API reference
+docs_dev/exdoc/search.html         # Documentation search
+\`\`\`
+
+</details>`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+  # Skip documentation generation with informative message
+  skip-docs-generation:
+    runs-on: ubuntu-latest
+    needs: check-docs-needed
+    if: needs.check-docs-needed.outputs.docs-needed == 'false'
+    steps:
+      - name: Log skip reason
+        run: |
+          echo "Skipping ExDoc generation - no relevant file changes detected"
+          echo "ExDoc regeneration is triggered by changes to:"
+          echo "  - lib/ directory (source code)"
+          echo "  - mix.exs (dependencies/configuration)"
+          echo "  - README.md (included in documentation)"
+          echo ""
+          echo "Other file changes don't require documentation updates."

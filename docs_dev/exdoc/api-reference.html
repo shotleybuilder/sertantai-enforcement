@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>API Reference — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-4C488ADB.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>API Reference <small class="app-vsn">ehs_enforcement v#0.1.0</small></h1>
+
+  </div>
+
+    <section class="details-list">
+      <h2 id="modules" class="section-heading">Modules</h2>
+      <div class="summary">
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.html" translate="no">EhsEnforcement</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>EhsEnforcement keeps the contexts that define your domain
+and business logic.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Accounts.html" translate="no">EhsEnforcement.Accounts</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Accounts domain handles user authentication and authorization.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Accounts.Token.html" translate="no">EhsEnforcement.Accounts.Token</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Token resource for Ash Authentication.
+Stores authentication tokens and session management.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Accounts.User.html" translate="no">EhsEnforcement.Accounts.User</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>User resource with GitHub OAuth authentication and admin privilege management.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Accounts.UserIdentity.html" translate="no">EhsEnforcement.Accounts.UserIdentity</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>UserIdentity resource for OAuth provider identities using Ash Authentication.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Hse.Breaches.html" translate="no">EhsEnforcement.Agencies.Hse.Breaches</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>HSE breaches processing module.
+Handles parsing and linking of HSE breach data to legislation records.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Hse.CaseScraper.html" translate="no">EhsEnforcement.Agencies.Hse.CaseScraper</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>HSE case scraper module.
+Handles scraping of HSE court case data from the HSE website.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Hse.Cases.html" translate="no">EhsEnforcement.Agencies.Hse.Cases</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>HSE court cases processing module.
+Handles fetching, processing, and storing HSE court case data.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Hse.Cases.HSECase.html" translate="no">EhsEnforcement.Agencies.Hse.Cases.HSECase</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Hse.Common.html" translate="no">EhsEnforcement.Agencies.Hse.Common</a>
+
+  </div>
+
+    <div class="summary-synopsis"></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Hse.NoticeScraper.html" translate="no">EhsEnforcement.Agencies.Hse.NoticeScraper</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>HSE notice scraper module.
+Handles scraping of HSE enforcement notice data from the HSE website.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Hse.Notices.html" translate="no">EhsEnforcement.Agencies.Hse.Notices</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>HSE notices processing module.
+Handles fetching, processing, and storing HSE enforcement notice data.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Hse.Notices.HSENotice.html" translate="no">EhsEnforcement.Agencies.Hse.Notices.HSENotice</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Config.ConfigManager.html" translate="no">EhsEnforcement.Config.ConfigManager</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Centralized configuration management system.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Config.Environment.html" translate="no">EhsEnforcement.Config.Environment</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Environment variable management and documentation.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Config.FeatureFlags.html" translate="no">EhsEnforcement.Config.FeatureFlags</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Dynamic feature flag system for the EHS Enforcement application.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Config.Settings.html" translate="no">EhsEnforcement.Config.Settings</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Central configuration management for the EHS Enforcement application.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Config.Validator.html" translate="no">EhsEnforcement.Config.Validator</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Configuration validation for application startup and runtime.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Configuration.html" translate="no">EhsEnforcement.Configuration</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Domain for managing application configuration and settings.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Configuration.ScrapingConfig.html" translate="no">EhsEnforcement.Configuration.ScrapingConfig</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Configuration resource for HSE case scraping operations.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Configuration.Validations.html" translate="no">EhsEnforcement.Configuration.Validations</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Custom validation functions for configuration resources.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.html" translate="no">EhsEnforcement.Enforcement</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Enforcement domain for managing enforcement agencies, cases, notices, and related entities.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Agency.html" translate="no">EhsEnforcement.Enforcement.Agency</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents an enforcement agency (HSE, ONR, ORR, EA, etc.)</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Breach.html" translate="no">EhsEnforcement.Enforcement.Breach</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a specific breach of legislation associated with a case.
+Normalized from the breaches text in cases.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Case.html" translate="no">EhsEnforcement.Enforcement.Case</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents an enforcement case (court case) against an offender.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Case.AshOban.Scheduler.ScheduledScrapeHse.html" translate="no">EhsEnforcement.Enforcement.Case.AshOban.Scheduler.ScheduledScrapeHse</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Case.AshOban.Scheduler.WeeklyScrapeDeep.html" translate="no">EhsEnforcement.Enforcement.Case.AshOban.Scheduler.WeeklyScrapeDeep</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Case.AshOban.Worker.ScheduledScrapeHse.html" translate="no">EhsEnforcement.Enforcement.Case.AshOban.Worker.ScheduledScrapeHse</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Case.AshOban.Worker.WeeklyScrapeDeep.html" translate="no">EhsEnforcement.Enforcement.Case.AshOban.Worker.WeeklyScrapeDeep</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Notice.html" translate="no">EhsEnforcement.Enforcement.Notice</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents an enforcement notice issued to an offender.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Offender.html" translate="no">EhsEnforcement.Enforcement.Offender</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a company or individual subject to enforcement action.
+Normalized to eliminate duplication between cases and notices.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.RecentActivity.html" translate="no">EhsEnforcement.Enforcement.RecentActivity</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Context for fetching and managing recent enforcement activity data.
+Combines court cases and enforcement notices for Recent Activity table.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.ErrorHandler.html" translate="no">EhsEnforcement.ErrorHandler</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Comprehensive error handling system for the EHS Enforcement application.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.ErrorHandler.DuplicateError.html" translate="no">EhsEnforcement.ErrorHandler.DuplicateError</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.ErrorHandler.SyncError.html" translate="no">EhsEnforcement.ErrorHandler.SyncError</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Events.html" translate="no">EhsEnforcement.Events</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Domain for event tracking and audit trail functionality.
+Handles automatic logging of enforcement data changes for compliance and debugging.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Events.ClearAllRecords.html" translate="no">EhsEnforcement.Events.ClearAllRecords</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Implementation for clearing all records before event replay.
+This ensures a clean state when rebuilding data from events.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Events.Event.html" translate="no">EhsEnforcement.Events.Event</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Centralized event log resource for tracking all enforcement data changes.
+Provides automatic audit trail and replay functionality for HSE case scraping operations.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.AirtableParams.html" translate="no">EhsEnforcement.Integrations.Airtable.AirtableParams</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.AtBases.html" translate="no">EhsEnforcement.Integrations.Airtable.AtBases</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.AtBasesLegl.html" translate="no">EhsEnforcement.Integrations.Airtable.AtBasesLegl</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.AtBasesTables.html" translate="no">EhsEnforcement.Integrations.Airtable.AtBasesTables</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.AtFields.html" translate="no">EhsEnforcement.Integrations.Airtable.AtFields</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.AtFormulas.html" translate="no">EhsEnforcement.Integrations.Airtable.AtFormulas</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.AtTables.html" translate="no">EhsEnforcement.Integrations.Airtable.AtTables</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.AtViews.html" translate="no">EhsEnforcement.Integrations.Airtable.AtViews</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.Endpoint.html" translate="no">EhsEnforcement.Integrations.Airtable.Endpoint</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.Get.html" translate="no">EhsEnforcement.Integrations.Airtable.Get</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>High-level GET operations for Airtable records.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.Headers.html" translate="no">EhsEnforcement.Integrations.Airtable.Headers</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.Patch.html" translate="no">EhsEnforcement.Integrations.Airtable.Patch</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>High-level PATCH operations for updating Airtable records.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.Post.html" translate="no">EhsEnforcement.Integrations.Airtable.Post</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>High-level POST operations for creating Airtable records.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.Records.html" translate="no">EhsEnforcement.Integrations.Airtable.Records</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Functions for working on the records retrieved from Airtable.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.ReqClient.html" translate="no">EhsEnforcement.Integrations.Airtable.ReqClient</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Modern Req-based Airtable API client with rate limiting and error handling.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.UkAirtable.html" translate="no">EhsEnforcement.Integrations.Airtable.UkAirtable</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Integrations.Airtable.Url.html" translate="no">EhsEnforcement.Integrations.Airtable.Url</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Airtable standard api shape
+curl <a>https://api.airtable.com/v0/appq5OQW9bTHC1zO5/tblJW0DMpRs74CJux</a> -H &quot;Authorization: Bearer API_KEY&quot;</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Legislation.LegalRegister.html" translate="no">EhsEnforcement.Legislation.LegalRegister</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Legislation.Models.html" translate="no">EhsEnforcement.Legislation.Models</a>
+
+  </div>
+
+    <div class="summary-synopsis"></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Legislation.SClass.html" translate="no">EhsEnforcement.Legislation.SClass</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Legislation.Taxa.LATTaxa.html" translate="no">EhsEnforcement.Legislation.Taxa.LATTaxa</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module to generate taxa classes for sub-sections / sub-articles High level</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Legislation.Taxa.Options.html" translate="no">EhsEnforcement.Legislation.Taxa.Options</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Simplified options module for EHS enforcement taxa processing</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Legislation.TypeCode.html" translate="no">EhsEnforcement.Legislation.TypeCode</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Logger.html" translate="no">EhsEnforcement.Logger</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Structured logging system for the EHS Enforcement application.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Mailer.html" translate="no">EhsEnforcement.Mailer</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.PubSub.html" translate="no">EhsEnforcement.PubSub</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>PubSub wrapper module for Ash notifications.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Registry.html" translate="no">EhsEnforcement.Registry</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Registry stub for EHS Enforcement application.
+In Ash 3.x, resources are managed by domains, not registries.
+This module provides compatibility for tests.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Release.html" translate="no">EhsEnforcement.Release</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Used for executing DB release tasks when run in production without Mix
+installed.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Repo.html" translate="no">EhsEnforcement.Repo</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.RetryLogic.html" translate="no">EhsEnforcement.RetryLogic</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Comprehensive retry logic system with multiple backoff strategies,
+circuit breaker patterns, rate limiting, and performance monitoring.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.html" translate="no">EhsEnforcement.Scraping</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Scraping domain for managing HSE scraping operations.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.CaseProcessingLog.html" translate="no">EhsEnforcement.Scraping.CaseProcessingLog</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Ash resource for tracking detailed case processing events during scraping sessions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Hse.CaseProcessor.html" translate="no">EhsEnforcement.Scraping.Hse.CaseProcessor</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>HSE case processing pipeline - transforms scraped data for Ash resource creation.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Hse.CaseProcessor.ProcessedCase.html" translate="no">EhsEnforcement.Scraping.Hse.CaseProcessor.ProcessedCase</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Struct representing a case ready for Ash resource creation</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Hse.CaseScraper.html" translate="no">EhsEnforcement.Scraping.Hse.CaseScraper</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>HSE case scraping service - PostgreSQL-first implementation.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase.html" translate="no">EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Struct representing a scraped HSE case before processing</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Hse.NoticeProcessor.html" translate="no">EhsEnforcement.Scraping.Hse.NoticeProcessor</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>HSE notice processing pipeline - transforms scraped data for Ash resource creation.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Hse.NoticeProcessor.ProcessedNotice.html" translate="no">EhsEnforcement.Scraping.Hse.NoticeProcessor.ProcessedNotice</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Struct representing a notice ready for Ash resource creation</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.RateLimiter.html" translate="no">EhsEnforcement.Scraping.RateLimiter</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Rate limiting service for HSE scraping operations.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.ScrapeCoordinator.html" translate="no">EhsEnforcement.Scraping.ScrapeCoordinator</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Coordinates HSE case scraping operations with PostgreSQL persistence.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.ScrapeCoordinator.LegacyScrapeSession.html" translate="no">EhsEnforcement.Scraping.ScrapeCoordinator.LegacyScrapeSession</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Legacy scraping session struct - use Ash ScrapeSession resource instead</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.ScrapeRequest.html" translate="no">EhsEnforcement.Scraping.ScrapeRequest</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Simple resource for manual HSE scraping form parameters.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.ScrapeSession.html" translate="no">EhsEnforcement.Scraping.ScrapeSession</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Ash resource for tracking HSE scraping sessions with real-time progress updates.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.ScrapedCase.html" translate="no">EhsEnforcement.Scraping.ScrapedCase</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Ash resource for tracking individual scraped cases with processing status.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Sync.html" translate="no">EhsEnforcement.Sync</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Sync domain for managing synchronization operations and logs.
+Provides administrative functions for importing and syncing data from external sources.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Sync.AirtableClientBehaviour.html" translate="no">EhsEnforcement.Sync.AirtableClientBehaviour</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Behaviour for Airtable client implementations.
+Allows for easy mocking in tests.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Sync.AirtableImporter.html" translate="no">EhsEnforcement.Sync.AirtableImporter</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>One-time import tool to migrate existing Airtable data using Ash.
+Can be removed after successful migration to PostgreSQL.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Sync.OffenderMatcher.html" translate="no">EhsEnforcement.Sync.OffenderMatcher</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Handles finding or creating offenders with deduplication logic.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Sync.SyncLog.html" translate="no">EhsEnforcement.Sync.SyncLog</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Tracks synchronization operations and their results.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Sync.SyncManager.html" translate="no">EhsEnforcement.Sync.SyncManager</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Manages synchronization of enforcement data from various sources.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Sync.SyncWorker.html" translate="no">EhsEnforcement.Sync.SyncWorker</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Worker for processing sync jobs in the background.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Telemetry.html" translate="no">EhsEnforcement.Telemetry</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Telemetry event handling and monitoring for the EHS Enforcement application.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.html" translate="no">EhsEnforcementWeb</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The entrypoint for defining your web interface, such
+as controllers, components, channels, and so on.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Admin.CaseLive.Index.html" translate="no">EhsEnforcementWeb.Admin.CaseLive.Index</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Admin case management dashboard with enhanced functionality for case oversight.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Admin.CaseLive.Scrape.html" translate="no">EhsEnforcementWeb.Admin.CaseLive.Scrape</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Admin interface for manual HSE case scraping with real-time progress display.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Admin.ConfigLive.Index.html" translate="no">EhsEnforcementWeb.Admin.ConfigLive.Index</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Admin interface for configuration management overview.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Admin.ConfigLive.Scraping.html" translate="no">EhsEnforcementWeb.Admin.ConfigLive.Scraping</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Admin interface for scraping configuration management.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Admin.NoticeLive.Scrape.html" translate="no">EhsEnforcementWeb.Admin.NoticeLive.Scrape</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Admin interface for manual HSE notice scraping with real-time progress display.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Admin.ScrapingLive.Index.html" translate="no">EhsEnforcementWeb.Admin.ScrapingLive.Index</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Scraping management and history interface for administrators.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.AgencyLive.html" translate="no">EhsEnforcementWeb.AgencyLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>LiveView for managing and viewing agency information and statistics.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.AuthController.html" translate="no">EhsEnforcementWeb.AuthController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Handles Ash Authentication callbacks and user session management.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.CaseController.html" translate="no">EhsEnforcementWeb.CaseController</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.CaseLive.CSVExport.html" translate="no">EhsEnforcementWeb.CaseLive.CSVExport</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Handles CSV export functionality for case data</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.CaseLive.Form.html" translate="no">EhsEnforcementWeb.CaseLive.Form</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.CaseLive.Index.html" translate="no">EhsEnforcementWeb.CaseLive.Index</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.CaseLive.Show.html" translate="no">EhsEnforcementWeb.CaseLive.Show</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Components.AgencyCard.html" translate="no">EhsEnforcementWeb.Components.AgencyCard</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Components.CaseFilter.html" translate="no">EhsEnforcementWeb.Components.CaseFilter</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Components.CasesActionCard.html" translate="no">EhsEnforcementWeb.Components.CasesActionCard</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Cases Management action card component for the dashboard.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Components.DashboardActionCard.html" translate="no">EhsEnforcementWeb.Components.DashboardActionCard</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Base dashboard action card component with customizable slots for metrics, actions, and admin indicators.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Components.NoticesActionCard.html" translate="no">EhsEnforcementWeb.Components.NoticesActionCard</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Notices Management action card component for the dashboard.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Components.OffendersActionCard.html" translate="no">EhsEnforcementWeb.Components.OffendersActionCard</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Offenders Database action card component for the dashboard.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Components.ReportsActionCard.html" translate="no">EhsEnforcementWeb.Components.ReportsActionCard</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Reports &amp; Analytics action card component for the dashboard.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.CoreComponents.html" translate="no">EhsEnforcementWeb.CoreComponents</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Provides core UI components.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.DashboardLive.html" translate="no">EhsEnforcementWeb.DashboardLive</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Endpoint.html" translate="no">EhsEnforcementWeb.Endpoint</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.EnforcementTimelineComponent.html" translate="no">EhsEnforcementWeb.EnforcementTimelineComponent</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.ErrorHTML.html" translate="no">EhsEnforcementWeb.ErrorHTML</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module is invoked by your endpoint in case of errors on HTML requests.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.ErrorJSON.html" translate="no">EhsEnforcementWeb.ErrorJSON</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module is invoked by your endpoint in case of errors on JSON requests.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Gettext.html" translate="no">EhsEnforcementWeb.Gettext</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>A module providing Internationalization with a gettext-based API.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.HealthController.html" translate="no">EhsEnforcementWeb.HealthController</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Layouts.html" translate="no">EhsEnforcementWeb.Layouts</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module holds different layouts used by your application.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Live.ErrorBoundary.html" translate="no">EhsEnforcementWeb.Live.ErrorBoundary</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>LiveView error boundary component for graceful error handling and recovery.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Live.ErrorBoundary.CrashingComponent.html" translate="no">EhsEnforcementWeb.Live.ErrorBoundary.CrashingComponent</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Live.ErrorBoundary.FailingMountLiveView.html" translate="no">EhsEnforcementWeb.Live.ErrorBoundary.FailingMountLiveView</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Live.ErrorBoundary.TestLiveView.html" translate="no">EhsEnforcementWeb.Live.ErrorBoundary.TestLiveView</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.NoticeLive.Index.html" translate="no">EhsEnforcementWeb.NoticeLive.Index</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.NoticeLive.Show.html" translate="no">EhsEnforcementWeb.NoticeLive.Show</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.OffenderCardComponent.html" translate="no">EhsEnforcementWeb.OffenderCardComponent</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.OffenderLive.Index.html" translate="no">EhsEnforcementWeb.OffenderLive.Index</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.OffenderLive.Show.html" translate="no">EhsEnforcementWeb.OffenderLive.Show</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.OffenderTableComponent.html" translate="no">EhsEnforcementWeb.OffenderTableComponent</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.PageController.html" translate="no">EhsEnforcementWeb.PageController</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.PageHTML.html" translate="no">EhsEnforcementWeb.PageHTML</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module contains pages rendered by PageController.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Plugs.AuthHelpers.html" translate="no">EhsEnforcementWeb.Plugs.AuthHelpers</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Authentication helper plugs for Ash Authentication integration.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.ReportsLive.Index.html" translate="no">EhsEnforcementWeb.ReportsLive.Index</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Reports and Analytics LiveView for generating filtered reports and exports.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Router.html" translate="no">EhsEnforcementWeb.Router</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Telemetry.html" translate="no">EhsEnforcementWeb.Telemetry</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="UK.Act.html" translate="no">UK.Act</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="UK.Regulation.html" translate="no">UK.Regulation</a>
+
+  </div>
+
+</div>
+
+      </div>
+    </section>
+
+
+</div>
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

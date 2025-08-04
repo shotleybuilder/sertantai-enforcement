@@ -14,8 +14,6 @@ defmodule EhsEnforcementWeb.ReportsLive.Index do
   alias EhsEnforcement.Enforcement
   alias EhsEnforcementWeb.CaseLive.CSVExport
 
-  @export_formats ["csv", "excel", "json", "pdf"]
-  @report_templates ["enforcement_summary", "agency_breakdown", "offender_analysis", "compliance_status"]
 
   @impl true
   def mount(_params, _session, socket) do

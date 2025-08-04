@@ -1,0 +1,111 @@
+#!/bin/bash
+# Post-commit hook to regenerate ExDoc when relevant files change
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[ExDoc]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[ExDoc]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[ExDoc]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ExDoc]${NC} $1"
+}
+
+# Check if we're in a Git repository
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    print_error "Not in a Git repository"
+    exit 1
+fi
+
+# Get the list of files changed in the last commit
+CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD)
+
+# Define patterns that should trigger ExDoc regeneration
+EXDOC_TRIGGER_PATTERNS=(
+    "^lib/"                    # Any changes in lib/ directory
+    "^mix\.exs$"              # Changes to mix.exs
+    "^README\.md$"            # Changes to README
+    "^\.gitignore$"           # Changes to gitignore (might affect included files)
+)
+
+# Function to check if any changed file matches trigger patterns
+should_regenerate_exdoc() {
+    for file in $CHANGED_FILES; do
+        for pattern in "${EXDOC_TRIGGER_PATTERNS[@]}"; do
+            if [[ $file =~ $pattern ]]; then
+                echo "$file"
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
+# Check if ExDoc regeneration is needed
+TRIGGER_FILE=$(should_regenerate_exdoc)
+if [ $? -eq 0 ]; then
+    print_status "Code changes detected that affect documentation"
+    print_status "Triggering file: $TRIGGER_FILE"
+    
+    # Check if ex_doc is available
+    if ! mix help docs > /dev/null 2>&1; then
+        print_warning "ExDoc not available - skipping documentation generation"
+        print_warning "Run 'mix deps.get' to install ex_doc dependency"
+        exit 0
+    fi
+    
+    print_status "Regenerating ExDoc documentation..."
+    
+    # Change to project root
+    cd "$(git rev-parse --show-toplevel)"
+    
+    # Regenerate ExDoc with error handling
+    if mix docs --quiet 2>/dev/null; then
+        print_success "ExDoc documentation updated successfully"
+        
+        # Check if there are changes in docs_dev/exdoc
+        if [ -n "$(git status --porcelain docs_dev/exdoc)" ]; then
+            print_status "Documentation files were updated"
+            
+            # Ask user if they want to commit the updated docs
+            read -p "$(print_status "Commit updated ExDoc files? (y/N): ")" -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                git add docs_dev/exdoc/
+                git commit -m "docs: update ExDoc documentation
+
+Generated from commit $(git rev-parse --short HEAD~1)
+Triggered by changes to: $TRIGGER_FILE"
+                print_success "ExDoc documentation committed"
+            else
+                print_warning "ExDoc files updated but not committed"
+                print_warning "Run 'git add docs_dev/exdoc && git commit' to commit changes"
+            fi
+        else
+            print_status "No changes in generated documentation"
+        fi
+    else
+        print_error "Failed to generate ExDoc documentation"
+        print_error "Check for compilation errors or missing dependencies"
+    fi
+else
+    # List what files were changed for reference
+    if [ -n "$CHANGED_FILES" ]; then
+        print_status "Files changed (no ExDoc regeneration needed):"
+        echo "$CHANGED_FILES" | sed 's/^/  /'
+    fi
+fi
