@@ -27,6 +27,11 @@ defmodule EhsEnforcementWeb.Router do
     plug :accepts, ["json"]
     plug :load_from_bearer
   end
+
+  # Health check pipeline - no authentication required
+  pipeline :health do
+    plug :accepts, ["json"]
+  end
   
   # Authentication routes
   scope "/", EhsEnforcementWeb do
@@ -102,6 +107,13 @@ defmodule EhsEnforcementWeb.Router do
       live "/admin/notices/scrape", Admin.NoticeLive.Scrape, :scrape
       live "/admin/scraping", Admin.ScrapingLive.Index, :index
     end
+  end
+
+  # Health check endpoint - no authentication required
+  scope "/", EhsEnforcementWeb do
+    pipe_through :health
+    
+    get "/health", HealthController, :check
   end
 
   # Other scopes may use custom stacks.

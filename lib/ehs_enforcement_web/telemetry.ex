@@ -79,7 +79,30 @@ defmodule EhsEnforcementWeb.Telemetry do
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
-      summary("vm.total_run_queue_lengths.io")
+      summary("vm.total_run_queue_lengths.io"),
+
+      # Oban Metrics
+      summary("oban.job.start.system_time", unit: {:native, :millisecond}),
+      summary("oban.job.stop.duration", unit: {:native, :millisecond}),
+      summary("oban.job.exception.duration", unit: {:native, :millisecond}),
+      counter("oban.job.stop.count"),
+      counter("oban.job.exception.count"),
+
+      # Custom Application Metrics
+      counter("ehs_enforcement.scraping.cases.processed"),
+      counter("ehs_enforcement.scraping.notices.processed"),
+      counter("ehs_enforcement.scraping.errors"),
+      summary("ehs_enforcement.auth.login.duration", unit: {:native, :millisecond}),
+      counter("ehs_enforcement.auth.login.success"),
+      counter("ehs_enforcement.auth.login.failure"),
+      
+      # Health check metrics
+      counter("ehs_enforcement.health_check.requests"),
+      counter("ehs_enforcement.health_check.success"),
+      counter("ehs_enforcement.health_check.failure"),
+      
+      # Database connection metrics
+      last_value("ehs_enforcement.database.connected")
     ]
   end
 
@@ -87,7 +110,25 @@ defmodule EhsEnforcementWeb.Telemetry do
     [
       # A module, function and arguments to be invoked periodically.
       # This function must call :telemetry.execute/3 and a metric must be added above.
-      # {EhsEnforcementWeb, :count_users, []}
+      {__MODULE__, :dispatch_memory_metrics, []},
+      {__MODULE__, :dispatch_application_metrics, []}
     ]
+  end
+
+  def dispatch_memory_metrics do
+    :telemetry.execute([:vm, :memory], :erlang.memory())
+  end
+
+  def dispatch_application_metrics do
+    # Dispatch custom application metrics
+    case EhsEnforcement.Repo.query("SELECT 1", []) do
+      {:ok, _} ->
+        :telemetry.execute([:ehs_enforcement, :database], %{connected: 1})
+      {:error, _} ->
+        :telemetry.execute([:ehs_enforcement, :database], %{connected: 0})
+    end
+  rescue
+    _ ->
+      :telemetry.execute([:ehs_enforcement, :database], %{connected: 0})
   end
 end
