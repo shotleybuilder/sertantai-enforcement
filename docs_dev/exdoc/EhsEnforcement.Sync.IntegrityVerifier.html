@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-8A1AC255.js"></script>
+    <script defer src="dist/sidebar_items-9DDD145A.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -242,23 +242,23 @@ by applying appropriate reconciliation strategies.</p>
 <p>Perform comprehensive integrity verification for a sync session.</p><p>This is the main entry point for integrity verification. It performs
 multiple types of verification checks and generates detailed reports
 about data consistency between source and target systems.</p><h2 id="verify_data_integrity/2-parameters" class="section-heading"><a href="#verify_data_integrity/2-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">verification_type</code> - Type of verification to perform (:full, :count_only, :sample)</li><li><code class="inline">options</code> - Verification configuration options</li></ul><h2 id="verify_data_integrity/2-options" class="section-heading"><a href="#verify_data_integrity/2-options" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Options</span></h2><ul><li><code class="inline">:session_id</code> - Session ID for event broadcasting</li><li><code class="inline">:resource_types</code> - List of resource types to verify (default: [:cases, :notices])</li><li><code class="inline">:verification_scope</code> - Scope of verification (:all, :recent, :sample)</li><li><code class="inline">:sample_size</code> - Number of records to sample for detailed verification</li><li><code class="inline">:reconciliation_mode</code> - Whether to attempt automatic reconciliation</li><li><code class="inline">:detailed_field_comparison</code> - Whether to perform field-level comparison</li><li><code class="inline">:time_window_hours</code> - Time window for recent data verification</li></ul><h2 id="verify_data_integrity/2-examples" class="section-heading"><a href="#verify_data_integrity/2-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h2><pre><code class="makeup elixir" translate="no"><span class="c1"># Full integrity verification</span><span class="w">
-</span><span class="nc">IntegrityVerifier</span><span class="o">.</span><span class="n">verify_data_integrity</span><span class="p" data-group-id="9484022645-1">(</span><span class="ss">:full</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9484022645-2">%{</span><span class="w">
+</span><span class="nc">IntegrityVerifier</span><span class="o">.</span><span class="n">verify_data_integrity</span><span class="p" data-group-id="6019459875-1">(</span><span class="ss">:full</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6019459875-2">%{</span><span class="w">
   </span><span class="ss">session_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;session-123&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="ss">resource_types</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9484022645-3">[</span><span class="ss">:cases</span><span class="p">,</span><span class="w"> </span><span class="ss">:notices</span><span class="p" data-group-id="9484022645-3">]</span><span class="w">
-</span><span class="p" data-group-id="9484022645-2">}</span><span class="p" data-group-id="9484022645-1">)</span><span class="w">
+  </span><span class="ss">resource_types</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6019459875-3">[</span><span class="ss">:cases</span><span class="p">,</span><span class="w"> </span><span class="ss">:notices</span><span class="p" data-group-id="6019459875-3">]</span><span class="w">
+</span><span class="p" data-group-id="6019459875-2">}</span><span class="p" data-group-id="6019459875-1">)</span><span class="w">
 
 </span><span class="c1"># Count-only verification</span><span class="w">
-</span><span class="nc">IntegrityVerifier</span><span class="o">.</span><span class="n">verify_data_integrity</span><span class="p" data-group-id="9484022645-4">(</span><span class="ss">:count_only</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9484022645-5">%{</span><span class="w">
+</span><span class="nc">IntegrityVerifier</span><span class="o">.</span><span class="n">verify_data_integrity</span><span class="p" data-group-id="6019459875-4">(</span><span class="ss">:count_only</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6019459875-5">%{</span><span class="w">
   </span><span class="ss">verification_scope</span><span class="p">:</span><span class="w"> </span><span class="ss">:recent</span><span class="p">,</span><span class="w">
   </span><span class="ss">time_window_hours</span><span class="p">:</span><span class="w"> </span><span class="mi">24</span><span class="w">
-</span><span class="p" data-group-id="9484022645-5">}</span><span class="p" data-group-id="9484022645-4">)</span><span class="w">
+</span><span class="p" data-group-id="6019459875-5">}</span><span class="p" data-group-id="6019459875-4">)</span><span class="w">
 
 </span><span class="c1"># Sample verification with reconciliation</span><span class="w">
-</span><span class="nc">IntegrityVerifier</span><span class="o">.</span><span class="n">verify_data_integrity</span><span class="p" data-group-id="9484022645-6">(</span><span class="ss">:sample</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9484022645-7">%{</span><span class="w">
+</span><span class="nc">IntegrityVerifier</span><span class="o">.</span><span class="n">verify_data_integrity</span><span class="p" data-group-id="6019459875-6">(</span><span class="ss">:sample</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6019459875-7">%{</span><span class="w">
   </span><span class="ss">sample_size</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span><span class="w">
   </span><span class="ss">reconciliation_mode</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p">,</span><span class="w">
   </span><span class="ss">detailed_field_comparison</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="w">
-</span><span class="p" data-group-id="9484022645-7">}</span><span class="p" data-group-id="9484022645-6">)</span></code></pre>
+</span><span class="p" data-group-id="6019459875-7">}</span><span class="p" data-group-id="6019459875-6">)</span></code></pre>
   </section>
 </section>
 

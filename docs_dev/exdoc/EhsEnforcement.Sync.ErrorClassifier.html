@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-8A1AC255.js"></script>
+    <script defer src="dist/sidebar_items-9DDD145A.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -182,26 +182,26 @@ systematic improvements based on historical error data.</p>
   <section class="docstring">
 
 <p>Enhanced error classification for sync operations.</p><p>Returns a comprehensive error classification with:</p><ul><li>Primary category and subcategory</li><li>Severity level and user impact</li><li>Recovery strategy recommendation</li><li>Retry eligibility and configuration</li><li>Required notifications and escalation</li></ul><h2 id="classify_sync_error/2-examples" class="section-heading"><a href="#classify_sync_error/2-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h2><pre><code class="makeup elixir" translate="no"><span class="c1"># Network timeout during Airtable API call</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">classify_sync_error</span><span class="p" data-group-id="8356339629-1">(</span><span class="p" data-group-id="8356339629-2">%</span><span class="nc" data-group-id="8356339629-2">Req.TransportError</span><span class="p" data-group-id="8356339629-2">{</span><span class="ss">reason</span><span class="p">:</span><span class="w"> </span><span class="ss">:timeout</span><span class="p" data-group-id="8356339629-2">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8356339629-3">%{</span><span class="ss">operation</span><span class="p">:</span><span class="w"> </span><span class="ss">:import_cases</span><span class="p" data-group-id="8356339629-3">}</span><span class="p" data-group-id="8356339629-1">)</span><span class="w">
-</span><span class="p" data-group-id="8356339629-4">%{</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">classify_sync_error</span><span class="p" data-group-id="8899090721-1">(</span><span class="p" data-group-id="8899090721-2">%</span><span class="nc" data-group-id="8899090721-2">Req.TransportError</span><span class="p" data-group-id="8899090721-2">{</span><span class="ss">reason</span><span class="p">:</span><span class="w"> </span><span class="ss">:timeout</span><span class="p" data-group-id="8899090721-2">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8899090721-3">%{</span><span class="ss">operation</span><span class="p">:</span><span class="w"> </span><span class="ss">:import_cases</span><span class="p" data-group-id="8899090721-3">}</span><span class="p" data-group-id="8899090721-1">)</span><span class="w">
+</span><span class="p" data-group-id="8899090721-4">%{</span><span class="w">
   </span><span class="ss">category</span><span class="p">:</span><span class="w"> </span><span class="ss">:network_error</span><span class="p">,</span><span class="w">
   </span><span class="ss">subcategory</span><span class="p">:</span><span class="w"> </span><span class="ss">:timeout</span><span class="p">,</span><span class="w">
   </span><span class="ss">severity</span><span class="p">:</span><span class="w"> </span><span class="ss">:medium</span><span class="p">,</span><span class="w">
   </span><span class="ss">recoverable</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p">,</span><span class="w">
   </span><span class="ss">retry_eligible</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p">,</span><span class="w">
   </span><span class="c1"># ... more fields</span><span class="w">
-</span><span class="p" data-group-id="8356339629-4">}</span><span class="w">
+</span><span class="p" data-group-id="8899090721-4">}</span><span class="w">
 
 </span><span class="c1"># Database constraint violation during record creation</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">classify_sync_error</span><span class="p" data-group-id="8356339629-5">(</span><span class="p" data-group-id="8356339629-6">%</span><span class="nc" data-group-id="8356339629-6">Ecto.ConstraintError</span><span class="p" data-group-id="8356339629-6">{</span><span class="p" data-group-id="8356339629-6">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8356339629-7">%{</span><span class="ss">operation</span><span class="p">:</span><span class="w"> </span><span class="ss">:create_case</span><span class="p" data-group-id="8356339629-7">}</span><span class="p" data-group-id="8356339629-5">)</span><span class="w">
-</span><span class="p" data-group-id="8356339629-8">%{</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">classify_sync_error</span><span class="p" data-group-id="8899090721-5">(</span><span class="p" data-group-id="8899090721-6">%</span><span class="nc" data-group-id="8899090721-6">Ecto.ConstraintError</span><span class="p" data-group-id="8899090721-6">{</span><span class="p" data-group-id="8899090721-6">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8899090721-7">%{</span><span class="ss">operation</span><span class="p">:</span><span class="w"> </span><span class="ss">:create_case</span><span class="p" data-group-id="8899090721-7">}</span><span class="p" data-group-id="8899090721-5">)</span><span class="w">
+</span><span class="p" data-group-id="8899090721-8">%{</span><span class="w">
   </span><span class="ss">category</span><span class="p">:</span><span class="w"> </span><span class="ss">:data_integrity_error</span><span class="p">,</span><span class="w">
   </span><span class="ss">subcategory</span><span class="p">:</span><span class="w"> </span><span class="ss">:constraint_violation</span><span class="p">,</span><span class="w">
   </span><span class="ss">severity</span><span class="p">:</span><span class="w"> </span><span class="ss">:high</span><span class="p">,</span><span class="w">
   </span><span class="ss">recoverable</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p">,</span><span class="w">
   </span><span class="ss">retry_eligible</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p">,</span><span class="w">
   </span><span class="c1"># ... more fields</span><span class="w">
-</span><span class="p" data-group-id="8356339629-8">}</span></code></pre>
+</span><span class="p" data-group-id="8899090721-8">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="generate_contextual_messages/2">
