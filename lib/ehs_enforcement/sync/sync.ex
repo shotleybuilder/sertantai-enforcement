@@ -8,7 +8,10 @@ defmodule EhsEnforcement.Sync do
   
   alias EhsEnforcement.Sync.AirtableImporter
   alias EhsEnforcement.Integrations.Airtable.ReqClient
+  alias Phoenix.PubSub
   require Logger
+
+  @pubsub_topic "sync_progress"
 
   resources do
     resource EhsEnforcement.Sync.SyncLog
@@ -216,6 +219,13 @@ defmodule EhsEnforcement.Sync do
   defp do_import_notices(limit, batch_size, actor) do
     Logger.info("📥 Starting notice import with limit: #{limit}, batch_size: #{batch_size}")
     
+    # Broadcast sync started event
+    broadcast_sync_event(:sync_started, %{
+      sync_type: :notices,
+      limit: limit,
+      batch_size: batch_size
+    })
+    
     imported_count = 0
     error_count = 0
     
@@ -233,6 +243,17 @@ defmodule EhsEnforcement.Sync do
           new_imported = acc_imported + batch_stats.imported
           new_errors = acc_errors + batch_stats.errors
           
+          # Broadcast progress update (use available data for now)
+          broadcast_sync_event(:sync_progress, %{
+            sync_type: :notices,
+            records_processed: new_imported,
+            records_created: new_imported, # For now, assume all imported are created
+            records_updated: 0,
+            records_exists: 0,
+            errors_count: new_errors,
+            current_batch: batch_number
+          })
+          
           Logger.info("✅ Batch #{batch_number} completed. Imported: #{batch_stats.imported}, Errors: #{batch_stats.errors}")
           
           if new_imported >= limit do
@@ -246,17 +267,42 @@ defmodule EhsEnforcement.Sync do
     
     case result do
       {imported, errors} ->
-        Logger.info("🎉 Import completed! Imported: #{imported}, Errors: #{errors}")
-        {:ok, %{imported: imported, errors: errors}}
+        Logger.info("🎉 Notice import completed! Imported: #{imported}, Errors: #{errors}")
+        
+        # Broadcast completion event (use available data for now)
+        broadcast_sync_event(:sync_completed, %{
+          sync_type: :notices,
+          records_processed: imported,
+          records_created: imported, # For now, assume all imported are created
+          records_updated: 0,
+          records_exists: 0,
+          errors_count: errors
+        })
+        
+        {:ok, %{imported: imported, created: imported, updated: 0, existing: 0, errors: []}}
         
       error ->
-        Logger.error("💥 Import failed: #{inspect(error)}")
+        Logger.error("💥 Notice import failed: #{inspect(error)}")
+        
+        # Broadcast error event
+        broadcast_sync_event(:sync_error, %{
+          sync_type: :notices,
+          error: inspect(error)
+        })
+        
         {:error, error}
     end
   end
 
   defp do_import_cases(limit, batch_size, actor) do
     Logger.info("📥 Starting case import with limit: #{limit}, batch_size: #{batch_size}")
+    
+    # Broadcast sync started event
+    broadcast_sync_event(:sync_started, %{
+      sync_type: :cases,
+      limit: limit,
+      batch_size: batch_size
+    })
     
     imported_count = 0
     error_count = 0
@@ -275,6 +321,17 @@ defmodule EhsEnforcement.Sync do
           new_imported = acc_imported + batch_stats.imported
           new_errors = acc_errors + batch_stats.errors
           
+          # Broadcast progress update (use available data for now)
+          broadcast_sync_event(:sync_progress, %{
+            sync_type: :cases,
+            records_processed: new_imported,
+            records_created: new_imported, # For now, assume all imported are created
+            records_updated: 0,
+            records_exists: 0,
+            errors_count: new_errors,
+            current_batch: batch_number
+          })
+          
           Logger.info("✅ Batch #{batch_number} completed. Imported: #{batch_stats.imported}, Errors: #{batch_stats.errors}")
           
           if new_imported >= limit do
@@ -289,10 +346,28 @@ defmodule EhsEnforcement.Sync do
     case result do
       {imported, errors} ->
         Logger.info("🎉 Case import completed! Imported: #{imported}, Errors: #{errors}")
-        {:ok, %{imported: imported, errors: errors}}
+        
+        # Broadcast completion event (use available data for now) 
+        broadcast_sync_event(:sync_completed, %{
+          sync_type: :cases,
+          records_processed: imported,
+          records_created: imported, # For now, assume all imported are created
+          records_updated: 0,
+          records_exists: 0,
+          errors_count: errors
+        })
+        
+        {:ok, %{imported: imported, created: imported, updated: 0, existing: 0, errors: []}}
         
       error ->
         Logger.error("💥 Case import failed: #{inspect(error)}")
+        
+        # Broadcast error event
+        broadcast_sync_event(:sync_error, %{
+          sync_type: :cases,
+          error: inspect(error)
+        })
+        
         {:error, error}
     end
   end
@@ -492,5 +567,10 @@ defmodule EhsEnforcement.Sync do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  # PubSub broadcasting function
+  defp broadcast_sync_event(event_type, data) do
+    PubSub.broadcast(EhsEnforcement.PubSub, @pubsub_topic, {event_type, data})
   end
 end
