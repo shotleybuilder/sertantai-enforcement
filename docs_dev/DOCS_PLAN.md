@@ -48,7 +48,7 @@ ehs_enforcement/
 
 # Only regenerate when these file patterns change:
 # - lib/ directory (source code)
-# - mix.exs (dependencies/configuration)  
+# - mix.exs (dependencies/configuration)
 # - README.md (included in documentation)
 
 # Features:
@@ -77,9 +77,9 @@ name: Documentation
 on:
   push:
     branches: [ main ]
-    paths: 
+    paths:
       - 'lib/**'        # Source code changes
-      - 'mix.exs'       # Dependency changes  
+      - 'mix.exs'       # Dependency changes
       - 'README.md'     # Documentation changes
       - 'docs/**'       # User docs changes
 
@@ -96,7 +96,7 @@ jobs:
           # Only run when lib/, mix.exs, or README.md change
           # Skip unnecessary CI runs for other file changes
 
-  # Generate ExDoc only when needed  
+  # Generate ExDoc only when needed
   generate-exdoc:
     needs: check-docs-needed
     if: needs.check-docs-needed.outputs.docs-needed == 'true'
@@ -198,7 +198,7 @@ chmod +x scripts/docs_workflow.sh
 3. GitHub Actions automatically deploys to Pages
 
 ### For Developer Documentation
-1. Run `scripts/docs_workflow.sh` 
+1. Run `scripts/docs_workflow.sh`
 2. Review generated ExDoc in `docs_dev/api/`
 3. Commit changes (include `[docs]` in commit message for CI)
 4. Push to repository
@@ -238,6 +238,12 @@ The system uses **smart detection** to only regenerate ExDoc when necessary:
 - `priv/**` - Private files don't affect public API
 - `scripts/**` - Utility scripts don't affect API
 
+### View ExDoc
+- `cd /home/jason/Desktop/ehs_enforcement`
+- `python3 -m http.server 8080`
+
+http://localhost:8080/docs_dev/exdoc/index.html
+
 ### Setup Instructions
 
 **For Team Members:**
@@ -253,12 +259,12 @@ The system uses **smart detection** to only regenerate ExDoc when necessary:
 
 ### Benefits
 
-✅ **Intelligent**: Only regenerates when source code changes  
-✅ **Efficient**: Skips unnecessary documentation updates  
-✅ **Automated**: Works locally and in CI/CD without manual intervention  
-✅ **User-Friendly**: Clear prompts and colored output  
-✅ **Traceable**: Commit messages include triggering file information  
-✅ **Secure**: Dev docs private, user docs public  
-✅ **Maintainable**: Clear separation of concerns  
-✅ **Professional**: GitHub Pages provides excellent UX  
+✅ **Intelligent**: Only regenerates when source code changes
+✅ **Efficient**: Skips unnecessary documentation updates
+✅ **Automated**: Works locally and in CI/CD without manual intervention
+✅ **User-Friendly**: Clear prompts and colored output
+✅ **Traceable**: Commit messages include triggering file information
+✅ **Secure**: Dev docs private, user docs public
+✅ **Maintainable**: Clear separation of concerns
+✅ **Professional**: GitHub Pages provides excellent UX
 ✅ **Version Controlled**: All docs tracked in Git

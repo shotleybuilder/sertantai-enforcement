@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-4C488ADB.js"></script>
+    <script defer src="dist/sidebar_items-E3CFA9CB.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -84,7 +84,10 @@ ehs_enforcement
 
 
     <section id="moduledoc">
-<p>Admin interface for scraping configuration management.</p><p>Features:</p><ul><li>Edit active scraping configuration</li><li>Create new configuration profiles</li><li>Activate/deactivate configurations</li><li>Real-time validation and preview</li><li>Feature flag management</li></ul>
+<p>Admin interface for scraping configuration management.</p><p>Provides comprehensive management of HSE scraping configurations including
+rate limiting, feature flags, scheduling, and error handling thresholds.
+Administrators can:</p><ul><li>Edit the active scraping configuration parameters</li><li>Create new configuration profiles with different settings</li><li>Activate/deactivate configurations as needed</li><li>Preview configuration changes with calculated impact</li><li>Manage feature flags (manual scraping, scheduled scraping, etc.)</li><li>Configure rate limiting and error handling thresholds</li></ul><h2 id="module-routes" class="section-heading"><a href="#module-routes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Routes</span></h2><ul><li><code class="inline">GET /admin/config/scraping</code> - Edit active configuration</li><li><code class="inline">GET /admin/config/scraping/new</code> - Create new configuration</li></ul><h2 id="module-configuration-parameters" class="section-heading"><a href="#module-configuration-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Configuration Parameters</span></h2><ul><li><strong>Rate Limiting</strong>: requests per minute, pause between pages</li><li><strong>Timeouts</strong>: network timeout, consecutive error thresholds  </li><li><strong>Batch Processing</strong>: batch size, max pages per session</li><li><strong>Feature Flags</strong>: manual/scheduled scraping, real-time progress</li><li><strong>Scheduling</strong>: cron expressions for automated scraping</li></ul><h2 id="module-authentication" class="section-heading"><a href="#module-authentication" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Authentication</span></h2><p>Requires admin authentication for configuration modifications.
+Reads are allowed without authentication for system functionality.</p>
     </section>
 
 </div>
@@ -100,6 +103,36 @@ ehs_enforcement
   <h2>
     <a href="#functions">Functions</a>
   </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_event/3" data-no-tooltip="" translate="no">handle_event(binary, arg2, socket)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Validates configuration parameters in real-time as user types.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_params/3" data-no-tooltip="" translate="no">handle_params(params, uri, socket)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Handles URL parameter changes to switch between edit/create modes.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#mount/3" data-no-tooltip="" translate="no">mount(params, session, socket)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Mounts the scraping configuration management page.</p></div>
+
+    </div>
 
     <div class="summary-row">
       <div class="summary-signature">
@@ -124,6 +157,63 @@ ehs_enforcement
       <span class="text">Functions</span>
     </h1>
     <div class="functions-list">
+<section class="detail" id="handle_event/3">
+
+  <div class="detail-header">
+    <a href="#handle_event/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">handle_event(binary, arg2, socket)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Validates configuration parameters in real-time as user types.</p><p>Provides immediate feedback on form validation and generates preview
+data showing the calculated impact of the configuration changes.</p><h2 id="handle_event/3-parameters" class="section-heading"><a href="#handle_event/3-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">config_params</code> - Form parameters from user input</li><li><code class="inline">socket</code> - Current socket state with form</li></ul><h2 id="handle_event/3-returns" class="section-heading"><a href="#handle_event/3-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">{:noreply, socket}</code> with updated form errors and preview data</li></ul>
+  </section>
+</section>
+<section class="detail" id="handle_params/3">
+
+  <div class="detail-header">
+    <a href="#handle_params/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">handle_params(params, uri, socket)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Handles URL parameter changes to switch between edit/create modes.</p><p>Responds to different actions in the URL parameters:</p><ul><li><code class="inline">action=new</code> - Enters creation mode with fresh form</li><li><code class="inline">action=edit</code> - Enters editing mode for active configuration</li><li>No action - Displays configuration overview</li></ul><h2 id="handle_params/3-parameters" class="section-heading"><a href="#handle_params/3-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">params</code> - URL parameters containing action</li><li><code class="inline">_uri</code> - Full URI (unused)</li><li><code class="inline">socket</code> - Current socket state</li></ul><h2 id="handle_params/3-returns" class="section-heading"><a href="#handle_params/3-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">{:noreply, socket}</code> with updated mode and form state</li></ul>
+  </section>
+</section>
+<section class="detail" id="mount/3">
+
+  <div class="detail-header">
+    <a href="#mount/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">mount(params, session, socket)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Mounts the scraping configuration management page.</p><p>Initializes the page with configuration state and loads all available
+scraping configurations. Sets up form state for potential editing/creation
+operations.</p><h2 id="mount/3-socket-assigns" class="section-heading"><a href="#mount/3-socket-assigns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Socket Assigns</span></h2><ul><li><code class="inline">active_config</code> - Currently active configuration (if any)</li><li><code class="inline">all_configs</code> - List of all available configurations</li><li><code class="inline">form</code> - AshPhoenix form for configuration editing</li><li><code class="inline">editing/creating</code> - Boolean flags for current mode</li><li><code class="inline">loading</code> - Loading state for UI feedback</li><li><code class="inline">preview_data</code> - Real-time preview of configuration impact</li></ul><h2 id="mount/3-returns" class="section-heading"><a href="#mount/3-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">{:ok, socket}</code> with initialized state and loaded configurations</li><li>Falls back to unauthenticated reads if current_user is nil</li></ul>
+  </section>
+</section>
 <section class="detail" id="render/1">
 
   <div class="detail-header">

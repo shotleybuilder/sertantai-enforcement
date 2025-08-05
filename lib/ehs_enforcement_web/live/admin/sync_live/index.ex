@@ -16,8 +16,10 @@ defmodule EhsEnforcementWeb.Admin.SyncLive.Index do
   require Ash.Query
   
   alias EhsEnforcement.Sync
+  alias EhsEnforcement.Sync.{SessionManager, EventBroadcaster}
   alias AshPhoenix.Form
   alias Phoenix.PubSub
+  import EhsEnforcementWeb.Admin.SyncLive.Components
   
   @pubsub_topic "sync_progress"
   
@@ -54,10 +56,21 @@ defmodule EhsEnforcementWeb.Admin.SyncLive.Index do
       sync_results: [],
       recent_errors: [],
       recent_records: [],
+      sync_errors: [],
       
-      # UI state
+      # UI state and data needed by new template
       loading: false,
-      last_update: System.monotonic_time(:millisecond)
+      last_update: System.monotonic_time(:millisecond),
+      current_sync_batches: [],
+      database_stats: %{
+        total_cases: nil,
+        total_notices: nil,
+        total_offenders: nil,
+        last_import: nil
+      },
+      recent_logs: [],
+      session_history: [],
+      active_tab: "current"
     )
     
     if connected?(socket) do
@@ -434,6 +447,55 @@ defmodule EhsEnforcementWeb.Admin.SyncLive.Index do
       :exists -> {"Exists", "bg-yellow-100 text-yellow-800"}
       :error -> {"Error", "bg-red-100 text-red-800"}
       _ -> {"Processing", "bg-gray-100 text-gray-800"}
+    end
+  end
+  
+  # Helper functions for template rendering
+  
+  defp log_icon(status) do
+    case status do
+      :completed -> "hero-check-circle"
+      :failed -> "hero-x-circle"
+      :started -> "hero-play-circle"
+      _ -> "hero-clock"
+    end
+  end
+  
+  defp log_icon_color(status) do
+    case status do
+      :completed -> "text-green-500"
+      :failed -> "text-red-500"
+      :started -> "text-blue-500"
+      _ -> "text-gray-400"
+    end
+  end
+  
+  defp log_description(log) do
+    operation = log.operation_type || to_string(log.sync_type)
+    resource = log.resource_type || "data"
+    
+    case log.status do
+      :started -> "Started #{operation} for #{resource}"
+      :completed -> "Completed #{operation} for #{resource} (#{log.records_synced || 0} records)"
+      :failed -> "Failed #{operation} for #{resource}: #{log.error_message || "Unknown error"}"
+      _ -> "#{operation} #{log.status} for #{resource}"
+    end
+  end
+  
+  defp relative_time(datetime) do
+    case datetime do
+      %DateTime{} ->
+        now = DateTime.utc_now()
+        diff = DateTime.diff(now, datetime, :second)
+        
+        cond do
+          diff < 60 -> "#{diff}s ago"
+          diff < 3600 -> "#{div(diff, 60)}m ago"
+          diff < 86400 -> "#{div(diff, 3600)}h ago"
+          true -> "#{div(diff, 86400)}d ago"
+        end
+      _ -> 
+        "N/A"
     end
   end
 end

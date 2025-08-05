@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-4C488ADB.js"></script>
+    <script defer src="dist/sidebar_items-E3CFA9CB.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -84,7 +84,9 @@ ehs_enforcement
 
 
     <section id="moduledoc">
-<p>Admin interface for configuration management overview.</p><p>Provides navigation to different configuration sections:</p><ul><li>Scraping configuration</li><li>Feature flags overview</li><li>System settings</li></ul>
+<p>Admin configuration management overview page.</p><p>Displays all scraping configurations with their current status and provides
+navigation to detailed configuration management. Administrators can:</p><ul><li>View all scraping configurations and their active status</li><li>Navigate to scraping configuration editor</li><li>Create default configurations if none exist</li><li>See feature flag summaries for each configuration</li></ul><h2 id="module-routes" class="section-heading"><a href="#module-routes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Routes</span></h2><ul><li><code class="inline">GET /admin/config</code> - Configuration overview page</li></ul><h2 id="module-authentication" class="section-heading"><a href="#module-authentication" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Authentication</span></h2><p>Requires admin authentication. Uses <code class="inline">current_user</code> from socket assigns
+for authorization of configuration access.</p>
     </section>
 
 </div>
@@ -100,6 +102,26 @@ ehs_enforcement
   <h2>
     <a href="#functions">Functions</a>
   </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#handle_event/3" data-no-tooltip="" translate="no">handle_event(binary, params, socket)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Navigates to the scraping configuration editor.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#mount/3" data-no-tooltip="" translate="no">mount(params, session, socket)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Mounts the configuration overview page.</p></div>
+
+    </div>
 
     <div class="summary-row">
       <div class="summary-signature">
@@ -124,6 +146,44 @@ ehs_enforcement
       <span class="text">Functions</span>
     </h1>
     <div class="functions-list">
+<section class="detail" id="handle_event/3">
+
+  <div class="detail-header">
+    <a href="#handle_event/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">handle_event(binary, params, socket)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Navigates to the scraping configuration editor.</p><p>Uses <code class="inline">push_navigate/2</code> for client-side navigation without page reload.</p>
+  </section>
+</section>
+<section class="detail" id="mount/3">
+
+  <div class="detail-header">
+    <a href="#mount/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">mount(params, session, socket)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Mounts the configuration overview page.</p><p>Loads all scraping configurations synchronously and displays their status.
+Handles cases where current_user might be nil by falling back to
+unauthenticated reads.</p><h2 id="mount/3-returns" class="section-heading"><a href="#mount/3-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">{:ok, socket}</code> with loaded configurations and loading state cleared</li><li>Sets <code class="inline">errors</code> if configuration loading fails</li></ul>
+  </section>
+</section>
 <section class="detail" id="render/1">
 
   <div class="detail-header">

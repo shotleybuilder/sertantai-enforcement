@@ -6,15 +6,16 @@ defmodule EhsEnforcement.Sync do
   
   use Ash.Domain
   
-  alias EhsEnforcement.Sync.AirtableImporter
+  alias EhsEnforcement.Sync.{AirtableImporter, EventBroadcaster, SessionManager}
   alias EhsEnforcement.Integrations.Airtable.ReqClient
-  alias Phoenix.PubSub
   require Logger
 
   @pubsub_topic "sync_progress"
 
   resources do
     resource EhsEnforcement.Sync.SyncLog
+    resource EhsEnforcement.Sync.SyncSession
+    resource EhsEnforcement.Sync.SyncProgress
   end
 
   @doc """
@@ -219,12 +220,17 @@ defmodule EhsEnforcement.Sync do
   defp do_import_notices(limit, batch_size, actor) do
     Logger.info("📥 Starting notice import with limit: #{limit}, batch_size: #{batch_size}")
     
-    # Broadcast sync started event
-    broadcast_sync_event(:sync_started, %{
-      sync_type: :notices,
-      limit: limit,
-      batch_size: batch_size
-    })
+    # Start a new sync session using SessionManager
+    session_config = %{
+      sync_type: :import_notices,
+      target_resource: "EhsEnforcement.Enforcement.Notice", 
+      config: %{batch_size: batch_size, limit: limit},
+      initiated_by: extract_user_identifier(actor),
+      estimated_total: limit
+    }
+    
+    {:ok, session} = SessionManager.start_session(session_config)
+    SessionManager.mark_session_running(session.session_id)
     
     imported_count = 0
     error_count = 0
@@ -238,21 +244,30 @@ defmodule EhsEnforcement.Sync do
       batch_number = batch_index + 1
       Logger.info("📦 Processing batch #{batch_number} (#{length(batch)} notice records)")
       
+      # Start batch tracking
+      batch_config = %{
+        batch_number: batch_number,
+        batch_size: length(batch),
+        source_ids: extract_source_ids(batch)
+      }
+      {:ok, batch_progress} = SessionManager.start_batch(session.session_id, batch_config)
+      
       case import_notice_batch(batch, actor) do
         {:ok, batch_stats} ->
           new_imported = acc_imported + batch_stats.imported
           new_errors = acc_errors + batch_stats.errors
           
-          # Broadcast progress update (use available data for now)
-          broadcast_sync_event(:sync_progress, %{
-            sync_type: :notices,
-            records_processed: new_imported,
-            records_created: new_imported, # For now, assume all imported are created
-            records_updated: 0,
-            records_exists: 0,
-            errors_count: new_errors,
-            current_batch: batch_number
-          })
+          # Update batch progress with enhanced statistics
+          batch_results = %{
+            records_processed: batch_stats.imported + batch_stats.errors,
+            records_created: batch_stats.imported, # Enhanced in next task
+            records_updated: 0, # Enhanced in next task
+            records_existing: 0, # Enhanced in next task
+            records_failed: batch_stats.errors
+          }
+          
+          SessionManager.update_batch_progress(batch_progress.id, batch_results)
+          SessionManager.complete_batch(batch_progress.id, batch_results)
           
           Logger.info("✅ Batch #{batch_number} completed. Imported: #{batch_stats.imported}, Errors: #{batch_stats.errors}")
           
@@ -269,26 +284,31 @@ defmodule EhsEnforcement.Sync do
       {imported, errors} ->
         Logger.info("🎉 Notice import completed! Imported: #{imported}, Errors: #{errors}")
         
-        # Broadcast completion event (use available data for now)
-        broadcast_sync_event(:sync_completed, %{
-          sync_type: :notices,
-          records_processed: imported,
-          records_created: imported, # For now, assume all imported are created
-          records_updated: 0,
-          records_exists: 0,
-          errors_count: errors
-        })
+        # Complete the session with final stats
+        final_stats = %{
+          total_processed: imported + errors,
+          total_created: imported, # Enhanced in next task
+          total_updated: 0, # Enhanced in next task
+          total_existing: 0, # Enhanced in next task
+          total_failed: errors,
+          sync_type: :import_notices
+        }
+        
+        SessionManager.complete_session(session.session_id, final_stats)
         
         {:ok, %{imported: imported, created: imported, updated: 0, existing: 0, errors: []}}
         
       error ->
         Logger.error("💥 Notice import failed: #{inspect(error)}")
         
-        # Broadcast error event
-        broadcast_sync_event(:sync_error, %{
-          sync_type: :notices,
-          error: inspect(error)
-        })
+        # Mark session as failed
+        error_info = %{
+          message: "Notice import failed",
+          error: inspect(error),
+          sync_type: :import_notices
+        }
+        
+        SessionManager.fail_session(session.session_id, error_info)
         
         {:error, error}
     end
@@ -569,8 +589,28 @@ defmodule EhsEnforcement.Sync do
     end
   end
 
-  # PubSub broadcasting function
+  # Helper functions for enhanced sync functionality
+  
+  defp extract_user_identifier(nil), do: "system"
+  defp extract_user_identifier(actor) when is_map(actor) do
+    Map.get(actor, :email, Map.get(actor, :username, Map.get(actor, :id, "unknown_user")))
+  end
+  defp extract_user_identifier(actor), do: to_string(actor)
+  
+  defp extract_source_ids(batch) do
+    Enum.map(batch, fn record ->
+      case record do
+        %{"id" => id} -> id
+        %{"fields" => %{"regulator_id" => reg_id}} -> reg_id
+        _ -> nil
+      end
+    end)
+    |> Enum.filter(&(&1 != nil))
+  end
+  
+  # Legacy PubSub broadcasting function (maintained for backwards compatibility)
   defp broadcast_sync_event(event_type, data) do
-    PubSub.broadcast(EhsEnforcement.PubSub, @pubsub_topic, {event_type, data})
+    # Use new EventBroadcaster for enhanced functionality
+    EventBroadcaster.broadcast(event_type, data, topic: @pubsub_topic)
   end
 end
