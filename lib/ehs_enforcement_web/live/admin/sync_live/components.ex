@@ -502,4 +502,22 @@ defmodule EhsEnforcementWeb.Admin.SyncLive.Components do
   defp is_sync_running?(session) do
     session.status == :running
   end
+  
+  @doc """
+  Refresh button component for reloading status data
+  """
+  attr :rest, :global, doc: "Additional attributes like phx-click"
+  
+  def refresh_button(assigns) do
+    ~H"""
+    <button type="button" 
+            class="inline-flex items-center p-1.5 border border-gray-300 rounded-md shadow-sm bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            {@rest}>
+      <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+      </svg>
+      <span class="sr-only">Refresh</span>
+    </button>
+    """
+  end
 end

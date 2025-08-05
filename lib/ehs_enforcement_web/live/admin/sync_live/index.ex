@@ -16,7 +16,7 @@ defmodule EhsEnforcementWeb.Admin.SyncLive.Index do
   require Ash.Query
   
   alias EhsEnforcement.Sync
-  alias EhsEnforcement.Sync.{SessionManager, EventBroadcaster}
+  alias EhsEnforcement.Sync.{SessionManager, EventBroadcaster, ErrorRecovery, IntegrityVerifier, IntegrityReporter, EnhancedSync}
   alias AshPhoenix.Form
   alias Phoenix.PubSub
   import EhsEnforcementWeb.Admin.SyncLive.Components
@@ -70,7 +70,11 @@ defmodule EhsEnforcementWeb.Admin.SyncLive.Index do
       },
       recent_logs: [],
       session_history: [],
-      active_tab: "current"
+      active_tab: "current",
+      
+      # Enhanced features status
+      recovery_status: nil,
+      integrity_status: nil
     )
     
     if connected?(socket) do
@@ -131,6 +135,49 @@ defmodule EhsEnforcementWeb.Admin.SyncLive.Index do
   def handle_event("clear_results", _params, socket) do
     socket = assign(socket, sync_results: [], recent_errors: [], recent_records: [])
     {:noreply, socket}
+  end
+
+  # Enhanced Features Event Handlers
+
+  @impl true
+  def handle_event("refresh_recovery_status", _params, socket) do
+    socket = load_recovery_status(socket)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("load_recovery_status", _params, socket) do
+    socket = load_recovery_status(socket)
+    {:noreply, socket}
+  end
+
+  @impl true  
+  def handle_event("refresh_integrity_status", _params, socket) do
+    socket = load_integrity_status(socket)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("load_integrity_status", _params, socket) do
+    socket = load_integrity_status(socket)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("generate_integrity_report", _params, socket) do
+    case IntegrityReporter.generate_comprehensive_report(%{
+      resource_types: [:cases, :notices],
+      format: :json,
+      include_recommendations: true
+    }) do
+      {:ok, _report} ->
+        socket = load_integrity_status(socket)
+        {:noreply, put_flash(socket, :info, "Integrity report generated successfully")}
+      
+      {:error, error} ->
+        Logger.error("Failed to generate integrity report: #{inspect(error)}")
+        {:noreply, put_flash(socket, :error, "Failed to generate integrity report")}
+    end
   end
 
   # PubSub Message Handling
@@ -498,4 +545,104 @@ defmodule EhsEnforcementWeb.Admin.SyncLive.Index do
         "N/A"
     end
   end
+
+  # Enhanced Features Helper Functions
+
+  defp load_recovery_status(socket) do
+    try do
+      # Get recovery analytics from the last 24 hours
+      case ErrorRecovery.get_recovery_analytics(24) do
+        {:ok, analytics} ->
+          recovery_status = %{
+            active_recoveries: analytics.active_recoveries || 0,
+            successful_recoveries: analytics.successful_recoveries || 0,
+            failed_recoveries: analytics.failed_recoveries || 0,
+            recent_actions: format_recent_recovery_actions(analytics.recent_actions || [])
+          }
+          assign(socket, recovery_status: recovery_status)
+        
+        {:error, error} ->
+          Logger.error("Failed to load recovery status: #{inspect(error)}")
+          assign(socket, recovery_status: %{
+            active_recoveries: 0,
+            successful_recoveries: 0,
+            failed_recoveries: 0,
+            recent_actions: []
+          })
+      end
+    rescue
+      error ->
+        Logger.error("Error loading recovery status: #{inspect(error)}")
+        assign(socket, recovery_status: nil)
+    end
+  end
+
+  defp load_integrity_status(socket) do
+    try do
+      # Get integrity verification results
+      case IntegrityVerifier.verify_data_integrity([:cases, :notices], %{verification_type: :count_only}) do
+        {:ok, verification_result} ->
+          integrity_status = %{
+            overall_score: verification_result.cases_verification.verification_rate || 0.0,
+            verified_records: (verification_result.cases_verification.verified_count || 0) + 
+                            (verification_result.notices_verification.verified_count || 0),
+            discrepancies: (verification_result.cases_verification.discrepancies || 0) + 
+                         (verification_result.notices_verification.discrepancies || 0),
+            last_verification: DateTime.utc_now() |> DateTime.to_string(),
+            recent_reports: get_recent_integrity_reports(),
+            alerts: get_integrity_alerts()
+          }
+          assign(socket, integrity_status: integrity_status)
+        
+        {:error, error} ->
+          Logger.error("Failed to load integrity status: #{inspect(error)}")
+          assign(socket, integrity_status: %{
+            overall_score: 0.0,
+            verified_records: 0,
+            discrepancies: 0,
+            last_verification: "Never",
+            recent_reports: [],
+            alerts: []
+          })
+      end
+    rescue
+      error ->
+        Logger.error("Error loading integrity status: #{inspect(error)}")
+        assign(socket, integrity_status: nil)
+    end
+  end
+
+  defp format_recent_recovery_actions(actions) when is_list(actions) do
+    actions
+    |> Enum.take(5)  # Show last 5 actions
+    |> Enum.map(fn action ->
+      %{
+        strategy: Map.get(action, :strategy, "Unknown"),
+        timestamp: format_timestamp(Map.get(action, :timestamp)),
+        result: Map.get(action, :result, "Unknown")
+      }
+    end)
+  end
+  defp format_recent_recovery_actions(_), do: []
+
+  defp get_recent_integrity_reports do
+    # This would typically query a reports storage system
+    # For now, return empty list
+    []
+  end
+
+  defp get_integrity_alerts do
+    # This would typically check for integrity violations
+    # For now, return empty list  
+    []
+  end
+
+  defp format_timestamp(nil), do: "Unknown"
+  defp format_timestamp(%DateTime{} = dt), do: DateTime.to_string(dt)
+  defp format_timestamp(timestamp) when is_binary(timestamp), do: timestamp
+  defp format_timestamp(_), do: "Unknown"
+
+  defp integrity_score_color(score) when score >= 0.9, do: "text-green-600"
+  defp integrity_score_color(score) when score >= 0.7, do: "text-yellow-600"
+  defp integrity_score_color(_), do: "text-red-600"
 end

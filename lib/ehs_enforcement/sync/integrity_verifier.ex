@@ -477,7 +477,7 @@ defmodule EhsEnforcement.Sync.IntegrityVerifier do
           verified_records: verified_count,
           missing_in_source: missing_count,
           field_mismatches: mismatch_count,
-          verification_rate: verified_count / total_checked,
+          verification_rate: if(total_checked > 0, do: verified_count / total_checked, else: 0.0),
           sample_results: verification_results
         }}
       
@@ -507,7 +507,7 @@ defmodule EhsEnforcement.Sync.IntegrityVerifier do
           verified_records: verified_count,
           missing_in_source: missing_count,
           field_mismatches: mismatch_count,
-          verification_rate: verified_count / total_checked,
+          verification_rate: if(total_checked > 0, do: verified_count / total_checked, else: 0.0),
           sample_results: verification_results
         }}
       

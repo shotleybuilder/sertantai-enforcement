@@ -24,7 +24,7 @@ defmodule EhsEnforcement.Sync.SyncSession do
     
     # Sync operation details
     attribute :sync_type, :atom do
-      constraints [one_of: [:import_cases, :import_notices, :import_all, :export_cases, :export_notices]]
+      constraints [one_of: [:import_cases, :import_notices, :import_all, :export_cases, :export_notices, :import_cases_enhanced, :import_notices_enhanced, :import_all_enhanced]]
       description "Type of synchronization operation"
     end
     
@@ -112,7 +112,7 @@ defmodule EhsEnforcement.Sync.SyncSession do
     defaults [:read, :update, :destroy]
     
     create :start_session do
-      accept [:session_id, :sync_type, :source_type, :target_resource, :config, :initiated_by, :agency_id]
+      accept [:session_id, :sync_type, :source_type, :target_resource, :config, :initiated_by, :agency_id, :total_records]
       
       change set_attribute(:status, :pending)
       change set_attribute(:started_at, &DateTime.utc_now/0)

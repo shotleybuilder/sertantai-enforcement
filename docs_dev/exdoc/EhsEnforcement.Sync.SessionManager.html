@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-6776299C.js"></script>
+    <script defer src="dist/sidebar_items-8A1AC255.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -378,21 +378,21 @@ and event broadcasting for any type of synchronization operation.</p>
   <section class="docstring">
 
 <p>Start a new sync session with comprehensive tracking.</p><h2 id="start_session/1-parameters" class="section-heading"><a href="#start_session/1-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">session_config</code> - Map containing session configuration</li></ul><h2 id="start_session/1-session-config-options" class="section-heading"><a href="#start_session/1-session-config-options" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Session Config Options</span></h2><ul><li><code class="inline">:session_id</code> - Unique session identifier (auto-generated if not provided)</li><li><code class="inline">:sync_type</code> - Type of sync operation (e.g., :import_cases, :import_notices)</li><li><code class="inline">:source_type</code> - Source system type (default: &quot;airtable&quot;)</li><li><code class="inline">:target_resource</code> - Target Ash resource module name</li><li><code class="inline">:config</code> - Operation-specific configuration (batch_size, limits, etc.)</li><li><code class="inline">:initiated_by</code> - User or system that initiated the sync</li><li><code class="inline">:agency_id</code> - Associated agency ID (optional)</li><li><code class="inline">:estimated_total</code> - Estimated total records to process (optional)</li></ul><h2 id="start_session/1-examples" class="section-heading"><a href="#start_session/1-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h2><pre><code class="makeup elixir" translate="no"><span class="c1"># Start a cases import session</span><span class="w">
-</span><span class="nc">SessionManager</span><span class="o">.</span><span class="n">start_session</span><span class="p" data-group-id="1860471175-1">(</span><span class="p" data-group-id="1860471175-2">%{</span><span class="w">
+</span><span class="nc">SessionManager</span><span class="o">.</span><span class="n">start_session</span><span class="p" data-group-id="3273625759-1">(</span><span class="p" data-group-id="3273625759-2">%{</span><span class="w">
   </span><span class="ss">sync_type</span><span class="p">:</span><span class="w"> </span><span class="ss">:import_cases</span><span class="p">,</span><span class="w">
   </span><span class="ss">target_resource</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;EhsEnforcement.Enforcement.Case&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="ss">config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1860471175-3">%{</span><span class="ss">batch_size</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p" data-group-id="1860471175-3">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3273625759-3">%{</span><span class="ss">batch_size</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p" data-group-id="3273625759-3">}</span><span class="p">,</span><span class="w">
   </span><span class="ss">initiated_by</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;admin@example.com&quot;</span><span class="w">
-</span><span class="p" data-group-id="1860471175-2">}</span><span class="p" data-group-id="1860471175-1">)</span><span class="w">
+</span><span class="p" data-group-id="3273625759-2">}</span><span class="p" data-group-id="3273625759-1">)</span><span class="w">
 
 </span><span class="c1"># Start a custom sync session</span><span class="w">
-</span><span class="nc">SessionManager</span><span class="o">.</span><span class="n">start_session</span><span class="p" data-group-id="1860471175-4">(</span><span class="p" data-group-id="1860471175-5">%{</span><span class="w">
+</span><span class="nc">SessionManager</span><span class="o">.</span><span class="n">start_session</span><span class="p" data-group-id="3273625759-4">(</span><span class="p" data-group-id="3273625759-5">%{</span><span class="w">
   </span><span class="ss">session_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;custom-sync-123&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">sync_type</span><span class="p">:</span><span class="w"> </span><span class="ss">:custom_import</span><span class="p">,</span><span class="w">
   </span><span class="ss">source_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;csv&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">target_resource</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MyApp.Records&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="ss">config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1860471175-6">%{</span><span class="ss">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/tmp/import.csv&quot;</span><span class="p" data-group-id="1860471175-6">}</span><span class="w">
-</span><span class="p" data-group-id="1860471175-5">}</span><span class="p" data-group-id="1860471175-4">)</span></code></pre>
+  </span><span class="ss">config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3273625759-6">%{</span><span class="ss">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/tmp/import.csv&quot;</span><span class="p" data-group-id="3273625759-6">}</span><span class="w">
+</span><span class="p" data-group-id="3273625759-5">}</span><span class="p" data-group-id="3273625759-4">)</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_batch_progress/2">

@@ -1,5 +1,5 @@
 defmodule EhsEnforcement.Sync.EnhancedSyncTest do
-  use ExUnit.Case, async: true
+  use EhsEnforcement.DataCase, async: true
   
   alias EhsEnforcement.Sync.EnhancedSync
   require Ash.Query

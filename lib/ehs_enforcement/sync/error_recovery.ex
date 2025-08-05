@@ -76,10 +76,10 @@ defmodule EhsEnforcement.Sync.ErrorRecovery do
     # Determine recovery strategy
     recovery_strategy = determine_recovery_strategy(error_classification, operation_context, recovery_options)
     
-    Logger.info("📋 Selected recovery strategy: #{recovery_strategy.type}")
+    Logger.info("📋 Selected recovery strategy: #{Map.get(recovery_strategy, :type, "unknown")}")
     
     # Execute recovery workflow
-    recovery_result = case recovery_strategy.type do
+    recovery_result = case Map.get(recovery_strategy, :type, "unknown") do
       :automatic_retry ->
         execute_automatic_retry_recovery(error, operation_context, recovery_strategy, recovery_options)
       
@@ -98,20 +98,30 @@ defmodule EhsEnforcement.Sync.ErrorRecovery do
       :graceful_degradation ->
         execute_graceful_degradation_recovery(error, operation_context, recovery_strategy, recovery_options)
       
-      _ ->
-        Logger.error("❌ Unknown recovery strategy: #{recovery_strategy.type}")
-        {:error, {:unknown_recovery_strategy, recovery_strategy.type}}
+      :no_retry ->
+        reason = Map.get(recovery_strategy, :reason, "No retry strategy available")
+        Logger.info("ℹ️ Error recovery not applicable: #{reason}")
+        {:ok, %{
+          strategy: :no_retry,
+          reason: reason,
+          action_taken: "none",
+          recovery_successful: false
+        }}
+      
+      unknown_type ->
+        Logger.error("❌ Unknown recovery strategy: #{inspect(unknown_type)}, full strategy: #{inspect(recovery_strategy)}")
+        {:error, {:unknown_recovery_strategy, unknown_type}}
     end
     
     # Handle recovery result
     case recovery_result do
       {:ok, recovery_details} ->
-        Logger.info("✅ Recovery completed successfully: #{recovery_strategy.type}")
+        Logger.info("✅ Recovery completed successfully: #{Map.get(recovery_strategy, :type, "unknown")}")
         
         if session_id do
           EventBroadcaster.broadcast_session_event(session_id, :recovery_completed, %{
             operation: operation,
-            recovery_strategy: recovery_strategy.type,
+            recovery_strategy: Map.get(recovery_strategy, :type, "unknown"),
             recovery_details: recovery_details
           })
         end
@@ -135,7 +145,7 @@ defmodule EhsEnforcement.Sync.ErrorRecovery do
         if session_id do
           EventBroadcaster.broadcast_session_event(session_id, :recovery_failed, %{
             operation: operation,
-            recovery_strategy: recovery_strategy.type,
+            recovery_strategy: Map.get(recovery_strategy, :type, "unknown"),
             recovery_error: recovery_error,
             rollback_result: rollback_result
           })
@@ -258,7 +268,12 @@ defmodule EhsEnforcement.Sync.ErrorRecovery do
         # Automatic strategy selection based on error classification
         automatic_strategy_selection(error_classification, operation_context)
       
+      explicit_strategy when is_map(explicit_strategy) ->
+        # Strategy is already a proper map structure
+        explicit_strategy
+      
       explicit_strategy ->
+        # Simple atom or other type - wrap it
         %{type: explicit_strategy, reason: :explicitly_specified}
     end
   end

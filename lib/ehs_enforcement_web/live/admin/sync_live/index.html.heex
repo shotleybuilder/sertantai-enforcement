@@ -263,4 +263,130 @@
       </div>
     </div>
   </div>
+
+  <!-- Enhanced Features Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    
+    <!-- Error Recovery Status Panel -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium text-gray-900">Error Recovery Status</h3>
+        <.refresh_button phx-click="refresh_recovery_status" />
+      </div>
+      
+      <div :if={@recovery_status} class="space-y-4">
+        <!-- Active Recoveries -->
+        <div :if={@recovery_status.active_recoveries > 0} class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h4 class="text-sm font-medium text-yellow-800">Active Error Recovery</h4>
+              <p class="text-xs text-yellow-700"><%= @recovery_status.active_recoveries %> recovery operations in progress</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recovery Statistics -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="text-center p-3 bg-gray-50 rounded-lg">
+            <div class="text-2xl font-bold text-green-600"><%= @recovery_status.successful_recoveries || 0 %></div>
+            <div class="text-xs text-gray-500">Successful Recoveries</div>
+          </div>
+          <div class="text-center p-3 bg-gray-50 rounded-lg">
+            <div class="text-2xl font-bold text-red-600"><%= @recovery_status.failed_recoveries || 0 %></div>
+            <div class="text-xs text-gray-500">Failed Recoveries</div>
+          </div>
+        </div>
+        
+        <!-- Recent Recovery Actions -->
+        <div :if={@recovery_status.recent_actions && length(@recovery_status.recent_actions) > 0}>
+          <h4 class="text-sm font-medium text-gray-900 mb-2">Recent Recovery Actions</h4>
+          <div class="space-y-2">
+            <div :for={action <- @recovery_status.recent_actions} class="text-xs bg-gray-50 p-2 rounded">
+              <div class="font-medium"><%= action.strategy %></div>
+              <div class="text-gray-600"><%= action.timestamp %> - <%= action.result %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div :if={!@recovery_status} class="text-center py-4 text-gray-500">
+        <p>No recovery status available</p>
+        <button type="button" phx-click="load_recovery_status" class="mt-2 text-blue-600 hover:text-blue-500 text-sm">
+          Load Recovery Status
+        </button>
+      </div>
+    </div>
+
+    <!-- Data Integrity Reports Panel -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium text-gray-900">Data Integrity Reports</h3>
+        <div class="flex space-x-2">
+          <button type="button" phx-click="generate_integrity_report" class="text-blue-600 hover:text-blue-500 text-sm">
+            Generate Report
+          </button>
+          <.refresh_button phx-click="refresh_integrity_status" />
+        </div>
+      </div>
+      
+      <div :if={@integrity_status} class="space-y-4">
+        <!-- Integrity Score -->
+        <div class="text-center p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg">
+          <div class={["text-3xl font-bold", integrity_score_color(@integrity_status.overall_score)]}>
+            <%= Float.round(@integrity_status.overall_score * 100, 1) %>%
+          </div>
+          <div class="text-sm text-gray-600">Overall Data Integrity</div>
+          <div class="text-xs text-gray-500 mt-1">Last checked: <%= @integrity_status.last_verification %></div>
+        </div>
+        
+        <!-- Integrity Metrics -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="text-center p-2 bg-gray-50 rounded">
+            <div class="text-lg font-semibold text-gray-900"><%= @integrity_status.verified_records || 0 %></div>
+            <div class="text-xs text-gray-500">Verified Records</div>
+          </div>
+          <div class="text-center p-2 bg-gray-50 rounded">
+            <div class="text-lg font-semibold text-red-600"><%= @integrity_status.discrepancies || 0 %></div>
+            <div class="text-xs text-gray-500">Discrepancies</div>
+          </div>
+        </div>
+        
+        <!-- Recent Reports -->
+        <div :if={@integrity_status.recent_reports && length(@integrity_status.recent_reports) > 0}>
+          <h4 class="text-sm font-medium text-gray-900 mb-2">Recent Reports</h4>
+          <div class="space-y-2">
+            <div :for={report <- @integrity_status.recent_reports} class="flex justify-between items-center text-xs bg-gray-50 p-2 rounded">
+              <div>
+                <div class="font-medium"><%= report.type %></div>
+                <div class="text-gray-600"><%= report.generated_at %></div>
+              </div>
+              <a href={report.download_url} class="text-blue-600 hover:text-blue-500">Download</a>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Alerts -->
+        <div :if={@integrity_status.alerts && length(@integrity_status.alerts) > 0} class="bg-red-50 border border-red-200 rounded-lg p-3">
+          <h4 class="text-sm font-medium text-red-800 mb-2">Integrity Alerts</h4>
+          <div class="space-y-1">
+            <div :for={alert <- @integrity_status.alerts} class="text-xs text-red-700">
+              <span class="font-medium"><%= alert.severity %>:</span> <%= alert.message %>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div :if={!@integrity_status} class="text-center py-4 text-gray-500">
+        <p>No integrity data available</p>
+        <button type="button" phx-click="load_integrity_status" class="mt-2 text-blue-600 hover:text-blue-500 text-sm">
+          Load Integrity Status
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

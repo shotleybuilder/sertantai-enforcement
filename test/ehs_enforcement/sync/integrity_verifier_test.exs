@@ -1,5 +1,5 @@
 defmodule EhsEnforcement.Sync.IntegrityVerifierTest do
-  use ExUnit.Case, async: true
+  use EhsEnforcement.DataCase, async: true
   
   alias EhsEnforcement.Sync.IntegrityVerifier
   require Ash.Query
