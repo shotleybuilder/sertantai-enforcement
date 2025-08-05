@@ -49,10 +49,10 @@ defmodule EhsEnforcement.Sync.Adapters.AirtableAdapter do
       :ok = AirtableAdapter.validate_connection(adapter_state)
   """
   
-  @behaviour EhsEnforcement.Sync.Generic.SourceAdapter
+  @behaviour NCDB2Phx.Utilities.SourceAdapter
   
   alias EhsEnforcement.Integrations.Airtable.ReqClient
-  alias EhsEnforcement.Sync.Generic.SourceAdapter
+  alias NCDB2Phx.Utilities.SourceAdapter
   require Logger
 
   @type adapter_config :: %{

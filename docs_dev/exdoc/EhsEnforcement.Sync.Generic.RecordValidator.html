@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>EhsEnforcement.Sync.Generic.RecordValidator — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-F5EF4C37.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">EhsEnforcement.Sync.Generic.RecordValidator</span> 
+      <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
+
+    </h1>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Generic record validation utilities for sync operations.</p><p>This module provides configurable validation rules that can be applied
+to records before processing. Validation rules help ensure data quality
+and prevent invalid records from being processed.</p><h2 id="module-built-in-validation-rules" class="section-heading"><a href="#module-built-in-validation-rules" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Built-in Validation Rules</span></h2><ul><li><code class="inline">:required_fields</code> - Ensure specified fields are present and non-empty</li><li><code class="inline">:field_types</code> - Validate field values match expected types</li><li><code class="inline">:field_formats</code> - Validate field values match regex patterns</li><li><code class="inline">:field_lengths</code> - Validate string field lengths within bounds</li><li><code class="inline">:field_ranges</code> - Validate numeric field values within ranges</li><li><code class="inline">:allowed_values</code> - Validate field values are in allowed sets</li><li><code class="inline">:custom_validation</code> - Apply custom validation function</li></ul><h2 id="module-configuration-examples" class="section-heading"><a href="#module-configuration-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Configuration Examples</span></h2><pre><code class="makeup elixir" translate="no"><span class="n">validation_rules</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="2927260412-1">[</span><span class="w">
+  </span><span class="p" data-group-id="2927260412-2">{</span><span class="ss">:required_fields</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2927260412-3">[</span><span class="ss">:name</span><span class="p">,</span><span class="w"> </span><span class="ss">:email</span><span class="p">,</span><span class="w"> </span><span class="ss">:status</span><span class="p" data-group-id="2927260412-3">]</span><span class="p" data-group-id="2927260412-2">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="2927260412-4">{</span><span class="ss">:field_types</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2927260412-5">%{</span><span class="ss">age</span><span class="p">:</span><span class="w"> </span><span class="ss">:integer</span><span class="p">,</span><span class="w"> </span><span class="ss">active</span><span class="p">:</span><span class="w"> </span><span class="ss">:boolean</span><span class="p">,</span><span class="w"> </span><span class="ss">score</span><span class="p">:</span><span class="w"> </span><span class="ss">:float</span><span class="p" data-group-id="2927260412-5">}</span><span class="p" data-group-id="2927260412-4">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="2927260412-6">{</span><span class="ss">:field_formats</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2927260412-7">%{</span><span class="ss">email</span><span class="p">:</span><span class="w"> </span><span class="sr">~r/^[^@]+@[^@]+.[^@]+$/</span><span class="p" data-group-id="2927260412-7">}</span><span class="p" data-group-id="2927260412-6">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="2927260412-8">{</span><span class="ss">:field_lengths</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2927260412-9">%{</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2927260412-10">%{</span><span class="ss">min</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="ss">max</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p" data-group-id="2927260412-10">}</span><span class="p" data-group-id="2927260412-9">}</span><span class="p" data-group-id="2927260412-8">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="2927260412-11">{</span><span class="ss">:field_ranges</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2927260412-12">%{</span><span class="ss">age</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2927260412-13">%{</span><span class="ss">min</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="ss">max</span><span class="p">:</span><span class="w"> </span><span class="mi">120</span><span class="p" data-group-id="2927260412-13">}</span><span class="p">,</span><span class="w"> </span><span class="ss">score</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2927260412-14">%{</span><span class="ss">min</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="ss">max</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p" data-group-id="2927260412-14">}</span><span class="p" data-group-id="2927260412-12">}</span><span class="p" data-group-id="2927260412-11">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="2927260412-15">{</span><span class="ss">:allowed_values</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2927260412-16">%{</span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2927260412-17">[</span><span class="s">&quot;active&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;inactive&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;pending&quot;</span><span class="p" data-group-id="2927260412-17">]</span><span class="p" data-group-id="2927260412-16">}</span><span class="p" data-group-id="2927260412-15">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="2927260412-18">{</span><span class="ss">:custom_validation</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">my_custom_validator</span><span class="o">/</span><span class="mi">1</span><span class="p" data-group-id="2927260412-18">}</span><span class="w">
+</span><span class="p" data-group-id="2927260412-1">]</span></code></pre><h2 id="module-usage" class="section-heading"><a href="#module-usage" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Usage</span></h2><pre><code class="makeup elixir" translate="no"><span class="n">record</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="6588149880-1">%{</span><span class="w">
+  </span><span class="s">&quot;fields&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="6588149880-2">%{</span><span class="w">
+    </span><span class="s">&quot;name&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;John Doe&quot;</span><span class="p">,</span><span class="w">
+    </span><span class="s">&quot;email&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;john@example.com&quot;</span><span class="p">,</span><span class="w">
+    </span><span class="s">&quot;age&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mi">25</span><span class="p">,</span><span class="w">
+    </span><span class="s">&quot;status&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;active&quot;</span><span class="w">
+  </span><span class="p" data-group-id="6588149880-2">}</span><span class="w">
+</span><span class="p" data-group-id="6588149880-1">}</span><span class="w">
+
+</span><span class="k">case</span><span class="w"> </span><span class="nc">RecordValidator</span><span class="o">.</span><span class="n">validate_record</span><span class="p" data-group-id="6588149880-3">(</span><span class="n">record</span><span class="p">,</span><span class="w"> </span><span class="n">validation_rules</span><span class="p" data-group-id="6588149880-3">)</span><span class="w"> </span><span class="k" data-group-id="6588149880-4">do</span><span class="w">
+  </span><span class="ss">:ok</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> 
+    </span><span class="c1"># Record is valid</span><span class="w">
+  </span><span class="p" data-group-id="6588149880-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">errors</span><span class="p" data-group-id="6588149880-5">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> 
+    </span><span class="c1"># Handle validation errors</span><span class="w">
+</span><span class="k" data-group-id="6588149880-4">end</span></code></pre>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-types summary">
+  <h2>
+    <a href="#types">Types</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:validation_error/0" data-no-tooltip="" translate="no">validation_error()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:validation_rule/0" data-no-tooltip="" translate="no">validation_rule()</a>
+
+      </div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#apply_validation_rule/2" data-no-tooltip="" translate="no">apply_validation_rule(record, rule)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Apply a single validation rule to a record.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#validate_record/2" data-no-tooltip="" translate="no">validate_record(record, validation_rules)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Validate a record against a list of validation rules.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h1>
+    <div class="types-list">
+<section class="detail" id="t:validation_error/0">
+
+  <div class="detail-header">
+    <a href="#t:validation_error/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validation_error()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> validation_error() :: %{
+  field: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>() | <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  rule: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  message: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  value: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+  expected: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()
+}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:validation_rule/0">
+
+  <div class="detail-header">
+    <a href="#t:validation_rule/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validation_rule()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> validation_rule() ::
+  {:required_fields, [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()]}
+  | {:field_types, %{required(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) =&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()}}
+  | {:field_formats, %{required(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) =&gt; <a href="https://hexdocs.pm/elixir/Regex.html#t:t/0">Regex.t</a>()}}
+  | {:field_lengths,
+     %{required(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) =&gt; %{min: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(), max: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()}}}
+  | {:field_ranges, %{required(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) =&gt; %{min: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), max: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()}}}
+  | {:allowed_values, %{required(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) =&gt; [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]}}
+  | {:custom_validation, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">function</a>()}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="apply_validation_rule/2">
+
+  <div class="detail-header">
+    <a href="#apply_validation_rule/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">apply_validation_rule(record, rule)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> apply_validation_rule(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(), <a href="#t:validation_rule/0">validation_rule</a>()) ::
+  :ok | {:error, <a href="#t:validation_error/0">validation_error</a>() | [<a href="#t:validation_error/0">validation_error</a>()]}</pre>
+
+      </div>
+
+<p>Apply a single validation rule to a record.</p><h2 id="apply_validation_rule/2-parameters" class="section-heading"><a href="#apply_validation_rule/2-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">record</code> - The record to validate</li><li><code class="inline">rule</code> - Single validation rule configuration</li></ul><h2 id="apply_validation_rule/2-returns" class="section-heading"><a href="#apply_validation_rule/2-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">:ok</code> - Record passes the validation</li><li><p><code class="inline">{:error, validation_error() | [validation_error()]}</code> - Validation error(s)</p></li></ul>
+  </section>
+</section>
+<section class="detail" id="validate_record/2">
+
+  <div class="detail-header">
+    <a href="#validate_record/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validate_record(record, validation_rules)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> validate_record(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(), [<a href="#t:validation_rule/0">validation_rule</a>()]) ::
+  :ok | {:error, [<a href="#t:validation_error/0">validation_error</a>()]}</pre>
+
+      </div>
+
+<p>Validate a record against a list of validation rules.</p><h2 id="validate_record/2-parameters" class="section-heading"><a href="#validate_record/2-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">record</code> - The record to validate</li><li><code class="inline">validation_rules</code> - List of validation rule configurations</li></ul><h2 id="validate_record/2-returns" class="section-heading"><a href="#validate_record/2-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">:ok</code> - Record passes all validations</li><li><code class="inline">{:error, [validation_error()]}</code> - List of validation errors</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

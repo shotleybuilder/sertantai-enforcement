@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>EhsEnforcement.Sync.Generic.TargetProcessor — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-F5EF4C37.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">EhsEnforcement.Sync.Generic.TargetProcessor</span> 
+      <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
+
+    </h1>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Generic target processor for handling record processing to any Ash resource.</p><p>This module provides a resource-agnostic interface for processing records
+into Ash resources. It handles the create/update/exists logic generically
+while allowing for resource-specific configuration.</p><h2 id="module-configuration" class="section-heading"><a href="#module-configuration" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Configuration</span></h2><p>The target processor is configured with a map containing:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="3528358315-1">%{</span><span class="w">
+  </span><span class="ss">unique_field</span><span class="p">:</span><span class="w"> </span><span class="ss">:regulator_id</span><span class="p">,</span><span class="w">           </span><span class="c1"># Field used for duplicate detection</span><span class="w">
+  </span><span class="ss">create_action</span><span class="p">:</span><span class="w"> </span><span class="ss">:create</span><span class="p">,</span><span class="w">                </span><span class="c1"># Ash action for creating records</span><span class="w">
+  </span><span class="ss">update_action</span><span class="p">:</span><span class="w"> </span><span class="ss">:update</span><span class="p">,</span><span class="w">                </span><span class="c1"># Ash action for updating records</span><span class="w">
+  </span><span class="ss">field_mapping</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3528358315-2">%{</span><span class="w">                      </span><span class="c1"># Map source fields to resource attributes</span><span class="w">
+    </span><span class="s">&quot;source_field&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ss">:target_attribute</span><span class="w">
+  </span><span class="p" data-group-id="3528358315-2">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">transformations</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3528358315-3">[</span><span class="w">                     </span><span class="c1"># Record transformations before processing</span><span class="w">
+    </span><span class="p" data-group-id="3528358315-4">{</span><span class="ss">:normalize_dates</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3528358315-5">[</span><span class="ss">:created_at</span><span class="p">,</span><span class="w"> </span><span class="ss">:updated_at</span><span class="p" data-group-id="3528358315-5">]</span><span class="p" data-group-id="3528358315-4">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="3528358315-6">{</span><span class="ss">:custom_transform</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">my_transform_function</span><span class="o">/</span><span class="mi">1</span><span class="p" data-group-id="3528358315-6">}</span><span class="w">
+  </span><span class="p" data-group-id="3528358315-3">]</span><span class="p">,</span><span class="w">
+  </span><span class="ss">duplicate_strategy</span><span class="p">:</span><span class="w"> </span><span class="ss">:update</span><span class="p">,</span><span class="w">           </span><span class="c1"># :update, :skip, :error</span><span class="w">
+  </span><span class="ss">validation_rules</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3528358315-7">[</span><span class="w">                    </span><span class="c1"># Custom validation rules</span><span class="w">
+    </span><span class="p" data-group-id="3528358315-8">{</span><span class="ss">:required_fields</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3528358315-9">[</span><span class="ss">:name</span><span class="p">,</span><span class="w"> </span><span class="ss">:type</span><span class="p" data-group-id="3528358315-9">]</span><span class="p" data-group-id="3528358315-8">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="3528358315-10">{</span><span class="ss">:custom_validation</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">my_validation_function</span><span class="o">/</span><span class="mi">1</span><span class="p" data-group-id="3528358315-10">}</span><span class="w">
+  </span><span class="p" data-group-id="3528358315-7">]</span><span class="w">
+</span><span class="p" data-group-id="3528358315-1">}</span></code></pre><h2 id="module-processing-flow" class="section-heading"><a href="#module-processing-flow" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Processing Flow</span></h2><ol><li>Record validation against rules</li><li>Field mapping and transformations</li><li>Duplicate detection using unique_field</li><li>Create/update/skip based on duplicate_strategy</li><li>Result classification and error handling</li></ol><h2 id="module-example-usage" class="section-heading"><a href="#module-example-usage" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example Usage</span></h2><pre><code class="makeup elixir" translate="no"><span class="c1"># Initialize processor for Case resource</span><span class="w">
+</span><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="4336557342-1">%{</span><span class="w">
+  </span><span class="ss">unique_field</span><span class="p">:</span><span class="w"> </span><span class="ss">:regulator_id</span><span class="p">,</span><span class="w">
+  </span><span class="ss">create_action</span><span class="p">:</span><span class="w"> </span><span class="ss">:create</span><span class="p">,</span><span class="w">
+  </span><span class="ss">update_action</span><span class="p">:</span><span class="w"> </span><span class="ss">:update</span><span class="p">,</span><span class="w">
+  </span><span class="ss">field_mapping</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4336557342-2">%{</span><span class="w">
+    </span><span class="s">&quot;case_id&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ss">:regulator_id</span><span class="p">,</span><span class="w">
+    </span><span class="s">&quot;offender_name&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ss">:offender_name</span><span class="p">,</span><span class="w">
+    </span><span class="s">&quot;action_type&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ss">:offence_action_type</span><span class="w">
+  </span><span class="p" data-group-id="4336557342-2">}</span><span class="w">
+</span><span class="p" data-group-id="4336557342-1">}</span><span class="w">
+
+</span><span class="p" data-group-id="4336557342-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">processor</span><span class="p" data-group-id="4336557342-3">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">TargetProcessor</span><span class="o">.</span><span class="n">initialize</span><span class="p" data-group-id="4336557342-4">(</span><span class="nc">MyApp.Cases.Case</span><span class="p">,</span><span class="w"> </span><span class="n">config</span><span class="p" data-group-id="4336557342-4">)</span><span class="w">
+
+</span><span class="c1"># Process a record</span><span class="w">
+</span><span class="n">record</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="4336557342-5">%{</span><span class="w">
+  </span><span class="s">&quot;id&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;rec123&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;fields&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="4336557342-6">%{</span><span class="w">
+    </span><span class="s">&quot;case_id&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;HSE001&quot;</span><span class="p">,</span><span class="w">
+    </span><span class="s">&quot;offender_name&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;Acme Corp&quot;</span><span class="p">,</span><span class="w">
+    </span><span class="s">&quot;action_type&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;Court Case&quot;</span><span class="w">
+  </span><span class="p" data-group-id="4336557342-6">}</span><span class="w">
+</span><span class="p" data-group-id="4336557342-5">}</span><span class="w">
+
+</span><span class="p" data-group-id="4336557342-7">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p" data-group-id="4336557342-7">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">TargetProcessor</span><span class="o">.</span><span class="n">process_record</span><span class="p" data-group-id="4336557342-8">(</span><span class="n">processor</span><span class="p">,</span><span class="w"> </span><span class="n">record</span><span class="p">,</span><span class="w"> </span><span class="n">config</span><span class="p">,</span><span class="w"> </span><span class="ss">actor</span><span class="p">:</span><span class="w"> </span><span class="n">admin_user</span><span class="p" data-group-id="4336557342-8">)</span><span class="w">
+</span><span class="c1"># result is {:created, case_record} | {:updated, case_record} | {:existing, case_record}</span></code></pre>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-types summary">
+  <h2>
+    <a href="#types">Types</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:processing_result/0" data-no-tooltip="" translate="no">processing_result()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:processor_state/0" data-no-tooltip="" translate="no">processor_state()</a>
+
+      </div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_batch_stats/1" data-no-tooltip="" translate="no">get_batch_stats(results)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get processing statistics for a batch of results.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#initialize/2" data-no-tooltip="" translate="no">initialize(resource_module, config)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Initialize the target processor for a specific Ash resource.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#process_batch/4" data-no-tooltip="" translate="no">process_batch(processor_state, records, config \\ %{}, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Process multiple records in batch with optimized performance.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#process_record/4" data-no-tooltip="" translate="no">process_record(processor_state, record, config \\ %{}, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Process a single record into the target resource.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h1>
+    <div class="types-list">
+<section class="detail" id="t:processing_result/0">
+
+  <div class="detail-header">
+    <a href="#t:processing_result/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">processing_result()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> processing_result() ::
+  {:created, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()} | {:updated, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()} | {:existing, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:processor_state/0">
+
+  <div class="detail-header">
+    <a href="#t:processor_state/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">processor_state()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> processor_state() :: %{resource_module: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(), config: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="get_batch_stats/1">
+
+  <div class="detail-header">
+    <a href="#get_batch_stats/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_batch_stats(results)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> get_batch_stats([<a href="#t:processing_result/0">processing_result</a>()]) :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()</pre>
+
+      </div>
+
+<p>Get processing statistics for a batch of results.</p><p>Analyzes batch processing results and returns statistics.</p>
+  </section>
+</section>
+<section class="detail" id="initialize/2">
+
+  <div class="detail-header">
+    <a href="#initialize/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">initialize(resource_module, config)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> initialize(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: {:ok, <a href="#t:processor_state/0">processor_state</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
+
+      </div>
+
+<p>Initialize the target processor for a specific Ash resource.</p><h2 id="initialize/2-parameters" class="section-heading"><a href="#initialize/2-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">resource_module</code> - The Ash resource module to process records into</li><li><code class="inline">config</code> - Configuration map with processing options</li></ul><h2 id="initialize/2-returns" class="section-heading"><a href="#initialize/2-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">{:ok, processor_state}</code> - Success with initialized processor</li><li><code class="inline">{:error, reason}</code> - Initialization failed</li></ul>
+  </section>
+</section>
+<section class="detail" id="process_batch/4">
+
+    <span id="process_batch/2"></span>
+
+    <span id="process_batch/3"></span>
+
+  <div class="detail-header">
+    <a href="#process_batch/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">process_batch(processor_state, records, config \\ %{}, opts \\ [])</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> process_batch(<a href="#t:processor_state/0">processor_state</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()], <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, [<a href="#t:processing_result/0">processing_result</a>()]} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
+
+      </div>
+
+<p>Process multiple records in batch with optimized performance.</p><p>This function processes multiple records efficiently, with options
+for parallel processing and batch optimizations.</p>
+  </section>
+</section>
+<section class="detail" id="process_record/4">
+
+    <span id="process_record/2"></span>
+
+    <span id="process_record/3"></span>
+
+  <div class="detail-header">
+    <a href="#process_record/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">process_record(processor_state, record, config \\ %{}, opts \\ [])</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> process_record(<a href="#t:processor_state/0">processor_state</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="#t:processing_result/0">processing_result</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
+
+      </div>
+
+<p>Process a single record into the target resource.</p><p>This is the main processing function that handles the complete flow
+from record validation through create/update operations.</p><h2 id="process_record/4-parameters" class="section-heading"><a href="#process_record/4-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">processor_state</code> - Processor state from initialize/2</li><li><code class="inline">record</code> - Source record to process</li><li><code class="inline">config</code> - Processing configuration (can override processor config)</li><li><code class="inline">opts</code> - Processing options including :actor</li></ul><h2 id="process_record/4-returns" class="section-heading"><a href="#process_record/4-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">{:ok, processing_result}</code> - Success with operation result</li><li><code class="inline">{:error, reason}</code> - Processing failed</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>EhsEnforcement.Sync.Generic.ConfigValidator — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-F5EF4C37.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">EhsEnforcement.Sync.Generic.ConfigValidator</span> 
+      <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
+
+    </h1>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Configuration validation for the generic sync engine.</p><p>This module provides comprehensive validation for sync configurations,
+ensuring that all required components are properly configured before
+sync operations begin. It validates:</p><ul><li>Source adapter configuration and connectivity</li><li>Target resource configuration and permissions</li><li>Processing pipeline configuration</li><li>PubSub and session tracking configuration</li><li>Error handling and recovery configuration</li></ul><h2 id="module-validation-levels" class="section-heading"><a href="#module-validation-levels" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Validation Levels</span></h2><ol><li><strong>Basic Validation</strong>: Required fields and data types</li><li><strong>Structural Validation</strong>: Module loading and interface compliance</li><li><strong>Connectivity Validation</strong>: External service availability</li><li><strong>Permission Validation</strong>: Resource access and authorization</li><li><strong>Integration Validation</strong>: Component compatibility</li></ol><h2 id="module-example-usage" class="section-heading"><a href="#module-example-usage" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Example Usage</span></h2><pre><code class="makeup elixir" translate="no"><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="7094143409-1">%{</span><span class="w">
+  </span><span class="ss">source_adapter</span><span class="p">:</span><span class="w"> </span><span class="nc">MyApp.Adapters.AirtableAdapter</span><span class="p">,</span><span class="w">
+  </span><span class="ss">source_config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7094143409-2">%{</span><span class="ss">api_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;key&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">base_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;base&quot;</span><span class="p" data-group-id="7094143409-2">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">target_resource</span><span class="p">:</span><span class="w"> </span><span class="nc">MyApp.Cases.Case</span><span class="p">,</span><span class="w">
+  </span><span class="ss">target_config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7094143409-3">%{</span><span class="ss">unique_field</span><span class="p">:</span><span class="w"> </span><span class="ss">:regulator_id</span><span class="p" data-group-id="7094143409-3">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">processing_config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7094143409-4">%{</span><span class="ss">batch_size</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p" data-group-id="7094143409-4">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">pubsub_config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7094143409-5">%{</span><span class="ss">module</span><span class="p">:</span><span class="w"> </span><span class="nc">MyApp.PubSub</span><span class="p" data-group-id="7094143409-5">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">session_config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7094143409-6">%{</span><span class="ss">sync_type</span><span class="p">:</span><span class="w"> </span><span class="ss">:import_cases</span><span class="p" data-group-id="7094143409-6">}</span><span class="w">
+</span><span class="p" data-group-id="7094143409-1">}</span><span class="w">
+
+</span><span class="k">case</span><span class="w"> </span><span class="nc">ConfigValidator</span><span class="o">.</span><span class="n">validate_sync_config</span><span class="p" data-group-id="7094143409-7">(</span><span class="n">config</span><span class="p" data-group-id="7094143409-7">)</span><span class="w"> </span><span class="k" data-group-id="7094143409-8">do</span><span class="w">
+  </span><span class="p" data-group-id="7094143409-9">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">validated_config</span><span class="p" data-group-id="7094143409-9">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> 
+    </span><span class="c1"># Config is valid, proceed with sync</span><span class="w">
+  </span><span class="p" data-group-id="7094143409-10">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">validation_errors</span><span class="p" data-group-id="7094143409-10">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> 
+    </span><span class="c1"># Handle validation errors</span><span class="w">
+</span><span class="k" data-group-id="7094143409-8">end</span></code></pre>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-types summary">
+  <h2>
+    <a href="#types">Types</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:validation_error/0" data-no-tooltip="" translate="no">validation_error()</a>
+
+      </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#t:validation_result/0" data-no-tooltip="" translate="no">validation_result()</a>
+
+      </div>
+
+    </div>
+
+</div>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#validate_source_adapter_config/2" data-no-tooltip="" translate="no">validate_source_adapter_config(adapter_module, adapter_config)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Validate only the source adapter configuration.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#validate_sync_config/2" data-no-tooltip="" translate="no">validate_sync_config(config, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Validate a complete sync configuration.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#validate_target_resource_config/2" data-no-tooltip="" translate="no">validate_target_resource_config(resource_module, resource_config)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Validate only the target resource configuration.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="types" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#types">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Types</span>
+    </h1>
+    <div class="types-list">
+<section class="detail" id="t:validation_error/0">
+
+  <div class="detail-header">
+    <a href="#t:validation_error/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validation_error()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> validation_error() :: %{
+  field: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  error: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  message: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  details: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()
+}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:validation_result/0">
+
+  <div class="detail-header">
+    <a href="#t:validation_result/0" class="detail-link" data-no-tooltip="" aria-label="Link to this type">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validation_result()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@type</span> validation_result() :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, [<a href="#t:validation_error/0">validation_error</a>()]}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+    </div>
+  </section>
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="validate_source_adapter_config/2">
+
+  <div class="detail-header">
+    <a href="#validate_source_adapter_config/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validate_source_adapter_config(adapter_module, adapter_config)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> validate_source_adapter_config(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="#t:validation_result/0">validation_result</a>()</pre>
+
+      </div>
+
+<p>Validate only the source adapter configuration.</p><p>Useful for testing source adapter configurations independently.</p>
+  </section>
+</section>
+<section class="detail" id="validate_sync_config/2">
+
+    <span id="validate_sync_config/1"></span>
+
+  <div class="detail-header">
+    <a href="#validate_sync_config/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validate_sync_config(config, opts \\ [])</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> validate_sync_config(
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) :: <a href="#t:validation_result/0">validation_result</a>()</pre>
+
+      </div>
+
+<p>Validate a complete sync configuration.</p><p>Performs comprehensive validation of all configuration components
+and returns either a validated configuration or detailed error information.</p><h2 id="validate_sync_config/2-parameters" class="section-heading"><a href="#validate_sync_config/2-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">config</code> - Complete sync configuration map</li><li><code class="inline">opts</code> - Validation options:<ul><li><code class="inline">:skip_connectivity</code> - Skip external connectivity checks (default: false)  </li><li><code class="inline">:skip_permissions</code> - Skip permission validation (default: false)</li><li><p><code class="inline">:validation_level</code> - :basic | :full (default: :full)</p></li></ul></li></ul><h2 id="validate_sync_config/2-returns" class="section-heading"><a href="#validate_sync_config/2-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">{:ok, validated_config}</code> - Configuration is valid</li><li><code class="inline">{:error, validation_errors}</code> - List of validation errors</li></ul>
+  </section>
+</section>
+<section class="detail" id="validate_target_resource_config/2">
+
+  <div class="detail-header">
+    <a href="#validate_target_resource_config/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">validate_target_resource_config(resource_module, resource_config)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> validate_target_resource_config(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="#t:validation_result/0">validation_result</a>()</pre>
+
+      </div>
+
+<p>Validate only the target resource configuration.</p><p>Useful for testing target resource configurations independently.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>
