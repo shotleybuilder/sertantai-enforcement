@@ -6,7 +6,7 @@ defmodule EhsEnforcement.Sync do
   
   use Ash.Domain
   
-  alias EhsEnforcement.Sync.{AirtableImporter, EventBroadcaster, SessionManager}
+  alias EhsEnforcement.Sync.{AirtableImporter, EventBroadcaster, SessionManager, RecordProcessor}
   alias EhsEnforcement.Integrations.Airtable.ReqClient
   require Logger
 
@@ -232,15 +232,18 @@ defmodule EhsEnforcement.Sync do
     {:ok, session} = SessionManager.start_session(session_config)
     SessionManager.mark_session_running(session.session_id)
     
-    imported_count = 0
-    error_count = 0
+    # Initialize counters for enhanced tracking
+    total_created = 0
+    total_updated = 0
+    total_exists = 0
+    total_errors = 0
     
     result = AirtableImporter.stream_airtable_records()
     |> Stream.filter(&is_notice_record?/1)
     |> Stream.take(limit)
     |> Stream.chunk_every(batch_size)
     |> Stream.with_index()
-    |> Enum.reduce_while({imported_count, error_count}, fn {batch, batch_index}, {acc_imported, acc_errors} ->
+    |> Enum.reduce_while({total_created, total_updated, total_exists, total_errors}, fn {batch, batch_index}, {acc_created, acc_updated, acc_exists, acc_errors} ->
       batch_number = batch_index + 1
       Logger.info("📦 Processing batch #{batch_number} (#{length(batch)} notice records)")
       
@@ -252,51 +255,55 @@ defmodule EhsEnforcement.Sync do
       }
       {:ok, batch_progress} = SessionManager.start_batch(session.session_id, batch_config)
       
-      case import_notice_batch(batch, actor) do
+      case import_notice_batch(batch, actor, session.session_id) do
         {:ok, batch_stats} ->
-          new_imported = acc_imported + batch_stats.imported
+          new_created = acc_created + batch_stats.created
+          new_updated = acc_updated + batch_stats.updated
+          new_exists = acc_exists + batch_stats.exists
           new_errors = acc_errors + batch_stats.errors
           
           # Update batch progress with enhanced statistics
           batch_results = %{
-            records_processed: batch_stats.imported + batch_stats.errors,
-            records_created: batch_stats.imported, # Enhanced in next task
-            records_updated: 0, # Enhanced in next task
-            records_existing: 0, # Enhanced in next task
+            records_processed: batch_stats.processed,
+            records_created: batch_stats.created,
+            records_updated: batch_stats.updated,
+            records_existing: batch_stats.exists,
             records_failed: batch_stats.errors
           }
           
           SessionManager.update_batch_progress(batch_progress.id, batch_results)
           SessionManager.complete_batch(batch_progress.id, batch_results)
           
-          Logger.info("✅ Batch #{batch_number} completed. Imported: #{batch_stats.imported}, Errors: #{batch_stats.errors}")
+          Logger.info("✅ Batch #{batch_number} completed. Created: #{batch_stats.created}, Updated: #{batch_stats.updated}, Exists: #{batch_stats.exists}, Errors: #{batch_stats.errors}")
           
-          if new_imported >= limit do
-            {:halt, {new_imported, new_errors}}
+          total_processed = new_created + new_updated + new_exists
+          if total_processed >= limit do
+            {:halt, {new_created, new_updated, new_exists, new_errors}}
           else
-            {:cont, {new_imported, new_errors}}
+            {:cont, {new_created, new_updated, new_exists, new_errors}}
           end
           
       end
     end)
     
     case result do
-      {imported, errors} ->
-        Logger.info("🎉 Notice import completed! Imported: #{imported}, Errors: #{errors}")
+      {created, updated, exists, errors} ->
+        total_processed = created + updated + exists + errors
+        Logger.info("🎉 Notice import completed! Created: #{created}, Updated: #{updated}, Exists: #{exists}, Errors: #{errors}")
         
         # Complete the session with final stats
         final_stats = %{
-          total_processed: imported + errors,
-          total_created: imported, # Enhanced in next task
-          total_updated: 0, # Enhanced in next task
-          total_existing: 0, # Enhanced in next task
+          total_processed: total_processed,
+          total_created: created,
+          total_updated: updated,
+          total_existing: exists,
           total_failed: errors,
           sync_type: :import_notices
         }
         
         SessionManager.complete_session(session.session_id, final_stats)
         
-        {:ok, %{imported: imported, created: imported, updated: 0, existing: 0, errors: []}}
+        {:ok, %{imported: total_processed, created: created, updated: updated, existing: exists, errors: []}}
         
       error ->
         Logger.error("💥 Notice import failed: #{inspect(error)}")
@@ -317,76 +324,102 @@ defmodule EhsEnforcement.Sync do
   defp do_import_cases(limit, batch_size, actor) do
     Logger.info("📥 Starting case import with limit: #{limit}, batch_size: #{batch_size}")
     
-    # Broadcast sync started event
-    broadcast_sync_event(:sync_started, %{
-      sync_type: :cases,
-      limit: limit,
-      batch_size: batch_size
-    })
+    # Start a new sync session using SessionManager
+    session_config = %{
+      sync_type: :import_cases,
+      target_resource: "EhsEnforcement.Enforcement.Case", 
+      config: %{batch_size: batch_size, limit: limit},
+      initiated_by: extract_user_identifier(actor),
+      estimated_total: limit
+    }
     
-    imported_count = 0
-    error_count = 0
+    {:ok, session} = SessionManager.start_session(session_config)
+    SessionManager.mark_session_running(session.session_id)
+    
+    # Initialize counters for enhanced tracking
+    total_created = 0
+    total_updated = 0
+    total_exists = 0
+    total_errors = 0
     
     result = AirtableImporter.stream_airtable_records()
     |> Stream.filter(&is_case_record?/1)
     |> Stream.take(limit)
     |> Stream.chunk_every(batch_size)
     |> Stream.with_index()
-    |> Enum.reduce_while({imported_count, error_count}, fn {batch, batch_index}, {acc_imported, acc_errors} ->
+    |> Enum.reduce_while({total_created, total_updated, total_exists, total_errors}, fn {batch, batch_index}, {acc_created, acc_updated, acc_exists, acc_errors} ->
       batch_number = batch_index + 1
       Logger.info("📦 Processing batch #{batch_number} (#{length(batch)} case records)")
       
-      case import_case_batch(batch, actor) do
+      # Start batch tracking
+      batch_config = %{
+        batch_number: batch_number,
+        batch_size: length(batch),
+        source_ids: extract_source_ids(batch)
+      }
+      {:ok, batch_progress} = SessionManager.start_batch(session.session_id, batch_config)
+      
+      case import_case_batch(batch, actor, session.session_id) do
         {:ok, batch_stats} ->
-          new_imported = acc_imported + batch_stats.imported
+          new_created = acc_created + batch_stats.created
+          new_updated = acc_updated + batch_stats.updated
+          new_exists = acc_exists + batch_stats.exists
           new_errors = acc_errors + batch_stats.errors
           
-          # Broadcast progress update (use available data for now)
-          broadcast_sync_event(:sync_progress, %{
-            sync_type: :cases,
-            records_processed: new_imported,
-            records_created: new_imported, # For now, assume all imported are created
-            records_updated: 0,
-            records_exists: 0,
-            errors_count: new_errors,
-            current_batch: batch_number
-          })
+          # Update batch progress with enhanced statistics
+          batch_results = %{
+            records_processed: batch_stats.processed,
+            records_created: batch_stats.created,
+            records_updated: batch_stats.updated,
+            records_existing: batch_stats.exists,
+            records_failed: batch_stats.errors
+          }
           
-          Logger.info("✅ Batch #{batch_number} completed. Imported: #{batch_stats.imported}, Errors: #{batch_stats.errors}")
+          SessionManager.update_batch_progress(batch_progress.id, batch_results)
+          SessionManager.complete_batch(batch_progress.id, batch_results)
           
-          if new_imported >= limit do
-            {:halt, {new_imported, new_errors}}
+          Logger.info("✅ Batch #{batch_number} completed. Created: #{batch_stats.created}, Updated: #{batch_stats.updated}, Exists: #{batch_stats.exists}, Errors: #{batch_stats.errors}")
+          
+          total_processed = new_created + new_updated + new_exists
+          if total_processed >= limit do
+            {:halt, {new_created, new_updated, new_exists, new_errors}}
           else
-            {:cont, {new_imported, new_errors}}
+            {:cont, {new_created, new_updated, new_exists, new_errors}}
           end
           
       end
     end)
     
     case result do
-      {imported, errors} ->
-        Logger.info("🎉 Case import completed! Imported: #{imported}, Errors: #{errors}")
+      {created, updated, exists, errors} ->
+        total_processed = created + updated + exists + errors
+        Logger.info("🎉 Case import completed! Created: #{created}, Updated: #{updated}, Exists: #{exists}, Errors: #{errors}")
         
-        # Broadcast completion event (use available data for now) 
-        broadcast_sync_event(:sync_completed, %{
-          sync_type: :cases,
-          records_processed: imported,
-          records_created: imported, # For now, assume all imported are created
-          records_updated: 0,
-          records_exists: 0,
-          errors_count: errors
-        })
+        # Complete the session with final stats
+        final_stats = %{
+          total_processed: total_processed,
+          total_created: created,
+          total_updated: updated,
+          total_existing: exists,
+          total_failed: errors,
+          sync_type: :import_cases
+        }
         
-        {:ok, %{imported: imported, created: imported, updated: 0, existing: 0, errors: []}}
+        SessionManager.complete_session(session.session_id, final_stats)
+        
+        {:ok, %{imported: total_processed, created: created, updated: updated, existing: exists, errors: []}}
         
       error ->
         Logger.error("💥 Case import failed: #{inspect(error)}")
         
-        # Broadcast error event
-        broadcast_sync_event(:sync_error, %{
-          sync_type: :cases,
-          error: inspect(error)
-        })
+        # Mark session as failed
+        error_info = %{
+          message: "Case import failed",
+          error: inspect(error),
+          sync_type: :import_cases
+        }
+        
+        SessionManager.fail_session(session.session_id, error_info)
         
         {:error, error}
     end
@@ -404,115 +437,50 @@ defmodule EhsEnforcement.Sync do
     action_type in ["Court Case", "Caution"]
   end
 
-  defp import_case_batch(records, actor) do
+  defp import_case_batch(records, actor, session_id \\ nil) do
     results = Enum.map(records, fn record ->
-      case import_single_case(record, actor) do
-        {:ok, _case} -> :ok
-        {:error, error} -> 
-          fields = record["fields"] || %{}
-          Logger.error("Failed to import case #{fields["regulator_id"]}: #{inspect(error)}")
-          :error
-      end
+      RecordProcessor.process_case_record(record, actor: actor, session_id: session_id)
     end)
     
-    imported_count = Enum.count(results, &(&1 == :ok))
-    error_count = Enum.count(results, &(&1 == :error))
+    # Count results by status
+    created_count = Enum.count(results, fn {status, _} -> status == :created end)
+    updated_count = Enum.count(results, fn {status, _} -> status == :updated end) 
+    exists_count = Enum.count(results, fn {status, _} -> status == :exists end)
+    error_count = Enum.count(results, fn {status, _} -> status == :error end)
     
-    {:ok, %{imported: imported_count, errors: error_count}}
+    total_processed = created_count + updated_count + exists_count + error_count
+    
+    {:ok, %{
+      processed: total_processed,
+      created: created_count,
+      updated: updated_count,
+      exists: exists_count,
+      errors: error_count
+    }}
   end
 
-  defp import_notice_batch(records, actor) do
+  defp import_notice_batch(records, actor, session_id \\ nil) do
     results = Enum.map(records, fn record ->
-      case import_single_notice(record, actor) do
-        {:ok, _notice} -> :ok
-        {:error, error} -> 
-          fields = record["fields"] || %{}
-          Logger.error("Failed to import notice #{fields["regulator_id"]}: #{inspect(error)}")
-          :error
-      end
+      RecordProcessor.process_notice_record(record, actor: actor, session_id: session_id)
     end)
     
-    imported_count = Enum.count(results, &(&1 == :ok))
-    error_count = Enum.count(results, &(&1 == :error))
+    # Count results by status
+    created_count = Enum.count(results, fn {status, _} -> status == :created end)
+    updated_count = Enum.count(results, fn {status, _} -> status == :updated end)
+    exists_count = Enum.count(results, fn {status, _} -> status == :exists end)
+    error_count = Enum.count(results, fn {status, _} -> status == :error end)
     
-    {:ok, %{imported: imported_count, errors: error_count}}
+    total_processed = created_count + updated_count + exists_count + error_count
+    
+    {:ok, %{
+      processed: total_processed,
+      created: created_count,
+      updated: updated_count,
+      exists: exists_count,
+      errors: error_count
+    }}
   end
 
-  defp import_single_case(record, _actor) do
-    fields = record["fields"] || %{}
-    
-    attrs = %{
-      agency_code: String.to_atom(fields["agency_code"] || "hse"),
-      regulator_id: to_string(fields["regulator_id"]),
-      offender_attrs: %{
-        name: fields["offender_name"],
-        postcode: fields["offender_postcode"],
-        local_authority: fields["offender_local_authority"],
-        main_activity: fields["offender_main_activity"]
-      },
-      offence_action_type: fields["offence_action_type"],
-      offence_action_date: parse_date(fields["offence_action_date"]),
-      offence_hearing_date: parse_date(fields["offence_hearing_date"]),
-      offence_result: fields["offence_result"],
-      offence_fine: parse_decimal(fields["offence_fine"]),
-      offence_costs: parse_decimal(fields["offence_costs"]),
-      offence_breaches: fields["offence_breaches"],
-      offence_breaches_clean: fields["offence_breaches_clean"],
-      regulator_function: fields["regulator_function"],
-      regulator_url: fields["regulator_url"],
-      related_cases: fields["related_cases"]
-    }
-    
-    EhsEnforcement.Enforcement.create_case(attrs)
-  end
-
-  defp import_single_notice(record, _actor) do
-    fields = record["fields"] || %{}
-    
-    attrs = %{
-      agency_code: String.to_atom(fields["agency_code"] || "hse"),
-      regulator_id: to_string(fields["regulator_id"]),
-      offender_attrs: %{
-        name: fields["offender_name"],
-        postcode: fields["offender_postcode"],
-        local_authority: fields["offender_local_authority"],
-        main_activity: fields["offender_main_activity"]
-      },
-      offence_action_type: fields["offence_action_type"],
-      offence_action_date: parse_date(fields["offence_action_date"]),
-      notice_date: parse_date(fields["notice_date"]),
-      operative_date: parse_date(fields["operative_date"]),
-      compliance_date: parse_date(fields["compliance_date"]),
-      notice_body: fields["notice_body"],
-      offence_breaches: fields["offence_breaches"]
-    }
-    
-    EhsEnforcement.Enforcement.create_notice(attrs)
-  end
-
-  defp parse_date(nil), do: nil
-  defp parse_date(date_string) when is_binary(date_string) do
-    case Date.from_iso8601(date_string) do
-      {:ok, date} -> date
-      _ -> nil
-    end
-  end
-  defp parse_date(_), do: nil
-
-  defp parse_decimal(nil), do: nil
-  defp parse_decimal(value) when is_binary(value) do
-    case Decimal.parse(value) do
-      {decimal, _} -> decimal
-      _ -> nil
-    end
-  end
-  defp parse_decimal(value) when is_integer(value) do
-    Decimal.new(value)
-  end
-  defp parse_decimal(value) when is_float(value) do
-    Decimal.from_float(value)
-  end
-  defp parse_decimal(_), do: nil
 
   defp count_notices do
     case EhsEnforcement.Enforcement.list_notices() do

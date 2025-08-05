@@ -82,9 +82,15 @@ EhsEnforcement.Scraping.ScrapedCase.html
 EhsEnforcement.Scraping.html
 EhsEnforcement.Sync.AirtableClientBehaviour.html
 EhsEnforcement.Sync.AirtableImporter.html
+EhsEnforcement.Sync.EventBroadcaster.html
 EhsEnforcement.Sync.OffenderMatcher.html
+EhsEnforcement.Sync.ProgressStreamer.html
+EhsEnforcement.Sync.ProgressSupervisor.html
+EhsEnforcement.Sync.SessionManager.html
 EhsEnforcement.Sync.SyncLog.html
 EhsEnforcement.Sync.SyncManager.html
+EhsEnforcement.Sync.SyncProgress.html
+EhsEnforcement.Sync.SyncSession.html
 EhsEnforcement.Sync.SyncWorker.html
 EhsEnforcement.Sync.html
 EhsEnforcement.Telemetry.html
@@ -95,6 +101,7 @@ EhsEnforcementWeb.Admin.ConfigLive.Index.html
 EhsEnforcementWeb.Admin.ConfigLive.Scraping.html
 EhsEnforcementWeb.Admin.NoticeLive.Scrape.html
 EhsEnforcementWeb.Admin.ScrapingLive.Index.html
+EhsEnforcementWeb.Admin.SyncLive.Components.html
 EhsEnforcementWeb.Admin.SyncLive.Index.html
 EhsEnforcementWeb.AgencyLive.html
 EhsEnforcementWeb.AuthController.html
@@ -146,8 +153,8 @@ dist/lato-latin-700-normal-2XVSBPG4.woff2
 dist/lato-latin-ext-400-normal-N27NCBWW.woff2
 dist/lato-latin-ext-700-normal-Q2L5DVMW.woff2
 dist/remixicon-QPNJX265.woff2
-dist/search_data-056E2B5E.js
-dist/sidebar_items-E3CFA9CB.js
+dist/search_data-1941C4D7.js
+dist/sidebar_items-6776299C.js
 index.html
 readme.html
 search.html

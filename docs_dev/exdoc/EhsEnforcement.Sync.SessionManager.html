@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>EhsEnforcement.Sync.SessionManager — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-6776299C.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">EhsEnforcement.Sync.SessionManager</span> 
+      <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
+
+    </h1>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Manages sync sessions with comprehensive tracking and progress monitoring.
+Designed with package-ready architecture for future extraction.</p><p>This module provides session lifecycle management, progress tracking,
+and event broadcasting for any type of synchronization operation.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#complete_batch/2" data-no-tooltip="" translate="no">complete_batch(batch_id, final_results)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Mark a batch as completed with final results.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#complete_session/2" data-no-tooltip="" translate="no">complete_session(session_id, final_stats \\ %{})</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Complete a sync session with final statistics.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#fail_session/2" data-no-tooltip="" translate="no">fail_session(session_id, error_info)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Mark a session as failed with error details.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_session/1" data-no-tooltip="" translate="no">get_session(session_id)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get session by session_id.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_session_batches/1" data-no-tooltip="" translate="no">get_session_batches(session_id)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get all batches for a session.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_session_stats/1" data-no-tooltip="" translate="no">get_session_stats(session_id)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Get session statistics and progress summary.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#mark_session_running/1" data-no-tooltip="" translate="no">mark_session_running(session_id)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Mark a session as running and begin progress tracking.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_batch/2" data-no-tooltip="" translate="no">start_batch(session_id, batch_config)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Start tracking a new batch within a session.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_session/1" data-no-tooltip="" translate="no">start_session(session_config)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Start a new sync session with comprehensive tracking.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#update_batch_progress/2" data-no-tooltip="" translate="no">update_batch_progress(batch_id, progress_data)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Update batch progress with processing results.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="complete_batch/2">
+
+  <div class="detail-header">
+    <a href="#complete_batch/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">complete_batch(batch_id, final_results)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Mark a batch as completed with final results.</p>
+  </section>
+</section>
+<section class="detail" id="complete_session/2">
+
+    <span id="complete_session/1"></span>
+
+  <div class="detail-header">
+    <a href="#complete_session/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">complete_session(session_id, final_stats \\ %{})</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Complete a sync session with final statistics.</p>
+  </section>
+</section>
+<section class="detail" id="fail_session/2">
+
+  <div class="detail-header">
+    <a href="#fail_session/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">fail_session(session_id, error_info)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Mark a session as failed with error details.</p>
+  </section>
+</section>
+<section class="detail" id="get_session/1">
+
+  <div class="detail-header">
+    <a href="#get_session/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_session(session_id)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Get session by session_id.</p>
+  </section>
+</section>
+<section class="detail" id="get_session_batches/1">
+
+  <div class="detail-header">
+    <a href="#get_session_batches/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_session_batches(session_id)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Get all batches for a session.</p>
+  </section>
+</section>
+<section class="detail" id="get_session_stats/1">
+
+  <div class="detail-header">
+    <a href="#get_session_stats/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_session_stats(session_id)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Get session statistics and progress summary.</p>
+  </section>
+</section>
+<section class="detail" id="mark_session_running/1">
+
+  <div class="detail-header">
+    <a href="#mark_session_running/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">mark_session_running(session_id)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Mark a session as running and begin progress tracking.</p>
+  </section>
+</section>
+<section class="detail" id="start_batch/2">
+
+  <div class="detail-header">
+    <a href="#start_batch/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_batch(session_id, batch_config)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Start tracking a new batch within a session.</p>
+  </section>
+</section>
+<section class="detail" id="start_session/1">
+
+  <div class="detail-header">
+    <a href="#start_session/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_session(session_config)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Start a new sync session with comprehensive tracking.</p><h2 id="start_session/1-parameters" class="section-heading"><a href="#start_session/1-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">session_config</code> - Map containing session configuration</li></ul><h2 id="start_session/1-session-config-options" class="section-heading"><a href="#start_session/1-session-config-options" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Session Config Options</span></h2><ul><li><code class="inline">:session_id</code> - Unique session identifier (auto-generated if not provided)</li><li><code class="inline">:sync_type</code> - Type of sync operation (e.g., :import_cases, :import_notices)</li><li><code class="inline">:source_type</code> - Source system type (default: &quot;airtable&quot;)</li><li><code class="inline">:target_resource</code> - Target Ash resource module name</li><li><code class="inline">:config</code> - Operation-specific configuration (batch_size, limits, etc.)</li><li><code class="inline">:initiated_by</code> - User or system that initiated the sync</li><li><code class="inline">:agency_id</code> - Associated agency ID (optional)</li><li><code class="inline">:estimated_total</code> - Estimated total records to process (optional)</li></ul><h2 id="start_session/1-examples" class="section-heading"><a href="#start_session/1-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h2><pre><code class="makeup elixir" translate="no"><span class="c1"># Start a cases import session</span><span class="w">
+</span><span class="nc">SessionManager</span><span class="o">.</span><span class="n">start_session</span><span class="p" data-group-id="1860471175-1">(</span><span class="p" data-group-id="1860471175-2">%{</span><span class="w">
+  </span><span class="ss">sync_type</span><span class="p">:</span><span class="w"> </span><span class="ss">:import_cases</span><span class="p">,</span><span class="w">
+  </span><span class="ss">target_resource</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;EhsEnforcement.Enforcement.Case&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1860471175-3">%{</span><span class="ss">batch_size</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p" data-group-id="1860471175-3">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">initiated_by</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;admin@example.com&quot;</span><span class="w">
+</span><span class="p" data-group-id="1860471175-2">}</span><span class="p" data-group-id="1860471175-1">)</span><span class="w">
+
+</span><span class="c1"># Start a custom sync session</span><span class="w">
+</span><span class="nc">SessionManager</span><span class="o">.</span><span class="n">start_session</span><span class="p" data-group-id="1860471175-4">(</span><span class="p" data-group-id="1860471175-5">%{</span><span class="w">
+  </span><span class="ss">session_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;custom-sync-123&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">sync_type</span><span class="p">:</span><span class="w"> </span><span class="ss">:custom_import</span><span class="p">,</span><span class="w">
+  </span><span class="ss">source_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;csv&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">target_resource</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MyApp.Records&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">config</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1860471175-6">%{</span><span class="ss">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/tmp/import.csv&quot;</span><span class="p" data-group-id="1860471175-6">}</span><span class="w">
+</span><span class="p" data-group-id="1860471175-5">}</span><span class="p" data-group-id="1860471175-4">)</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="update_batch_progress/2">
+
+  <div class="detail-header">
+    <a href="#update_batch_progress/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">update_batch_progress(batch_id, progress_data)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Update batch progress with processing results.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>
