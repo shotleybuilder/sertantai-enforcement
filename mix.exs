@@ -125,7 +125,7 @@ defmodule EhsEnforcement.MixProject do
       # Documentation generation
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       # Package dependencies from GitHub
-      {:ncdb_2_phx, github: "shotleybuilder/ncdb_2_phx", tag: "v0.1.1", override: true}
+      {:ncdb_2_phx, github: "shotleybuilder/ncdb_2_phx", tag: "v0.2.1", override: true}
     ]
   end
 

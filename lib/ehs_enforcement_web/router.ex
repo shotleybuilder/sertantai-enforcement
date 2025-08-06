@@ -3,6 +3,7 @@ defmodule EhsEnforcementWeb.Router do
   use AshAuthentication.Phoenix.Router
   
   import EhsEnforcementWeb.Plugs.AuthHelpers, only: [load_current_user: 2]
+  import NCDB2Phx.Router
   
   pipeline :browser do
     plug :accepts, ["html"]
@@ -106,10 +107,15 @@ defmodule EhsEnforcementWeb.Router do
       live "/admin/cases/scrape", Admin.CaseLive.Scrape, :scrape
       live "/admin/notices/scrape", Admin.NoticeLive.Scrape, :scrape
       live "/admin/scraping", Admin.ScrapingLive.Index, :index
-      
-      # Admin Sync Management Routes
-      live "/admin/sync", Admin.SyncLive.Index, :index
     end
+    
+    # NCDB2Phx Sync Administration - Complete admin interface (separate live_session)
+    ncdb_sync_routes "/admin/sync", [
+      as: :admin_sync,
+      live_session_name: :admin_sync_session,
+      root_layout: {EhsEnforcementWeb.Layouts, :root},
+      session_args: %{current_user: :current_user}
+    ]
   end
 
   # Health check endpoint - no authentication required

@@ -8,11 +8,11 @@
     <meta name="project" content="ehs_enforcement v0.1.0">
 
 
-    <title>EhsEnforcement.Sync.ProgressStreamer — ehs_enforcement v0.1.0</title>
+    <title>EhsEnforcement.Sync.Compat — ehs_enforcement v0.1.0</title>
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-F5EF4C37.js"></script>
+    <script defer src="dist/sidebar_items-7EF803A2.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -75,7 +75,7 @@ ehs_enforcement
 <div id="top-content">
   <div class="heading-with-actions top-heading">
     <h1>
-      <span translate="no">EhsEnforcement.Sync.ProgressStreamer</span> 
+      <span translate="no">EhsEnforcement.Sync.Compat</span> 
       <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
 
     </h1>
@@ -84,8 +84,13 @@ ehs_enforcement
 
 
     <section id="moduledoc">
-<p>Generic progress streaming service for sync operations.
-Provides real-time progress updates for any resource type or sync operation.</p><p>Designed with package-ready architecture for future extraction.</p>
+<p>Compatibility layer for transitioning from legacy sync system to ncdb_2_phx.</p><p>This module provides a wrapper API that maintains backward compatibility
+while internally using the generic ncdb_2_phx sync engine. This allows
+for gradual migration without breaking existing code.</p><h2 id="module-usage" class="section-heading"><a href="#module-usage" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Usage</span></h2><p>This module provides the same API as the original sync system:</p><pre><code class="makeup elixir" translate="no"><span class="c1"># Import cases - same API as before</span><span class="w">
+</span><span class="nc">EhsEnforcement.Sync.Compat</span><span class="o">.</span><span class="n">import_cases</span><span class="p" data-group-id="3177804060-1">(</span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">500</span><span class="p" data-group-id="3177804060-1">)</span><span class="w">
+
+</span><span class="c1"># Import notices - same API as before</span><span class="w">
+</span><span class="nc">EhsEnforcement.Sync.Compat</span><span class="o">.</span><span class="n">import_notices</span><span class="p" data-group-id="3177804060-2">(</span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">500</span><span class="p" data-group-id="3177804060-2">)</span></code></pre><p>Internally, these calls are delegated to the generic ncdb_2_phx engine.</p>
     </section>
 
 </div>
@@ -104,71 +109,41 @@ Provides real-time progress updates for any resource type or sync operation.</p>
 
     <div class="summary-row">
       <div class="summary-signature">
-        <a href="#child_spec/1" data-no-tooltip="" translate="no">child_spec(init_arg)</a>
+        <a href="#get_case_import_stats/0" data-no-tooltip="" translate="no">get_case_import_stats()</a>
 
       </div>
 
-        <div class="summary-synopsis"><p>Returns a specification to start this module under a supervisor.</p></div>
+        <div class="summary-synopsis"><p>Get import statistics for cases.</p></div>
 
     </div>
 
     <div class="summary-row">
       <div class="summary-signature">
-        <a href="#get_progress/1" data-no-tooltip="" translate="no">get_progress(session_id)</a>
+        <a href="#get_notice_import_stats/0" data-no-tooltip="" translate="no">get_notice_import_stats()</a>
 
       </div>
 
-        <div class="summary-synopsis"><p>Get current progress for a session.</p></div>
+        <div class="summary-synopsis"><p>Get import statistics for notices.</p></div>
 
     </div>
 
     <div class="summary-row">
       <div class="summary-signature">
-        <a href="#get_streaming_stats/1" data-no-tooltip="" translate="no">get_streaming_stats(session_id)</a>
+        <a href="#import_cases/1" data-no-tooltip="" translate="no">import_cases(opts \\ [])</a>
 
       </div>
 
-        <div class="summary-synopsis"><p>Calculate streaming statistics for performance monitoring.</p></div>
+        <div class="summary-synopsis"><p>Import case records from Airtable using ncdb_2_phx engine.</p></div>
 
     </div>
 
     <div class="summary-row">
       <div class="summary-signature">
-        <a href="#list_active_sessions/0" data-no-tooltip="" translate="no">list_active_sessions()</a>
+        <a href="#import_notices/1" data-no-tooltip="" translate="no">import_notices(opts \\ [])</a>
 
       </div>
 
-        <div class="summary-synopsis"><p>List all active streaming sessions.</p></div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#start_link/1" data-no-tooltip="" translate="no">start_link(opts)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Start a progress streamer for a sync session.</p></div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#stop_streaming/1" data-no-tooltip="" translate="no">stop_streaming(session_id)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Stop progress streaming for a session.</p></div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#update_progress/2" data-no-tooltip="" translate="no">update_progress(session_id, progress_data)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Update progress for a streaming session.</p></div>
+        <div class="summary-synopsis"><p>Import notice records from Airtable using ncdb_2_phx engine.</p></div>
 
     </div>
 
@@ -185,14 +160,14 @@ Provides real-time progress updates for any resource type or sync operation.</p>
       <span class="text">Functions</span>
     </h1>
     <div class="functions-list">
-<section class="detail" id="child_spec/1">
+<section class="detail" id="get_case_import_stats/0">
 
   <div class="detail-header">
-    <a href="#child_spec/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+    <a href="#get_case_import_stats/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
       <i class="ri-link-m" aria-hidden="true"></i>
     </a>
     <div class="heading-with-actions">
-      <h1 class="signature" translate="no">child_spec(init_arg)</h1>
+      <h1 class="signature" translate="no">get_case_import_stats()</h1>
 
 
     </div>
@@ -200,17 +175,17 @@ Provides real-time progress updates for any resource type or sync operation.</p>
 
   <section class="docstring">
 
-<p>Returns a specification to start this module under a supervisor.</p><p>See <a href="https://hexdocs.pm/elixir/Supervisor.html"><code class="inline">Supervisor</code></a>.</p>
+<p>Get import statistics for cases.</p><p>This wraps the ncdb_2_phx metrics API to maintain compatibility.</p>
   </section>
 </section>
-<section class="detail" id="get_progress/1">
+<section class="detail" id="get_notice_import_stats/0">
 
   <div class="detail-header">
-    <a href="#get_progress/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+    <a href="#get_notice_import_stats/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
       <i class="ri-link-m" aria-hidden="true"></i>
     </a>
     <div class="heading-with-actions">
-      <h1 class="signature" translate="no">get_progress(session_id)</h1>
+      <h1 class="signature" translate="no">get_notice_import_stats()</h1>
 
 
     </div>
@@ -218,17 +193,19 @@ Provides real-time progress updates for any resource type or sync operation.</p>
 
   <section class="docstring">
 
-<p>Get current progress for a session.</p>
+<p>Get import statistics for notices.</p><p>This wraps the ncdb_2_phx metrics API to maintain compatibility.</p>
   </section>
 </section>
-<section class="detail" id="get_streaming_stats/1">
+<section class="detail" id="import_cases/1">
+
+    <span id="import_cases/0"></span>
 
   <div class="detail-header">
-    <a href="#get_streaming_stats/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+    <a href="#import_cases/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
       <i class="ri-link-m" aria-hidden="true"></i>
     </a>
     <div class="heading-with-actions">
-      <h1 class="signature" translate="no">get_streaming_stats(session_id)</h1>
+      <h1 class="signature" translate="no">import_cases(opts \\ [])</h1>
 
 
     </div>
@@ -236,17 +213,20 @@ Provides real-time progress updates for any resource type or sync operation.</p>
 
   <section class="docstring">
 
-<p>Calculate streaming statistics for performance monitoring.</p>
+<p>Import case records from Airtable using ncdb_2_phx engine.</p><p>Maintains the same API as the original import_cases function
+but uses the generic sync engine internally.</p><h2 id="import_cases/1-options" class="section-heading"><a href="#import_cases/1-options" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Options</span></h2><ul><li><code class="inline">:limit</code> - Maximum number of records to import (default: 1000)</li><li><code class="inline">:batch_size</code> - Number of records to process per batch (default: 100)</li><li><code class="inline">:actor</code> - The user performing the import (for authorization)</li></ul><h2 id="import_cases/1-returns" class="section-heading"><a href="#import_cases/1-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">{:ok, %{imported: count, errors: errors}}</code> - Success with statistics</li><li><code class="inline">{:error, reason}</code> - Failure with error details</li></ul>
   </section>
 </section>
-<section class="detail" id="list_active_sessions/0">
+<section class="detail" id="import_notices/1">
+
+    <span id="import_notices/0"></span>
 
   <div class="detail-header">
-    <a href="#list_active_sessions/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+    <a href="#import_notices/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
       <i class="ri-link-m" aria-hidden="true"></i>
     </a>
     <div class="heading-with-actions">
-      <h1 class="signature" translate="no">list_active_sessions()</h1>
+      <h1 class="signature" translate="no">import_notices(opts \\ [])</h1>
 
 
     </div>
@@ -254,61 +234,8 @@ Provides real-time progress updates for any resource type or sync operation.</p>
 
   <section class="docstring">
 
-<p>List all active streaming sessions.</p>
-  </section>
-</section>
-<section class="detail" id="start_link/1">
-
-  <div class="detail-header">
-    <a href="#start_link/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">start_link(opts)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Start a progress streamer for a sync session.</p><h2 id="start_link/1-options" class="section-heading"><a href="#start_link/1-options" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Options</span></h2><ul><li><code class="inline">:session_id</code> - Required. The sync session ID to track</li><li><code class="inline">:update_interval</code> - Update interval in milliseconds (default: 1000)</li><li><code class="inline">:auto_complete</code> - Whether to auto-complete when target reached (default: true)</li><li><code class="inline">:progress_callback</code> - Function to call on each progress update</li><li><code class="inline">:completion_callback</code> - Function to call when streaming completes</li></ul>
-  </section>
-</section>
-<section class="detail" id="stop_streaming/1">
-
-  <div class="detail-header">
-    <a href="#stop_streaming/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">stop_streaming(session_id)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Stop progress streaming for a session.</p>
-  </section>
-</section>
-<section class="detail" id="update_progress/2">
-
-  <div class="detail-header">
-    <a href="#update_progress/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">update_progress(session_id, progress_data)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Update progress for a streaming session.</p>
+<p>Import notice records from Airtable using ncdb_2_phx engine.</p><p>Maintains the same API as the original import_notices function
+but uses the generic sync engine internally.</p><h2 id="import_notices/1-options" class="section-heading"><a href="#import_notices/1-options" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Options</span></h2><ul><li><code class="inline">:limit</code> - Maximum number of records to import (default: 1000)</li><li><code class="inline">:batch_size</code> - Number of records to process per batch (default: 100)</li><li><code class="inline">:actor</code> - The user performing the import (for authorization)</li></ul><h2 id="import_notices/1-returns" class="section-heading"><a href="#import_notices/1-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">{:ok, %{imported: count, errors: errors}}</code> - Success with statistics</li><li><code class="inline">{:error, reason}</code> - Failure with error details</li></ul>
   </section>
 </section>
 

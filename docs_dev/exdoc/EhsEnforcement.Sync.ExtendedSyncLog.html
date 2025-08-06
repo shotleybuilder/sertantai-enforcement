@@ -8,7 +8,7 @@
     <meta name="project" content="ehs_enforcement v0.1.0">
 
 
-    <title>EhsEnforcement.Scraping.ScrapeRequest — ehs_enforcement v0.1.0</title>
+    <title>EhsEnforcement.Sync.ExtendedSyncLog — ehs_enforcement v0.1.0</title>
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
@@ -75,7 +75,7 @@ ehs_enforcement
 <div id="top-content">
   <div class="heading-with-actions top-heading">
     <h1>
-      <span translate="no">EhsEnforcement.Scraping.ScrapeRequest</span> 
+      <span translate="no">EhsEnforcement.Sync.ExtendedSyncLog</span> 
       <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
 
     </h1>
@@ -84,7 +84,8 @@ ehs_enforcement
 
 
     <section id="moduledoc">
-<p>Simple resource for manual HSE scraping form parameters.</p>
+<p>Extended sync log resource that uses EhsEnforcement.Repo
+for Phase 1 compatibility.</p>
     </section>
 
 </div>
@@ -181,18 +182,28 @@ ehs_enforcement
 
       <div class="specs">
 
-          <pre translate="no"><span class="attribute">@type</span> t() :: %EhsEnforcement.Scraping.ScrapeRequest{
+          <pre translate="no"><span class="attribute">@type</span> t() :: %EhsEnforcement.Sync.ExtendedSyncLog{
   __lateral_join_source__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   __metadata__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   __order__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   aggregates: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   calculations: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-  database: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  duration_ms: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  error_details: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  event_data: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  event_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-  max_pages: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-  start_page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  message: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  occurred_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  session_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  source_record_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  sync_batch: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  sync_batch_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  sync_session: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  sync_session_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
 }</pre>
 
@@ -256,8 +267,8 @@ ehs_enforcement
 be created by Ash as a result of a successful action. You should not be creating records manually in code,
 e.g <code class="inline">%MyResource{value: 1, value: 2}</code>. Generally that is fine, but often with embedded resources it is nice
 to be able to validate the keys that are being provided, e.g</p><pre><code class="makeup elixir" translate="no"><span class="nc">Resource</span><span class="w">
-</span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Ash.Changeset</span><span class="o">.</span><span class="n">for_create</span><span class="p" data-group-id="7261163350-1">(</span><span class="ss">:create</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7261163350-2">%{</span><span class="ss">embedded</span><span class="p">:</span><span class="w"> </span><span class="nc">EmbeddedResource</span><span class="o">.</span><span class="n">input</span><span class="p" data-group-id="7261163350-3">(</span><span class="ss">foo</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">bar</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="7261163350-3">)</span><span class="p" data-group-id="7261163350-2">}</span><span class="p" data-group-id="7261163350-1">)</span><span class="w">
-</span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Ash</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="7261163350-4">(</span><span class="p" data-group-id="7261163350-4">)</span></code></pre>
+</span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Ash.Changeset</span><span class="o">.</span><span class="n">for_create</span><span class="p" data-group-id="3007225874-1">(</span><span class="ss">:create</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3007225874-2">%{</span><span class="ss">embedded</span><span class="p">:</span><span class="w"> </span><span class="nc">EmbeddedResource</span><span class="o">.</span><span class="n">input</span><span class="p" data-group-id="3007225874-3">(</span><span class="ss">foo</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">bar</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="3007225874-3">)</span><span class="p" data-group-id="3007225874-2">}</span><span class="p" data-group-id="3007225874-1">)</span><span class="w">
+</span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Ash</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="3007225874-4">(</span><span class="p" data-group-id="3007225874-4">)</span></code></pre>
   </section>
 </section>
 <section class="detail" id="input/2">
