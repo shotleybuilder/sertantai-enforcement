@@ -12,10 +12,6 @@ defmodule EhsEnforcement.Application do
       EhsEnforcement.Repo,
       {DNSCluster, query: Application.get_env(:ehs_enforcement, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: EhsEnforcement.PubSub},
-      # Registry for progress streamers
-      {Registry, keys: :unique, name: EhsEnforcement.Sync.ProgressRegistry},
-      # Supervisor for progress streaming processes
-      EhsEnforcement.Sync.ProgressSupervisor,
       # Start the Finch HTTP client for sending emails
       {Finch, name: EhsEnforcement.Finch},
       # Start Oban for background job processing

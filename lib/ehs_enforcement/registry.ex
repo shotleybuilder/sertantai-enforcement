@@ -12,7 +12,7 @@ defmodule EhsEnforcement.Registry do
       {EhsEnforcement.Enforcement.Case, %{}},
       {EhsEnforcement.Enforcement.Notice, %{}},
       {EhsEnforcement.Enforcement.Breach, %{}},
-      {EhsEnforcement.Sync.SyncLog, %{}}
+      {EhsEnforcement.Sync.ExtendedSyncLog, %{}}
     ]
   end
 end

@@ -6,6 +6,7 @@ This directory contains comprehensive administrative documentation for the EHS E
 
 | Guide | Purpose | Route | Key Features |
 |-------|---------|-------|-------------|
+| [Import and Sync Operations](import_sync_guide.md) | Data import and synchronization from Airtable | `/admin/sync` | Real-time progress, batch processing, error recovery |
 | [General Cases Guide](cases.md) | Overview of HSE case administration | Various | System overview, troubleshooting |
 | [Scraping Overview](scraping_overview.md) | Central monitoring dashboard | `/admin/scraping` | Performance metrics, analytics |
 | [Case Scraping](case_scraping.md) | Manual prosecution case collection | `/admin/cases/scrape` | Real-time progress, intelligent stopping |
