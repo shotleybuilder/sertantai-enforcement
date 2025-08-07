@@ -7,7 +7,9 @@ defmodule EhsEnforcementWeb.DashboardTestHelpers do
   """
 
   alias EhsEnforcement.Enforcement
-  alias EhsEnforcement.Repo
+  
+  require Ash.Query
+  import Ash.Expr
   import Phoenix.LiveViewTest
   import ExUnit.Assertions
 
@@ -197,12 +199,20 @@ defmodule EhsEnforcementWeb.DashboardTestHelpers do
   end
 
   @doc """
-  Clears all test data from the database.
+  Clears all test data from the database using proper Ash patterns.
   """
   def clear_test_data do
-    Repo.delete_all(EhsEnforcement.Enforcement.Case)
-    Repo.delete_all(EhsEnforcement.Enforcement.Offender)
-    Repo.delete_all(EhsEnforcement.Enforcement.Agency)
+    # Delete cases first (they have foreign key constraints)
+    {:ok, cases} = EhsEnforcement.Enforcement.Case |> Ash.read()
+    Enum.each(cases, &Enforcement.destroy_case!/1)
+    
+    # Delete offenders (referenced by cases) - use Ash.destroy! since no code interface defined
+    {:ok, offenders} = EhsEnforcement.Enforcement.Offender |> Ash.read()
+    Enum.each(offenders, &Ash.destroy!/1)
+    
+    # Delete agencies last - use Ash.destroy! since no code interface defined
+    {:ok, agencies} = EhsEnforcement.Enforcement.Agency |> Ash.read()
+    Enum.each(agencies, &Ash.destroy!/1)
   end
 
   @doc """

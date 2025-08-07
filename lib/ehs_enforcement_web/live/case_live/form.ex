@@ -105,7 +105,12 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
 
   @impl true
   def handle_event("toggle_offender_mode", %{"mode" => mode}, socket) do
-    offender_mode = String.to_atom(mode)
+    offender_mode = case mode do
+      "select" -> :select
+      "create" -> :create
+      "new" -> :create  # Legacy test compatibility
+      _ -> :select  # Default fallback for any unexpected input
+    end
     
     {:noreply,
      socket
@@ -149,11 +154,14 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
            |> put_flash(:info, "Case created successfully")
            |> push_navigate(to: ~p"/cases/#{case_record.id}")}
         
-        {:error, changeset} ->
+        {:error, error} ->
+          require Logger
+          Logger.error("Failed to create case: #{inspect(error)}")
+          
           {:noreply,
            socket
            |> assign(:loading, false)
-           |> assign(:changeset, changeset)}
+           |> put_flash(:error, "Failed to create case")}
       end
       
     rescue
@@ -183,11 +191,14 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
            |> put_flash(:info, "Case updated successfully")
            |> push_navigate(to: ~p"/cases/#{updated_case.id}")}
         
-        {:error, changeset} ->
+        {:error, error} ->
+          require Logger
+          Logger.error("Failed to update case: #{inspect(error)}")
+          
           {:noreply,
            socket
            |> assign(:loading, false)
-           |> assign(:changeset, changeset)}
+           |> put_flash(:error, "Failed to update case")}
       end
       
     rescue

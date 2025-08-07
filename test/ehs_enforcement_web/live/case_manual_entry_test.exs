@@ -4,7 +4,9 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
   import ExUnit.CaptureLog
 
   alias EhsEnforcement.Enforcement
-  alias EhsEnforcement.Repo
+  
+  require Ash.Query
+  import Ash.Expr
 
   describe "Manual case entry form" do
     setup do
@@ -307,7 +309,7 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       {:ok, view, _html} = live(conn, "/cases/new")
 
       # Submit valid case data
-      case_count_before = Repo.aggregate(EhsEnforcement.Enforcement.Case, :count, :id)
+      case_count_before = Enforcement.count_cases!()
 
       render_submit(view, "save", %{
         "case" => %{
@@ -333,11 +335,14 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
              redirected_to(view) =~ "/cases"
 
       # Case should be created in database
-      case_count_after = Repo.aggregate(EhsEnforcement.Enforcement.Case, :count, :id)
+      case_count_after = Enforcement.count_cases!()
       assert case_count_after == case_count_before + 1
 
-      # Verify case data
-      created_case = Repo.get_by(EhsEnforcement.Enforcement.Case, regulator_id: "HSE-MANUAL-001")
+      # Verify case data  
+      {:ok, cases} = EhsEnforcement.Enforcement.Case 
+                     |> Ash.Query.filter(regulator_id == "HSE-MANUAL-001") 
+                     |> Ash.read()
+      created_case = List.first(cases)
       assert created_case != nil
       assert created_case.agency_id == hse_agency.id
       assert created_case.offence_fine == Decimal.new("15000.00")
@@ -347,7 +352,7 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
     test "creates new offender when specified", %{conn: conn, agencies: [hse_agency | _]} do
       {:ok, view, _html} = live(conn, "/cases/new")
 
-      offender_count_before = Repo.aggregate(EhsEnforcement.Enforcement.Offender, :count, :id)
+      offender_count_before = Enforcement.count_offenders!()
 
       render_submit(view, "save", %{
         "case" => %{
@@ -365,17 +370,23 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       })
 
       # Should create new offender
-      offender_count_after = Repo.aggregate(EhsEnforcement.Enforcement.Offender, :count, :id)
+      offender_count_after = Enforcement.count_offenders!()
       assert offender_count_after == offender_count_before + 1
 
       # Verify offender data
-      created_offender = Repo.get_by(EhsEnforcement.Enforcement.Offender, name: "Brand New Company PLC")
+      {:ok, offenders} = EhsEnforcement.Enforcement.Offender 
+                        |> Ash.Query.filter(name == "Brand New Company PLC") 
+                        |> Ash.read()
+      created_offender = List.first(offenders)
       assert created_offender != nil
       assert created_offender.local_authority == "New Council"
       assert created_offender.postcode == "BN1 1EW"
 
       # Case should be linked to new offender
-      created_case = Repo.get_by(EhsEnforcement.Enforcement.Case, regulator_id: "HSE-NEWOFF-001")
+      {:ok, cases} = EhsEnforcement.Enforcement.Case 
+                     |> Ash.Query.filter(regulator_id == "HSE-NEWOFF-001") 
+                     |> Ash.read()
+      created_case = List.first(cases)
       assert created_case.offender_id == created_offender.id
     end
 
@@ -394,7 +405,10 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       })
 
       # Should not create new offender
-      created_case = Repo.get_by(EhsEnforcement.Enforcement.Case, regulator_id: "HSE-EXISTING-001")
+      {:ok, cases} = EhsEnforcement.Enforcement.Case 
+                     |> Ash.Query.filter(regulator_id == "HSE-EXISTING-001") 
+                     |> Ash.read()
+      created_case = List.first(cases)
       assert created_case.offender_id == existing_offender.id
     end
 
