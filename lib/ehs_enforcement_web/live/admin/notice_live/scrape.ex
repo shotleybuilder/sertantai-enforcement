@@ -14,14 +14,10 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   
   require Logger
   require Ash.Query
-  import Ash.Expr
   
   alias EhsEnforcement.Scraping.ScrapeCoordinator
   alias EhsEnforcement.Scraping.ScrapeRequest
   alias EhsEnforcement.Scraping.ScrapeSession
-  alias EhsEnforcement.Scraping.CaseProcessingLog
-  alias EhsEnforcement.Scraping.ScrapedCase
-  alias EhsEnforcement.Enforcement
   alias AshPhoenix.Form
   alias Phoenix.PubSub
   
@@ -562,37 +558,10 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     end
   end
   
-  defp notice_status_badge(notice) do
-    # Determine status based on notice type and compliance dates
-    {status_text, status_class} = cond do
-      # Check if this notice was just created (very recent)
-      notice.inserted_at && DateTime.diff(DateTime.utc_now(), notice.inserted_at, :second) < 60 ->
-        {"Created", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"}
-      
-      # Notice has compliance date in the future
-      notice.compliance_date && Date.compare(notice.compliance_date, Date.utc_today()) == :gt ->
-        {"Active", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"}
-      
-      # Notice compliance date has passed
-      notice.compliance_date && Date.compare(notice.compliance_date, Date.utc_today()) == :lt ->
-        {"Compliance Due", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"}
-      
-      # Notice is operative
-      notice.operative_date && Date.compare(notice.operative_date, Date.utc_today()) != :gt ->
-        {"Operative", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"}
-      
-      # Default issued status
-      true ->
-        {"Issued", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"}
-    end
-    
-    {status_text, status_class}
-  end
 
   # Pure Ash scraping function - updates ScrapeSession for progress tracking
   defp scrape_notices_with_session(session, opts) do
     alias EhsEnforcement.Agencies.Hse.NoticeScraper
-    alias EhsEnforcement.Scraping.Hse.NoticeProcessor
     
     start_page = opts.start_page
     max_pages = opts.max_pages

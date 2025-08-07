@@ -19,8 +19,6 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   alias EhsEnforcement.Scraping.ScrapeRequest
   alias EhsEnforcement.Scraping.ScrapeSession
   alias EhsEnforcement.Scraping.CaseProcessingLog
-  alias EhsEnforcement.Scraping.ScrapedCase
-  alias EhsEnforcement.Enforcement
   alias AshPhoenix.Form
   alias Phoenix.PubSub
   
@@ -657,23 +655,6 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   
   # Private Functions
   
-  defp validate_scraping_params(params) do
-    errors = []
-    
-    start_page = parse_integer(params["start_page"], 1)
-    max_pages = parse_integer(params["max_pages"], 10)
-    database = params["database"] || "convictions"
-    
-    errors = if start_page < 1, do: ["Start page must be greater than 0" | errors], else: errors
-    errors = if max_pages < 1, do: ["Max pages must be greater than 0" | errors], else: errors
-    errors = if max_pages > 100, do: ["Max pages cannot exceed 100" | errors], else: errors
-    errors = if database not in ["convictions", "notices"], do: ["Invalid database selection" | errors], else: errors
-    
-    case errors do
-      [] -> {:ok, %{start_page: start_page, max_pages: max_pages, database: database}}
-      _ -> {:error, errors}
-    end
-  end
   
   # load_recent_data/1 function removed - now handled by keep_live/4 automatically
   
@@ -728,14 +709,6 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   # end
   # Removed: function not used in this module
   
-  defp parse_integer(value, default) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, ""} -> int
-      _ -> default
-    end
-  end
-  defp parse_integer(value, _default) when is_integer(value), do: value
-  defp parse_integer(_, default), do: default
   
   defp should_enable_real_time_progress?(actor) do
     config = ScrapeCoordinator.load_scraping_config(actor: actor)
@@ -827,266 +800,17 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   end
   
   
-  defp replace_placeholder_with_real_cases(socket, page_data) do
-    # Remove placeholder for this page and replace with real scraped cases
-    scraped_cases_from_page = page_data[:scraped_cases] || []
-    creation_results = page_data[:creation_results] || %{}
-    current_page = page_data.current_page
-    
-    # Remove placeholder for this page
-    scraped_cases_without_placeholder = Enum.reject(socket.assigns.scraped_cases, fn case_item ->
-      case_item.temp_id == "page_#{current_page}_placeholder"
-    end)
-    
-    # Add real cases with two-phase status
-    real_cases = Enum.map(scraped_cases_from_page, fn case_data ->
-      save_status = determine_case_save_status(case_data, creation_results)
-      
-      %{
-        # Core case data from scraping
-        regulator_id: case_data.regulator_id,
-        offender_name: case_data.offender_name,
-        offence_action_date: case_data.offence_action_date,
-        offence_fine: case_data.offence_fine,
-        offence_result: case_data.offence_result,
-        
-        # Two-phase status system - these cases went: scraping -> scraped -> ready_for_db
-        processing_status: :ready_for_db,
-        database_status: save_status,
-        
-        # Meta data for display
-        scraped_at: DateTime.utc_now(),
-        page: page_data.current_page,
-        
-        # Generate a unique ID for frontend tracking
-        temp_id: "#{case_data.regulator_id}_#{page_data.current_page}_#{System.unique_integer()}"
-      }
-    end)
-    
-    # Combine real cases with existing cases (placeholder removed)
-    final_scraped_cases = (real_cases ++ scraped_cases_without_placeholder)
-    |> Enum.take(200)  # Keep last 200 scraped cases for performance
-    
-    
-    assign(socket, scraped_cases: final_scraped_cases)
-  end
   
-  defp update_scraped_cases_with_database_status(socket, page_data) do
-    # Update existing cases with database save results when page_completed
-    scraped_cases_from_page = page_data[:scraped_cases] || []
-    creation_results = page_data[:creation_results] || %{}
-    current_page = page_data.current_page
-    
-    # Update existing scraped_cases that match this page
-    updated_scraped_cases = Enum.map(socket.assigns.scraped_cases, fn case_item ->
-      if case_item.page == current_page and case_item.processing_status != nil do
-        # Find matching case data from scraping results
-        matching_scraped = Enum.find(scraped_cases_from_page, fn scraped ->
-          scraped.regulator_id == case_item.regulator_id
-        end)
-        
-        if matching_scraped do
-          # Update with complete scraped data and database status
-          save_status = determine_case_save_status(matching_scraped, creation_results)
-          
-          %{case_item |
-            # Update with complete case data
-            offender_name: matching_scraped.offender_name,
-            offence_action_date: matching_scraped.offence_action_date,
-            offence_fine: matching_scraped.offence_fine,
-            offence_result: matching_scraped.offence_result,
-            
-            # Update status progression
-            processing_status: :ready_for_db,
-            database_status: save_status,
-            
-            # Update metadata
-            scraped_at: DateTime.utc_now()
-          }
-        else
-          # Case wasn't in the completed results, mark as error
-          %{case_item |
-            processing_status: :error,
-            database_status: :error
-          }
-        end
-      else
-        # Case is from different page or already processed, leave unchanged
-        case_item
-      end
-    end)
-    
-    # Also add any new cases that weren't in the processing list
-    new_cases = Enum.reject(scraped_cases_from_page, fn scraped ->
-      Enum.any?(socket.assigns.scraped_cases, fn existing ->
-        existing.regulator_id == scraped.regulator_id and existing.page == current_page
-      end)
-    end)
-    
-    # Add new cases that appeared in completed results but weren't in processing
-    additional_cases = Enum.map(new_cases, fn case_data ->
-      save_status = determine_case_save_status(case_data, creation_results)
-      
-      %{
-        # Core case data from scraping
-        regulator_id: case_data.regulator_id,
-        offender_name: case_data.offender_name,
-        offence_action_date: case_data.offence_action_date,
-        offence_fine: case_data.offence_fine,
-        offence_result: case_data.offence_result,
-        
-        # Two-phase status system - these cases completed quickly
-        processing_status: :ready_for_db,
-        database_status: save_status,
-        
-        # Meta data for display
-        scraped_at: DateTime.utc_now(),
-        page: page_data.current_page,
-        
-        # Generate a unique ID for frontend tracking
-        temp_id: "#{case_data.regulator_id}_#{page_data.current_page}_#{System.unique_integer()}"
-      }
-    end)
-    
-    # Combine updated cases with any additional cases
-    final_scraped_cases = (additional_cases ++ updated_scraped_cases)
-    |> Enum.take(200)  # Keep last 200 scraped cases for performance
-    
-    
-    assign(socket, scraped_cases: final_scraped_cases)
-  end
   
-  defp determine_case_save_status(case_data, creation_results) do
-    case creation_results do
-      %{created: created_list} when is_list(created_list) ->
-        if Enum.any?(created_list, fn created -> created.regulator_id == case_data.regulator_id end) do
-          :created
-        else
-          check_other_statuses(case_data, creation_results)
-        end
-      
-      %{updated: updated_list} when is_list(updated_list) ->
-        if Enum.any?(updated_list, fn updated -> updated.regulator_id == case_data.regulator_id end) do
-          :updated
-        else
-          check_other_statuses(case_data, creation_results)
-        end
-      
-      _ ->
-        check_other_statuses(case_data, creation_results)
-    end
-  end
   
-  defp check_other_statuses(case_data, creation_results) do
-    cond do
-      # Check if case was in existing/duplicate list
-      Map.get(creation_results, :existing_count, 0) > 0 ->
-        :existing
-      
-      # Check if there were errors for this case
-      case Map.get(creation_results, :errors, []) do
-        errors when is_list(errors) ->
-          has_error = Enum.any?(errors, fn
-            {regulator_id, _error} -> regulator_id == case_data.regulator_id
-            _ -> false
-          end)
-          if has_error, do: :error, else: :unknown
-        
-        _ -> :unknown
-      end
-    end
-  end
 
-  defp case_status_badge(case) do
-    # Determine status based on data completeness and processing state
-    {status_text, status_class} = cond do
-      # Check if this case was just created (very recent)
-      case.inserted_at && DateTime.diff(DateTime.utc_now(), case.inserted_at, :second) < 60 ->
-        {"Created", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"}
-      
-      # Check if case has minimal data (likely existing/duplicate)
-      is_nil(case.offence_result) and is_nil(case.offence_fine) ->
-        {"Exists", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"}
-      
-      # Case has conviction result
-      case.offence_result == "Convicted" ->
-        {"Convicted", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"}
-      
-      # Case has fine
-      case.offence_result == "Fined" or (case.offence_fine && Decimal.positive?(case.offence_fine)) ->
-        {"Fined", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"}
-      
-      # Default complete status
-      true ->
-        {"Complete", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"}
-    end
-    
-    {status_text, status_class}
-  end
   
-  defp processing_status_badge(processing_status) do
-    # Show processing status (before database operations)
-    {status_text, status_class} = case processing_status do
-      :scraping ->
-        {"Scraping", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"}
-      
-      :scraped ->
-        {"Scraped", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"}
-      
-      :ready_for_db ->
-        {"Ready for DB", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"}
-      
-      :error ->
-        {"Error", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"}
-      
-      _ ->
-        {"Processing", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"}
-    end
-    
-    {status_text, status_class}
-  end
 
-  defp database_status_badge(database_status) do
-    # Show database save status (after database operations)
-    case database_status do
-      :created ->
-        {"Created", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"}
-      
-      :updated ->
-        {"Updated", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"}
-      
-      :exists ->
-        {"Exists", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"}
-      
-      :error ->
-        {"Error", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"}
-      
-      nil ->
-        {"Pending", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-500"}
-      
-      _ ->
-        {"Unknown", "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"}
-    end
-  end
   
-  defp scraped_case_status_badge(scraped_case) do
-    # Legacy function for backward compatibility - use database status if available
-    case Map.get(scraped_case, :database_status) do
-      nil ->
-        # Old format - use save_status
-        legacy_status = Map.get(scraped_case, :save_status, :processing)
-        database_status_badge(legacy_status)
-      
-      status ->
-        # New format - use database_status
-        database_status_badge(status)
-    end
-  end
 
   # Pure Ash scraping function - updates ScrapeSession for progress tracking
   defp scrape_cases_with_session(session, opts) do
     alias EhsEnforcement.Scraping.Hse.CaseScraper
-    alias EhsEnforcement.Scraping.Hse.CaseProcessor
     
     start_page = opts.start_page
     max_pages = opts.max_pages

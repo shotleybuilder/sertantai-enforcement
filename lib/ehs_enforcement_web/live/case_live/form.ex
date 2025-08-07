@@ -139,113 +139,7 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
 
   # Private functions
 
-  defp save_case(socket, nil, case_params) do
-    # Creating new case
-    socket = assign(socket, :loading, true)
-    
-    try do
-      case_attrs = prepare_case_attrs(case_params, socket.assigns.selected_offender, socket.assigns.offender_mode)
-      
-      case Enforcement.create_case(case_attrs) do
-        {:ok, case_record} ->
-          {:noreply,
-           socket
-           |> assign(:loading, false)
-           |> put_flash(:info, "Case created successfully")
-           |> push_navigate(to: ~p"/cases/#{case_record.id}")}
-        
-        {:error, error} ->
-          require Logger
-          Logger.error("Failed to create case: #{inspect(error)}")
-          
-          {:noreply,
-           socket
-           |> assign(:loading, false)
-           |> put_flash(:error, "Failed to create case")}
-      end
-      
-    rescue
-      error ->
-        require Logger
-        Logger.error("Failed to create case: #{inspect(error)}")
-        
-        {:noreply,
-         socket
-         |> assign(:loading, false)
-         |> put_flash(:error, "Failed to create case. Please try again.")}
-    end
-  end
 
-  defp save_case(socket, case_record, case_params) do
-    # Updating existing case
-    socket = assign(socket, :loading, true)
-    
-    try do
-      case_attrs = prepare_case_attrs(case_params, socket.assigns.selected_offender, socket.assigns.offender_mode)
-      
-      case Enforcement.update_case(case_record, case_attrs) do
-        {:ok, updated_case} ->
-          {:noreply,
-           socket
-           |> assign(:loading, false)
-           |> put_flash(:info, "Case updated successfully")
-           |> push_navigate(to: ~p"/cases/#{updated_case.id}")}
-        
-        {:error, error} ->
-          require Logger
-          Logger.error("Failed to update case: #{inspect(error)}")
-          
-          {:noreply,
-           socket
-           |> assign(:loading, false)
-           |> put_flash(:error, "Failed to update case")}
-      end
-      
-    rescue
-      error ->
-        require Logger
-        Logger.error("Failed to update case: #{inspect(error)}")
-        
-        {:noreply,
-         socket
-         |> assign(:loading, false)
-         |> put_flash(:error, "Failed to update case. Please try again.")}
-    end
-  end
-
-  defp prepare_case_attrs(case_params, selected_offender, offender_mode) do
-    base_attrs = %{
-      regulator_id: case_params["regulator_id"],
-      agency_id: case_params["agency_id"],
-      offence_action_date: parse_date(case_params["offence_action_date"]),
-      offence_fine: parse_decimal(case_params["offence_fine"]),
-      offence_breaches: case_params["offence_breaches"],
-      last_synced_at: DateTime.utc_now()
-    }
-
-    case {offender_mode, selected_offender} do
-      {:select, %{id: offender_id}} ->
-        Map.put(base_attrs, :offender_id, offender_id)
-      
-      {:create, _} ->
-        offender_attrs = %{
-          name: case_params["offender_name"],
-          local_authority: case_params["offender_local_authority"],
-          postcode: case_params["offender_postcode"]
-        }
-        
-        # Use the agency_code + offender_attrs pattern from the tests
-        agency_code = get_agency_code(case_params["agency_id"])
-        
-        base_attrs
-        |> Map.delete(:agency_id)
-        |> Map.put(:agency_code, agency_code)
-        |> Map.put(:offender_attrs, offender_attrs)
-      
-      _ ->
-        base_attrs
-    end
-  end
 
   defp search_offenders(query) do
     try do
@@ -259,32 +153,8 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
     end
   end
 
-  defp get_agency_code(agency_id) do
-    try do
-      agency = Enforcement.get_agency!(agency_id)
-      agency.code
-    rescue
-      _ -> :hse  # Default fallback
-    end
-  end
 
-  defp parse_date(""), do: nil
-  defp parse_date(nil), do: nil
-  defp parse_date(date_string) when is_binary(date_string) do
-    case Date.from_iso8601(date_string) do
-      {:ok, date} -> date
-      _ -> nil
-    end
-  end
 
-  defp parse_decimal(""), do: Decimal.new("0.00")
-  defp parse_decimal(nil), do: Decimal.new("0.00")
-  defp parse_decimal(decimal_string) when is_binary(decimal_string) do
-    case Decimal.parse(decimal_string) do
-      {decimal, _} -> decimal
-      :error -> Decimal.new("0.00")
-    end
-  end
 
   # Unused functions commented out:
   # defp format_currency_input(amount) when is_struct(amount, Decimal) do
