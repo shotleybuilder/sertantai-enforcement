@@ -173,12 +173,12 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
   
   # Private functions
   
-  defp fetch_page_html(page_number, database, opts \\ []) do
+  defp fetch_page_html(page_number, database, opts) do
     url = build_page_url(page_number, database)
     fetch_with_retry(url, @max_retries, opts)
   end
   
-  defp fetch_case_html_by_id(regulator_id, database, opts \\ []) do
+  defp fetch_case_html_by_id(regulator_id, database, opts) do
     url = build_case_url_by_id(regulator_id, database)
     fetch_with_retry(url, @max_retries, opts)
   end
@@ -195,7 +195,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
     base_url <> query
   end
   
-  defp fetch_with_retry(url, retries \\ @max_retries, opts \\ []) do
+  defp fetch_with_retry(url, retries, opts) do
     case RateLimiter.rate_limited_request(url, opts) do
       {:ok, body} ->
         {:ok, body}
@@ -290,7 +290,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
     end)
   end
   
-  defp enrich_cases_with_details(cases, database, opts \\ []) do
+  defp enrich_cases_with_details(cases, database, opts) do
     try do
       enriched = Enum.map(cases, fn case_data ->
         case fetch_case_details(case_data.regulator_id, database, opts) do
@@ -305,7 +305,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
     end
   end
   
-  defp fetch_case_details(regulator_id, database, opts \\ []) do
+  defp fetch_case_details(regulator_id, database, opts) do
     url = build_case_details_url(regulator_id, database)
     
     with {:ok, html} <- fetch_with_retry(url, @max_retries, opts),
@@ -466,7 +466,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
     breach_base_url = String.replace(base_url, "/case/", "/breach/")
     url = breach_base_url <> "breach_list.asp?ST=B&SN=F&EO=%3D&SF=CN&SV=#{case_number}"
     
-    with {:ok, html} <- fetch_with_retry(url, @max_retries),
+    with {:ok, html} <- fetch_with_retry(url, @max_retries, []),
          {:ok, breach_data} <- parse_breach_list(html) do
       {:ok, breach_data}
     else
@@ -518,7 +518,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
     base_url = String.replace(@base_url_template, "%{database}", database)
     url = base_url <> "case_list.asp?ST=C&SN=R&EO=%3D&SF=RCN&SV=#{case_number}"
     
-    with {:ok, html} <- fetch_with_retry(url, @max_retries),
+    with {:ok, html} <- fetch_with_retry(url, @max_retries, []),
          {:ok, related_cases} <- parse_related_cases_list(html) do
       {:ok, related_cases}
     else
