@@ -12,11 +12,16 @@ defmodule EhsEnforcement.Sync do
   @pubsub_topic "sync_progress"
 
   resources do
-    # Phase 2: Use extended ncdb_2_phx resources with our repo configuration
+    # Use package resources directly - they should inherit our repo in production
+    resource NCDB2Phx.Resources.SyncSession
+    resource NCDB2Phx.Resources.SyncBatch  
+    resource NCDB2Phx.Resources.SyncLog
+    
+    # Local extended resources
     resource EhsEnforcement.Sync.ExtendedSyncSession
     resource EhsEnforcement.Sync.ExtendedSyncBatch
     resource EhsEnforcement.Sync.ExtendedSyncLog
-    
+    resource EhsEnforcement.Sync.SimpleSyncSession
   end
 
   @doc """

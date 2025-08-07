@@ -67,7 +67,7 @@ defmodule EhsEnforcement.MixProject do
   defp deps do
     [
       {:usage_rules, "~> 0.1", only: [:dev]},
-      {:phoenix, "~> 1.7.21"},
+      {:phoenix, "~> 1.8.0"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
@@ -125,7 +125,7 @@ defmodule EhsEnforcement.MixProject do
       # Documentation generation
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       # Package dependencies from GitHub
-      {:ncdb_2_phx, github: "shotleybuilder/ncdb_2_phx", tag: "v0.2.1", override: true}
+      {:ncdb_2_phx, github: "shotleybuilder/ncdb_2_phx", override: true}
     ]
   end
 
