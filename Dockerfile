@@ -76,11 +76,11 @@ COPY --from=build --chown=app:app /app/_build/prod/rel/ehs_enforcement ./
 USER app
 
 # Expose port
-EXPOSE 4000
+EXPOSE 4002
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4000/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:4002/health || exit 1
 
 # Start the release
 CMD ["bin/server"]

@@ -29,7 +29,7 @@ services:
       # Phoenix Configuration
       SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       PHX_HOST: ${PHX_HOST}
-      PORT: ${PORT:-4000}
+      PORT: ${PORT:-4002}
       PHX_SERVER: "true"
       
       # Database Configuration
@@ -60,7 +60,7 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
     ports:
-      - "${PORT:-4000}:4000"
+      - "${PORT:-4002}:4002"
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,7 +68,7 @@ services:
     networks:
       - ehs_network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4002/health"]
       interval: 30s
       timeout: 10s
       retries: 3
