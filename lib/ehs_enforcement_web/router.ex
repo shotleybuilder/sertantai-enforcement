@@ -106,8 +106,12 @@ defmodule EhsEnforcementWeb.Router do
       live "/admin/notices/scrape", Admin.NoticeLive.Scrape, :scrape
       live "/admin/scraping", Admin.ScrapingLive.Index, :index
     end
+  end
+
+  # NCDB2Phx Sync Administration - Admin-only routes with correct module scope
+  scope "/" do
+    pipe_through [:browser, :admin_required]
     
-    # NCDB2Phx Sync Administration - Complete admin interface (separate live_session)
     ncdb_sync_routes "/admin/sync", [
       as: :admin_sync,
       live_session_name: :admin_sync_session,
