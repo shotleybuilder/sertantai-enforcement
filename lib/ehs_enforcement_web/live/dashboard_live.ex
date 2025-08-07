@@ -410,7 +410,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
   #   )
   # end
 
-  defp load_recent_cases_paginated(filter_agency, page, page_size, time_period \\ nil) do
+  defp load_recent_cases_paginated(filter_agency, page, page_size, time_period) do
     filter_conditions = if filter_agency, do: [agency_id: filter_agency], else: []
     offset = (page - 1) * page_size
     

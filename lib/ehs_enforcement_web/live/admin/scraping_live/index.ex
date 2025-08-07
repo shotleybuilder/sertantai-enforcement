@@ -21,7 +21,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   require Ash.Query
   
   alias EhsEnforcement.Enforcement.Case
-  alias EhsEnforcement.Enforcement
   
   # LiveView Callbacks
   
@@ -145,6 +144,17 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   def handle_info({:filtered_sessions_loaded, data}, socket) do
     socket = assign(socket,
       scraping_sessions: data.sessions,
+      loading: false
+    )
+    
+    {:noreply, socket}
+  end
+  
+  @impl true
+  def handle_info({:filtered_cases_loaded, data}, socket) do
+    socket = assign(socket,
+      recent_cases: data.recent_cases,
+      case_stats: data.case_stats,
       loading: false
     )
     
@@ -278,16 +288,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   # Update message handlers for proper Ash data loading
   
   
-  @impl true
-  def handle_info({:filtered_cases_loaded, data}, socket) do
-    socket = assign(socket,
-      recent_cases: data.recent_cases,
-      case_stats: data.case_stats,
-      loading: false
-    )
-    
-    {:noreply, socket}
-  end
   
   defp format_datetime(nil), do: "N/A"
   defp format_datetime(datetime) do

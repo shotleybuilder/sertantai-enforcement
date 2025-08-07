@@ -75,7 +75,7 @@ defmodule EhsEnforcement.Telemetry do
   end
 
   def handle_event([:sync, :exception], _measurements, metadata, _config) do
-    error_info = inspect(metadata.error)
+    _error_info = inspect(metadata.error)
     
     EhsLogger.error("Sync failed for #{metadata.agency}", metadata.error, metadata[:stacktrace] || [], %{
       operation: metadata[:operation],

@@ -4,7 +4,6 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   alias EhsEnforcement.Enforcement
 
   require Ash.Query
-  import Ash.Expr
 
   @per_page 20
 

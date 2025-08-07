@@ -580,7 +580,6 @@ defmodule EhsEnforcement.ErrorHandler do
 
   defp is_user_facing_error?(:validation_error), do: true
   defp is_user_facing_error?(:business_error), do: true
-  defp is_user_facing_error?(:dashboard_load), do: true
   defp is_user_facing_error?(_), do: false
 
   defp assess_data_loss_risk(:database_error), do: :high

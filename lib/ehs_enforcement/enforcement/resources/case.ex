@@ -196,23 +196,6 @@ defmodule EhsEnforcement.Enforcement.Case do
       end)
     end
 
-    @doc """
-    Update a case with data from HSE website scraping operations.
-    
-    This action is specifically for scraping workflow (HSE website → Postgres).
-    It does NOT set `last_synced_at` since that's reserved for Airtable syncing.
-    
-    ## PubSub Events
-    
-    When this action succeeds, it publishes to:
-    - `case:scraped:updated` - General scraping event (all scraped cases)
-    - `case:scraped:updated:<case_id>` - Specific case scraping event
-    
-    ## Usage
-    
-        # In scraping when we find an existing case
-        {:ok, updated_case} = Ash.update(existing_case, case_data, action: :update_from_scraping, actor: actor)
-    """
     update :update_from_scraping do
       accept([:offence_result, :offence_fine, :offence_costs, :offence_hearing_date, :url, :related_cases])
       # No last_synced_at change - this is scraping, not Airtable syncing

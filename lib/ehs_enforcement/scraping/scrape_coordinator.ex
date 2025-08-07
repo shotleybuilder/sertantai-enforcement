@@ -12,19 +12,16 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
   
   require Logger
   require Ash.Query
-  import Ash.Expr
   
   alias EhsEnforcement.Scraping.Hse.CaseScraper
   alias EhsEnforcement.Scraping.Hse.CaseProcessor
   alias EhsEnforcement.Configuration.ScrapingConfig
   alias EhsEnforcement.Scraping.ScrapeSession
   alias EhsEnforcement.Scraping.CaseProcessingLog
-  alias EhsEnforcement.Scraping.ScrapedCase
   
   # Dual notification system:
   # 1. Ash PubSub notifications for session-level updates (handled automatically)
   # 2. Manual PubSub for detailed case processing (required for UI components)
-  @pubsub_topic "scraping:progress"
   
   # Default fallback values if no configuration is found
   @fallback_config %{
@@ -405,41 +402,6 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
     end
   end
 
-  # Legacy pattern - kept for backwards compatibility but redirects to new serial processing
-  defp process_single_scraped_case(session, scraped_case, actor, acc) do
-    Logger.debug("Processing individual case: #{scraped_case.regulator_id}")
-    
-    case CaseProcessor.process_and_create_case(scraped_case, actor) do
-      {:ok, case_record} ->
-        # Case record created - triggers case:created PubSub event automatically
-        Logger.info("✅ Created case: #{case_record.regulator_id} - should appear in UI via case:created PubSub")
-        
-        %{acc | cases_created: acc.cases_created + 1}
-        
-      {:error, %Ash.Error.Invalid{errors: errors}} ->
-        # Check if error indicates case already exists
-        if duplicate_error?(errors) do
-          Logger.info("⏭️ Case already exists: #{scraped_case.regulator_id}")
-          
-          # Find and update existing case with last_synced_at to trigger case:updated PubSub
-          case find_and_update_existing_case(scraped_case, actor) do
-            {:ok, updated_case} ->
-              Logger.info("📝 Updated existing case: #{updated_case.regulator_id} - should appear in UI via case:updated PubSub")
-            {:error, find_error} ->
-              Logger.warning("Failed to find/update existing case: #{inspect(find_error)}")
-          end
-          
-          %{acc | cases_existing: acc.cases_existing + 1}
-        else
-          Logger.warning("❌ Error creating case #{scraped_case.regulator_id}: #{inspect(errors)}")
-          %{acc | cases_errors: acc.cases_errors + 1}
-        end
-        
-      {:error, reason} ->
-        Logger.warning("❌ Error processing case #{scraped_case.regulator_id}: #{inspect(reason)}")
-        %{acc | cases_errors: acc.cases_errors + 1}
-    end
-  end
 
   defp advance_to_next_page(session) do
     # Update session to next page using Ash.update
@@ -562,14 +524,7 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
   
   defp duplicate_error?(_), do: false
 
-  # Helper functions for type safety
-  defp ensure_integer(value) when is_integer(value), do: value
-  defp ensure_integer(value) when is_binary(value), do: String.to_integer(value)
-  defp ensure_integer(_), do: 1  # fallback
   
-  defp ensure_string(value) when is_binary(value), do: value
-  defp ensure_string(value) when is_atom(value), do: Atom.to_string(value)
-  defp ensure_string(_), do: "convictions"  # fallback
 
   defp find_and_update_existing_case(scraped_case, actor) do
     # Find existing case by regulator_id using Ash.read with filter

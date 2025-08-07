@@ -13,7 +13,6 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Index do
   
   require Logger
   require Ash.Query
-  import Ash.Expr
   
   alias EhsEnforcement.Enforcement
   

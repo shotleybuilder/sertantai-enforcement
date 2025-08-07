@@ -195,15 +195,6 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
   
   defp format_number(number), do: to_string(number)
 
-  # Helper component for metric display (private version)
-  defp metric_display(assigns) do
-    ~H"""
-    <div class="text-sm">
-      <div class="text-gray-600 text-xs font-medium uppercase tracking-wide"><%= @label %></div>
-      <div class="text-gray-900 font-semibold"><%= @value %></div>
-    </div>
-    """
-  end
 
   # Helper component for action buttons
   attr :class, :string, required: true

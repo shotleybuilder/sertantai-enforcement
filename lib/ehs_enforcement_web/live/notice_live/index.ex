@@ -238,20 +238,6 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     end
   end
 
-  defp add_compliance_filter(filter, status) do
-    today = Date.utc_today()
-    
-    case status do
-      "pending" ->
-        [{:compliance_date, {:>, today}} | filter]
-      
-      "overdue" ->
-        [{:compliance_date, {:<=, today}} | filter]
-      
-      _ ->
-        filter
-    end
-  end
 
   defp count_notices(socket) do
     filter = build_filter(socket.assigns.filters, socket.assigns.search_query)

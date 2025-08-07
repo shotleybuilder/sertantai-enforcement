@@ -24,7 +24,6 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Index do
   
   require Logger
   require Ash.Query
-  import Ash.Expr
   
   alias EhsEnforcement.Configuration.ScrapingConfig
   
@@ -116,29 +115,6 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Index do
   
   # Private functions
   
-  defp load_configuration_overview(socket) do
-    Task.start_link(fn ->
-      try do
-        # Load all scraping configurations - handle case where current_user might be nil
-        actor = socket.assigns[:current_user]
-        
-        {:ok, configs} = if actor do
-          Ash.read(ScrapingConfig, actor: actor)
-        else
-          Ash.read(ScrapingConfig)
-        end
-        
-        send(self(), {:config_data_loaded, %{configs: configs}})
-        
-      rescue
-        error ->
-          Logger.error("Failed to load configuration overview: #{inspect(error)}")
-          send(self(), {:config_data_error, error})
-      end
-    end)
-    
-    {:ok, assign(socket, loading: true, configs: [], errors: [])}
-  end
   
   defp config_status_badge(%ScrapingConfig{is_active: true}), do: "bg-green-100 text-green-800"
   defp config_status_badge(%ScrapingConfig{is_active: false}), do: "bg-gray-100 text-gray-800"

@@ -212,7 +212,7 @@ defmodule EhsEnforcement.Sync.Adapters.AirtableAdapter do
         {:ok, total_count}
         
       {:error, error} ->
-        Logger.warn("⚠️ Could not get total count: #{inspect(error)}")
+        Logger.warning("⚠️ Could not get total count: #{inspect(error)}")
         {:error, :count_unavailable}
     end
   end
@@ -302,7 +302,7 @@ defmodule EhsEnforcement.Sync.Adapters.AirtableAdapter do
     "https://api.airtable.com/v0/#{base_id}"
   end
 
-  defp fetch_page(adapter_state, offset \\ nil) do
+  defp fetch_page(adapter_state, offset) do
     params = if offset do
       Map.put(adapter_state.request_params, :offset, offset)
     else
@@ -339,7 +339,7 @@ defmodule EhsEnforcement.Sync.Adapters.AirtableAdapter do
     :ok
   end
 
-  defp should_retry_error?(error, config) do
+  defp should_retry_error?(error, _config) do
     # Determine if error is retryable based on error type and configuration
     case error do
       %{status: status} when status in [429, 500, 502, 503, 504] ->

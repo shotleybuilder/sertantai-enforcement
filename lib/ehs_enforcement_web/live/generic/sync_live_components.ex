@@ -49,7 +49,6 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
   """
   
   use Phoenix.Component
-  import Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
   @doc """

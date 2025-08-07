@@ -354,10 +354,10 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
     Logger.info("Using bulk_create for #{length(cases_data)} cases")
     
     # Add actor context if provided - bulk_create handles actor internally
-    bulk_opts = if actor, do: [actor: actor], else: []
+    _bulk_opts = if actor, do: [actor: actor], else: []
     
     case Enforcement.Case.bulk_create(cases_data: cases_data, batch_size: 50) do
-      {:ok, bulk_result} -> 
+      {:ok, _bulk_result} -> 
         Logger.info("Bulk create completed successfully")
         {:ok, %{
           created: [],  # bulk_create doesn't return individual records

@@ -20,7 +20,6 @@ defmodule EhsEnforcement.Sync.Compat do
   """
   
   alias EhsEnforcement.Sync.RecordProcessor
-  alias EhsEnforcement.Integrations.Airtable.ReqClient
   require Logger
   
   @pubsub_topic "sync_progress"
@@ -227,7 +226,7 @@ defmodule EhsEnforcement.Sync.Compat do
     end
   end
   
-  defp process_records_in_batches(adapter_state, config, session) do
+  defp process_records_in_batches(adapter_state, config, _session) do
     batch_size = get_in(config, [:processing_config, :batch_size]) || 100
     limit = get_in(config, [:processing_config, :limit]) || 1000
     
@@ -240,7 +239,7 @@ defmodule EhsEnforcement.Sync.Compat do
     end
   end
   
-  defp fetch_and_process_batch(adapter_state, config, batch_size, remaining, acc) when remaining > 0 do
+  defp fetch_and_process_batch(_adapter_state, _config, batch_size, remaining, acc) when remaining > 0 do
     current_batch_size = min(batch_size, remaining)
     
     try do
@@ -371,22 +370,4 @@ defmodule EhsEnforcement.Sync.Compat do
     RecordProcessor.process_notice_record(record)
   end
   
-  defp transform_sync_result(ncdb_result) do
-    # Transform ncdb_2_phx result format to match legacy API
-    stats = ncdb_result.session.progress_stats || %{}
-    
-    imported = Map.get(stats, :processed, 0)
-    created = Map.get(stats, :created, 0)
-    updated = Map.get(stats, :updated, 0)
-    existing = Map.get(stats, :skipped, 0)
-    errors = ncdb_result.session.error_count || 0
-    
-    {:ok, %{
-      imported: imported,
-      created: created,
-      updated: updated,
-      existing: existing,
-      errors: []  # Legacy API returned empty array for errors
-    }}
-  end
 end

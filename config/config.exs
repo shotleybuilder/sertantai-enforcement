@@ -13,6 +13,9 @@ config :ehs_enforcement,
   ecto_repos: [EhsEnforcement.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# Configure ncdb_2_phx package to use our repo (v0.2.4+ supports this)
+config :ncdb_2_phx, repo: EhsEnforcement.Repo
+
 # Configures the endpoint
 config :ehs_enforcement, EhsEnforcementWeb.Endpoint,
   url: [host: "localhost"],

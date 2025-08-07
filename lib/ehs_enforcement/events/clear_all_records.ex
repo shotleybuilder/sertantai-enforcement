@@ -7,7 +7,7 @@ defmodule EhsEnforcement.Events.ClearAllRecords do
   use AshEvents.ClearRecordsForReplay
 
   @impl true
-  def clear_records!(opts) do
+  def clear_records!(_opts) do
     # Clear all relevant records for resources with event tracking
     # This runs before replay to ensure clean state
     

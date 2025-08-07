@@ -8,11 +8,11 @@
     <meta name="project" content="ehs_enforcement v0.1.0">
 
 
-    <title>EhsEnforcementWeb.Admin.SyncLive.Index — ehs_enforcement v0.1.0</title>
+    <title>EhsEnforcement.Sync.EventBroadcaster — ehs_enforcement v0.1.0</title>
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-7EF803A2.js"></script>
+    <script defer src="dist/sidebar_items-C1DFF22F.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -75,7 +75,7 @@ ehs_enforcement
 <div id="top-content">
   <div class="heading-with-actions top-heading">
     <h1>
-      <span translate="no">EhsEnforcementWeb.Admin.SyncLive.Index</span> 
+      <span translate="no">EhsEnforcement.Sync.EventBroadcaster</span> 
       <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
 
     </h1>
@@ -84,7 +84,9 @@ ehs_enforcement
 
 
     <section id="moduledoc">
-<p>Admin interface for Airtable data synchronization with real-time progress display.</p><p>Features:</p><ul><li>Manual sync trigger with configurable parameters</li><li>Real-time progress updates via Phoenix PubSub</li><li>Sync session management and results display  </li><li>Error reporting and recovery options</li><li>Package-ready architecture for future extraction</li></ul>
+<p>Event broadcasting service for sync operations.</p><p>Provides a simple interface for broadcasting sync-related events via PubSub.
+This module acts as a wrapper around the main EhsEnforcement.PubSub module,
+specifically tailored for sync operation events.</p>
     </section>
 
 </div>
@@ -103,11 +105,11 @@ ehs_enforcement
 
     <div class="summary-row">
       <div class="summary-signature">
-        <a href="#render/1" data-no-tooltip="" translate="no">render(assigns)</a>
+        <a href="#broadcast/3" data-no-tooltip="" translate="no">broadcast(event_type, event_data, opts \\ [])</a>
 
       </div>
 
-        <div class="summary-synopsis"><p>Callback implementation for <a><code class="inline">Phoenix.LiveView.render/1</code></a>.</p></div>
+        <div class="summary-synopsis"><p>Broadcasts a sync event to subscribers.</p></div>
 
     </div>
 
@@ -124,14 +126,16 @@ ehs_enforcement
       <span class="text">Functions</span>
     </h1>
     <div class="functions-list">
-<section class="detail" id="render/1">
+<section class="detail" id="broadcast/3">
+
+    <span id="broadcast/2"></span>
 
   <div class="detail-header">
-    <a href="#render/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+    <a href="#broadcast/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
       <i class="ri-link-m" aria-hidden="true"></i>
     </a>
     <div class="heading-with-actions">
-      <h1 class="signature" translate="no">render(assigns)</h1>
+      <h1 class="signature" translate="no">broadcast(event_type, event_data, opts \\ [])</h1>
 
 
     </div>
@@ -139,7 +143,16 @@ ehs_enforcement
 
   <section class="docstring">
 
-<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/1.0.17/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p>
+<p>Broadcasts a sync event to subscribers.</p><h2 id="broadcast/3-parameters" class="section-heading"><a href="#broadcast/3-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">event_type</code> - The type of sync event (e.g., :record_created, :record_updated, :record_exists)</li><li><code class="inline">event_data</code> - Map containing event details</li><li><code class="inline">opts</code> - Keyword list of options, including:<ul><li><code class="inline">topic</code> - The PubSub topic to broadcast to (defaults to &quot;sync_events&quot;)</li></ul></li></ul><h2 id="broadcast/3-examples" class="section-heading"><a href="#broadcast/3-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h2><pre><code class="makeup elixir" translate="no"><span class="nc">EventBroadcaster</span><span class="o">.</span><span class="n">broadcast</span><span class="p" data-group-id="6359731559-1">(</span><span class="ss">:record_created</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6359731559-2">%{</span><span class="w">
+  </span><span class="ss">resource_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Case&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">record_data</span><span class="p">:</span><span class="w"> </span><span class="n">case_data</span><span class="p">,</span><span class="w">
+  </span><span class="ss">session_id</span><span class="p">:</span><span class="w"> </span><span class="n">session_id</span><span class="w">
+</span><span class="p" data-group-id="6359731559-2">}</span><span class="p">,</span><span class="w"> </span><span class="ss">topic</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;sync_records&quot;</span><span class="p" data-group-id="6359731559-1">)</span><span class="w">
+
+</span><span class="nc">EventBroadcaster</span><span class="o">.</span><span class="n">broadcast</span><span class="p" data-group-id="6359731559-3">(</span><span class="ss">:record_updated</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6359731559-4">%{</span><span class="w">
+  </span><span class="ss">resource_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Offender&quot;</span><span class="p">,</span><span class="w"> 
+  </span><span class="ss">record_data</span><span class="p">:</span><span class="w"> </span><span class="n">offender_data</span><span class="w">
+</span><span class="p" data-group-id="6359731559-4">}</span><span class="p" data-group-id="6359731559-3">)</span></code></pre>
   </section>
 </section>
 

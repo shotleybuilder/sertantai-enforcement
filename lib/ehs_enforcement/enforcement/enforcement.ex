@@ -8,7 +8,6 @@ defmodule EhsEnforcement.Enforcement do
   use Ash.Domain, extensions: [AshPhoenix]
   
   require Ash.Query
-  import Ash.Expr
 
   resources do
     resource EhsEnforcement.Enforcement.Agency do

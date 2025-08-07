@@ -66,26 +66,6 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
 
   # Private functions
 
-  defp load_related_notices(notice) do
-    filter = [
-      offender_id: notice.offender_id
-    ]
-    
-    # Get notices excluding the current one
-    case Enforcement.list_notices([
-      filter: filter,
-      sort: [notice_date: :desc],
-      load: [:agency],
-      page: [limit: 6]
-    ]) do
-      {:ok, notices} -> 
-        notices
-        |> Enum.reject(&(&1.id == notice.id))
-        |> Enum.take(5)
-      _ -> 
-        []
-    end
-  end
 
   defp calculate_compliance_status(notice) do
     today = Date.utc_today()
