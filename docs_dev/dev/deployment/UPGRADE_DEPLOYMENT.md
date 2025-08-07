@@ -28,7 +28,7 @@ This guide covers how to deploy newer versions of the EHS Enforcement applicatio
 
 # 2. Check current application status
 docker-compose -f docker-compose.prod.yml ps
-curl https://yourdomain.com/health
+curl https://yourdomain.com:4002/health
 
 # 3. Review changes being deployed
 git log --oneline HEAD..origin/main
@@ -42,19 +42,28 @@ diff .env.example .env.prod
 
 ## Update Deployment Process
 
-### Method 1: Using Deployment Script (Recommended)
+### Method 1: Using Docker Compose (Recommended for Phoenix 1.8.0)
 
 ```bash
-# Standard update deployment
-./scripts/deploy.sh prod
+# Standard update deployment with Docker Compose
+# Note: Custom deployment scripts can be added as needed
 
-# The script automatically:
-# - Creates database backup
-# - Pulls latest code
-# - Builds new Docker images
-# - Runs migrations
-# - Performs health checks
-# - Rolls back on failure
+cd /opt/ehs_enforcement
+
+# 1. Create backup first
+mkdir -p backups
+docker-compose -f docker-compose.prod.yml exec postgres pg_dump -U postgres ehs_enforcement_prod > backups/backup_$(date +%Y%m%d_%H%M%S).sql
+
+# 2. Pull and deploy
+git pull origin main
+docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose.prod.yml up -d
+
+# 3. Run migrations (Phoenix 1.8.0 + Ash)
+docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "EhsEnforcement.Release.migrate"
+
+# 4. Verify deployment
+curl https://yourdomain.com:4002/health
 ```
 
 ### Method 2: Manual Step-by-Step
@@ -79,38 +88,94 @@ docker-compose -f docker-compose.prod.yml build --no-cache
 # 6. Deploy with rolling update
 docker-compose -f docker-compose.prod.yml up -d
 
-# 7. Run migrations
-docker-compose -f docker-compose.prod.yml exec app bin/migrate
+# 7. Run migrations (Phoenix 1.8.0 + Ash)
+docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "EhsEnforcement.Release.migrate"
 
 # 8. Verify deployment
-curl https://yourdomain.com/health
+curl https://yourdomain.com:4002/health
 docker-compose -f docker-compose.prod.yml logs --tail=50 app
 ```
 
 ## Migration Handling
 
-### Ash + Ecto Migrations
+### Ash Framework + Phoenix 1.8.0 Migrations
 
-The application uses both Ash resources and standard Ecto migrations:
+This application uses the Ash Framework with Phoenix 1.8.0 release patterns. Migration handling differs from standard Phoenix applications:
 
+#### Pre-Update Ash Checks
 ```bash
-# Check for pending migrations
-docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "EhsEnforcement.Release.migrate()"
+# 1. Check current Ash resource snapshots
+git status priv/resource_snapshots/
 
-# Manual migration steps if needed
+# 2. Verify Ash domains are accessible
+docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "
+domains = [EhsEnforcement.Accounts, EhsEnforcement.Configuration, EhsEnforcement.Enforcement, EhsEnforcement.Events, EhsEnforcement.Scraping, EhsEnforcement.Sync]
+Enum.each(domains, fn domain -> IO.puts(\"#{inspect(domain)}: #{Code.ensure_loaded?(domain)}\") end)
+"
+
+# 3. Check current migration status
+docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "EhsEnforcement.Release.status"
+```
+
+#### Running Migrations (Phoenix 1.8.0 + Ash)
+```bash
+# Primary migration command (handles both Ecto and Ash)
+docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "EhsEnforcement.Release.migrate"
+
+# Verify Ash domains loaded correctly after migration
+docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "EhsEnforcement.Release.status"
+
+# Test Ash functionality post-migration
+docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "
+case Ash.read(EhsEnforcement.Enforcement.Agency) do
+  {:ok, agencies} -> IO.puts(\"✓ Ash operations working, found #{length(agencies)} agencies\")
+  {:error, error} -> IO.puts(\"✗ Ash error: #{inspect(error)}\")
+end
+"
+```
+
+#### Manual Ash Migration Steps (If Needed)
+```bash
+# Connect to running application
 docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement remote
 
 # In the remote shell:
-EhsEnforcement.Release.migrate()
-EhsEnforcement.Release.migrate_ash()
+EhsEnforcement.Release.migrate()        # Run both Ecto and Ash migrations
+EhsEnforcement.Release.migrate_ash()    # Run only Ash domain loading
+EhsEnforcement.Release.status()         # Check overall status
 ```
 
 ### Migration Safety Checks
 
 ```bash
-# Before running migrations, check what will be applied
-docker-compose -f docker-compose.prod.yml exec app mix ecto.migrations
-docker-compose -f docker-compose.prod.yml exec app mix ash.codegen --check
+# Check what migrations would be applied (Phoenix 1.8.0)
+docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "EhsEnforcement.Release.status"
+
+# In development environment (before deployment):
+# mix ash.codegen --check      # Generate any needed Ash migrations
+# mix ash.migrate --dry-run    # Preview Ash migrations
+# mix ecto.migrations          # Check standard Ecto migrations
+
+# Verify Ash resource snapshots are committed
+ls -la priv/resource_snapshots/
+git status priv/resource_snapshots/
+```
+
+### Ash-Specific Update Considerations
+
+```bash
+# After pulling updates, check for Ash resource changes
+if git diff HEAD~1 --name-only | grep -q "priv/resource_snapshots"; then
+    echo "⚠️  Ash resource snapshots changed - review carefully"
+    git diff HEAD~1 priv/resource_snapshots/
+fi
+
+# Verify all 6 Ash domains load successfully after update
+docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "
+domains = [EhsEnforcement.Accounts, EhsEnforcement.Configuration, EhsEnforcement.Enforcement, EhsEnforcement.Events, EhsEnforcement.Scraping, EhsEnforcement.Sync]
+failed_domains = for domain <- domains, not Code.ensure_loaded?(domain), do: domain
+if failed_domains == [], do: IO.puts(\"✓ All Ash domains loaded successfully\"), else: IO.puts(\"✗ Failed domains: #{inspect(failed_domains)}\")
+"
 ```
 
 ## Rollback Procedures
@@ -137,7 +202,7 @@ docker-compose -f docker-compose.prod.yml up -d
 ### Database Rollback
 
 ```bash
-# Only if migrations need to be rolled back
+# Only if migrations need to be rolled back (Phoenix 1.8.0)
 docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "EhsEnforcement.Release.rollback(EhsEnforcement.Repo, <version>)"
 
 # Or restore from backup
@@ -155,13 +220,13 @@ For critical updates that need zero downtime:
 ```bash
 # 1. Prepare second environment
 cp docker-compose.prod.yml docker-compose.green.yml
-# Edit ports in green compose file (4001 instead of 4000)
+# Edit ports in green compose file (4003 instead of 4002)
 
 # 2. Deploy to green environment
 docker-compose -f docker-compose.green.yml up -d
 
 # 3. Test green environment
-curl http://localhost:4001/health
+curl http://localhost:4003/health
 
 # 4. Update load balancer to point to green
 # (Update nginx upstream or DNS)
@@ -265,9 +330,9 @@ curl https://yourdomain.com/health
 ### Health Check Monitoring
 
 ```bash
-# Continuous health monitoring during update
+# Continuous health monitoring during update (Phoenix 1.8.0 - port 4002)
 while true; do
-  echo "$(date): $(curl -s -o /dev/null -w "%{http_code}" https://yourdomain.com/health)"
+  echo "$(date): $(curl -s -o /dev/null -w "%{http_code}" https://yourdomain.com:4002/health)"
   sleep 5
 done
 ```
@@ -304,15 +369,18 @@ set -e
 
 echo "Starting automated update process..."
 
-# Backup
-./scripts/backup.sh
+# Backup (Phoenix 1.8.0 compatible)
+mkdir -p backups
+docker-compose -f docker-compose.prod.yml exec postgres pg_dump -U postgres ehs_enforcement_prod > backups/backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Pull changes
 git pull origin main
 
-# Check for migration warnings
+# Check for migration warnings (Phoenix 1.8.0 + Ash)
 if git diff HEAD~1 --name-only | grep -q "priv/repo/migrations\|priv/resource_snapshots"; then
-    echo "WARNING: Database migrations detected. Proceed? (y/N)"
+    echo "⚠️  WARNING: Database/Ash migrations detected. Proceed? (y/N)"
+    echo "Files changed:"
+    git diff HEAD~1 --name-only | grep -E "priv/repo/migrations|priv/resource_snapshots"
     read -r response
     if [[ ! "$response" =~ ^[Yy]$ ]]; then
         echo "Update cancelled"
@@ -320,10 +388,18 @@ if git diff HEAD~1 --name-only | grep -q "priv/repo/migrations\|priv/resource_sn
     fi
 fi
 
-# Deploy
-./scripts/deploy.sh prod
+# Deploy (Phoenix 1.8.0 + Ash)
+docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "EhsEnforcement.Release.migrate"
 
-echo "Update completed successfully!"
+# Verify deployment
+if curl -f -s https://yourdomain.com:4002/health > /dev/null; then
+    echo "✓ Update completed successfully!"
+else
+    echo "✗ Health check failed - consider rolling back"
+    exit 1
+fi
 ```
 
 ### CI/CD Integration
@@ -350,7 +426,14 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd /opt/ehs_enforcement
-            ./scripts/update.sh
+            # Create backup
+            mkdir -p backups
+            docker-compose -f docker-compose.prod.yml exec postgres pg_dump -U postgres ehs_enforcement_prod > backups/backup_$(date +%Y%m%d_%H%M%S).sql
+            # Deploy with Phoenix 1.8.0 patterns
+            git pull origin main
+            docker-compose -f docker-compose.prod.yml build --no-cache
+            docker-compose -f docker-compose.prod.yml up -d
+            docker-compose -f docker-compose.prod.yml exec app bin/ehs_enforcement eval "EhsEnforcement.Release.migrate"
 ```
 
 ## Best Practices
