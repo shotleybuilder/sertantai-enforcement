@@ -13,6 +13,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
   require Ash.Query
   
   alias EhsEnforcement.Agencies.Hse.NoticeScraper
+  alias EhsEnforcement.Sync.OffenderMatcher
   
   @hse_agency_code :hse
   

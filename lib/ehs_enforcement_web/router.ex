@@ -94,9 +94,7 @@ defmodule EhsEnforcementWeb.Router do
       live "/cases/new", CaseLive.Form, :new
       live "/cases/:id/edit", CaseLive.Form, :edit
       
-      # Admin Notice Management Routes
-      live "/notices/new", NoticeLive.Form, :new
-      live "/notices/:id/edit", NoticeLive.Form, :edit
+      # Admin Notice Management Routes - READ ONLY (notices are scraped data)
       
       # Admin Configuration Management Routes
       live "/admin/config", Admin.ConfigLive.Index, :index

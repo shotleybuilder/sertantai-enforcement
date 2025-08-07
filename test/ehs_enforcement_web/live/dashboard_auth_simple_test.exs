@@ -72,11 +72,9 @@ defmodule EhsEnforcementWeb.DashboardAuthSimpleTest do
       
       # Should show admin actions
       assert html =~ "[ADMIN] > Add New Case"
-      assert html =~ "[ADMIN] > Add New Notice"
       
       # Admin buttons should have proper phx-click handlers
       assert has_element?(view, "button[phx-click='navigate_to_new_case']")
-      assert has_element?(view, "button[phx-click='navigate_to_new_notice']")
     end
 
     test "regular users do not see admin actions", %{conn: conn} do
@@ -130,12 +128,6 @@ defmodule EhsEnforcementWeb.DashboardAuthSimpleTest do
       view |> element("button[phx-click='navigate_to_new_case']") |> render_click()
       assert_redirected(view, "/cases/new")
 
-      # Restart view for next test
-      {:ok, view, _html} = live(conn, "/dashboard")
-      
-      # Test notice navigation
-      view |> element("button[phx-click='navigate_to_new_notice']") |> render_click()
-      assert_redirected(view, "/notices/new")
     end
   end
 end

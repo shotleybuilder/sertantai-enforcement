@@ -318,10 +318,6 @@ defmodule EhsEnforcementWeb.DashboardLive do
     {:noreply, push_navigate(socket, to: "/cases/new")}
   end
 
-  @impl true
-  def handle_event("navigate_to_new_notice", _params, socket) do
-    {:noreply, push_navigate(socket, to: "/notices/new")}
-  end
 
   @impl true
   def handle_event("browse_top_offenders", _params, socket) do

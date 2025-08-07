@@ -81,7 +81,6 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
 
       # Should NOT show admin actions for regular user
       refute html_regular =~ "[ADMIN] > Add New Case"
-      refute html_regular =~ "[ADMIN] > Add New Notice"
 
       # Test with admin user
       admin_user = create_test_admin(%{
@@ -96,11 +95,9 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
 
       # Should show admin actions for admin user
       assert html_admin =~ "[ADMIN] > Add New Case"
-      assert html_admin =~ "[ADMIN] > Add New Notice"
       
       # Admin buttons should have proper phx-click handlers
       assert has_element?(view_admin, "button[phx-click='navigate_to_new_case']")
-      assert has_element?(view_admin, "button[phx-click='navigate_to_new_notice']")
     end
 
     test "handles nil current_user gracefully", %{conn: conn} do
