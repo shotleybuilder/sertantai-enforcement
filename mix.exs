@@ -10,6 +10,7 @@ defmodule EhsEnforcement.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      listeners: [Phoenix.CodeReloader],
       
       # ExDoc configuration
       docs: [
@@ -115,8 +116,10 @@ defmodule EhsEnforcement.MixProject do
       # Ash Authentication
       {:ash_authentication, "~> 4.0"},
       {:ash_authentication_phoenix, "~> 2.0"},
-      # SAT solver for Ash policies
+      # SAT solver for Ash policies - PicoSAT for optimal performance
       {:picosat_elixir, "~> 0.2"},
+      # Backup pure Elixir SAT solver (can be removed if PicoSAT works)
+      {:simple_sat, "~> 0.1"},
       # Background job processing for Ash
       {:ash_oban, "~> 0.2"},
       {:oban, "~> 2.17"},

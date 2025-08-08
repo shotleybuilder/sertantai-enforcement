@@ -87,16 +87,16 @@ defmodule EhsEnforcement.Release do
     IO.puts("\n=== Migration Status ===")
     for repo <- repos() do
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, fn repo ->
-        case Ecto.Migrator.status(repo) do
-          {:ok, status} -> 
-            IO.puts("Repository: #{inspect(repo)}")
-            for {status, version, description} <- status do
-              indicator = if status == :up, do: "✓", else: "✗"
-              IO.puts("  #{indicator} #{version} #{description}")
-            end
-          
-          {:error, reason} ->
-            IO.puts("✗ Could not get migration status for #{inspect(repo)}: #{inspect(reason)}")
+        try do
+          status = Ecto.Migrator.migrations(repo)
+          IO.puts("Repository: #{inspect(repo)}")
+          for {migration_status, version, description} <- status do
+            indicator = if migration_status == :up, do: "✓", else: "✗"
+            IO.puts("  #{indicator} #{version} #{description}")
+          end
+        rescue
+          error ->
+            IO.puts("✗ Could not get migration status for #{inspect(repo)}: #{inspect(error)}")
         end
       end)
     end

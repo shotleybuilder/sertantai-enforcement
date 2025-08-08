@@ -219,6 +219,7 @@ defmodule EhsEnforcement.Sync.ExtendedSyncSession do
     
     update :mark_completed do
       argument :final_stats, :map, allow_nil?: false
+      require_atomic? false
       
       change set_attribute(:status, :completed)
       change set_attribute(:completed_at, &DateTime.utc_now/0)
@@ -233,6 +234,7 @@ defmodule EhsEnforcement.Sync.ExtendedSyncSession do
     
     update :mark_failed do
       argument :error_info, :map, allow_nil?: false
+      require_atomic? false
       
       change set_attribute(:status, :failed)
       change set_attribute(:completed_at, &DateTime.utc_now/0)
@@ -247,6 +249,7 @@ defmodule EhsEnforcement.Sync.ExtendedSyncSession do
     
     update :update_progress do
       argument :progress_update, :map, allow_nil?: false
+      require_atomic? false
       
       change fn changeset, _context ->
         progress_update = Ash.Changeset.get_argument(changeset, :progress_update)

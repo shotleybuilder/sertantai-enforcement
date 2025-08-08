@@ -141,11 +141,11 @@ defmodule EhsEnforcement.Integrations.Airtable.UkAirtable do
       with(:ok <- func.(name, path, opts)) do
         :ok
       else
-        {:error, error} ->
-          IO.puts("ERROR #{error} with #{fields["Title_EN"]}")
-
         {:error, :html} ->
           IO.puts(".html from #{fields["Title_EN"]}")
+
+        {:error, error} ->
+          IO.puts("ERROR #{error} with #{fields["Title_EN"]}")
       end
     end)
 
