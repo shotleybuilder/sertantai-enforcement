@@ -12,260 +12,300 @@ This guide provides step-by-step instructions for deploying the EHS Enforcement 
 
 ## Environment Setup
 
-### 1. Server Preparation
+### 1. Server Preparation - COMPLETE
 
-```bash
-# Update system
-✅ sudo apt update && sudo apt upgrade -y
+  ```bash
+  # Update system
+  ✅ sudo apt update && sudo apt upgrade -y
 
-# Install Docker
-✅ curl -fsSL https://get.docker.com -o get-docker.sh
-✅ sudo sh get-docker.sh
-✅ sudo usermod -aG docker $USER
+  # Install Docker
+  ✅ curl -fsSL https://get.docker.com -o get-docker.sh
+  ✅ sudo sh get-docker.sh
+  ✅ sudo usermod -aG docker $USER
 
-# Install Docker Compose
-✅ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-✅ sudo chmod +x /usr/local/bin/docker-compose
+  # Install Docker Compose
+  ✅ sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  ✅ sudo chmod +x /usr/local/bin/docker-compose
 
-# Install Nginx (if not using Docker for reverse proxy)
-✅ sudo apt install nginx -y
+  # Install Nginx (if not using Docker for reverse proxy)
+  ✅ sudo apt install nginx -y
 
-# Install additional dependencies
-✅ sudo apt install -y unzip build-essential libpq-dev postgresql-client ufw
-```
+  # Install additional dependencies
+  ✅ sudo apt install -y unzip build-essential libpq-dev postgresql-client ufw
+  ```
 
 ### 2. PostgreSQL Database Setup
 
-Since this deployment uses Docker Compose, PostgreSQL runs in a container. However, for production setups, you may also want to configure a standalone PostgreSQL instance.
+  Since this deployment uses Docker Compose, PostgreSQL runs in a container. However, for production setups, you may also want to configure a standalone PostgreSQL instance.
 
-#### Option A: PostgreSQL via Docker (Recommended - Handled by docker-compose.prod.yml)
+  #### Option A: PostgreSQL via Docker (Recommended - Handled by docker-compose.prod.yml)
 
-The `docker-compose.prod.yml` file includes a PostgreSQL 16 container that will be automatically provisioned. No additional setup required - skip to step 3.
+    The `docker-compose.prod.yml` file includes a PostgreSQL 16 container that will be automatically provisioned. No additional setup required - skip to step 3.
 
-#### Option B: Standalone PostgreSQL Installation (Alternative)
+  #### Option B: Standalone PostgreSQL Installation (Alternative)
 
-If you prefer a standalone PostgreSQL installation on the Digital Ocean droplet:
+    If you prefer a standalone PostgreSQL installation on the Digital Ocean droplet:
 
-```bash
-# Install PostgreSQL 16
-sudo apt update
-sudo apt install -y wget ca-certificates
+    ```bash
+    # Install PostgreSQL 16
+    sudo apt update
+    sudo apt install -y wget ca-certificates
 
-# Add PostgreSQL official repository
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+    # Add PostgreSQL official repository
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
 
-# Install PostgreSQL 16
-sudo apt update
-sudo apt install -y postgresql-16 postgresql-client-16
+    # Install PostgreSQL 16
+    sudo apt update
+    sudo apt install -y postgresql-16 postgresql-client-16
 
-# Start and enable PostgreSQL
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
+    # Start and enable PostgreSQL
+    sudo systemctl start postgresql
+    sudo systemctl enable postgresql
 
-# Create production database and user
-sudo -u postgres psql << 'EOF'
--- Create production database
-CREATE DATABASE ehs_enforcement_prod;
+    # Create production database and user
+    sudo -u postgres psql << 'EOF'
+    -- Create production database
+    CREATE DATABASE ehs_enforcement_prod;
 
--- Create application user with strong password
-CREATE USER ehs_app WITH ENCRYPTED PASSWORD 'your-secure-database-password-here';
+    -- Create application user with strong password
+    CREATE USER ehs_app WITH ENCRYPTED PASSWORD 'your-secure-database-password-here';
 
--- Grant permissions
-GRANT ALL PRIVILEGES ON DATABASE ehs_enforcement_prod TO ehs_app;
-ALTER USER ehs_app CREATEDB;  -- Needed for running tests
+    -- Grant permissions
+    GRANT ALL PRIVILEGES ON DATABASE ehs_enforcement_prod TO ehs_app;
+    ALTER USER ehs_app CREATEDB;  -- Needed for running tests
 
--- Set connection limits
-ALTER USER ehs_app CONNECTION LIMIT 20;
-EOF
+    -- Set connection limits
+    ALTER USER ehs_app CONNECTION LIMIT 20;
+    EOF
 
-# Configure PostgreSQL for production
-sudo tee -a /etc/postgresql/16/main/postgresql.conf << 'EOF'
+    # Configure PostgreSQL for production
+    sudo tee -a /etc/postgresql/16/main/postgresql.conf << 'EOF'
 
-# Production optimization settings
-listen_addresses = 'localhost'
-max_connections = 100
-shared_buffers = 256MB        # 25% of available RAM
-effective_cache_size = 1GB    # 75% of available RAM
-maintenance_work_mem = 64MB
-checkpoint_completion_target = 0.9
-wal_buffers = 16MB
-default_statistics_target = 100
-random_page_cost = 1.1
-effective_io_concurrency = 200
-work_mem = 4MB
-min_wal_size = 1GB
-max_wal_size = 4GB
-EOF
+    # Production optimization settings
+    listen_addresses = 'localhost'
+    max_connections = 100
+    shared_buffers = 256MB        # 25% of available RAM
+    effective_cache_size = 1GB    # 75% of available RAM
+    maintenance_work_mem = 64MB
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    default_statistics_target = 100
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    work_mem = 4MB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    EOF
 
-# Configure authentication
-sudo sed -i "s/#listen_addresses = 'localhost'/listen_addresses = 'localhost'/" /etc/postgresql/16/main/postgresql.conf
+    # Configure authentication
+    sudo sed -i "s/#listen_addresses = 'localhost'/listen_addresses = 'localhost'/" /etc/postgresql/16/main/postgresql.conf
 
-# Restart PostgreSQL to apply settings
-sudo systemctl restart postgresql
+    # Restart PostgreSQL to apply settings
+    sudo systemctl restart postgresql
 
-# Test connection
-sudo -u postgres psql -c "SELECT version();"
+    # Test connection
+    sudo -u postgres psql -c "SELECT version();"
 
-# Create backup directory
-sudo mkdir -p /var/lib/postgresql/backups
-sudo chown postgres:postgres /var/lib/postgresql/backups
-```
+    # Create backup directory
+    sudo mkdir -p /var/lib/postgresql/backups
+    sudo chown postgres:postgres /var/lib/postgresql/backups
+    ```
 
-#### Database Security Configuration (Standalone PostgreSQL)
+    #### Database Security Configuration (Standalone PostgreSQL)
 
-```bash
-# Configure firewall for PostgreSQL (if using standalone)
-sudo ufw allow from 127.0.0.1 to any port 5432
-sudo ufw allow from ::1 to any port 5432
+    ```bash
+    # Configure firewall for PostgreSQL (if using standalone)
+    sudo ufw allow from 127.0.0.1 to any port 5432
+    sudo ufw allow from ::1 to any port 5432
 
-# Edit pg_hba.conf for security
-sudo sed -i 's/local   all             all                                     peer/local   all             all                                     md5/' /etc/postgresql/16/main/pg_hba.conf
+    # Edit pg_hba.conf for security
+    sudo sed -i 's/local   all             all                                     peer/local   all             all                                     md5/' /etc/postgresql/16/main/pg_hba.conf
 
-# Restart PostgreSQL
-sudo systemctl restart postgresql
-```
+    # Restart PostgreSQL
+    sudo systemctl restart postgresql
+    ```
 
-#### Environment Configuration for Standalone PostgreSQL
+    #### Environment Configuration for Standalone PostgreSQL
 
-If using standalone PostgreSQL, update your `.env.prod` file:
+    If using standalone PostgreSQL, update your `.env.prod` file:
 
-```bash
-# For standalone PostgreSQL
-DATABASE_URL=ecto://ehs_app:your-secure-database-password-here@localhost:5432/ehs_enforcement_prod
+    ```bash
+    # For standalone PostgreSQL
+    DATABASE_URL=ecto://ehs_app:your-secure-database-password-here@localhost:5432/ehs_enforcement_prod
 
-# For Docker PostgreSQL (default)
-DATABASE_URL=ecto://postgres:your-docker-db-password@postgres:5432/ehs_enforcement_prod
-```
+    # For Docker PostgreSQL (default)
+    DATABASE_URL=ecto://postgres:your-docker-db-password@postgres:5432/ehs_enforcement_prod
+    ```
 
-### 3. Application Setup
+### 3. Application Setup - COMPLETE
 
-# Install asdf
-```bash
-# Install essential build tools and dependencies
-# libwxgtk3.2-dev for ubuntu 22.04 and newer
-# running ubuntu 25.04
-✅ sudo apt install -y \
-    curl \
-    git \
-    build-essential \
-    autoconf \
-    m4 \
-    libncurses5-dev \
-    libwxgtk3.2-dev \
-    libgl1-mesa-dev \
-    libglu1-mesa-dev \
-    libpng-dev \
-    libssh-dev \
-    unixodbc-dev \
-    xsltproc \
-    fop \
-    libxml2-utils \
-    libncurses-dev \
-    openjdk-11-jdk
+  # Install asdf
+    ```bash
+    # Install essential build tools and dependencies
+    # libwxgtk3.2-dev for ubuntu 22.04 and newer
+    # running ubuntu 25.04
+    ✅ sudo apt install -y \
+        curl \
+        git \
+        build-essential \
+        autoconf \
+        m4 \
+        libncurses5-dev \
+        libwxgtk3.2-dev \
+        libgl1-mesa-dev \
+        libglu1-mesa-dev \
+        libpng-dev \
+        libssh-dev \
+        unixodbc-dev \
+        xsltproc \
+        fop \
+        libxml2-utils \
+        libncurses-dev \
+        openjdk-11-jdk
 
-# For Erlang compilation
-# libiodbc2-dev replaces iodbc for ubuntu 20.04 and newer
-✅ sudo apt install -y \
-    libssl-dev \
-    automake \
-    libtool \
-    libiodbc2-dev \
-    libc6-dev \
-    gcc \
-    make
+    # For Erlang compilation
+    # libiodbc2-dev replaces iodbc for ubuntu 20.04 and newer
+    ✅ sudo apt install -y \
+        libssl-dev \
+        automake \
+        libtool \
+        libiodbc2-dev \
+        libc6-dev \
+        gcc \
+        make
 
-# For wxWidgets (needed for Erlang observer)
-# Note: wxWidgets is only needed for Erlang's GUI tools like Observer (:observer.start()). You can
-# install Erlang/Elixir without it and add it later if you need the GUI tools. Most Phoenix
-# development doesn't require these GUI tools.
-sudo apt install -y \
-    libwxbase3.0-dev \
-    libwxgtk3.0-gtk3-dev \
-    libsctp1 \
-    libsctp-dev
+    # For wxWidgets (needed for Erlang observer)
+    # Note: wxWidgets is only needed for Erlang's GUI tools like Observer (:observer.start()). You can
+    # install Erlang/Elixir without it and add it later if you need the GUI tools. Most Phoenix
+    # development doesn't require these GUI tools.
+    sudo apt install -y \
+        libwxbase3.0-dev \
+        libwxgtk3.0-gtk3-dev \
+        libsctp1 \
+        libsctp-dev
 
-# Install asdf
-✅ git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
+    # Install asdf
+    ✅ git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
 
-# Add to shell profile (for bash)
-✅ echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
-✅ echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
+    # Add to shell profile (for bash)
+    ✅ echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
+    ✅ echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
 
-# Reload shell or source the file
-✅ source ~/.bashrc
-```
+    # Reload shell or source the file
+    ✅ source ~/.bashrc
+    ```
 
-# Install Erlang
-Note: Erlang compilation takes a while (15-30 minutes depending on your system).
-**Make sure not to interrupt it with Ctrl+C**.
-If you need to stop, use Ctrl+Z to suspend and then kill %1 to properly terminate.
-```bash
-✅ asdf plugin-add erlang
-✅ asdf install erlang 27.2.4
-✅ asdf global erlang 27.2.4
-```
+  # Install Erlang
+    Note: Erlang compilation takes a while (15-30 minutes depending on your system).
+    **Make sure not to interrupt it with Ctrl+C**.
+    If you need to stop, use Ctrl+Z to suspend and then kill %1 to properly terminate.
+    ```bash
+    ✅ asdf plugin-add erlang
+    ✅ asdf install erlang 27.2.4
+    ✅ asdf global erlang 27.2.4
+    ```
 
-```bash
-# If you want to see progress during installation:
-# Install with verbose output
-KERL_BUILD_DOCS=yes asdf install erlang 27.2.4
-```
+    ```bash
+    # If you want to see progress during installation:
+    # Install with verbose output
+    KERL_BUILD_DOCS=yes asdf install erlang 27.2.4
+    ```
 
-```
-APPLICATIONS DISABLED (See: /root/.asdf/plugins/erlang/kerl-home/builds/asdf_27.2.4/otp_build_27.2.4.log)
- * odbc           : ODBC library - link check failed
+    ```
+    APPLICATIONS DISABLED (See: /root/.asdf/plugins/erlang/kerl-home/builds/asdf_27.2.4/otp_build_27.2.4.log)
+    * odbc           : ODBC library - link check failed
 
-APPLICATIONS INFORMATION (See: /root/.asdf/plugins/erlang/kerl-home/builds/asdf_27.2.4/otp_build_27.2.4.log)
- * wx             : wxWidgets was not compiled with --enable-webview or wxWebView developer package is not installed, wxWebView will NOT be available
-```
-### Note
-  ODBC Warning (Safe to Ignore):
-  - What it means: ODBC database connectivity wasn't built
-  - Impact: You can't use :odbc module from Erlang
-  - For Phoenix/Elixir: Not needed - you'll use Ecto with PostgreSQL/MySQL drivers instead
-  wxWidgets Warning (Safe to Ignore):
-  - What it means: GUI tools built without web view support
-  - Impact: :observer.start() will work, but without web view features
-  - For Phoenix/Elixir: Rarely needed for web development
+    APPLICATIONS INFORMATION (See: /root/.asdf/plugins/erlang/kerl-home/builds/asdf_27.2.4/otp_build_27.2.4.log)
+    * wx             : wxWidgets was not compiled with --enable-webview or wxWebView developer package is not installed, wxWebView will NOT be available
+    ```
+    ### Note
+      ODBC Warning (Safe to Ignore):
+      - What it means: ODBC database connectivity wasn't built
+      - Impact: You can't use :odbc module from Erlang
+      - For Phoenix/Elixir: Not needed - you'll use Ecto with PostgreSQL/MySQL drivers instead
+      wxWidgets Warning (Safe to Ignore):
+      - What it means: GUI tools built without web view support
+      - Impact: :observer.start() will work, but without web view features
+      - For Phoenix/Elixir: Rarely needed for web development
 
-## sGot impatient and cancelled?
-  ```bash
-  # Remove the lock file and partial build:
-  # Remove the lock file
-  rm -f ~/.asdf/plugins/erlang/kerl-home/builds/asdf_27.2.4/build.lock
-  # Remove the entire partial build directory
-  rm -rf ~/.asdf/plugins/erlang/kerl-home/builds/asdf_27.2.4
-  # Also clean up any partial install
-  rm -rf ~/.asdf/installs/erlang/27.2.4
-  # Clear kerl build cache (optional but recommended):
-  # Clear all kerl builds to start fresh
-  rm -rf ~/.asdf/plugins/erlang/kerl-home/builds/*
-  ```
+    ## sGot impatient and cancelled?
+      ```bash
+      # Remove the lock file and partial build:
+      # Remove the lock file
+      rm -f ~/.asdf/plugins/erlang/kerl-home/builds/asdf_27.2.4/build.lock
+      # Remove the entire partial build directory
+      rm -rf ~/.asdf/plugins/erlang/kerl-home/builds/asdf_27.2.4
+      # Also clean up any partial install
+      rm -rf ~/.asdf/installs/erlang/27.2.4
+      # Clear kerl build cache (optional but recommended):
+      # Clear all kerl builds to start fresh
+      rm -rf ~/.asdf/plugins/erlang/kerl-home/builds/*
+      ```
 
-# Install Elixir
-  ```bash
-  ✅ asdf plugin-add elixir
-  ✅ asdf install elixir 1.18.4
-  ✅ asdf global elixir 1.18.4
-  ```
+  # Install Elixir
+      ```bash
+      ✅ asdf plugin-add elixir
+      ✅ asdf install elixir 1.18.4
+      ✅ asdf global elixir 1.18.4
+      ```
 
-  ```bash
-  # Clone repository
-  git clone <your-repository-url> /opt/ehs_enforcement
-  cd /opt/ehs_enforcement
+      ```bash
+      # Clone repository
+      git clone <your-repository-url> /opt/ehs_enforcement
+      cd /opt/ehs_enforcement
 
-  # Copy environment template
-  cp .env.example .env.prod
-  ```
+      # Copy environment template
+      cp .env.example .env.prod
+      ```
 
-### 3. Environment Configuration
+### 4. Environment Configuration
+    **DB Notes**
+      Based on the docker-compose.prod.yml, here's how the Docker PostgreSQL database gets
+      automatically configured:
+
+      Docker Compose Database Configuration
+
+      The Docker container creates the database automatically using these environment variables from your
+      .env.prod:
+
+      Your .env.prod should contain:
+
+      # Database Configuration (Docker PostgreSQL)
+      DATABASE_URL=ecto://postgres:your-strong-password@postgres:5432/ehs_enforcement_prod
+      DATABASE_NAME=ehs_enforcement_prod
+      DATABASE_USER=postgres
+      DATABASE_PASSWORD=your-strong-password-here
+      DATABASE_PORT=5432
+      POOL_SIZE=10
+
+      Key Points for Docker Setup:
+
+      1. Host is postgres (not localhost) - This is the Docker service name
+      2. User is postgres (default PostgreSQL superuser)
+      3. Database ehs_enforcement_prod gets created automatically
+      4. Password must match DATABASE_PASSWORD environment variable
+
+      How It Works:
+
+      1. Docker Compose starts PostgreSQL container with:
+        - POSTGRES_DB=${DATABASE_NAME:-ehs_enforcement_prod} → Creates the database
+        - POSTGRES_USER=${DATABASE_USER:-postgres} → Sets the user (defaults to 'postgres')
+        - POSTGRES_PASSWORD=${DATABASE_PASSWORD} → Sets the password
+      2. Your Phoenix app connects using:
+        - DATABASE_URL=ecto://postgres:password@postgres:5432/ehs_enforcement_prod
+        - The hostname postgres resolves to the PostgreSQL container via Docker network
+      3. Database gets created automatically when the container first starts
+
+  `touch .env.prod`
 
   Edit `.env.prod` with your production values:
 
+  echo "DATABASE_URL=ecto://postgres:password@postgres:5432/ehs_enforcement_prod" >> .env.prod
+
   ```bash
   # Required Production Variables
-  DATABASE_URL=ecto://username:password@postgres:5432/ehs_enforcement_prod
+  DATABASE_URL=ecto://postgres:password@postgres:5432/ehs_enforcement_prod
   SECRET_KEY_BASE=<generate-with-mix-phx-gen-secret>
   PHX_HOST=yourdomain.com
   PORT=4002  # Using 4002 to avoid conflicts with other Phoenix apps
@@ -776,7 +816,7 @@ df -h /var/lib/postgresql/
 
 # Monitor PostgreSQL performance
 sudo -u postgres psql -c "
-SELECT 
+SELECT
     schemaname,
     tablename,
     attname,
@@ -794,17 +834,17 @@ ORDER BY schemaname, tablename, attname;
 ```bash
 # For Docker PostgreSQL
 docker-compose -f docker-compose.prod.yml exec postgres psql -U postgres -c "
-SELECT 
+SELECT
     pid,
     now() - pg_stat_activity.query_start AS duration,
-    query 
-FROM pg_stat_activity 
+    query
+FROM pg_stat_activity
 WHERE (now() - pg_stat_activity.query_start) > interval '5 minutes';
 "
 
-# For Standalone PostgreSQL  
+# For Standalone PostgreSQL
 sudo -u postgres psql -c "
-SELECT 
+SELECT
     datname,
     numbackends,
     xact_commit,
@@ -816,7 +856,7 @@ SELECT
     tup_inserted,
     tup_updated,
     tup_deleted
-FROM pg_stat_database 
+FROM pg_stat_database
 WHERE datname = 'ehs_enforcement_prod';
 "
 ```
@@ -831,11 +871,11 @@ sudo -u postgres psql ehs_enforcement_prod -c "VACUUM ANALYZE;"
 
 # Check table sizes
 sudo -u postgres psql ehs_enforcement_prod -c "
-SELECT 
+SELECT
     schemaname,
     tablename,
     pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
-FROM pg_tables 
+FROM pg_tables
 WHERE schemaname = 'public'
 ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 "
@@ -920,7 +960,7 @@ IO.puts(\"GitHub OAuth configured: #{not is_nil(config[:client_id])}\")
 
 ### Weekly
 - Update Docker images: `docker-compose -f docker-compose.prod.yml pull`
-- Database backup verification: 
+- Database backup verification:
   - Docker: `ls -la /opt/ehs_enforcement/backups/`
   - Standalone: `ls -la /var/lib/postgresql/backups/`
 - Security log review: `sudo tail -100 /var/log/auth.log`

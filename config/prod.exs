@@ -9,13 +9,8 @@ config :ehs_enforcement, EhsEnforcementWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
   # Force SSL/HTTPS in production
   force_ssl: [hsts: true],
-  # Security headers
-  http: [
-    protocol_options: [
-      idle_timeout: 60_000,
-      request_timeout: 30_000
-    ]
-  ]
+  # Use default Bandit configuration (no custom timeouts)
+  http: []
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: EhsEnforcement.Finch

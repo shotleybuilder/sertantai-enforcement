@@ -81,7 +81,7 @@ if config_env() == :prod do
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :ehs_enforcement, EhsEnforcement.Repo,
-    ssl: true,
+    # SSL configuration from DATABASE_URL parameters (e.g., ?ssl=false)
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6,
