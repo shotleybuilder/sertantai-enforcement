@@ -13,23 +13,27 @@ defmodule EhsEnforcement.Logger do
   @metrics_table :logger_metrics
   @error_metrics_table :logger_error_metrics
 
-  # Sensitive data patterns for redaction
-  @sensitive_patterns [
-    ~r/api_key/i,
-    ~r/password/i,
-    ~r/secret/i,
-    ~r/token/i,
-    ~r/credential/i
-  ]
+  # Sensitive data patterns for redaction (use functions to avoid serialization issues)
+  defp sensitive_patterns do
+    [
+      ~r/api_key/i,
+      ~r/password/i,
+      ~r/secret/i,
+      ~r/token/i,
+      ~r/credential/i
+    ]
+  end
 
   # PII patterns for redaction
-  @pii_patterns [
-    ~r/user_name/i,
-    ~r/phone_number/i,
-    ~r/national_insurance/i,
-    ~r/email/i,
-    ~r/address/i
-  ]
+  defp pii_patterns do
+    [
+      ~r/user_name/i,
+      ~r/phone_number/i,
+      ~r/national_insurance/i,
+      ~r/email/i,
+      ~r/address/i
+    ]
+  end
 
   ## Public Logging API
 
@@ -307,13 +311,13 @@ defmodule EhsEnforcement.Logger do
   defp sanitize_value(_key, value), do: value
 
   defp is_sensitive_field?(key_str) do
-    Enum.any?(@sensitive_patterns, fn pattern ->
+    Enum.any?(sensitive_patterns(), fn pattern ->
       Regex.match?(pattern, key_str)
     end)
   end
 
   defp is_pii_field?(key_str) do
-    Enum.any?(@pii_patterns, fn pattern ->
+    Enum.any?(pii_patterns(), fn pattern ->
       Regex.match?(pattern, key_str)
     end)
   end
