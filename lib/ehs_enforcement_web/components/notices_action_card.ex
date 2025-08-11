@@ -51,9 +51,9 @@ defmodule EhsEnforcementWeb.Components.NoticesActionCard do
       </:metrics>
       
       <:actions>
-        <.card_action_button phx-click="browse_active_notices">
+        <.card_action_button phx-click="browse_recent_notices">
           <div class="flex items-center justify-between w-full">
-            <span>Browse Active</span>
+            <span>Browse Recent</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
@@ -62,7 +62,7 @@ defmodule EhsEnforcementWeb.Components.NoticesActionCard do
         
         <.card_secondary_button phx-click="search_notices">
           <div class="flex items-center justify-between w-full">
-            <span>Search Database</span>
+            <span>Search</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>

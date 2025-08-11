@@ -215,43 +215,9 @@ defmodule EhsEnforcementWeb.DashboardLive do
 
   @impl true
   def handle_event("browse_recent_cases", _params, socket) do
-    # Get current time period for filtering
-    time_period = socket.assigns.time_period
-    {days_ago, _timeframe_label} = case time_period do
-      "week" -> {7, "Last 7 Days"}
-      "month" -> {30, "Last 30 Days"}
-      "year" -> {365, "Last 365 Days"}
-      _ -> {30, "Last 30 Days"}
-    end
-    cutoff_date = Date.add(Date.utc_today(), -days_ago)
-    
-    # Apply the same filtering logic as the filter_recent_activity event for cases
-    filter_conditions = if socket.assigns.filter_agency, do: [agency_id: socket.assigns.filter_agency], else: []
-    cases = EhsEnforcement.Enforcement.list_cases_with_filters!([
-      filter: filter_conditions,
-      sort: [offence_action_date: :desc],
-      load: [:offender, :agency]
-    ])
-    
-    # Filter by time period
-    time_filtered_cases = Enum.filter(cases, fn case_record ->
-      case_record.offence_action_date && Date.compare(case_record.offence_action_date, cutoff_date) != :lt
-    end)
-    
-    paginated_cases = Enum.take(time_filtered_cases, socket.assigns.recent_activity_page_size)
-    recent_activity = format_cases_as_recent_activity(paginated_cases)
-    
-    # Scroll to Recent Activity section and filter to show only cases
-    socket = 
-      socket
-      |> assign(:recent_activity_filter, :cases)
-      |> assign(:recent_activity, recent_activity)
-      |> assign(:recent_cases, paginated_cases)
-      |> assign(:total_recent_cases, length(time_filtered_cases))
-      |> assign(:recent_activity_page, 1)
-      |> push_event("scroll_to_element", %{id: "recent-activity-section"})
-    
-    {:noreply, socket}
+    # Use current time period for filtering
+    time_period = Map.get(socket.assigns, :time_period, "month")
+    {:noreply, push_navigate(socket, to: "/cases?filter=recent&period=#{time_period}")}
   end
 
   @impl true
@@ -275,8 +241,10 @@ defmodule EhsEnforcementWeb.DashboardLive do
   end
 
   @impl true
-  def handle_event("browse_active_notices", _params, socket) do
-    {:noreply, push_navigate(socket, to: "/notices?filter=active&page=1")}
+  def handle_event("browse_recent_notices", _params, socket) do
+    # Use current time period for filtering
+    time_period = Map.get(socket.assigns, :time_period, "month")
+    {:noreply, push_navigate(socket, to: "/notices?filter=recent&period=#{time_period}")}
   end
 
   @impl true

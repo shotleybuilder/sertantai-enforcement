@@ -26,6 +26,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      |> assign(:page_size, 20)
      |> assign(:total_notices, 0)
      |> assign(:view_mode, :table)
+     |> assign(:search_active, false)
      |> assign(:agencies, load_agencies())
      |> load_notices()}
   end
@@ -267,9 +268,36 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     end
   end
 
-  defp apply_params(socket, _params) do
+  defp apply_params(socket, params) do
+    page = String.to_integer(params["page"] || "1")
+    
+    # Handle filter parameters from dashboard navigation
+    filters = case params["filter"] do
+      "recent" ->
+        # Calculate date based on period parameter from dashboard
+        days_ago = case params["period"] do
+          "week" -> 7
+          "month" -> 30
+          "year" -> 365
+          _ -> 30  # default to month
+        end
+        date_from = Date.add(Date.utc_today(), -days_ago)
+        %{date_from: Date.to_iso8601(date_from)}
+      "search" ->
+        # Show advanced search interface activated
+        socket.assigns.filters
+      _ ->
+        socket.assigns.filters
+    end
+    
+    # Handle search activation from dashboard
+    search_active = params["filter"] == "search"
+    
     socket
-    # TODO: Apply URL params if needed
+    |> assign(:page, max(1, page))
+    |> assign(:filters, filters)
+    |> assign(:search_active, search_active || socket.assigns[:search_active] || false)
+    |> load_notices()
   end
 
   defp load_agencies do

@@ -51,23 +51,23 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
       </:metrics>
 
       <:actions>
-        <.action_button 
-          phx-click="generate_report" 
-          class="bg-green-600 hover:bg-green-700 text-white"
-          aria_label="Generate custom report with filtering options"
-        >
-          <span class="block text-sm font-medium">Generate</span>
-          <span class="block text-xs">Report</span>
-        </.action_button>
+        <.card_action_button phx-click="generate_report">
+          <div class="flex items-center justify-between w-full">
+            <span>Generate Report</span>
+            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+        </.card_action_button>
         
-        <.action_button 
-          phx-click="export_data" 
-          class="bg-gray-600 hover:bg-gray-700 text-white"
-          aria_label="Export data with multiple format options"
-        >
-          <span class="block text-sm font-medium">Export</span>
-          <span class="block text-xs">Data</span>
-        </.action_button>
+        <.card_secondary_button disabled={true}>
+          <div class="flex items-center justify-between w-full">
+            <span>Export Data</span>
+            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2zm10-12a4 4 0 00-8 0v2a2 2 0 002 2h4a2 2 0 002-2v-2z"/>
+            </svg>
+          </div>
+        </.card_secondary_button>
       </:actions>
     </.dashboard_action_card>
     """
@@ -196,22 +196,4 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
   defp format_number(number), do: to_string(number)
 
 
-  # Helper component for action buttons
-  attr :class, :string, required: true
-  attr :aria_label, :string, required: true
-  attr :rest, :global
-  slot :inner_block, required: true
-  
-  defp action_button(assigns) do
-    ~H"""
-    <button 
-      type="button"
-      class={"px-4 py-3 rounded-lg font-medium transition-colors duration-200 #{@class}"}
-      aria-label={@aria_label}
-      {@rest}
-    >
-      <%= render_slot(@inner_block) %>
-    </button>
-    """
-  end
 end

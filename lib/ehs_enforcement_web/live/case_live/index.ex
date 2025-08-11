@@ -37,8 +37,15 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     # Handle filter parameters from dashboard navigation
     filters = case params["filter"] do
       "recent" ->
-        thirty_days_ago = Date.add(Date.utc_today(), -30)
-        %{date_from: Date.to_iso8601(thirty_days_ago)}
+        # Calculate date based on period parameter from dashboard
+        days_ago = case params["period"] do
+          "week" -> 7
+          "month" -> 30
+          "year" -> 365
+          _ -> 30  # default to month
+        end
+        date_from = Date.add(Date.utc_today(), -days_ago)
+        %{date_from: Date.to_iso8601(date_from)}
       "search" ->
         # Show advanced search interface activated
         socket.assigns.filters
