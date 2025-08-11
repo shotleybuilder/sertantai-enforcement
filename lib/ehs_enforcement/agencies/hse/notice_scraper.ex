@@ -11,10 +11,13 @@ defmodule EhsEnforcement.Agencies.Hse.NoticeScraper do
   """
 
   def get_hse_notices(page_number: page_number, country: country) do
-    base_url = ~s|https://resources.hse.gov.uk/notices/notices/|
+    base_url = ~s|https://resources.hse.gov.uk|
+    
+    # URL encode the country parameter to handle spaces
+    encoded_country = URI.encode_www_form(country)
 
     url =
-      ~s|notice_list.asp?PN=#{page_number}&ST=N&CO=,AND&SN=F&EO==&SF=CTR&SV=#{country}&SO=DNIS|
+      ~s|/notices/notices/notice_list.asp?PN=#{page_number}&ST=N&CO=,AND&SN=F&EO==&SF=CTR&SV=#{encoded_country}&SO=DNIS|
 
     Req.new(base_url: base_url, url: url)
     |> Req.Request.append_request_steps(debug_url: debug_url())
@@ -28,8 +31,9 @@ defmodule EhsEnforcement.Agencies.Hse.NoticeScraper do
   def get_notice_details(%{notice_number: notice_number}), do: get_notice_details(notice_number)
 
   def get_notice_details(notice_number) do
-    base_url = ~s|https://resources.hse.gov.uk/notices/notices/|
-    url = ~s/notice_details.asp?SF=CN&SV=#{notice_number}/
+    base_url = ~s|https://resources.hse.gov.uk|
+    encoded_notice_number = URI.encode_www_form(notice_number)
+    url = ~s|/notices/notices/notice_details.asp?SF=CN&SV=#{encoded_notice_number}|
 
     Req.get!(base_url: base_url, url: url).body
     |> parse_tr()
@@ -40,8 +44,9 @@ defmodule EhsEnforcement.Agencies.Hse.NoticeScraper do
   def get_notice_breaches(%{notice_number: notice_number}), do: get_notice_breaches(notice_number)
 
   def get_notice_breaches(notice_number) do
-    base_url = ~s|https://resources.hse.gov.uk/notices/breach/|
-    url = ~s/breach_list.asp?ST=B&SN=F&EO==&SF=NN&SV=#{notice_number}/
+    base_url = ~s|https://resources.hse.gov.uk|
+    encoded_notice_number = URI.encode_www_form(notice_number)
+    url = ~s|/notices/breach/breach_list.asp?ST=B&SN=F&EO==&SF=NN&SV=#{encoded_notice_number}|
 
     Req.get!(base_url: base_url, url: url).body
     |> parse_tr()

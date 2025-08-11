@@ -189,9 +189,8 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
   defp build_offender_attrs(notice_data) do
     %{
       name: notice_data.offender_name || "Unknown",
-      sic_code: notice_data[:offender_sic],
       local_authority: notice_data[:offender_local_authority],
-      industry: notice_data[:offender_industry],
+      sic_code: notice_data[:offender_sic],
       main_activity: notice_data[:offender_main_activity]
     }
   end

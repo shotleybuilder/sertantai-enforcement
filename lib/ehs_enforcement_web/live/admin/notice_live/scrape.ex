@@ -584,9 +584,23 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         })
         |> Ash.update!(actor: actor)
         
-        case NoticeScraper.get_hse_notices(page_number: page, country: "United Kingdom") do
+        # HSE website uses separate country filters for England, Scotland, Wales
+        # We'll combine results from all three to get comprehensive UK coverage
+        all_notices = ["England", "Scotland", "Wales"]
+        |> Enum.flat_map(fn country ->
+          case NoticeScraper.get_hse_notices(page_number: page, country: country) do
+            notices when is_list(notices) ->
+              Logger.info("Found #{length(notices)} notices on page #{page} for #{country}")
+              notices
+            {:error, reason} ->
+              Logger.warning("Failed to get notices for #{country} on page #{page}: #{inspect(reason)}")
+              []
+          end
+        end)
+        
+        case all_notices do
           basic_notices when is_list(basic_notices) ->
-            Logger.info("Found #{length(basic_notices)} notices on page #{page}")
+            Logger.info("Found #{length(basic_notices)} total notices on page #{page} (combined from all countries)")
             
             # Process each notice individually with real-time session updates
             {page_results, page_existing_count} = Enum.reduce(basic_notices, {acc, 0}, fn basic_notice, {notice_acc, page_existing} ->
