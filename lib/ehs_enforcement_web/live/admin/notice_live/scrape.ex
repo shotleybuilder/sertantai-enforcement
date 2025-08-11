@@ -32,7 +32,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     
     # Create AshPhoenix.Form for scraping parameters with notices database default
     form = Form.for_create(ScrapeRequest, :create, as: "scrape_request", forms: [auto?: false]) 
-    |> Form.validate(%{"database" => "notices"})
+    |> Form.validate(%{"database" => "notices", "country" => "All"})
     |> to_form()
     
     socket = assign(socket,
@@ -117,7 +117,10 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   @impl true 
   def handle_event("validate", %{"scrape_request" => params}, socket) do
     # Ensure database is always "notices" for this interface
-    params_with_notices = Map.put(params, "database", "notices")
+    params_with_notices = params
+    |> Map.put("database", "notices")
+    |> Map.put_new("country", "All")  # Default to All if not provided
+    
     form = Form.validate(socket.assigns.form, params_with_notices) |> to_form()
     {:noreply, assign(socket, form: form)}
   end
@@ -132,7 +135,9 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
       {:noreply, socket}
     else
       # Force database to "notices" for this interface
-      params_with_notices = Map.put(params, "database", "notices")
+      params_with_notices = params
+      |> Map.put("database", "notices")
+      |> Map.put_new("country", "All")  # Default to All if not provided
       
       # First validate the form with the new params, then submit
       validated_form = Form.validate(socket.assigns.form, params_with_notices)
@@ -142,7 +147,8 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
           validated_params = %{
             start_page: scrape_request.start_page,
             max_pages: scrape_request.max_pages,
-            database: "notices"  # Force notices
+            database: "notices",  # Force notices
+            country: scrape_request.country || "All"
           }
         
         # Simplified scraping - just create Notices directly (no tracking tables needed)
@@ -150,6 +156,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
           start_page: validated_params.start_page,
           max_pages: validated_params.max_pages,
           database: "notices",
+          country: validated_params.country,
           actor: socket.assigns.current_user
         }
         
@@ -168,7 +175,6 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         )
         
         # Start simple scraping task
-        _liveview_pid = self()
         Logger.info("Starting simple notice scraping: pages #{scraping_opts.start_page}-#{scraping_opts.start_page + scraping_opts.max_pages - 1}")
         
         # Create ScrapeSession using Ash (pure Ash approach)
@@ -400,6 +406,13 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     {:noreply, socket}
   end
 
+  # Handle scrape session updates (the key to progress updates)
+  @impl true  
+  def handle_info(%Phoenix.Socket.Broadcast{topic: "scrape_session:updated", event: "update", payload: %Ash.Notifier.Notification{} = notification}, socket) do
+    session_data = notification.data
+    handle_scrape_session_update(session_data, socket)
+  end
+
   # Task completion handlers
   @impl true
   def handle_info({:scraping_completed, _session}, socket) do
@@ -585,8 +598,13 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         |> Ash.update!(actor: actor)
         
         # HSE website uses separate country filters for England, Scotland, Wales
-        # We'll combine results from all three to get comprehensive UK coverage
-        all_notices = ["England", "Scotland", "Wales"]
+        # Use selected country or scrape all three for comprehensive UK coverage
+        countries_to_scrape = case opts.country do
+          "All" -> ["England", "Scotland", "Wales"]
+          country -> [country]
+        end
+        
+        all_notices = countries_to_scrape
         |> Enum.flat_map(fn country ->
           case NoticeScraper.get_hse_notices(page_number: page, country: country) do
             notices when is_list(notices) ->
@@ -613,7 +631,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
                 notice_was_existing = updated_acc.existing_count > prev_existing
                 new_page_existing = if notice_was_existing, do: page_existing + 1, else: page_existing
                 
-                # Update session immediately after each notice
+                # Update session immediately after each notice (match Cases pattern exactly)
                 total_found = updated_acc.created_count + updated_acc.existing_count
                 session
                 |> Ash.Changeset.for_update(:update, %{
@@ -733,4 +751,27 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   end
   
   defp duplicate_error?(_), do: false
+
+  defp handle_scrape_session_update(session_data, socket) do
+    # Update progress display with latest session data (matching Cases pattern exactly)
+    updated_progress = %{
+      status: session_data.status,
+      current_page: session_data.current_page,
+      pages_processed: session_data.pages_processed,
+      notices_found: session_data.cases_found || 0,  # Notice: session uses "cases_found" field
+      notices_created: session_data.cases_created || 0,  # Notice: session uses "cases_created" field
+      notices_exist_total: session_data.cases_exist_total || 0,
+      errors_count: session_data.errors_count || 0,
+      notices_exist_current_page: session_data.cases_exist_current_page || 0,
+      max_pages: session_data.max_pages  # Add for percentage calculation
+    }
+    
+    socket = assign(socket, 
+      progress: updated_progress,
+      last_update: System.monotonic_time(:millisecond)
+    )
+    
+    # Also trigger keep_live refresh for active_sessions (matching Cases pattern)
+    {:noreply, AshPhoenix.LiveView.handle_live(socket, "scrape_session:updated", [:active_sessions])}
+  end
 end

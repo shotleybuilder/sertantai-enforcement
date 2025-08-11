@@ -24,6 +24,11 @@ defmodule EhsEnforcement.Scraping.ScrapeRequest do
       default "convictions"
     end
 
+    attribute :country, :string do
+      allow_nil? true
+      default "All"
+    end
+
     timestamps()
   end
 
@@ -31,7 +36,7 @@ defmodule EhsEnforcement.Scraping.ScrapeRequest do
     defaults [:read, :update, :destroy]
     
     create :create do
-      accept [:start_page, :max_pages, :database]
+      accept [:start_page, :max_pages, :database, :country]
       primary? true
     end
   end
@@ -41,5 +46,6 @@ defmodule EhsEnforcement.Scraping.ScrapeRequest do
     validate compare(:max_pages, greater_than: 0)
     validate compare(:max_pages, less_than_or_equal_to: 100)
     validate attribute_in(:database, ["convictions", "notices"])
+    validate attribute_in(:country, ["All", "England", "Scotland", "Wales"])
   end
 end

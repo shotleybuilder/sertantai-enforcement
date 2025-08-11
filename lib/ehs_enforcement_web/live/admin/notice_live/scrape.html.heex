@@ -57,6 +57,21 @@
             </div>
           </div>
           
+          <div class="mb-6">
+            <.input 
+              field={@form[:country]} 
+              type="select" 
+              label="Country"
+              options={[
+                {"All Countries", "All"},
+                {"England", "England"},
+                {"Scotland", "Scotland"}, 
+                {"Wales", "Wales"}
+              ]}
+              disabled={@scraping_active}
+            />
+          </div>
+          
           <!-- Database field hidden for notices -->
           <input type="hidden" name="scrape_request[database]" value="notices" />
           

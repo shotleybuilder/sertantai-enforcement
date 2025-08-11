@@ -16,11 +16,19 @@ defmodule EhsEnforcement.Enforcement.Notice do
   end
 
   pub_sub do
-    module(EhsEnforcementWeb.Endpoint)
+    # Use our PubSub module, not the Endpoint (match Cases pattern exactly)
+    module(EhsEnforcement.PubSub)
     prefix("notice")
 
+    # Broadcast when a notice is created
+    # Topics: "notice:created" and "notice:created:<id>"
     publish(:create, ["created", :id])
+    publish(:create, ["created"])
+    
+    # Broadcast when a notice is updated  
+    # Topics: "notice:updated" and "notice:updated:<id>"
     publish(:update, ["updated", :id])
+    publish(:update, ["updated"])
     publish(:destroy, ["deleted", :id])
   end
 
