@@ -126,9 +126,7 @@ defmodule EhsEnforcement.MixProject do
       # Event tracking for Ash
       {:ash_events, "~> 0.1"},
       # Documentation generation
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
-      # Package dependencies from GitHub
-      {:ncdb_2_phx, github: "shotleybuilder/ncdb_2_phx", override: true}
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false}
     ]
   end
 

@@ -11,8 +11,7 @@ defmodule EhsEnforcement.Registry do
       {EhsEnforcement.Enforcement.Offender, %{}},
       {EhsEnforcement.Enforcement.Case, %{}},
       {EhsEnforcement.Enforcement.Notice, %{}},
-      {EhsEnforcement.Enforcement.Breach, %{}},
-      {EhsEnforcement.Sync.ExtendedSyncLog, %{}}
+      {EhsEnforcement.Enforcement.Breach, %{}}
     ]
   end
 end

@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>EhsEnforcement.Logger — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-736236C6.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">EhsEnforcement.Logger</span> 
+      <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
+
+    </h1>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Structured logging system for the EHS Enforcement application.</p><p>Provides comprehensive logging with metadata enrichment, security auditing,
+performance monitoring, and PII sanitization capabilities.</p>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#debug/2" data-no-tooltip="" translate="no">debug(message, metadata \\ %{})</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs debug message in development environment.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#error/4" data-no-tooltip="" translate="no">error(message, error, stacktrace, metadata \\ %{})</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs error message with stacktrace and error details.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#format_as_json/3" data-no-tooltip="" translate="no">format_as_json(message, level, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Formats log message as JSON structure.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#generate_summary_report/0" data-no-tooltip="" translate="no">generate_summary_report()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Generates comprehensive log summary report.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_error_metrics/0" data-no-tooltip="" translate="no">get_error_metrics()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Gets error metrics and most frequent error types.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#get_log_metrics/0" data-no-tooltip="" translate="no">get_log_metrics()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Gets current log metrics.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#info/2" data-no-tooltip="" translate="no">info(message, metadata \\ %{})</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs info message with structured metadata.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#log_auth_failure/2" data-no-tooltip="" translate="no">log_auth_failure(message, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs authentication failure events.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#log_auth_success/2" data-no-tooltip="" translate="no">log_auth_success(message, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs authentication success events.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#log_data_access/2" data-no-tooltip="" translate="no">log_data_access(message, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs data access events for audit trail.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#log_data_modification/2" data-no-tooltip="" translate="no">log_data_modification(message, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs data modification events.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#log_duplicate_detected/2" data-no-tooltip="" translate="no">log_duplicate_detected(message, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs duplicate detection events.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#log_resource_usage/2" data-no-tooltip="" translate="no">log_resource_usage(message, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs resource usage spikes.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#log_slow_operation/2" data-no-tooltip="" translate="no">log_slow_operation(message, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs slow operations with timing information.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#log_sync_progress/2" data-no-tooltip="" translate="no">log_sync_progress(message, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs sync operation progress.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#log_validation_errors/2" data-no-tooltip="" translate="no">log_validation_errors(message, metadata)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs data validation errors.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#reset_metrics/0" data-no-tooltip="" translate="no">reset_metrics()</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Resets log metrics counters.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#warn/2" data-no-tooltip="" translate="no">warn(message, metadata \\ %{})</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Logs warning message with appropriate context.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#with_correlation_id/2" data-no-tooltip="" translate="no">with_correlation_id(correlation_id, fun)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Executes function within correlation ID context.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="debug/2">
+
+    <span id="debug/1"></span>
+
+  <div class="detail-header">
+    <a href="#debug/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">debug(message, metadata \\ %{})</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs debug message in development environment.</p>
+  </section>
+</section>
+<section class="detail" id="error/4">
+
+    <span id="error/3"></span>
+
+  <div class="detail-header">
+    <a href="#error/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">error(message, error, stacktrace, metadata \\ %{})</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs error message with stacktrace and error details.</p>
+  </section>
+</section>
+<section class="detail" id="format_as_json/3">
+
+  <div class="detail-header">
+    <a href="#format_as_json/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">format_as_json(message, level, metadata)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Formats log message as JSON structure.</p>
+  </section>
+</section>
+<section class="detail" id="generate_summary_report/0">
+
+  <div class="detail-header">
+    <a href="#generate_summary_report/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">generate_summary_report()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Generates comprehensive log summary report.</p>
+  </section>
+</section>
+<section class="detail" id="get_error_metrics/0">
+
+  <div class="detail-header">
+    <a href="#get_error_metrics/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_error_metrics()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Gets error metrics and most frequent error types.</p>
+  </section>
+</section>
+<section class="detail" id="get_log_metrics/0">
+
+  <div class="detail-header">
+    <a href="#get_log_metrics/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">get_log_metrics()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Gets current log metrics.</p>
+  </section>
+</section>
+<section class="detail" id="info/2">
+
+    <span id="info/1"></span>
+
+  <div class="detail-header">
+    <a href="#info/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">info(message, metadata \\ %{})</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs info message with structured metadata.</p>
+  </section>
+</section>
+<section class="detail" id="log_auth_failure/2">
+
+  <div class="detail-header">
+    <a href="#log_auth_failure/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">log_auth_failure(message, metadata)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs authentication failure events.</p>
+  </section>
+</section>
+<section class="detail" id="log_auth_success/2">
+
+  <div class="detail-header">
+    <a href="#log_auth_success/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">log_auth_success(message, metadata)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs authentication success events.</p>
+  </section>
+</section>
+<section class="detail" id="log_data_access/2">
+
+  <div class="detail-header">
+    <a href="#log_data_access/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">log_data_access(message, metadata)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs data access events for audit trail.</p>
+  </section>
+</section>
+<section class="detail" id="log_data_modification/2">
+
+  <div class="detail-header">
+    <a href="#log_data_modification/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">log_data_modification(message, metadata)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs data modification events.</p>
+  </section>
+</section>
+<section class="detail" id="log_duplicate_detected/2">
+
+  <div class="detail-header">
+    <a href="#log_duplicate_detected/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">log_duplicate_detected(message, metadata)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs duplicate detection events.</p>
+  </section>
+</section>
+<section class="detail" id="log_resource_usage/2">
+
+  <div class="detail-header">
+    <a href="#log_resource_usage/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">log_resource_usage(message, metadata)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs resource usage spikes.</p>
+  </section>
+</section>
+<section class="detail" id="log_slow_operation/2">
+
+  <div class="detail-header">
+    <a href="#log_slow_operation/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">log_slow_operation(message, metadata)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs slow operations with timing information.</p>
+  </section>
+</section>
+<section class="detail" id="log_sync_progress/2">
+
+  <div class="detail-header">
+    <a href="#log_sync_progress/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">log_sync_progress(message, metadata)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs sync operation progress.</p>
+  </section>
+</section>
+<section class="detail" id="log_validation_errors/2">
+
+  <div class="detail-header">
+    <a href="#log_validation_errors/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">log_validation_errors(message, metadata)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs data validation errors.</p>
+  </section>
+</section>
+<section class="detail" id="reset_metrics/0">
+
+  <div class="detail-header">
+    <a href="#reset_metrics/0" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">reset_metrics()</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Resets log metrics counters.</p>
+  </section>
+</section>
+<section class="detail" id="warn/2">
+
+    <span id="warn/1"></span>
+
+  <div class="detail-header">
+    <a href="#warn/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">warn(message, metadata \\ %{})</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Logs warning message with appropriate context.</p>
+  </section>
+</section>
+<section class="detail" id="with_correlation_id/2">
+
+  <div class="detail-header">
+    <a href="#with_correlation_id/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">with_correlation_id(correlation_id, fun)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Executes function within correlation ID context.</p>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

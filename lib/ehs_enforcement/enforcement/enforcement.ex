@@ -115,7 +115,7 @@ defmodule EhsEnforcement.Enforcement do
 
   def get_offender_by_name_and_postcode(name, postcode) do
     # Normalize the search name for matching
-    normalized_search_name = EhsEnforcement.Sync.OffenderMatcher.normalize_company_name(name)
+    normalized_search_name = EhsEnforcement.Enforcement.Offender.normalize_company_name(name)
     
     query = if postcode do
       EhsEnforcement.Enforcement.Offender

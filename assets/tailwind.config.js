@@ -9,7 +9,18 @@ module.exports = {
   content: [
     "./js/**/*.js",
     "../lib/ehs_enforcement_web.ex",
-    "../lib/ehs_enforcement_web/**/*.*ex"
+    "../lib/ehs_enforcement_web/**/*.ex",
+    "../lib/ehs_enforcement_web/**/*.exs", 
+    "../lib/ehs_enforcement_web/**/*.heex",
+    "../lib/ehs_enforcement_web/**/*.html.heex"
+  ],
+  safelist: [
+    'bg-white', 'bg-gray-50', 'bg-red-50', 'bg-blue-50', 'bg-green-50', 'bg-yellow-50',
+    'text-gray-700', 'text-gray-600', 'text-gray-500', 'text-white',
+    'flex', 'flex-col', 'flex-row', 'items-center', 'justify-between', 'justify-center',
+    'px-4', 'py-3', 'px-6', 'py-2', 'p-4', 'p-6', 'm-4', 'mb-4', 'mt-4',
+    'rounded', 'rounded-lg', 'rounded-md', 'rounded-full',
+    'border', 'border-gray-300', 'border-gray-200', 'shadow', 'shadow-lg'
   ],
   theme: {
     extend: {

@@ -13,7 +13,6 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
   require Ash.Query
   
   alias EhsEnforcement.Agencies.Hse.NoticeScraper
-  alias EhsEnforcement.Sync.OffenderMatcher
   
   @hse_agency_code :hse
   
@@ -151,7 +150,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
     case EhsEnforcement.Enforcement.get_agency_by_code(processed.agency_code) do
       {:ok, agency} when not is_nil(agency) ->
         # Find or create offender
-        case OffenderMatcher.find_or_create_offender(processed.offender_attrs) do
+        case EhsEnforcement.Enforcement.Offender.find_or_create_offender(processed.offender_attrs) do
           {:ok, offender} ->
             # Create notice using Ash
             notice_attrs = %{

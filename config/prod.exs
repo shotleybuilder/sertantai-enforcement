@@ -7,8 +7,8 @@ import Config
 # before starting your production server.
 config :ehs_enforcement, EhsEnforcementWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
-  # Force SSL/HTTPS in production
-  force_ssl: [hsts: true],
+  # Force SSL/HTTPS in production - disabled for nginx SSL termination
+  # force_ssl: [hsts: true],
   # Use default Bandit configuration (no custom timeouts)
   http: []
 

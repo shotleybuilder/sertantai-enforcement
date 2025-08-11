@@ -156,7 +156,7 @@ defmodule EhsEnforcement.Enforcement.Case do
             case EhsEnforcement.Enforcement.get_agency_by_code(agency_code) do
               {:ok, agency} when not is_nil(agency) ->
                 # Find or create offender
-                case EhsEnforcement.Sync.OffenderMatcher.find_or_create_offender(offender_attrs) do
+                case EhsEnforcement.Enforcement.Offender.find_or_create_offender(offender_attrs) do
                   {:ok, offender} ->
                     changeset
                     |> Ash.Changeset.force_change_attribute(:agency_id, agency.id)

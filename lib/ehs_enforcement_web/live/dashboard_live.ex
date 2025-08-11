@@ -3,7 +3,6 @@ defmodule EhsEnforcementWeb.DashboardLive do
 
   alias EhsEnforcement.Enforcement
   # alias EhsEnforcement.Enforcement.RecentActivity  # Unused alias removed
-  alias EhsEnforcement.Sync.SyncManager
   alias Phoenix.PubSub
   
   require Ash.Query
@@ -77,21 +76,6 @@ defmodule EhsEnforcementWeb.DashboardLive do
      |> assign(:total_recent_cases, final_total_recent_cases)
      |> assign(:recent_activity, final_recent_activity)
      |> assign(:stats, stats)}
-  end
-
-  @impl true
-  def handle_event("sync_agency", %{"agency" => agency_code}, socket) do
-    agency_code = String.to_existing_atom(agency_code)
-    
-    # Start sync process
-    Task.start(fn ->
-      SyncManager.sync_agency(agency_code, :cases)
-    end)
-    
-    # Update UI to show sync in progress
-    sync_status = Map.put(socket.assigns.sync_status, agency_code, %{status: "syncing", progress: 0})
-    
-    {:noreply, assign(socket, :sync_status, sync_status)}
   end
 
   @impl true

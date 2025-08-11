@@ -34,8 +34,7 @@ defmodule EhsEnforcement.Release do
         EhsEnforcement.Configuration,
         EhsEnforcement.Enforcement,
         EhsEnforcement.Events,
-        EhsEnforcement.Scraping,
-        EhsEnforcement.Sync
+        EhsEnforcement.Scraping
       ]
       
       # Load and verify all domains

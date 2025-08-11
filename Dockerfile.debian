@@ -64,6 +64,11 @@ ENV MIX_ENV=prod
 ENV PHX_SERVER=true
 ENV LANG=C.UTF-8
 
+# Add Erlang VM memory settings
+ENV ERL_MAX_PORTS=4096
+ENV ERL_MAX_ETS_TABLES=256
+ENV ERL_FLAGS="+P 4096 +Q 256"
+
 # Create app user
 RUN groupadd -r phoenix && useradd -r -g phoenix phoenix
 
