@@ -187,12 +187,24 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
   # Private Functions
   
   defp build_offender_attrs(notice_data) do
-    %{
+    base_attrs = %{
       name: notice_data.offender_name || "Unknown",
       local_authority: notice_data[:offender_local_authority],
       sic_code: notice_data[:offender_sic],
-      main_activity: notice_data[:offender_main_activity]
+      main_activity: notice_data[:offender_main_activity],
+      industry: notice_data[:offender_industry],
+      address: notice_data[:offender_address],
+      country: notice_data[:offender_country]
     }
+    
+    # Add business type using same logic as case processor
+    enhanced_attrs = base_attrs
+    |> Map.put(:business_type, normalize_business_type(determine_business_type(notice_data.offender_name || "")))
+    
+    # Remove nil values to keep attrs clean
+    enhanced_attrs
+    |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
+    |> Map.new()
   end
   
   defp build_regulator_url(regulator_id) when is_binary(regulator_id) do
@@ -281,4 +293,30 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
       trimmed -> trimmed
     end
   end
+  
+  defp normalize_business_type(business_type_string) do
+    case business_type_string do
+      "LTD" -> :limited_company
+      "PLC" -> :plc
+      "LLP" -> :partnership  
+      "LLC" -> :limited_company
+      "INC" -> :limited_company
+      "CORP" -> :limited_company
+      "SOLE" -> :individual
+      _ -> :other
+    end
+  end
+  
+  defp determine_business_type(offender_name) when is_binary(offender_name) do
+    cond do
+      Regex.match?(~r/LLC|llc/, offender_name) -> "LLC"
+      Regex.match?(~r/[Ii]nc$/, offender_name) -> "INC"
+      Regex.match?(~r/[ ][Cc]orp[. ]/, offender_name) -> "CORP"
+      Regex.match?(~r/PLC|[Pp]lc/, offender_name) -> "PLC"
+      Regex.match?(~r/[Ll]imited|LIMITED|Ltd|LTD|Lld/, offender_name) -> "LTD"
+      Regex.match?(~r/LLP|[Ll]lp/, offender_name) -> "LLP"
+      true -> "SOLE"
+    end
+  end
+  defp determine_business_type(_), do: "SOLE"
 end

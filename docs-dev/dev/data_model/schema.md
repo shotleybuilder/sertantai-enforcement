@@ -143,10 +143,13 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 | `id` | `uuid` | PRIMARY KEY, NOT NULL | Offender unique identifier |
 | `name` | `text` | NOT NULL | Original company/individual name |
 | `normalized_name` | `text` | NULLABLE | Normalized name for matching |
+| `address` | `text` | NULLABLE | Offender business address |
 | `local_authority` | `text` | NULLABLE | Local authority area |
+| `country` | `text` | NULLABLE | Country (England, Scotland, Wales, Northern Ireland) |
 | `postcode` | `text` | NULLABLE | Postal code |
 | `main_activity` | `text` | NULLABLE | Primary business activity |
-| `business_type` | `text` | NULLABLE | Business structure type |
+| `sic_code` | `text` | NULLABLE | Standard Industrial Classification code |
+| `business_type` | `text` | NULLABLE | Business structure type (atom: :limited_company, :individual, :partnership, :plc, :other) |
 | `industry` | `text` | NULLABLE | Industry classification |
 | `first_seen_date` | `date` | NULLABLE | First enforcement action date |
 | `last_seen_date` | `date` | NULLABLE | Most recent enforcement date |
@@ -474,9 +477,14 @@ The original production database is a single Airtable table containing all enfor
 |---------------|------------------|--------|-------|
 | `offender_name` | `offenders` | `name` | Original company/individual name |
 | `offender_name` | `offenders` | `normalized_name` | Auto-generated normalized version |
-| `offender_postcode` | `offenders` | `postcode` | Normalized to uppercase |
+| `offender_address` | `offenders` | `address` | Business address |
 | `offender_local_authority` | `offenders` | `local_authority` | Direct mapping |
+| `offender_country` | `offenders` | `country` | England, Scotland, Wales, Northern Ireland |
+| `offender_postcode` | `offenders` | `postcode` | Normalized to uppercase |
 | `offender_main_activity` | `offenders` | `main_activity` | Direct mapping |
+| `offender_sic` | `offenders` | `sic_code` | Standard Industrial Classification code |
+| `offender_business_type` | `offenders` | `business_type` | Mapped to atoms: LTD→:limited_company, PLC→:plc, etc. |
+| `offender_industry` | `offenders` | `industry` | Industry classification |
 
 ### Case-Specific Fields
 
@@ -534,6 +542,15 @@ Some PostgreSQL fields are computed from Airtable data during import:
 3. **Deduplication**: PostgreSQL `normalized_name` handles company name variations
 4. **Data integrity**: Foreign key constraints ensure referential integrity
 5. **Audit trail**: `events` table tracks all data changes
+
+### Schema Updates (2025-08-11)
+
+**Latest Changes**: Added missing offender fields to support complete Airtable mapping:
+- ✅ **Added fields**: `address`, `country`, `sic_code` 
+- ✅ **Business type mapping**: Airtable strings → PostgreSQL atoms (LTD → :limited_company, etc.)
+- ✅ **Country capture**: Now captures country from HSE search criteria (England, Scotland, Wales, Northern Ireland)
+
+**Production Update**: Use `scripts/update_offender_fields.exs` to backfill existing production records with missing field data from Airtable.
 
 ### Common Field Naming Patterns
 

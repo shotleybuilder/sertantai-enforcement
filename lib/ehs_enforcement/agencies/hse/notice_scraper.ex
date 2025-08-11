@@ -25,7 +25,7 @@ defmodule EhsEnforcement.Agencies.Hse.NoticeScraper do
     |> Map.get(:body)
     |> parse_tr()
     |> extract_td()
-    |> extract_notices()
+    |> extract_notices(country)
   end
 
   def get_notice_details(%{notice_number: notice_number}), do: get_notice_details(notice_number)
@@ -66,7 +66,7 @@ defmodule EhsEnforcement.Agencies.Hse.NoticeScraper do
     end)
   end
 
-  defp extract_notices(notices) do
+  defp extract_notices(notices, country) do
     Enum.reduce(notices, [], fn
       [
         {"td", [],
@@ -91,7 +91,8 @@ defmodule EhsEnforcement.Agencies.Hse.NoticeScraper do
             offence_action_type: String.trim(notice_type),
             offence_action_date: EhsEnforcement.Utility.iso_date(issue_date),
             offender_local_authority: String.trim(local_authority),
-            offender_sic: String.trim(sic)
+            offender_sic: String.trim(sic),
+            offender_country: country
           }
           | acc
         ]

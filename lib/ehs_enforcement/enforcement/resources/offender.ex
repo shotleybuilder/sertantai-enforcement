@@ -28,7 +28,9 @@ defmodule EhsEnforcement.Enforcement.Offender do
     
     attribute :name, :string, allow_nil?: false
     attribute :normalized_name, :string
+    attribute :address, :string
     attribute :local_authority, :string
+    attribute :country, :string
     attribute :postcode, :string
     attribute :main_activity, :string
     attribute :sic_code, :string
@@ -62,7 +64,7 @@ defmodule EhsEnforcement.Enforcement.Offender do
     
     create :create do
       primary? true
-      accept [:name, :local_authority, :postcode, :main_activity, :sic_code, :business_type, :industry,
+      accept [:name, :address, :local_authority, :country, :postcode, :main_activity, :sic_code, :business_type, :industry,
               :first_seen_date, :last_seen_date, :total_cases, :total_notices, :total_fines]
       
       change fn changeset, _context ->
@@ -79,7 +81,7 @@ defmodule EhsEnforcement.Enforcement.Offender do
     update :update do
       primary? true
       require_atomic? false
-      accept [:name, :local_authority, :main_activity, :sic_code, :business_type, :industry]
+      accept [:name, :address, :local_authority, :country, :main_activity, :sic_code, :business_type, :industry]
       
       change fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :name) do
