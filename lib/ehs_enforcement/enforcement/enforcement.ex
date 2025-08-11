@@ -266,6 +266,7 @@ defmodule EhsEnforcement.Enforcement do
     end
   end
 
+
   def list_notices_with_filters!(opts \\ []) do
     query = EhsEnforcement.Enforcement.Notice
     

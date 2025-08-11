@@ -206,8 +206,8 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     |> apply_search_filter(socket.assigns.search_query)
 
     try do
-      # Use code interface instead of direct Ash.read
-      offenders = case Enforcement.list_offenders(query) do
+      # Use direct Ash.read with the built query
+      offenders = case Ash.read(query) do
         {:ok, offenders} -> offenders
         {:error, _} -> []
       end
