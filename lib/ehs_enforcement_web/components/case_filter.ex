@@ -167,16 +167,7 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
               <.icon name="hero-funnel" class="h-4 w-4 mr-1" />
               Apply Filters
             </button>
-            
-            <button
-              type="button"
-              phx-click="clear_filters"
-              phx-target={@target}
-              class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <.icon name="hero-x-mark" class="h-4 w-4 mr-1" />
-              Clear
-            </button>
+            <!-- Clear button removed - use Clear All link in header -->
           </div>
         </div>
       </.form>

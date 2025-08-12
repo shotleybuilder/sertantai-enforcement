@@ -28,6 +28,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      |> assign(:loading, true)
      |> assign(:search_active, false)
      |> assign(:fuzzy_search, false)
+     |> assign(:sort_requested, false)
      |> load_cases(), temporary_assigns: [cases: []]}
   end
 
@@ -82,6 +83,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      socket
      |> assign(:filters, %{})
      |> assign(:page, 1)
+     |> assign(:sort_requested, false)  # Reset sort flag when clearing
      |> load_cases()}
   end
 
@@ -106,6 +108,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      |> assign(:sort_by, sort_by)
      |> assign(:sort_dir, sort_dir)
      |> assign(:page, 1)  # Reset to first page when sorting
+     |> assign(:sort_requested, true)  # Flag to indicate sorting was requested
      |> load_cases()}
   end
 
@@ -192,14 +195,21 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   # Private functions
 
   defp load_cases(socket) do
-    %{filters: filters, sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size, fuzzy_search: fuzzy_search} = socket.assigns
+    %{filters: filters, sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size, fuzzy_search: fuzzy_search, sort_requested: sort_requested} = socket.assigns
     
     try do
-      # Check if fuzzy search is enabled and we have a search query
-      search_query = filters[:search]
-      use_fuzzy = fuzzy_search && is_binary(search_query) && String.trim(search_query) != ""
-      
-      {cases, total_cases} = if use_fuzzy do
+      # Don't load any cases if no filters are applied AND no sort was requested
+      if map_size(filters) == 0 && !sort_requested do
+        socket
+        |> assign(:cases, [])
+        |> assign(:total_cases, 0)
+        |> assign(:loading, false)
+      else
+        # Check if fuzzy search is enabled and we have a search query
+        search_query = filters[:search]
+        use_fuzzy = fuzzy_search && is_binary(search_query) && String.trim(search_query) != ""
+        
+        {cases, total_cases} = if use_fuzzy do
         # Use fuzzy search with pg_trgm
         trimmed_query = String.trim(search_query)
         limited_query = if String.length(trimmed_query) > 100 do
@@ -235,13 +245,15 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
         count_opts = [filter: build_optimized_filter(filters)]
         regular_total = Enforcement.count_cases!(count_opts)
         
-        {regular_results, regular_total}
+          {regular_results, regular_total}
+        end
+        
+        socket
+        |> assign(:cases, cases)
+        |> assign(:total_cases, total_cases)
+        |> assign(:loading, false)
+        |> assign(:sort_requested, false)  # Reset the flag after loading
       end
-      
-      socket
-      |> assign(:cases, cases)
-      |> assign(:total_cases, total_cases)
-      |> assign(:loading, false)
       
     rescue
       error ->
@@ -362,11 +374,17 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
 
   defp build_sort_options(sort_by, sort_dir) do
     case {sort_by, sort_dir} do
-      {:offender_name, dir} ->
-        [offender: [name: dir]]
+      # TODO: Re-enable offender sorting when Ash 3.5.x belongs_to relationship 
+      # sorting bug is fixed (KeyError: key :constraints not found)
+      # {:offender_name, dir} ->
+      #   [offender: [name: dir]]
       
-      {:agency_name, dir} ->
-        [agency: [name: dir]]
+      # Agency sorting removed - not supported
+      {:agency_name, _dir} ->
+        [offence_action_date: :desc]  # Fallback to default sort
+      
+      {:offender_name, _dir} ->
+        [offence_action_date: :desc]  # Fallback to default sort - sorting disabled
       
       {field, dir} when field in [:offence_action_date, :offence_fine, :regulator_id] ->
         [{field, dir}]

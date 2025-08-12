@@ -96,12 +96,12 @@ defmodule EhsEnforcement.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      # Ash framework dependencies
-      {:ash, "~> 3.0"},
-      {:ash_phoenix, "~> 2.0"},
-      {:ash_postgres, "~> 2.0"},
-      {:ash_graphql, "~> 1.0"},
-      {:ash_json_api, "~> 1.0"},
+      # Ash framework dependencies  
+      {:ash, "~> 3.5"},
+      {:ash_phoenix, "~> 2.1"},
+      {:ash_postgres, "~> 2.6"},
+      {:ash_graphql, "~> 1.3"},
+      {:ash_json_api, "~> 1.4"},
       {:ash_admin, "~> 0.11"},
       {:ash_rate_limiter, "~> 0.1"},
       {:hammer, "~> 7.0"},

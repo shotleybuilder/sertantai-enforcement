@@ -17,23 +17,16 @@
           </div>
           
           <div class="flex space-x-3">
-            <!-- Export Button -->
+            <!-- Export Button (Disabled) -->
             <button
-              phx-click="export_csv"
-              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled
+              title="Export functionality coming soon"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-50"
             >
               <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" />
               Export CSV
             </button>
             
-            <!-- New Case Button -->
-            <.link
-              navigate={~p"/cases/new"}
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <.icon name="hero-plus" class="h-4 w-4 mr-2" />
-              New Case
-            </.link>
           </div>
         </div>
       </div>
@@ -121,6 +114,15 @@
                       <% end %>
                     </th>
                     
+                    <!-- TODO: Re-enable offender sorting when Ash 3.5.x belongs_to relationship sorting bug is fixed -->
+                    <!-- KeyError: key :constraints not found in BelongsTo struct -->
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Offender
+                    </th>
+                    <!-- Commented out until Ash bug fix:
                     <th
                       scope="col"
                       class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -133,18 +135,13 @@
                         <.icon name={if @sort_dir == :asc, do: "hero-chevron-up", else: "hero-chevron-down"} class="inline h-4 w-4 ml-1" />
                       <% end %>
                     </th>
+                    -->
                     
                     <th
                       scope="col"
-                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      phx-click="sort"
-                      phx-value-field="agency_name"
-                      phx-value-direction={if @sort_by == :agency_name && @sort_dir == :asc, do: "desc", else: "asc"}
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Agency
-                      <%= if @sort_by == :agency_name do %>
-                        <.icon name={if @sort_dir == :asc, do: "hero-chevron-up", else: "hero-chevron-down"} class="inline h-4 w-4 ml-1" />
-                      <% end %>
                     </th>
                     
                     <th
@@ -234,13 +231,15 @@
                             <.icon name="hero-eye" class="h-4 w-4" />
                           </.link>
                           
-                          <.link
-                            navigate={~p"/cases/#{case.id}/edit"}
-                            class="text-green-600 hover:text-green-900"
-                            title="Edit case"
-                          >
-                            <.icon name="hero-pencil" class="h-4 w-4" />
-                          </.link>
+                          <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
+                            <.link
+                              navigate={~p"/cases/#{case.id}/edit"}
+                              class="text-green-600 hover:text-green-900"
+                              title="Edit case"
+                            >
+                              <.icon name="hero-pencil" class="h-4 w-4" />
+                            </.link>
+                          <% end %>
                         </div>
                       </td>
                     </tr>
@@ -252,32 +251,23 @@
             <!-- Empty State -->
             <div class="text-center py-12">
               <.icon name="hero-folder-open" class="mx-auto h-12 w-12 text-gray-400" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900">No enforcement cases</h3>
+              <h3 class="mt-2 text-sm font-medium text-gray-900">
+                <%= if map_size(@filters) > 0 do %>
+                  No matching cases found
+                <% else %>
+                  Ready to search cases
+                <% end %>
+              </h3>
               <p class="mt-1 text-sm text-gray-500">
                 <%= if map_size(@filters) > 0 do %>
                   No cases match your current filters. Try adjusting your search criteria.
                 <% else %>
-                  Get started by creating your first case.
+                  Use the filters above to search and view enforcement cases from our database.
                 <% end %>
               </p>
               
               <div class="mt-6">
-                <%= if map_size(@filters) > 0 do %>
-                  <button
-                    phx-click="clear_filters"
-                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-3"
-                  >
-                    Clear Filters
-                  </button>
-                <% end %>
-                
-                <.link
-                  navigate={~p"/cases/new"}
-                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <.icon name="hero-plus" class="h-4 w-4 mr-2" />
-                  New Case
-                </.link>
+                <!-- Clear button removed - use Clear All link in filter component -->
               </div>
             </div>
           <% end %>
