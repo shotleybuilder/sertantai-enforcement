@@ -222,6 +222,12 @@ defmodule EhsEnforcement.Enforcement.Case do
               message: "Either agency_id + offender_id OR agency_code + offender_attrs must be provided")
         end
       end)
+      
+      # Automatically update offender's agencies array when case is created
+      change after_action(fn changeset, case_record, _context ->
+        update_offender_agencies(case_record.offender_id)
+        {:ok, case_record}
+      end)
     end
 
     update :update_from_scraping do
@@ -495,5 +501,77 @@ defmodule EhsEnforcement.Enforcement.Case do
     define(:scrape_hse_cases_deep)
     define(:duplicate_detection)
     define(:bulk_create)
+  end
+  
+  # Helper function to update offender agencies when cases are created/updated
+  defp update_offender_agencies(offender_id) do
+    spawn(fn ->
+      try do
+        # Get the offender
+        case EhsEnforcement.Enforcement.get_offender(offender_id) do
+          {:ok, offender} ->
+            # Get all unique agencies from cases and notices for this offender
+            agencies = get_unique_agencies_for_offender(offender_id)
+            
+            # Update the offender's agencies array
+            case Ash.update(offender, %{agencies: agencies}) do
+              {:ok, _updated_offender} ->
+                require Logger
+                Logger.info("Updated agencies for offender #{offender.name}: #{inspect(agencies)}")
+                
+              {:error, error} ->
+                require Logger
+                Logger.warning("Failed to update agencies for offender #{offender_id}: #{inspect(error)}")
+            end
+            
+          {:error, error} ->
+            require Logger
+            Logger.warning("Failed to get offender #{offender_id}: #{inspect(error)}")
+        end
+      rescue
+        error ->
+          require Logger
+          Logger.error("Error updating offender agencies: #{inspect(error)}")
+      end
+    end)
+  end
+  
+  defp get_unique_agencies_for_offender(offender_id) do
+    # Get agencies from cases
+    case_agencies = case EhsEnforcement.Enforcement.list_cases() do
+      {:ok, cases} ->
+        cases
+        |> Enum.filter(&(&1.offender_id == offender_id))
+        |> Enum.map(fn case_record ->
+          case Ash.load(case_record, :agency) do
+            {:ok, loaded_case} -> loaded_case.agency.name
+            _ -> nil
+          end
+        end)
+        |> Enum.filter(&(&1 != nil))
+        
+      _ -> []
+    end
+    
+    # Get agencies from notices  
+    notice_agencies = case EhsEnforcement.Enforcement.list_notices() do
+      {:ok, notices} ->
+        notices
+        |> Enum.filter(&(&1.offender_id == offender_id))
+        |> Enum.map(fn notice ->
+          case Ash.load(notice, :agency) do
+            {:ok, loaded_notice} -> loaded_notice.agency.name
+            _ -> nil
+          end
+        end)
+        |> Enum.filter(&(&1 != nil))
+        
+      _ -> []
+    end
+    
+    # Combine and deduplicate
+    (case_agencies ++ notice_agencies)
+    |> Enum.uniq()
+    |> Enum.sort()
   end
 end

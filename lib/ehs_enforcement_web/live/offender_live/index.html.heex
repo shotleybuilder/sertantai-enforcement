@@ -17,10 +17,20 @@
           </div>
           
           <div class="flex space-x-3">
+            <!-- Back Button -->
+            <.link
+              navigate={~p"/"}
+              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <.icon name="hero-arrow-left" class="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </.link>
+            
             <!-- Export Button -->
             <button
-              phx-click="export_csv"
-              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled
+              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-60"
+              title="Export functionality will be available after user management is implemented"
             >
               <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" />
               Export CSV
@@ -61,6 +71,7 @@
       sort_order={@sort_order}
       fuzzy_search={@fuzzy_search}
       total_count={@total_count}
+      agencies={@agencies}
       target={nil}
     />
 
@@ -153,9 +164,6 @@
                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                           Enforcement Statistics
                         </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                          Status
-                        </th>
                         <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
                           <span class="sr-only">Actions</span>
                         </th>
@@ -166,7 +174,6 @@
                         <tr 
                           data-role="offender-row" 
                           data-offender-id={offender.id}
-                          data-repeat-offender={is_repeat_offender?(offender)}
                           class="hover:bg-gray-50"
                         >
                           <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-0">
@@ -174,11 +181,6 @@
                               <div>
                                 <div class="font-medium text-gray-900">
                                   <%= offender.name %>
-                                  <%= if is_repeat_offender?(offender) do %>
-                                    <span class="ml-2 inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
-                                      Repeat Offender
-                                    </span>
-                                  <% end %>
                                 </div>
                                 <div class="text-gray-500">
                                   <%= offender.postcode %>
@@ -204,18 +206,6 @@
                             <div class="text-gray-500">
                               Total Fines: <span class="font-medium"><%= format_currency(offender.total_fines) %></span>
                             </div>
-                          </td>
-                          
-                          <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                            <%= if is_repeat_offender?(offender) do %>
-                              <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
-                                High Risk
-                              </span>
-                            <% else %>
-                              <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                                Standard
-                              </span>
-                            <% end %>
                           </td>
                           
                           <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">

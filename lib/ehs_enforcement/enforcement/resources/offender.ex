@@ -20,6 +20,9 @@ defmodule EhsEnforcement.Enforcement.Offender do
       index [:local_authority], name: "offenders_local_authority_gin_trgm", using: "GIN"
       index [:main_activity], name: "offenders_main_activity_gin_trgm", using: "GIN"
       index [:postcode], name: "offenders_postcode_gin_trgm", using: "GIN"
+      
+      # GIN index for agencies array to enable efficient array contains queries
+      index [:agencies], name: "offenders_agencies_gin", using: "GIN"
     end
   end
 
@@ -48,6 +51,10 @@ defmodule EhsEnforcement.Enforcement.Offender do
     end
     attribute :industry, :string
     
+    # Denormalized list of all agencies that have taken enforcement action against this offender
+    # This allows efficient filtering without complex joins across cases and notices
+    attribute :agencies, {:array, :string}, default: []
+    
     # Aggregated statistics
     attribute :first_seen_date, :date
     attribute :last_seen_date, :date
@@ -74,7 +81,7 @@ defmodule EhsEnforcement.Enforcement.Offender do
     create :create do
       primary? true
       accept [:name, :address, :local_authority, :country, :postcode, :main_activity, :sic_code, :business_type, :industry,
-              :first_seen_date, :last_seen_date, :total_cases, :total_notices, :total_fines]
+              :first_seen_date, :last_seen_date, :total_cases, :total_notices, :total_fines, :agencies]
       
       change fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :name) do
@@ -90,7 +97,7 @@ defmodule EhsEnforcement.Enforcement.Offender do
     update :update do
       primary? true
       require_atomic? false
-      accept [:name, :address, :local_authority, :country, :main_activity, :sic_code, :business_type, :industry]
+      accept [:name, :address, :local_authority, :country, :main_activity, :sic_code, :business_type, :industry, :agencies]
       
       change fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :name) do
@@ -125,6 +132,7 @@ defmodule EhsEnforcement.Enforcement.Offender do
         |> Ash.Changeset.force_change_attribute(:total_fines, new_fines)
       end
     end
+    
     
     read :search do
       argument :query, :string, allow_nil?: false

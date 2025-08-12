@@ -498,6 +498,7 @@ defmodule EhsEnforcement.Enforcement do
   # Optimized filter building for offenders to leverage pg_trgm GIN indexes
   defp build_optimized_offender_filter(query, filters) do
     # Group filters for optimal index usage
+    agency_filter = filters[:agency]
     industry_filter = filters[:industry]
     local_authority_filter = filters[:local_authority]
     business_type_filter = filters[:business_type]
@@ -506,6 +507,11 @@ defmodule EhsEnforcement.Enforcement do
     
     # Apply individual filters in optimal order
     query
+    |> apply_if_present(agency_filter, fn q, value ->
+      # Filter offenders by agency using the denormalized agencies array
+      # This is much more efficient than joining through cases/notices
+      Ash.Query.filter(q, ^value in agencies)
+    end)
     |> apply_if_present(industry_filter, fn q, value -> 
       Ash.Query.filter(q, industry == ^value) 
     end)

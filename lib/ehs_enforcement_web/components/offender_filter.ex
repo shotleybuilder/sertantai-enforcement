@@ -7,6 +7,7 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
   """
   def filter_form(assigns) do
     assigns = assign_new(assigns, :fuzzy_search, fn -> false end)
+    assigns = assign_new(assigns, :agencies, fn -> [] end)
     ~H"""
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -21,8 +22,28 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
       </div>
       
       <.form for={%{}} phx-change="filter_change" phx-target={@target} data-testid="offender-filters">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- Industry Filter -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <!-- Agency Filter (Position 1) -->
+          <div class="space-y-1">
+            <label for="agency-filter" class="block text-sm font-medium text-gray-700">
+              Agency
+            </label>
+            <select
+              id="agency-filter"
+              name="filters[agency]"
+              value={@filters[:agency]}
+              class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            >
+              <option value="">All Agencies</option>
+              <%= for agency <- @agencies do %>
+                <option value={agency.name} selected={@filters[:agency] == agency.name}>
+                  <%= agency.name %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+
+          <!-- Industry Filter (Position 2) -->
           <div class="space-y-1">
             <label for="industry-filter" class="block text-sm font-medium text-gray-700">
               Industry
@@ -140,7 +161,7 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
         </div>
 
         <!-- Second Row - Additional Filters -->
-        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Repeat Offenders Only -->
           <div class="space-y-1">
             <div class="flex items-center">
@@ -194,18 +215,6 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
               <option value="desc" selected={@sort_order == "desc"}>High to Low</option>
               <option value="asc" selected={@sort_order == "asc"}>Low to High</option>
             </select>
-          </div>
-
-          <!-- Results Info -->
-          <div class="space-y-1">
-            <div class="text-sm text-gray-700 font-medium">Results</div>
-            <div class="text-sm text-gray-500">
-              <%= if @total_count > 0 do %>
-                <%= @total_count %> offenders found
-              <% else %>
-                No offenders found
-              <% end %>
-            </div>
           </div>
         </div>
       </.form>

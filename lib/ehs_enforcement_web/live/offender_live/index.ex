@@ -14,11 +14,15 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case_created")
     Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "notice_created")
 
+    # Load agencies for filter dropdown
+    {:ok, agencies} = Enforcement.list_agencies()
+
     socket =
       socket
       |> assign(:page_title, "Offender Management")
       |> assign(:loading, true)
       |> assign(:offenders, [])
+      |> assign(:agencies, agencies)
       |> assign(:total_count, 0)
       |> assign(:current_page, 1)
       |> assign(:per_page, @per_page)
@@ -214,6 +218,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
 
   defp parse_filters(filter_params) do
     %{}
+    |> maybe_add_filter(:agency, filter_params["agency"])
     |> maybe_add_filter(:industry, filter_params["industry"])
     |> maybe_add_filter(:local_authority, filter_params["local_authority"])
     |> maybe_add_filter(:business_type, filter_params["business_type"])
@@ -309,6 +314,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   # The Enforcement context handles optimized filtering internally
   defp build_optimized_filter(filters, search_query) do
     %{}
+    |> add_filter_if_present(filters, :agency)
     |> add_filter_if_present(filters, :industry)
     |> add_filter_if_present(filters, :local_authority)
     |> add_filter_if_present(filters, :business_type)
@@ -375,11 +381,6 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   defp refresh_offender_stats(socket) do
     # Reload current page data
     load_offenders(socket)
-  end
-
-  defp is_repeat_offender?(offender) do
-    total_enforcement = (offender.total_cases || 0) + (offender.total_notices || 0)
-    total_enforcement > 2
   end
 
   defp format_currency(nil), do: "£0"
