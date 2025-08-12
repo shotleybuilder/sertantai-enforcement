@@ -8,7 +8,7 @@
     <meta name="project" content="ehs_enforcement v0.1.0">
 
 
-    <title>EhsEnforcement.Integrations.Airtable.AirtableParams — ehs_enforcement v0.1.0</title>
+    <title>mix populate_offender_agencies — ehs_enforcement v0.1.0</title>
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
@@ -47,7 +47,7 @@ ehs_enforcement
 
 <output role="status" id="toast"></output>
 
-<main class="content page-module" id="main" data-type="modules">
+<main class="content page-task" id="main" data-type="tasks">
   <div id="content" class="content-inner">
     <div class="top-search">
       <div class="search-settings">
@@ -75,7 +75,7 @@ ehs_enforcement
 <div id="top-content">
   <div class="heading-with-actions top-heading">
     <h1>
-      <span translate="no">EhsEnforcement.Integrations.Airtable.AirtableParams</span> 
+      <span translate="no">mix populate_offender_agencies</span> 
       <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
 
     </h1>
@@ -83,88 +83,15 @@ ehs_enforcement
   </div>
 
 
-</div>
-
-  <section id="summary" class="details-list">
-    <h1 class="section-heading">
-      <a class="hover-link" href="#summary">
-        <i class="ri-link-m" aria-hidden="true"></i>
-      </a>
-      <span class="text">Summary</span>
-    </h1>
-<div class="summary-functions summary">
-  <h2>
-    <a href="#functions">Functions</a>
-  </h2>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#params_defaults/1" data-no-tooltip="" translate="no">params_defaults(params)</a>
-
-      </div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#params_validation/1" data-no-tooltip="" translate="no">params_validation(params)</a>
-
-      </div>
-
-    </div>
+    <section id="moduledoc">
+<p>Populates the agencies array field for existing offenders based on their cases and notices.</p><p>This task uses proper Ash queries and is safe to run in production.</p><p>Usage:
+  mix populate_offender_agencies</p><p>Options:
+  --dry-run    Show what would be updated without making changes
+  --limit N    Only process first N offenders (for testing)</p>
+    </section>
 
 </div>
 
-  </section>
-
-
-  <section id="functions" class="details-list">
-    <h1 class="section-heading">
-      <a class="hover-link" href="#functions">
-        <i class="ri-link-m" aria-hidden="true"></i>
-      </a>
-      <span class="text">Functions</span>
-    </h1>
-    <div class="functions-list">
-<section class="detail" id="params_defaults/1">
-
-  <div class="detail-header">
-    <a href="#params_defaults/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">params_defaults(params)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="params_validation/1">
-
-  <div class="detail-header">
-    <a href="#params_validation/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">params_validation(params)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-
-    </div>
-  </section>
 
     <footer class="footer">
       <p>

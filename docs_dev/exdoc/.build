@@ -104,6 +104,7 @@ EhsEnforcementWeb.Components.CaseFilter.html
 EhsEnforcementWeb.Components.CasesActionCard.html
 EhsEnforcementWeb.Components.DashboardActionCard.html
 EhsEnforcementWeb.Components.NoticesActionCard.html
+EhsEnforcementWeb.Components.OffenderFilter.html
 EhsEnforcementWeb.Components.OffendersActionCard.html
 EhsEnforcementWeb.Components.ReportsActionCard.html
 EhsEnforcementWeb.CoreComponents.html
@@ -130,9 +131,11 @@ EhsEnforcementWeb.PageController.html
 EhsEnforcementWeb.PageHTML.html
 EhsEnforcementWeb.Plugs.AuthHelpers.html
 EhsEnforcementWeb.ReportsLive.Index.html
+EhsEnforcementWeb.ReportsLive.Offenders.html
 EhsEnforcementWeb.Router.html
 EhsEnforcementWeb.Telemetry.html
 EhsEnforcementWeb.html
+Mix.Tasks.PopulateOffenderAgencies.html
 UK.Act.html
 UK.Regulation.html
 api-reference.html
@@ -143,8 +146,8 @@ dist/lato-latin-700-normal-2XVSBPG4.woff2
 dist/lato-latin-ext-400-normal-N27NCBWW.woff2
 dist/lato-latin-ext-700-normal-Q2L5DVMW.woff2
 dist/remixicon-QPNJX265.woff2
-dist/search_data-C45BDD1F.js
-dist/sidebar_items-176D2BAA.js
+dist/search_data-A6FA1682.js
+dist/sidebar_items-2B9BF3B5.js
 index.html
 readme.html
 search.html

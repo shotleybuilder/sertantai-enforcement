@@ -411,7 +411,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
     filter_conditions = if filter_agency, do: [agency_id: filter_agency], else: []
     offset = (page - 1) * page_size
     
-    # Calculate cutoff date if time_period is provided
+    # Calculate cutoff date for database filtering
     cutoff_date = if time_period do
       days_ago = case time_period do
         "week" -> 7
@@ -421,45 +421,44 @@ defmodule EhsEnforcementWeb.DashboardLive do
       end
       Date.add(Date.utc_today(), -days_ago)
     else
-      nil
+      # Default to last 30 days if no time period specified
+      Date.add(Date.utc_today(), -30)
     end
     
     try do
-      # Load cases using the proper filter function
+      # Add date filter to conditions for database-level filtering
+      date_filter = if cutoff_date, do: [offence_action_date: [gte: cutoff_date]], else: []
+      combined_filter = filter_conditions ++ date_filter
+      
+      # Load cases with database-level filtering, sorting, and limits
       cases_query_opts = [
-        filter: filter_conditions,
+        filter: combined_filter,
         sort: [offence_action_date: :desc],
-        load: [:offender, :agency]
+        load: [:offender, :agency],
+        limit: page_size * 3  # Get extra records to allow for proper sorting with notices
       ]
       cases = Enforcement.list_cases_with_filters!(cases_query_opts)
       
-      # Load notices using the proper filter function
+      # Load notices with database-level filtering, sorting, and limits
       notices_query_opts = [
-        filter: filter_conditions,
+        filter: combined_filter,
         sort: [offence_action_date: :desc],
-        load: [:offender, :agency]
+        load: [:offender, :agency],
+        limit: page_size * 3  # Get extra records to allow for proper sorting with cases
       ]
       notices = Enforcement.list_notices_with_filters!(notices_query_opts)
       
-      # Combine and sort by date, filtering out nil dates
+      # Combine, filter out nil dates, and sort by date
       all_activity = (cases ++ notices)
-      |> Enum.filter(fn record -> record.offence_action_date != nil end)
+      |> Enum.filter(fn record -> 
+        record.offence_action_date != nil and 
+        Date.compare(record.offence_action_date, cutoff_date) != :lt
+      end)
       |> Enum.sort_by(& &1.offence_action_date, {:desc, Date})
       
-      # Apply time period filter if provided
-      filtered_activity = if cutoff_date do
-        Enum.filter(all_activity, fn record ->
-          Date.compare(record.offence_action_date, cutoff_date) != :lt
-        end)
-      else
-        all_activity
-      end
-      
-      # Calculate total count
-      total_count = length(filtered_activity)
-      
-      # Apply pagination
-      paginated_activity = filtered_activity
+      # Apply pagination to the combined and sorted results
+      total_count = length(all_activity)
+      paginated_activity = all_activity
       |> Enum.drop(offset)
       |> Enum.take(page_size)
       

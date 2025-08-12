@@ -19,17 +19,26 @@ This guide provides step-by-step instructions for deploying the pg_trgm extensio
 **⚠️ IMPORTANT**: Install the extension BEFORE deploying application code changes.
 
 #### Option A: Via Database Administrator (Recommended)
-```sql
--- Connect to production database as superuser
-\c your_production_database;
+```bash
+docker compose exec postgres psql -U postgres -d ehs_enforcement_prod
+```
 
+The \c command is for switching databases once you'realready in the PostgreSQL prompt
+
+```sql
 -- Install pg_trgm extension
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Verify installation
-SELECT name, default_version, installed_version 
-FROM pg_available_extensions 
+SELECT name, default_version, installed_version
+FROM pg_available_extensions
 WHERE name = 'pg_trgm';
+
+-- Test trigram functionality
+SELECT similarity('construction', 'construktion');
+
+-- Quit PostgreSQL prompt
+\q
 ```
 
 #### Option B: Via Application Migration (Alternative)
@@ -61,7 +70,7 @@ mix ash.migrate
 ```
 
 **Expected indexes to be created:**
-- `cases_regulator_id_gin_trgm` 
+- `cases_regulator_id_gin_trgm`
 - `cases_offence_breaches_gin_trgm`
 - `notices_regulator_id_gin_trgm`
 - `notices_offence_breaches_gin_trgm`
@@ -76,9 +85,9 @@ mix ash.migrate
 
 ```sql
 -- Check all pg_trgm GIN indexes were created
-SELECT indexname, indexdef 
-FROM pg_indexes 
-WHERE indexname LIKE '%gin_trgm' 
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE indexname LIKE '%gin_trgm'
 ORDER BY indexname;
 ```
 
@@ -94,7 +103,7 @@ If the initial migration takes too long, you can recreate indexes concurrently:
 DROP INDEX IF EXISTS cases_regulator_id_gin_trgm;
 
 -- Recreate with CONCURRENTLY (no table locks)
-CREATE INDEX CONCURRENTLY cases_regulator_id_gin_trgm 
+CREATE INDEX CONCURRENTLY cases_regulator_id_gin_trgm
 ON cases USING GIN (regulator_id gin_trgm_ops);
 ```
 
@@ -144,7 +153,7 @@ Test via web interface:
 ```sql
 -- Monitor index usage
 SELECT schemaname, tablename, indexname, idx_scan, idx_tup_read, idx_tup_fetch
-FROM pg_stat_user_indexes 
+FROM pg_stat_user_indexes
 WHERE indexname LIKE '%gin_trgm%'
 ORDER BY idx_scan DESC;
 ```
@@ -156,7 +165,7 @@ SET log_min_duration_statement = 100;  -- Log queries > 100ms
 
 -- Monitor slow queries involving trigram similarity
 SELECT query, mean_exec_time, calls, rows, 100.0 * shared_blks_hit / nullif(shared_blks_hit + shared_blks_read, 0) AS hit_percent
-FROM pg_stat_statements 
+FROM pg_stat_statements
 WHERE query ILIKE '%trigram_similarity%'
 ORDER BY mean_exec_time DESC;
 ```
@@ -225,6 +234,6 @@ DROP EXTENSION IF EXISTS pg_trgm;
 
 ---
 
-**Implementation Date**: 2025-08-12  
-**Document Version**: 1.0  
+**Implementation Date**: 2025-08-12
+**Document Version**: 1.0
 **Contact**: Development Team for questions or issues
