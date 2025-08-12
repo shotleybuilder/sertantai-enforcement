@@ -183,14 +183,14 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     %{filters: filters, sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size} = socket.assigns
     
     try do
-      # Build query options
-      query_opts = build_query_options(filters, sort_by, sort_dir, page, page_size)
+      # Build optimized query options using composite index patterns
+      query_opts = build_optimized_query_options(filters, sort_by, sort_dir, page, page_size)
       
-      # Load cases with associations
-      cases = Enforcement.list_cases!(query_opts)
+      # Use optimized filtering function that leverages composite indexes
+      cases = Enforcement.list_cases_with_filters!(query_opts)
       
-      # Get total count for pagination
-      count_opts = [filter: build_ash_filter(filters)]
+      # Get total count using same optimized filter
+      count_opts = [filter: build_optimized_filter(filters)]
       total_cases = Enforcement.count_cases!(count_opts)
       
       socket
@@ -211,49 +211,95 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     end
   end
 
-  defp build_query_options(filters, sort_by, sort_dir, page, page_size) do
+  defp build_optimized_query_options(filters, sort_by, sort_dir, page, page_size) do
     offset = (page - 1) * page_size
     
     [
-      filter: build_ash_filter(filters),
+      filter: build_optimized_filter(filters),
       sort: build_sort_options(sort_by, sort_dir),
-      page: [limit: page_size, offset: offset],
+      limit: page_size,
+      offset: offset,
       load: [:offender, :agency]
     ]
   end
 
-  defp build_ash_filter(filters) do
-    Enum.reduce(filters, [], fn
-      {:agency_id, id}, acc when is_binary(id) and id != "" ->
-        [{:agency_id, id} | acc]
-      
-      {:date_from, date}, acc when is_binary(date) and date != "" ->
+  # Optimized filter building that formats data for the Enforcement context
+  # The Enforcement context now handles composite index optimization internally
+  defp build_optimized_filter(filters) do
+    %{}
+    |> add_filter_if_present(filters, :agency_id)
+    |> add_date_range_filters(filters)
+    |> add_fine_range_filters(filters) 
+    |> add_search_filter(filters)
+    |> add_filter_if_present(filters, :regulator_id)
+  end
+  
+  defp add_filter_if_present(acc, filters, key) do
+    case filters[key] do
+      value when is_binary(value) and value != "" -> Map.put(acc, key, value)
+      _ -> acc
+    end
+  end
+  
+  defp add_date_range_filters(acc, filters) do
+    date_conditions = []
+    
+    date_conditions = case filters[:date_from] do
+      date when is_binary(date) and date != "" ->
         case Date.from_iso8601(date) do
-          {:ok, parsed_date} -> [{:offence_action_date, [greater_than_or_equal_to: parsed_date]} | acc]
-          _ -> acc
+          {:ok, parsed_date} -> [{:greater_than_or_equal_to, parsed_date} | date_conditions]
+          _ -> date_conditions
         end
-      
-      {:date_to, date}, acc when is_binary(date) and date != "" ->
+      _ -> date_conditions
+    end
+    
+    date_conditions = case filters[:date_to] do
+      date when is_binary(date) and date != "" ->
         case Date.from_iso8601(date) do
-          {:ok, parsed_date} -> [{:offence_action_date, [less_than_or_equal_to: parsed_date]} | acc]
-          _ -> acc
+          {:ok, parsed_date} -> [{:less_than_or_equal_to, parsed_date} | date_conditions]
+          _ -> date_conditions
         end
-      
-      {:min_fine, amount}, acc when is_binary(amount) and amount != "" ->
+      _ -> date_conditions
+    end
+    
+    if date_conditions != [] do
+      Map.put(acc, :offence_action_date, date_conditions)
+    else
+      acc
+    end
+  end
+  
+  defp add_fine_range_filters(acc, filters) do
+    fine_conditions = []
+    
+    fine_conditions = case filters[:min_fine] do
+      amount when is_binary(amount) and amount != "" ->
         case Decimal.parse(amount) do
-          {decimal_amount, _} -> [{:offence_fine, [greater_than_or_equal_to: decimal_amount]} | acc]
-          :error -> acc
+          {decimal_amount, _} -> [{:greater_than_or_equal_to, decimal_amount} | fine_conditions]
+          :error -> fine_conditions
         end
-      
-      {:max_fine, amount}, acc when is_binary(amount) and amount != "" ->
+      _ -> fine_conditions
+    end
+    
+    fine_conditions = case filters[:max_fine] do
+      amount when is_binary(amount) and amount != "" ->
         case Decimal.parse(amount) do
-          {decimal_amount, _} -> [{:offence_fine, [less_than_or_equal_to: decimal_amount]} | acc]
-          :error -> acc
+          {decimal_amount, _} -> [{:less_than_or_equal_to, decimal_amount} | fine_conditions]
+          :error -> fine_conditions
         end
-      
-      {:search, query}, acc when is_binary(query) and query != "" ->
-        # Implement search across multiple fields
-        # Search in: offender name, case regulator_id, and offence_breaches
+      _ -> fine_conditions
+    end
+    
+    if fine_conditions != [] do
+      Map.put(acc, :offence_fine, fine_conditions)
+    else
+      acc
+    end
+  end
+  
+  defp add_search_filter(acc, filters) do
+    case filters[:search] do
+      query when is_binary(query) and query != "" ->
         trimmed_query = String.trim(query)
         
         # Limit search term length to prevent database issues
@@ -264,12 +310,9 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
         end
         
         search_pattern = "%#{limited_query}%"
-        
-        # Pass search pattern to Enforcement context
-        [{:search, search_pattern} | acc]
-      
-      _, acc -> acc
-    end)
+        Map.put(acc, :search, search_pattern)
+      _ -> acc
+    end
   end
 
   defp build_sort_options(sort_by, sort_dir) do

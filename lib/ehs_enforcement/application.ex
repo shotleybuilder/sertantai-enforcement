@@ -26,6 +26,9 @@ defmodule EhsEnforcement.Application do
       EhsEnforcementWeb.Endpoint
     ]
 
+    # Initialize caching for performance optimization
+    EhsEnforcement.Enforcement.init_cache()
+
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: EhsEnforcement.Supervisor]

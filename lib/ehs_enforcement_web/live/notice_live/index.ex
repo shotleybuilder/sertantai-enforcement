@@ -150,11 +150,15 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   # Private functions
 
   defp load_notices(socket) do
-    query_opts = build_query_opts(socket)
+    query_opts = build_optimized_query_opts(socket)
     
     try do
+      # Use optimized filtering function that leverages composite indexes
       notices = Enforcement.list_notices_with_filters!(query_opts)
-      total = count_notices(socket)
+      
+      # Get total count using same optimized filter
+      filter = build_optimized_notice_filter(socket)
+      total = Enforcement.count_notices!([filter: filter])
       
       socket
       |> assign(:notices, notices)
@@ -170,86 +174,76 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     end
   end
 
-  defp build_query_opts(socket) do
-    %{
-      filters: socket.assigns.filters,
-      search_query: socket.assigns.search_query,
-      sort_by: socket.assigns.sort_by,
-      sort_order: socket.assigns.sort_order,
-      page: socket.assigns.page,
-      page_size: socket.assigns.page_size
-    }
-    |> build_ash_query_opts()
+  defp build_optimized_query_opts(socket) do
+    %{filters: filters, search_query: search_query, sort_by: sort_by, sort_order: sort_order, 
+      page: page, page_size: page_size} = socket.assigns
+    
+    offset = (page - 1) * page_size
+    
+    [
+      filter: build_optimized_notice_filter(socket),
+      sort: [{sort_by, sort_order}],
+      limit: page_size,
+      offset: offset,
+      load: [:agency, :offender]
+    ]
   end
 
-  defp build_ash_query_opts(params) do
-    opts = []
+  defp build_optimized_notice_filter(socket) do
+    filters = socket.assigns.filters
+    search_query = socket.assigns.search_query
     
-    # Build filter
-    filter = build_filter(params.filters, params.search_query)
-    opts = if filter != [], do: [{:filter, filter} | opts], else: opts
-    
-    # Add sort
-    sort = [{params.sort_by, params.sort_order}]
-    opts = [{:sort, sort} | opts]
-    
-    # Add limit for pagination (not page option)
-    limit = params.page_size
-    opts = [{:limit, limit} | opts]
-    
-    # Add offset for pagination
-    offset = (params.page - 1) * params.page_size
-    opts = if offset > 0, do: [{:offset, offset} | opts], else: opts
-    
-    # Load relationships
-    [{:load, [:agency, :offender]} | opts]
+    %{}
+    |> add_notice_filter_if_present(filters, :agency_id)
+    |> add_notice_filter_if_present(filters, :offence_action_type)
+    |> add_notice_date_filters(filters)
+    |> add_notice_search_filter(search_query)
   end
-
-  defp build_filter(filters, search_query) do
-    filter = []
-    
-    # Add filters
-    filter = if filters[:agency_id], do: [{:agency_id, filters[:agency_id]} | filter], else: filter
-    filter = if filters[:offence_action_type], do: [{:offence_action_type, filters[:offence_action_type]} | filter], else: filter
-    
-    # Add date range filters
-    filter = if filters[:date_from] do
-      case Date.from_iso8601(filters[:date_from]) do
-        {:ok, date} -> [{:date_from, date} | filter]
-        {:error, _} -> filter  # Ignore invalid dates
-      end
-    else
-      filter
+  
+  defp add_notice_filter_if_present(acc, filters, key) do
+    case filters[key] do
+      value when is_binary(value) and value != "" -> Map.put(acc, key, value)
+      _ -> acc
     end
-    
-    filter = if filters[:date_to] do
-      case Date.from_iso8601(filters[:date_to]) do
-        {:ok, date} -> [{:date_to, date} | filter]
-        {:error, _} -> filter  # Ignore invalid dates
-      end
-    else
-      filter
+  end
+  
+  defp add_notice_date_filters(acc, filters) do
+    acc
+    |> add_date_from_filter(filters)
+    |> add_date_to_filter(filters)
+  end
+  
+  defp add_date_from_filter(acc, filters) do
+    case filters[:date_from] do
+      date when is_binary(date) and date != "" ->
+        case Date.from_iso8601(date) do
+          {:ok, parsed_date} -> Map.put(acc, :date_from, parsed_date)
+          _ -> acc
+        end
+      _ -> acc
     end
-    
-    # Add search
+  end
+  
+  defp add_date_to_filter(acc, filters) do
+    case filters[:date_to] do
+      date when is_binary(date) and date != "" ->
+        case Date.from_iso8601(date) do
+          {:ok, parsed_date} -> Map.put(acc, :date_to, parsed_date)
+          _ -> acc
+        end
+      _ -> acc
+    end
+  end
+  
+  defp add_notice_search_filter(acc, search_query) do
     if search_query != "" do
-      [{:search, "%#{search_query}%"} | filter]
+      Map.put(acc, :search, "%#{search_query}%")
     else
-      filter
+      acc
     end
   end
 
 
-  defp count_notices(socket) do
-    filter = build_filter(socket.assigns.filters, socket.assigns.search_query)
-    query_opts = if filter != [], do: [filter: filter], else: []
-    
-    try do
-      Enforcement.count_notices!(query_opts)
-    rescue
-      _ -> 0
-    end
-  end
 
   defp parse_filters(params) do
     %{}

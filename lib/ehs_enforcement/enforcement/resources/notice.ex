@@ -21,6 +21,15 @@ defmodule EhsEnforcement.Enforcement.Notice do
       
       # Composite index for common query patterns (agency + date filtering)
       index [:agency_id, :offence_action_date], name: "notices_agency_date_index"
+      
+      # Text search indexes for regulator_id and offence_breaches
+      index [:regulator_id], name: "notices_regulator_id_index"
+      
+      # Action type filtering index
+      index [:offence_action_type], name: "notices_offence_action_type_index"
+      
+      # Text search index on offence_breaches (for ILIKE queries)
+      index [:offence_breaches], name: "notices_offence_breaches_index"
     end
   end
 

@@ -9,6 +9,13 @@ defmodule EhsEnforcement.Enforcement do
   
   require Ash.Query
 
+  # Cache configuration for common filter combinations
+  @cache_ttl 5 * 60 * 1000 # 5 minutes in milliseconds
+  @cache_name :enforcement_cache
+
+  # Performance monitoring configuration
+  @slow_query_threshold 1000 # Log queries taking longer than 1000ms
+
   resources do
     resource EhsEnforcement.Enforcement.Agency do
       define :list_agencies, action: :read
@@ -154,31 +161,12 @@ defmodule EhsEnforcement.Enforcement do
   def list_cases_with_filters(opts \\ []) do
     query = EhsEnforcement.Enforcement.Case
     
-    # Apply filters if provided
+    # Apply filters if provided - optimized for composite index usage
     query = case opts[:filter] do
       nil -> query
       filters ->
-        Enum.reduce(filters, query, fn
-          {:regulator_id, value}, q -> Ash.Query.filter(q, regulator_id == ^value)
-          {:agency_id, value}, q -> Ash.Query.filter(q, agency_id == ^value)
-          {:offence_action_date, conditions}, q when is_list(conditions) ->
-            Enum.reduce(conditions, q, fn
-              {:greater_than_or_equal_to, date}, acc_q -> Ash.Query.filter(acc_q, offence_action_date >= ^date)
-              {:less_than_or_equal_to, date}, acc_q -> Ash.Query.filter(acc_q, offence_action_date <= ^date)
-              _, acc_q -> acc_q
-            end)
-          {:offence_fine, conditions}, q when is_list(conditions) ->
-            Enum.reduce(conditions, q, fn
-              {:greater_than_or_equal_to, amount}, acc_q -> Ash.Query.filter(acc_q, offence_fine >= ^amount)
-              {:less_than_or_equal_to, amount}, acc_q -> Ash.Query.filter(acc_q, offence_fine <= ^amount)
-              _, acc_q -> acc_q
-            end)
-          {:search, pattern}, q ->
-            # Handle search with OR conditions using proper Ash syntax
-            # Search in: regulator_id, offence_breaches, and offender.name
-            Ash.Query.filter(q, ilike(regulator_id, ^pattern) or ilike(offence_breaches, ^pattern) or ilike(offender.name, ^pattern))
-          _, q -> q
-        end)
+        # Build comprehensive filter expression to leverage composite indexes
+        build_optimized_case_filter(query, filters)
     end
     
     # Apply load if provided
@@ -210,6 +198,107 @@ defmodule EhsEnforcement.Enforcement do
     Ash.read(query)
   end
 
+  # Optimized filter building to leverage composite indexes (agency_id, offence_action_date)
+  defp build_optimized_case_filter(query, filters) do
+    # Group filters for optimal index usage
+    agency_filter = filters[:agency_id]
+    date_filters = filters[:offence_action_date] || []
+    fine_filters = filters[:offence_fine] || []
+    search_pattern = filters[:search]
+    regulator_id_filter = filters[:regulator_id]
+    
+    # Build filter expression to use composite indexes efficiently
+    query = if agency_filter && Enum.any?(date_filters) do
+      # Use composite index (agency_id, offence_action_date) - most efficient path
+      date_conditions = build_date_conditions(date_filters)
+      case date_conditions do
+        {start_date, end_date} when not is_nil(start_date) and not is_nil(end_date) ->
+          Ash.Query.filter(query, 
+            agency_id == ^agency_filter and 
+            offence_action_date >= ^start_date and 
+            offence_action_date <= ^end_date
+          )
+        {start_date, nil} when not is_nil(start_date) ->
+          Ash.Query.filter(query, 
+            agency_id == ^agency_filter and 
+            offence_action_date >= ^start_date
+          )
+        {nil, end_date} when not is_nil(end_date) ->
+          Ash.Query.filter(query, 
+            agency_id == ^agency_filter and 
+            offence_action_date <= ^end_date
+          )
+        _ ->
+          Ash.Query.filter(query, agency_id == ^agency_filter)
+      end
+    else
+      # Apply individual filters in optimal order
+      query
+      |> apply_if_present(agency_filter, fn q, value -> 
+        Ash.Query.filter(q, agency_id == ^value) 
+      end)
+      |> apply_date_filters(date_filters)
+    end
+    
+    # Apply remaining filters
+    query
+    |> apply_if_present(regulator_id_filter, fn q, value ->
+      Ash.Query.filter(q, regulator_id == ^value)
+    end)
+    |> apply_fine_filters(fine_filters)
+    |> apply_search_filter(search_pattern)
+  end
+  
+  # Helper functions for optimized filtering
+  defp apply_if_present(query, nil, _fun), do: query
+  defp apply_if_present(query, value, fun), do: fun.(query, value)
+  
+  defp build_date_conditions(date_filters) do
+    start_date = Enum.find_value(date_filters, fn
+      {:greater_than_or_equal_to, date} -> date
+      _ -> nil
+    end)
+    
+    end_date = Enum.find_value(date_filters, fn
+      {:less_than_or_equal_to, date} -> date
+      _ -> nil
+    end)
+    
+    {start_date, end_date}
+  end
+  
+  defp apply_date_filters(query, []), do: query
+  defp apply_date_filters(query, date_filters) do
+    Enum.reduce(date_filters, query, fn
+      {:greater_than_or_equal_to, date}, acc_q -> 
+        Ash.Query.filter(acc_q, offence_action_date >= ^date)
+      {:less_than_or_equal_to, date}, acc_q -> 
+        Ash.Query.filter(acc_q, offence_action_date <= ^date)
+      _, acc_q -> acc_q
+    end)
+  end
+  
+  defp apply_fine_filters(query, []), do: query
+  defp apply_fine_filters(query, fine_filters) do
+    Enum.reduce(fine_filters, query, fn
+      {:greater_than_or_equal_to, amount}, acc_q -> 
+        Ash.Query.filter(acc_q, offence_fine >= ^amount)
+      {:less_than_or_equal_to, amount}, acc_q -> 
+        Ash.Query.filter(acc_q, offence_fine <= ^amount)
+      _, acc_q -> acc_q
+    end)
+  end
+  
+  defp apply_search_filter(query, nil), do: query
+  defp apply_search_filter(query, pattern) when is_binary(pattern) do
+    # Optimized search using OR conditions with proper Ash syntax
+    Ash.Query.filter(query, 
+      ilike(regulator_id, ^pattern) or 
+      ilike(offence_breaches, ^pattern) or 
+      ilike(offender.name, ^pattern)
+    )
+  end
+
   def list_cases_with_filters!(opts \\ []) do
     case list_cases_with_filters(opts) do
       {:ok, cases} -> cases
@@ -220,23 +309,10 @@ defmodule EhsEnforcement.Enforcement do
   def count_cases!(opts \\ []) do
     query = EhsEnforcement.Enforcement.Case
     
-    # Apply filters if provided
+    # Apply filters if provided - use same optimized filtering as list function
     query = case opts[:filter] do
       nil -> query
-      filters ->
-        Enum.reduce(filters, query, fn
-          {:regulator_id, value}, q -> Ash.Query.filter(q, regulator_id == ^value)
-          {:agency_id, value}, q -> Ash.Query.filter(q, agency_id == ^value)
-          {:offence_action_date, conditions}, q when is_list(conditions) ->
-            Enum.reduce(conditions, q, fn
-              {:greater_than_or_equal_to, date}, acc_q -> Ash.Query.filter(acc_q, offence_action_date >= ^date)
-              {:less_than_or_equal_to, date}, acc_q -> Ash.Query.filter(acc_q, offence_action_date <= ^date)
-              _, acc_q -> acc_q
-            end)
-          {:search, pattern}, q ->
-            Ash.Query.filter(q, ilike(regulator_id, ^pattern) or ilike(offence_breaches, ^pattern) or ilike(offender.name, ^pattern))
-          _, q -> q
-        end)
+      filters -> build_optimized_case_filter(query, filters)
     end
     
     case Ash.count(query) do
@@ -263,10 +339,10 @@ defmodule EhsEnforcement.Enforcement do
   def count_notices!(opts \\ []) do
     query = EhsEnforcement.Enforcement.Notice
     
-    # Apply filters if provided
+    # Apply filters if provided - use same optimized filtering as list function
     query = case opts[:filter] do
       nil -> query
-      filters -> Ash.Query.filter(query, ^filters)
+      filters -> build_optimized_notice_filter(query, filters)
     end
     
     case Ash.count(query) do
@@ -275,24 +351,13 @@ defmodule EhsEnforcement.Enforcement do
     end
   end
 
-
   def list_notices_with_filters!(opts \\ []) do
     query = EhsEnforcement.Enforcement.Notice
     
-    # Apply complex filters if provided (beyond what code interfaces handle)
+    # Apply complex filters if provided - optimized for composite index usage
     query = case opts[:filter] do
       nil -> query
-      filters ->
-        Enum.reduce(filters, query, fn
-          {:regulator_id, value}, q -> Ash.Query.filter(q, regulator_id == ^value)
-          {:agency_id, value}, q -> Ash.Query.filter(q, agency_id == ^value)
-          {:date_from, date}, q -> Ash.Query.filter(q, offence_action_date >= ^date)
-          {:date_to, date}, q -> Ash.Query.filter(q, offence_action_date <= ^date)
-          {:search, pattern}, q ->
-            # Handle search with OR conditions
-            Ash.Query.filter(q, ilike(regulator_id, ^pattern) or ilike(offence_breaches, ^pattern) or ilike(offender.name, ^pattern))
-          _, q -> q
-        end)
+      filters -> build_optimized_notice_filter(query, filters)
     end
     
     # Apply sort if provided  
@@ -313,9 +378,363 @@ defmodule EhsEnforcement.Enforcement do
       limit -> Ash.Query.limit(query, limit)
     end
     
+    # Apply offset if provided (for consistent pagination with cases)
+    query = case opts[:offset] do
+      nil -> query
+      offset -> Ash.Query.offset(query, offset)
+    end
+    
     case Ash.read(query) do
       {:ok, notices} -> notices
       {:error, error} -> raise error
     end
+  end
+
+  # Optimized filter building for notices to leverage composite indexes (agency_id, offence_action_date)
+  defp build_optimized_notice_filter(query, filters) do
+    # Group filters for optimal index usage
+    agency_filter = filters[:agency_id]
+    date_from = filters[:date_from]
+    date_to = filters[:date_to]
+    search_pattern = filters[:search]
+    regulator_id_filter = filters[:regulator_id]
+    action_type_filter = filters[:offence_action_type]
+    
+    # Build filter expression to use composite indexes efficiently
+    query = if agency_filter && (date_from || date_to) do
+      # Use composite index (agency_id, offence_action_date) - most efficient path
+      case {date_from, date_to} do
+        {start_date, end_date} when not is_nil(start_date) and not is_nil(end_date) ->
+          Ash.Query.filter(query, 
+            agency_id == ^agency_filter and 
+            offence_action_date >= ^start_date and 
+            offence_action_date <= ^end_date
+          )
+        {start_date, nil} when not is_nil(start_date) ->
+          Ash.Query.filter(query, 
+            agency_id == ^agency_filter and 
+            offence_action_date >= ^start_date
+          )
+        {nil, end_date} when not is_nil(end_date) ->
+          Ash.Query.filter(query, 
+            agency_id == ^agency_filter and 
+            offence_action_date <= ^end_date
+          )
+        _ ->
+          Ash.Query.filter(query, agency_id == ^agency_filter)
+      end
+    else
+      # Apply individual filters in optimal order
+      query
+      |> apply_if_present(agency_filter, fn q, value -> 
+        Ash.Query.filter(q, agency_id == ^value) 
+      end)
+      |> apply_if_present(date_from, fn q, date ->
+        Ash.Query.filter(q, offence_action_date >= ^date)
+      end)
+      |> apply_if_present(date_to, fn q, date ->
+        Ash.Query.filter(q, offence_action_date <= ^date)
+      end)
+    end
+    
+    # Apply remaining filters
+    query
+    |> apply_if_present(regulator_id_filter, fn q, value ->
+      Ash.Query.filter(q, regulator_id == ^value)
+    end)
+    |> apply_if_present(action_type_filter, fn q, value ->
+      Ash.Query.filter(q, offence_action_type == ^value)
+    end)
+    |> apply_search_filter(search_pattern)
+  end
+
+  # Cached query functions for common filter combinations
+
+  @doc """
+  Cached version of list_cases_with_filters! for frequently used filter combinations.
+  
+  Uses a simple cache key based on common filter patterns to avoid repeated database queries.
+  Cache TTL is #{@cache_ttl / 1000} seconds.
+  """
+  def list_cases_with_filters_cached!(opts \\ []) do
+    cache_key = build_cache_key("cases", opts)
+    
+    case get_from_cache(cache_key) do
+      {:hit, result} -> result
+      :miss ->
+        result = list_cases_with_filters!(opts)
+        put_in_cache(cache_key, result)
+        result
+    end
+  end
+
+  @doc """
+  Cached version of list_notices_with_filters! for frequently used filter combinations.
+  """
+  def list_notices_with_filters_cached!(opts \\ []) do
+    cache_key = build_cache_key("notices", opts)
+    
+    case get_from_cache(cache_key) do
+      {:hit, result} -> result
+      :miss ->
+        result = list_notices_with_filters!(opts)
+        put_in_cache(cache_key, result)
+        result
+    end
+  end
+
+  @doc """
+  Cached count functions for dashboard metrics and pagination.
+  """
+  def count_cases_cached!(opts \\ []) do
+    cache_key = build_cache_key("cases_count", opts)
+    
+    case get_from_cache(cache_key) do
+      {:hit, result} -> result
+      :miss ->
+        result = count_cases!(opts)
+        put_in_cache(cache_key, result)
+        result
+    end
+  end
+
+  def count_notices_cached!(opts \\ []) do
+    cache_key = build_cache_key("notices_count", opts)
+    
+    case get_from_cache(cache_key) do
+      {:hit, result} -> result
+      :miss ->
+        result = count_notices!(opts)
+        put_in_cache(cache_key, result)
+        result
+    end
+  end
+
+  # Cache management functions
+  
+  defp build_cache_key(resource_type, opts) do
+    # Create a stable cache key based on filter options
+    filter_key = case opts[:filter] do
+      nil -> "no_filter"
+      filters -> 
+        filters
+        |> Enum.sort()
+        |> Enum.map(fn {k, v} -> "#{k}:#{cache_value(v)}" end)
+        |> Enum.join("|")
+    end
+    
+    pagination_key = case {opts[:limit], opts[:offset]} do
+      {nil, nil} -> "no_page"
+      {limit, offset} -> "limit:#{limit || "nil"}|offset:#{offset || "nil"}"
+    end
+    
+    "#{resource_type}:#{filter_key}:#{pagination_key}"
+  end
+
+  defp cache_value(value) when is_list(value) do
+    value 
+    |> Enum.map(&cache_value/1)
+    |> Enum.join(",")
+  end
+  
+  defp cache_value({key, val}), do: "#{key}=#{cache_value(val)}"
+  defp cache_value(%Date{} = date), do: Date.to_iso8601(date)
+  defp cache_value(%Decimal{} = decimal), do: Decimal.to_string(decimal)
+  defp cache_value(value) when is_binary(value), do: String.slice(value, 0, 50) # Limit key length
+  defp cache_value(value), do: inspect(value)
+
+  defp get_from_cache(key) do
+    case :ets.lookup(@cache_name, key) do
+      [{^key, value, expires_at}] ->
+        if System.monotonic_time(:millisecond) < expires_at do
+          {:hit, value}
+        else
+          :ets.delete(@cache_name, key)
+          :miss
+        end
+      [] -> :miss
+    end
+  end
+
+  defp put_in_cache(key, value) do
+    expires_at = System.monotonic_time(:millisecond) + @cache_ttl
+    :ets.insert(@cache_name, {key, value, expires_at})
+    value
+  end
+
+  @doc """
+  Clear all cached results. Useful when data is updated.
+  """
+  def clear_cache do
+    case :ets.whereis(@cache_name) do
+      :undefined -> :ok
+      _pid -> 
+        :ets.delete_all_objects(@cache_name)
+        :ok
+    end
+  end
+
+  @doc """
+  Initialize the cache table. Called during application startup.
+  """
+  def init_cache do
+    case :ets.whereis(@cache_name) do
+      :undefined ->
+        :ets.new(@cache_name, [:set, :public, :named_table])
+        :ok
+      _pid -> :ok
+    end
+  end
+
+  # Performance monitoring functions
+
+  @doc """
+  Monitored version of list_cases_with_filters! that logs slow queries.
+  """
+  def list_cases_with_filters_monitored!(opts \\ []) do
+    monitor_query_performance("list_cases_with_filters!", opts, fn ->
+      list_cases_with_filters!(opts)
+    end)
+  end
+
+  @doc """
+  Monitored version of list_notices_with_filters! that logs slow queries.
+  """
+  def list_notices_with_filters_monitored!(opts \\ []) do
+    monitor_query_performance("list_notices_with_filters!", opts, fn ->
+      list_notices_with_filters!(opts)
+    end)
+  end
+
+  @doc """
+  Monitored version of count_cases! that logs slow queries.
+  """
+  def count_cases_monitored!(opts \\ []) do
+    monitor_query_performance("count_cases!", opts, fn ->
+      count_cases!(opts)
+    end)
+  end
+
+  @doc """
+  Monitored version of count_notices! that logs slow queries.
+  """
+  def count_notices_monitored!(opts \\ []) do
+    monitor_query_performance("count_notices!", opts, fn ->
+      count_notices!(opts)
+    end)
+  end
+
+  # Performance monitoring helpers
+
+  defp monitor_query_performance(function_name, opts, query_fn) do
+    start_time = System.monotonic_time(:millisecond)
+    
+    try do
+      result = query_fn.()
+      end_time = System.monotonic_time(:millisecond)
+      query_time = end_time - start_time
+      
+      # Log slow queries
+      if query_time > @slow_query_threshold do
+        log_slow_query(function_name, opts, query_time, length_or_count(result))
+      end
+      
+      # Log metrics for monitoring (optional telemetry events could be added here)
+      log_query_metrics(function_name, opts, query_time, length_or_count(result))
+      
+      result
+      
+    rescue
+      error ->
+        end_time = System.monotonic_time(:millisecond)
+        query_time = end_time - start_time
+        
+        log_query_error(function_name, opts, query_time, error)
+        reraise error, __STACKTRACE__
+    end
+  end
+
+  defp length_or_count(result) when is_list(result), do: length(result)
+  defp length_or_count(result) when is_integer(result), do: result
+  defp length_or_count(_), do: "unknown"
+
+  defp log_slow_query(function_name, opts, query_time_ms, result_count) do
+    require Logger
+    
+    filter_summary = summarize_filters(opts[:filter])
+    
+    Logger.warning("""
+    Slow query detected in Enforcement context
+    Function: #{function_name}
+    Query time: #{query_time_ms}ms (threshold: #{@slow_query_threshold}ms)
+    Result count: #{result_count}
+    Filters: #{filter_summary}
+    Options: #{inspect(opts, limit: :infinity, printable_limit: :infinity)}
+    """)
+  end
+
+  defp log_query_metrics(function_name, opts, query_time_ms, result_count) do
+    # This could be extended to send metrics to external monitoring systems
+    # For now, we'll just log debug info for queries over 100ms
+    if query_time_ms > 100 do
+      require Logger
+      
+      filter_summary = summarize_filters(opts[:filter])
+      
+      Logger.debug("""
+      Query performance metrics
+      Function: #{function_name}
+      Query time: #{query_time_ms}ms
+      Result count: #{result_count}  
+      Filters: #{filter_summary}
+      """)
+    end
+  end
+
+  defp log_query_error(function_name, opts, query_time_ms, error) do
+    require Logger
+    
+    filter_summary = summarize_filters(opts[:filter])
+    
+    Logger.error("""
+    Query error in Enforcement context
+    Function: #{function_name}
+    Query time: #{query_time_ms}ms
+    Error: #{inspect(error)}
+    Filters: #{filter_summary}
+    Options: #{inspect(opts, limit: :infinity)}
+    """)
+  end
+
+  defp summarize_filters(nil), do: "none"
+  defp summarize_filters(filters) when is_map(filters) do
+    filters
+    |> Enum.map(fn
+      {key, value} when is_list(value) -> "#{key}:#{length(value)}_conditions"
+      {key, value} when is_binary(value) -> "#{key}:#{String.slice(value, 0, 20)}..."
+      {key, %Date{}} -> "#{key}:date"
+      {key, %Decimal{}} -> "#{key}:decimal"
+      {key, _value} -> "#{key}:value"
+    end)
+    |> Enum.join(", ")
+  end
+  defp summarize_filters(filters), do: inspect(filters, limit: 50)
+
+  @doc """
+  Get query performance statistics for monitoring dashboards.
+  This could be extended to track metrics in ETS/database for reporting.
+  """
+  def get_performance_stats do
+    # In a production system, this would retrieve actual performance metrics
+    # For now, return a placeholder that could be extended
+    %{
+      slow_query_threshold_ms: @slow_query_threshold,
+      cache_ttl_seconds: @cache_ttl / 1000,
+      monitoring_enabled: true,
+      cache_status: case :ets.whereis(@cache_name) do
+        :undefined -> "not_initialized"
+        _pid -> "active"
+      end
+    }
   end
 end

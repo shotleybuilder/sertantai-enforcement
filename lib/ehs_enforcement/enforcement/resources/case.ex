@@ -24,6 +24,15 @@ defmodule EhsEnforcement.Enforcement.Case do
       
       # Composite index for common query patterns (agency + date filtering)
       index [:agency_id, :offence_action_date], name: "cases_agency_date_index"
+      
+      # Fine amount filtering index for range queries
+      index [:offence_fine], name: "cases_offence_fine_index"
+      
+      # Text search indexes for regulator_id and offence_breaches
+      index [:regulator_id], name: "cases_regulator_id_index"
+      
+      # Text search index on offence_breaches (for ILIKE queries)
+      index [:offence_breaches], name: "cases_offence_breaches_index"
     end
   end
 
