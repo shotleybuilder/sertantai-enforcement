@@ -22,6 +22,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
     # Subscribe to real-time updates
     PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
     PubSub.subscribe(EhsEnforcement.PubSub, "agency:updates")
+    PubSub.subscribe(EhsEnforcement.PubSub, "metrics:refreshed")
     
     # Load initial data
     agencies = Enforcement.list_agencies!()
@@ -52,8 +53,8 @@ defmodule EhsEnforcementWeb.DashboardLive do
     # Convert cases to recent activity format for the table
     _recent_activity = format_cases_as_recent_activity(recent_cases)
     
-    # Calculate stats
-    stats = calculate_stats(socket.assigns.agencies, recent_cases, socket.assigns.time_period)
+    # Load cached stats instead of calculating in real-time
+    stats = load_cached_stats(socket.assigns.time_period)
     
     # Ensure page is within valid range (recalculate if needed)
     max_page = calculate_max_page(total_recent_cases, socket.assigns.recent_activity_page_size)
@@ -130,7 +131,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
     # Load data using the same approach as handle_params, but with time period filtering
     {recent_cases, total_recent_cases} = load_recent_cases_paginated(updated_socket.assigns.filter_agency, 1, updated_socket.assigns.recent_activity_page_size, period)
     recent_activity = format_cases_as_recent_activity(recent_cases)
-    stats = calculate_stats(updated_socket.assigns.agencies, recent_cases, period)
+    stats = load_cached_stats(period)
     
     {:noreply,
      updated_socket
@@ -292,6 +293,24 @@ defmodule EhsEnforcementWeb.DashboardLive do
   end
 
   @impl true
+  def handle_event("refresh_metrics", _params, socket) do
+    current_user = socket.assigns[:current_user]
+    
+    # Check admin privileges
+    case current_user do
+      %{is_admin: true} ->
+        # Refresh metrics in the background
+        Task.start(fn ->
+          EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:admin)
+        end)
+        
+        {:noreply, put_flash(socket, :info, "Metrics refresh started. Dashboard will update automatically when complete.")}
+      _ ->
+        {:noreply, put_flash(socket, :error, "Admin privileges required to refresh metrics")}
+    end
+  end
+
+  @impl true
   def handle_info({:sync_progress, agency_code, progress}, socket) do
     sync_status = Map.update(
       socket.assigns.sync_status,
@@ -315,7 +334,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
     agencies = Enforcement.list_agencies!()
     {recent_cases, total_recent_cases} = load_recent_cases_paginated(socket.assigns.filter_agency, socket.assigns.recent_activity_page, socket.assigns.recent_activity_page_size, socket.assigns.time_period)
     recent_activity = format_cases_as_recent_activity(recent_cases)
-    stats = calculate_stats(agencies, recent_cases, socket.assigns.time_period)
+    stats = load_cached_stats(socket.assigns.time_period)
     
     sync_status = Map.put(socket.assigns.sync_status, agency_code, %{status: "completed", progress: 100})
     
@@ -341,7 +360,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
     # Reload recent cases when a new case is created
     {recent_cases, total_recent_cases} = load_recent_cases_paginated(socket.assigns.filter_agency, socket.assigns.recent_activity_page, socket.assigns.recent_activity_page_size, socket.assigns.time_period)
     recent_activity = format_cases_as_recent_activity(recent_cases)
-    stats = calculate_stats(socket.assigns.agencies, recent_cases, socket.assigns.time_period)
+    stats = load_cached_stats(socket.assigns.time_period)
     
     {:noreply,
      socket
@@ -349,6 +368,32 @@ defmodule EhsEnforcementWeb.DashboardLive do
      |> assign(:total_recent_cases, total_recent_cases)
      |> assign(:recent_activity, recent_activity)
      |> assign(:stats, stats)}
+  end
+
+  @impl true
+  def handle_info(%Phoenix.Socket.Broadcast{topic: "metrics:refreshed", event: "refresh"}, socket) do
+    # Reload data after metrics are refreshed
+    agencies = Enforcement.list_agencies!()
+    {recent_cases, total_recent_cases} = load_recent_cases_paginated(socket.assigns.filter_agency, socket.assigns.recent_activity_page, socket.assigns.recent_activity_page_size, socket.assigns.time_period)
+    recent_activity = format_cases_as_recent_activity(recent_cases)
+    stats = load_cached_stats(socket.assigns.time_period)
+    
+    {:noreply,
+     socket
+     |> assign(:agencies, agencies)
+     |> assign(:recent_cases, recent_cases)
+     |> assign(:total_recent_cases, total_recent_cases)
+     |> assign(:recent_activity, recent_activity)
+     |> assign(:stats, stats)
+     |> put_flash(:info, "Dashboard metrics updated successfully!")}
+  end
+
+  # Catch-all handler for unmatched PubSub messages to prevent crashes
+  @impl true
+  def handle_info(message, socket) do
+    require Logger
+    Logger.debug("Unhandled message in DashboardLive: #{inspect(message)}")
+    {:noreply, socket}
   end
 
   # Unused function commented out:
@@ -441,6 +486,65 @@ defmodule EhsEnforcementWeb.DashboardLive do
   defp calculate_max_page(total_items, _page_size) when total_items <= 0, do: 1
   defp calculate_max_page(total_items, page_size) do
     ceil(total_items / page_size)
+  end
+
+  defp load_cached_stats(time_period) do
+    # Convert string time period to atom for matching
+    period_atom = case time_period do
+      "week" -> :week
+      "month" -> :month
+      "year" -> :year
+      _ -> :month  # default fallback
+    end
+
+    try do
+      # Load cached metrics for the specific time period
+      case EhsEnforcement.Enforcement.get_current_metrics() do
+        {:ok, metrics} ->
+          # Find the metric for the requested period
+          case Enum.find(metrics, fn metric -> metric.period == period_atom end) do
+            %EhsEnforcement.Enforcement.Metrics{} = metric ->
+              # Convert cached metrics to expected stats format
+              %{
+                recent_cases: metric.recent_cases_count,
+                recent_notices: metric.recent_notices_count,
+                total_cases: metric.total_cases_count,
+                total_notices: metric.total_notices_count,
+                total_fines: metric.total_fines_amount,
+                active_agencies: metric.active_agencies_count,
+                agency_stats: convert_agency_stats_to_list(metric.agency_stats),
+                period: "#{metric.days_ago} days",
+                timeframe: metric.period_label
+              }
+            nil ->
+              # Fallback to real-time calculation if no cached data
+              require Logger
+              Logger.warning("No cached metrics found for period #{period_atom}, falling back to real-time calculation")
+              fallback_calculate_stats(time_period)
+          end
+        {:error, _error} ->
+          # Fallback if metrics loading fails
+          fallback_calculate_stats(time_period)
+      end
+    rescue
+      error ->
+        require Logger
+        Logger.error("Failed to load cached metrics: #{inspect(error)}")
+        fallback_calculate_stats(time_period)
+    end
+  end
+
+  defp convert_agency_stats_to_list(agency_stats_map) when is_map(agency_stats_map) do
+    agency_stats_map
+    |> Map.values()
+    |> Enum.sort_by(& &1["case_count"], :desc)
+  end
+  defp convert_agency_stats_to_list(_), do: []
+
+  defp fallback_calculate_stats(time_period) do
+    # Fallback to original real-time calculation
+    agencies = Enforcement.list_agencies!()
+    calculate_stats(agencies, [], time_period)
   end
 
   defp calculate_stats(agencies, _recent_cases, period) do

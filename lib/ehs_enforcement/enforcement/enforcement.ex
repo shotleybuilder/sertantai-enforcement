@@ -53,6 +53,11 @@ defmodule EhsEnforcement.Enforcement do
       define :create_breach, action: :create
       define :update_breach, action: :update
     end
+    
+    resource EhsEnforcement.Enforcement.Metrics do
+      define :get_current_metrics, action: :get_current
+      define :refresh_metrics, action: :refresh
+    end
   end
 
   forms do
@@ -109,6 +114,10 @@ defmodule EhsEnforcement.Enforcement do
   - `get_breach/2` - Get breach by ID
   - `create_breach/2` - Create new breach
   - `update_breach/3` - Update existing breach
+  
+  ## Metrics Functions
+  - `get_current_metrics/1` - Get current cached dashboard metrics
+  - `refresh_metrics/1` - Refresh all dashboard metrics from current data
   """
 
   # Complex functions that extend beyond basic code interfaces

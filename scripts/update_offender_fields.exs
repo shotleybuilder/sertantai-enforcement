@@ -105,8 +105,8 @@ defmodule OffenderFieldUpdater do
   
   defp build_offender_regulator_map do
     # Get all cases and notices with their regulator_ids and offender_ids
-    {:ok, cases} = Enforcement.read(Enforcement.Case, load: [:offender])
-    {:ok, notices} = Enforcement.read(Enforcement.Notice, load: [:offender])
+    {:ok, cases} = Ash.read(Enforcement.Case, load: [:offender])
+    {:ok, notices} = Ash.read(Enforcement.Notice, load: [:offender])
     
     # Build map: offender_id => [regulator_ids]
     offender_map = %{}
@@ -203,8 +203,8 @@ defmodule OffenderFieldUpdater do
     
     if regulator_ids == [] do
       Logger.warning("No regulator_ids found for offender #{offender_id}")
-      return :skipped
-    end
+      :skipped
+    else
     
     # Find the first Airtable record that has the additional offender fields we need
     airtable_record = Enum.find_value(regulator_ids, fn regulator_id ->
@@ -214,39 +214,41 @@ defmodule OffenderFieldUpdater do
       end
     end)
     
-    if not airtable_record do
-      Logger.warning("No Airtable data found for offender #{offender_id} (regulator_ids: #{inspect(regulator_ids)})")
-      return :skipped
-    end
+      if not airtable_record do
+        Logger.warning("No Airtable data found for offender #{offender_id} (regulator_ids: #{inspect(regulator_ids)})")
+        :skipped
+      else
     
-    # Get current offender
-    case Enforcement.get(Enforcement.Offender, offender_id) do
-      {:ok, offender} ->
-        update_attrs = build_update_attrs(airtable_record, offender)
+        # Get current offender
+        case Ash.get(Enforcement.Offender, offender_id) do
+          {:ok, offender} ->
+            update_attrs = build_update_attrs(airtable_record, offender)
         
-        if update_attrs != %{} do
-          if @dry_run do
-            Logger.info("DRY RUN: Would update offender #{offender_id} with: #{inspect(update_attrs)}")
-            :updated
-          else
-            case Ash.update(offender, update_attrs) do
-              {:ok, _updated_offender} ->
-                Logger.debug("Updated offender #{offender_id} with #{map_size(update_attrs)} fields")
+            if update_attrs != %{} do
+              if @dry_run do
+                Logger.info("DRY RUN: Would update offender #{offender_id} with: #{inspect(update_attrs)}")
                 :updated
-                
-              {:error, error} ->
-                Logger.error("Failed to update offender #{offender_id}: #{inspect(error)}")
-                :error
+              else
+                case Ash.update(offender, update_attrs) do
+                  {:ok, _updated_offender} ->
+                    Logger.debug("Updated offender #{offender_id} with #{map_size(update_attrs)} fields")
+                    :updated
+                    
+                  {:error, error} ->
+                    Logger.error("Failed to update offender #{offender_id}: #{inspect(error)}")
+                    :error
+                end
+              end
+            else
+              Logger.debug("No updates needed for offender #{offender_id}")
+              :skipped
             end
-          end
-        else
-          Logger.debug("No updates needed for offender #{offender_id}")
-          :skipped
-        end
         
-      {:error, error} ->
-        Logger.error("Failed to fetch offender #{offender_id}: #{inspect(error)}")
-        :error
+          {:error, error} ->
+            Logger.error("Failed to fetch offender #{offender_id}: #{inspect(error)}")
+            :error
+      end
+      end
     end
   end
   
