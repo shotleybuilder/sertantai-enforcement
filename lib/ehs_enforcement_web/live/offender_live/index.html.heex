@@ -1,403 +1,313 @@
-<div class="space-y-6">
+<div class="min-h-screen bg-gray-50">
   <!-- Header -->
-  <div class="flex justify-between items-center">
-    <div>
-      <h1 class="text-3xl font-bold text-gray-900">Offender Management</h1>
-      <p class="mt-1 text-sm text-gray-600">All Offenders</p>
-    </div>
-    
-    <div class="flex gap-4">
-      <button
-        disabled
-        data-role="export-csv"
-        title="Login required to export data"
-        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-400 bg-gray-200 cursor-not-allowed opacity-50"
-      >
-        <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        Export CSV
-      </button>
-    </div>
-  </div>
-
-  <!-- Analytics Section -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <!-- Industry Analysis -->
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-      <div class="p-5">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Industry Analysis</h3>
-        <div class="mt-2 max-w-xl text-sm text-gray-500">
-          <div class="space-y-2">
-            <%= for {industry, stats} <- @industry_stats do %>
-              <div class="flex justify-between">
-                <span><%= industry %></span>
-                <span class="font-medium"><%= stats.count %> offenders</span>
-              </div>
-            <% end %>
+  <div class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="py-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Offender Management</h1>
+            <p class="mt-2 text-sm text-gray-700">
+              Enforcement Offenders
+              <%= if @total_count > 0 do %>
+                · <%= @total_count %> offenders
+              <% else %>
+                · No offenders found
+              <% end %>
+            </p>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Top Offenders -->
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-      <div class="p-5">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Top Offenders</h3>
-        <div class="mt-2 max-w-xl text-sm text-gray-500">
-          <div class="space-y-2">
-            <%= for offender <- Enum.take(@top_offenders, 5) do %>
-              <div data-role="top-offender" data-offender-id={offender.id} class="flex justify-between">
-                <span class="truncate"><%= offender.name %></span>
-                <span class="font-medium"><%= format_currency(offender.total_fines) %></span>
-              </div>
-            <% end %>
+          
+          <div class="flex space-x-3">
+            <!-- Export Button -->
+            <button
+              phx-click="export_csv"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" />
+              Export CSV
+            </button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Repeat Offenders -->
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-      <div class="p-5">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Repeat Offenders</h3>
-        <div class="mt-2">
-          <div class="text-3xl font-bold text-red-600"><%= @repeat_offender_percentage %>%</div>
-          <p class="text-sm text-gray-500">of offenders have multiple violations</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Search and Filters -->
-  <div class="bg-white shadow rounded-lg">
-    <div class="p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Search -->
-        <div>
-          <.form
-            for={%{}}
-            as={:search}
-            phx-change="search"
-            phx-submit="search"
-            id="offender-search"
-            class="space-y-4"
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Analytics Link -->
+    <div class="bg-white shadow rounded-lg mb-6">
+      <div class="p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900">View Detailed Analytics</h3>
+            <p class="mt-1 text-sm text-gray-500">Industry analysis, top offenders, and repeat offender patterns</p>
+          </div>
+          <.link 
+            navigate={~p"/reports/offenders"}
+            class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
           >
-            <div>
-              <label for="search_query" class="block text-sm font-medium text-gray-700">
-                Search Offenders
-              </label>
-              <input
-                type="search"
-                name="search[query]"
-                id="search_query"
-                value={@search_query}
-                placeholder="Search by name, postcode, or activity..."
-                tabindex="0"
-                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              />
+            <.icon name="hero-chart-bar" class="w-4 h-4 mr-2" />
+            View Analytics Report
+          </.link>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <EhsEnforcementWeb.Components.OffenderFilter.filter_form
+      filters={@filters}
+      search_query={@search_query}
+      sort_by={@sort_by}
+      sort_order={@sort_order}
+      fuzzy_search={@fuzzy_search}
+      total_count={@total_count}
+      target={nil}
+    />
+
+    <!-- Loading State -->
+    <%= if @loading do %>
+      <div class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p class="mt-2 text-sm text-gray-500">Loading offenders...</p>
+      </div>
+    <% else %>
+      <!-- Offenders Table -->
+      <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <div class="px-4 py-5 sm:p-6">
+          <!-- Table Controls -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-4">
+              <span class="text-sm text-gray-700">
+                <%= if @total_count > 0 do %>
+                  Showing <%= (@current_page - 1) * @per_page + 1 %>-<%= min(@current_page * @per_page, @total_count) %> of <%= @total_count %> offenders
+                <% else %>
+                  No offenders to display
+                <% end %>
+              </span>
+              
+              <!-- Page Size Selector -->
+              <div class="flex items-center space-x-2">
+                <label for="page-size" class="text-sm text-gray-700">Show:</label>
+                <select
+                  id="page-size"
+                  name="page_size"
+                  phx-change="change_page_size"
+                  class="border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="10" selected={@per_page == 10}>10</option>
+                  <option value="20" selected={@per_page == 20}>20</option>
+                  <option value="50" selected={@per_page == 50}>50</option>
+                  <option value="100" selected={@per_page == 100}>100</option>
+                </select>
+                <span class="text-sm text-gray-700">per page</span>
+              </div>
             </div>
-          </.form>
+            
+            <!-- Sort Info -->
+            <div class="text-sm text-gray-500">
+              Sorted by 
+              <%= case @sort_by do %>
+                <% "total_fines" -> %> total fines
+                <% "name" -> %> name
+                <% "total_cases" -> %> total cases
+                <% "total_notices" -> %> total notices
+                <% _ -> %> default
+              <% end %>
+              (<%= if @sort_order == "desc", do: "high to low", else: "low to high" %>)
+            </div>
+          </div>
+
+          <%= if @offenders == [] do %>
+            <div class="text-center py-12">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 class="mt-2 text-sm font-medium text-gray-900">No offenders found</h3>
+              <p class="mt-1 text-sm text-gray-500">No enforcement data available with the current filters.</p>
+              
+              <%= if map_size(@filters) > 0 or @search_query != "" do %>
+                <div class="mt-4">
+                  <button
+                    phx-click="clear_filters"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <!-- Offenders Table -->
+            <div class="mt-4 flow-root">
+              <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                  <table class="min-w-full divide-y divide-gray-300">
+                    <thead>
+                      <tr>
+                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
+                          Offender
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                          Location & Industry
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                          Enforcement Statistics
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                          Status
+                        </th>
+                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                          <span class="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                      <%= for offender <- @offenders do %>
+                        <tr 
+                          data-role="offender-row" 
+                          data-offender-id={offender.id}
+                          data-repeat-offender={is_repeat_offender?(offender)}
+                          class="hover:bg-gray-50"
+                        >
+                          <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-0">
+                            <div class="flex items-center">
+                              <div>
+                                <div class="font-medium text-gray-900">
+                                  <%= offender.name %>
+                                  <%= if is_repeat_offender?(offender) do %>
+                                    <span class="ml-2 inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                                      Repeat Offender
+                                    </span>
+                                  <% end %>
+                                </div>
+                                <div class="text-gray-500">
+                                  <%= offender.postcode %>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          
+                          <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            <div class="text-gray-900">
+                              <%= offender.local_authority %>
+                            </div>
+                            <div class="text-gray-500">
+                              <%= offender.industry %>
+                            </div>
+                          </td>
+                          
+                          <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            <div class="text-gray-900">
+                              <span class="font-medium"><%= offender.total_cases || 0 %> Cases</span>, 
+                              <span class="font-medium"><%= offender.total_notices || 0 %> Notices</span>
+                            </div>
+                            <div class="text-gray-500">
+                              Total Fines: <span class="font-medium"><%= format_currency(offender.total_fines) %></span>
+                            </div>
+                          </td>
+                          
+                          <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            <%= if is_repeat_offender?(offender) do %>
+                              <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                                High Risk
+                              </span>
+                            <% else %>
+                              <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                Standard
+                              </span>
+                            <% end %>
+                          </td>
+                          
+                          <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+                            <.link
+                              patch={~p"/offenders/#{offender.id}"}
+                              tabindex="0"
+                              class="text-blue-600 hover:text-blue-900"
+                            >
+                              View Details
+                            </.link>
+                          </td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          <% end %>
         </div>
 
-        <!-- Filters -->
-        <div>
-          <.form
-            for={%{}}
-            as={:filters}
-            phx-change="filter_change"
-            id="offender-filters"
-            class="space-y-4"
-          >
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label for="industry" class="block text-sm font-medium text-gray-700">
-                  Industry
-                </label>
-                <select
-                  name="filters[industry]"
-                  id="industry"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        <!-- Pagination -->
+        <%= if @total_count > @per_page do %>
+          <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+            <div class="flex flex-1 justify-between sm:hidden">
+              <%= if @current_page > 1 do %>
+                <button
+                  phx-click="prev_page"
+                  class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
-                  <option value="">All Industries</option>
-                  <option value="Manufacturing" selected={@filters[:industry] == "Manufacturing"}>Manufacturing</option>
-                  <option value="Chemical Processing" selected={@filters[:industry] == "Chemical Processing"}>Chemical Processing</option>
-                  <option value="Construction" selected={@filters[:industry] == "Construction"}>Construction</option>
-                  <option value="Retail" selected={@filters[:industry] == "Retail"}>Retail</option>
-                  <option value="Healthcare" selected={@filters[:industry] == "Healthcare"}>Healthcare</option>
-                </select>
-              </div>
-
-              <div>
-                <label for="business_type" class="block text-sm font-medium text-gray-700">
-                  Business Type
-                </label>
-                <select
-                  name="filters[business_type]"
-                  id="business_type"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  Previous
+                </button>
+              <% end %>
+              
+              <%= if @current_page < max_pages(@total_count, @per_page) do %>
+                <button
+                  phx-click="next_page"
+                  data-role="next-page"
+                  class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
-                  <option value="">All Types</option>
-                  <option value="limited_company" selected={@filters[:business_type] == "limited_company"}>Limited Company</option>
-                  <option value="plc" selected={@filters[:business_type] == "plc"}>PLC</option>
-                  <option value="partnership" selected={@filters[:business_type] == "partnership"}>Partnership</option>
-                  <option value="sole_trader" selected={@filters[:business_type] == "sole_trader"}>Sole Trader</option>
-                </select>
-              </div>
+                  Next
+                </button>
+              <% end %>
             </div>
-
-            <div class="grid grid-cols-2 gap-4">
+            
+            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
               <div>
-                <label for="local_authority" class="block text-sm font-medium text-gray-700">
-                  Local Authority
-                </label>
-                <input
-                  type="text"
-                  name="filters[local_authority]"
-                  id="local_authority"
-                  value={@filters[:local_authority] || ""}
-                  placeholder="e.g., Manchester"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-
-              <div class="flex items-end">
-                <label class="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="filters[repeat_only]"
-                    value="true"
-                    checked={@filters[:repeat_only] == true}
-                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                  />
-                  <span class="ml-2 text-sm font-medium text-gray-700">Repeat offenders only</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Sort controls -->
-            <div class="flex gap-4">
-              <div>
-                <label for="sort_by" class="block text-sm font-medium text-gray-700">Sort by</label>
-                <select
-                  name="sort_by"
-                  id="sort_by"
-                  value={@sort_by}
-                  phx-change="sort"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                >
-                  <option value="total_fines">Total Fines</option>
-                  <option value="total_cases">Total Cases</option>
-                  <option value="total_notices">Total Notices</option>
-                  <option value="name">Name</option>
-                  <option value="last_seen_date">Last Activity</option>
-                </select>
+                <p class="text-sm text-gray-700">
+                  Showing
+                  <span class="font-medium"><%= (@current_page - 1) * @per_page + 1 %></span>
+                  to
+                  <span class="font-medium"><%= min(@current_page * @per_page, @total_count) %></span>
+                  of
+                  <span class="font-medium"><%= @total_count %></span>
+                  results
+                </p>
               </div>
               
               <div>
-                <label for="sort_order" class="block text-sm font-medium text-gray-700">Order</label>
-                <select
-                  name="sort_order"
-                  id="sort_order"
-                  value={@sort_order}
-                  phx-change="sort"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                >
-                  <option value="desc">High to Low</option>
-                  <option value="asc">Low to High</option>
-                </select>
+                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <%= if @current_page > 1 do %>
+                    <button
+                      phx-click="prev_page"
+                      class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                    >
+                      <span class="sr-only">Previous</span>
+                      <.icon name="hero-chevron-left" class="h-5 w-5" />
+                    </button>
+                  <% end %>
+                  
+                  <span aria-current="page" class="relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                    <%= @current_page %>
+                  </span>
+                  
+                  <%= if @current_page < max_pages(@total_count, @per_page) do %>
+                    <button
+                      phx-click="next_page"
+                      data-role="next-page"
+                      class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                    >
+                      <span class="sr-only">Next</span>
+                      <.icon name="hero-chevron-right" class="h-5 w-5" />
+                    </button>
+                  <% end %>
+                </nav>
               </div>
             </div>
-          </.form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Loading State -->
-  <%= if @loading do %>
-    <div class="text-center py-8">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      <p class="mt-2 text-sm text-gray-500">Loading offenders...</p>
-    </div>
-  <% else %>
-    <!-- Offenders Table -->
-    <%= if @offenders == [] do %>
-      <div class="text-center py-12">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No offenders found</h3>
-        <p class="mt-1 text-sm text-gray-500">No enforcement data available with the current filters.</p>
-      </div>
-    <% else %>
-      <div class="bg-white shadow overflow-hidden sm:rounded-md">
-        <table role="table" class="min-w-full divide-y divide-gray-200">
-          <thead role="rowgroup" class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Offender
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Location & Industry
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Enforcement Statistics
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th scope="col" class="relative px-6 py-3">
-                <span class="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody role="rowgroup" class="bg-white divide-y divide-gray-200">
-            <%= for offender <- @offenders do %>
-              <tr 
-                data-role="offender-row" 
-                data-offender-id={offender.id}
-                data-repeat-offender={is_repeat_offender?(offender)}
-                class="hover:bg-gray-50"
-              >
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="flex items-center">
-                    <div>
-                      <div class="text-sm font-medium text-gray-900">
-                        <%= offender.name %>
-                        <%= if is_repeat_offender?(offender) do %>
-                          <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            Repeat Offender
-                          </span>
-                        <% end %>
-                      </div>
-                      <div class="text-sm text-gray-500">
-                        <%= offender.postcode %>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900">
-                    <%= offender.local_authority %>
-                  </div>
-                  <div class="text-sm text-gray-500">
-                    <%= offender.industry %>
-                  </div>
-                </td>
-                
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900">
-                    <span class="font-medium"><%= offender.total_cases || 0 %> Cases</span>, 
-                    <span class="font-medium"><%= offender.total_notices || 0 %> Notices</span>
-                  </div>
-                  <div class="text-sm text-gray-500">
-                    Total Fines: <span class="font-medium"><%= format_currency(offender.total_fines) %></span>
-                  </div>
-                </td>
-                
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <%= if is_repeat_offender?(offender) do %>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                      High Risk
-                    </span>
-                  <% else %>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      Standard
-                    </span>
-                  <% end %>
-                </td>
-                
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <.link
-                    patch={~p"/offenders/#{offender.id}"}
-                    tabindex="0"
-                    class="text-indigo-600 hover:text-indigo-900"
-                  >
-                    View Details
-                  </.link>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      <%= if @total_count > @per_page do %>
-        <div class="pagination bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-          <div class="flex-1 flex justify-between sm:hidden">
-            <%= if @current_page > 1 do %>
-              <button
-                phx-click="prev_page"
-                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Previous
-              </button>
-            <% end %>
-            
-            <%= if @current_page < max_pages(@total_count, @per_page) do %>
-              <button
-                phx-click="next_page"
-                data-role="next-page"
-                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-              >
-                Next
-              </button>
-            <% end %>
           </div>
-          
-          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p class="text-sm text-gray-700">
-                Showing
-                <span class="font-medium"><%= (@current_page - 1) * @per_page + 1 %></span>
-                to
-                <span class="font-medium"><%= min(@current_page * @per_page, @total_count) %></span>
-                of
-                <span class="font-medium"><%= @total_count %></span>
-                results
-              </p>
-            </div>
-            
-            <div>
-              <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                <%= if @current_page > 1 do %>
-                  <button
-                    phx-click="prev_page"
-                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    <span class="sr-only">Previous</span>
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
-                <% end %>
-                
-                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-indigo-600">
-                  <%= @current_page %>
-                </span>
-                
-                <%= if @current_page < max_pages(@total_count, @per_page) do %>
-                  <button
-                    phx-click="next_page"
-                    data-role="next-page"
-                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    <span class="sr-only">Next</span>
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
-                <% end %>
-              </nav>
-            </div>
-          </div>
-        </div>
-      <% end %>
+        <% end %>
+      </div>
     <% end %>
-  <% end %>
+  </div>
 </div>
 
 <script>

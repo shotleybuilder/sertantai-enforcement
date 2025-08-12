@@ -90,12 +90,19 @@ defmodule EhsEnforcement.Enforcement do
   - `get_agency_by_code/2` - Get agency by code
   
   ## Offender Functions  
-  - `list_offenders/1` - List all offenders with options
+  - `list_offenders/1` - List all offenders with basic options (code interface)
+  - `list_offenders_with_filters/1` - List offenders with complex filtering (custom function)
+  - `list_offenders_with_filters_cached!/1` - Cached version for performance
+  - `list_offenders_with_filters_monitored!/1` - Monitored version with slow query logging
   - `get_offender/2` - Get offender by ID
   - `create_offender/2` - Create new offender
   - `update_offender/3` - Update existing offender
   - `search_offenders/2` - Search offenders with query
+  - `fuzzy_search_offenders/2` - Fuzzy search using pg_trgm trigram similarity
   - `update_offender_statistics/3` - Update offender statistics
+  - `count_offenders!/1` - Count offenders with filtering
+  - `count_offenders_cached!/1` - Cached count for performance
+  - `count_offenders_monitored!/1` - Monitored count with logging
   
   ## Case Functions
   - `list_cases/1` - List all cases with basic options (code interface)
@@ -299,22 +306,6 @@ defmodule EhsEnforcement.Enforcement do
     )
   end
 
-  # Apply fuzzy text search filter using pg_trgm trigram similarity.
-  # Uses the pg_trgm extension for fuzzy matching with similarity threshold.
-  # Minimum similarity score of 0.3 (30%) is used for reasonable fuzzy matching.
-  defp apply_fuzzy_search_filter(query, nil), do: query
-  defp apply_fuzzy_search_filter(query, search_term) when is_binary(search_term) and byte_size(search_term) >= 3 do
-    # Use pg_trgm trigram similarity for fuzzy search
-    # Similarity threshold of 0.3 provides good balance between accuracy and recall
-    similarity_threshold = 0.3
-    
-    Ash.Query.filter(query,
-      trigram_similarity(regulator_id, ^search_term) > ^similarity_threshold or
-      trigram_similarity(offence_breaches, ^search_term) > ^similarity_threshold or
-      trigram_similarity(offender.name, ^search_term) > ^similarity_threshold
-    )
-  end
-  defp apply_fuzzy_search_filter(query, _short_term), do: query  # Skip fuzzy search for terms < 3 chars
 
   def list_cases_with_filters!(opts \\ []) do
     case list_cases_with_filters(opts) do
@@ -338,13 +329,52 @@ defmodule EhsEnforcement.Enforcement do
     end
   end
 
+  def list_offenders_with_filters!(opts \\ []) do
+    query = EhsEnforcement.Enforcement.Offender
+    
+    # Apply complex filters if provided - optimized for available indexes
+    query = case opts[:filter] do
+      nil -> query
+      filters -> build_optimized_offender_filter(query, filters)
+    end
+    
+    # Apply sort if provided
+    query = case opts[:sort] do
+      nil -> Ash.Query.sort(query, [total_fines: :desc])  # Default sort by total fines
+      sorts -> Ash.Query.sort(query, sorts)
+    end
+    
+    # Apply load if provided
+    query = case opts[:load] do
+      nil -> query
+      loads -> Ash.Query.load(query, loads)
+    end
+    
+    # Apply pagination if provided
+    query = case opts[:limit] do
+      nil -> query
+      limit -> Ash.Query.limit(query, limit)
+    end
+    
+    # Apply offset if provided (for consistent pagination with cases/notices)
+    query = case opts[:offset] do
+      nil -> query
+      offset -> Ash.Query.offset(query, offset)
+    end
+    
+    case Ash.read(query) do
+      {:ok, offenders} -> offenders
+      {:error, error} -> raise error
+    end
+  end
+
   def count_offenders!(opts \\ []) do
     query = EhsEnforcement.Enforcement.Offender
     
-    # Apply filters if provided
+    # Apply filters if provided - use same optimized filtering as list function
     query = case opts[:filter] do
       nil -> query
-      filters -> Ash.Query.filter(query, ^filters)
+      filters -> build_optimized_offender_filter(query, filters)
     end
     
     case Ash.count(query) do
@@ -463,6 +493,52 @@ defmodule EhsEnforcement.Enforcement do
       Ash.Query.filter(q, offence_action_type == ^value)
     end)
     |> apply_search_filter(search_pattern)
+  end
+
+  # Optimized filter building for offenders to leverage pg_trgm GIN indexes
+  defp build_optimized_offender_filter(query, filters) do
+    # Group filters for optimal index usage
+    industry_filter = filters[:industry]
+    local_authority_filter = filters[:local_authority]
+    business_type_filter = filters[:business_type]
+    repeat_only_filter = filters[:repeat_only]
+    search_pattern = filters[:search]
+    
+    # Apply individual filters in optimal order
+    query
+    |> apply_if_present(industry_filter, fn q, value -> 
+      Ash.Query.filter(q, industry == ^value) 
+    end)
+    |> apply_if_present(local_authority_filter, fn q, value ->
+      Ash.Query.filter(q, local_authority == ^value)
+    end)
+    |> apply_if_present(business_type_filter, fn q, value ->
+      # Convert string to atom if needed
+      atom_value = if is_binary(value), do: String.to_atom(value), else: value
+      Ash.Query.filter(q, business_type == ^atom_value)
+    end)
+    |> apply_repeat_offender_filter(repeat_only_filter)
+    |> apply_offender_search_filter(search_pattern)
+  end
+  
+  defp apply_repeat_offender_filter(query, nil), do: query
+  defp apply_repeat_offender_filter(query, false), do: query
+  defp apply_repeat_offender_filter(query, true) do
+    # Repeat offenders have more than 2 total enforcement actions
+    Ash.Query.filter(query, total_cases + total_notices > 2)
+  end
+  
+  defp apply_offender_search_filter(query, nil), do: query
+  defp apply_offender_search_filter(query, pattern) when is_binary(pattern) do
+    # Optimized search using OR conditions with proper Ash syntax
+    # Uses existing pg_trgm GIN indexes for efficient text search
+    Ash.Query.filter(query, 
+      ilike(name, ^pattern) or 
+      ilike(normalized_name, ^pattern) or
+      ilike(local_authority, ^pattern) or
+      ilike(main_activity, ^pattern) or
+      ilike(postcode, ^pattern)
+    )
   end
 
   # Fuzzy search functions using pg_trgm trigram similarity
@@ -626,6 +702,33 @@ defmodule EhsEnforcement.Enforcement do
     end
   end
 
+  @doc """
+  Cached version of list_offenders_with_filters! for frequently used filter combinations.
+  """
+  def list_offenders_with_filters_cached!(opts \\ []) do
+    cache_key = build_cache_key("offenders", opts)
+    
+    case get_from_cache(cache_key) do
+      {:hit, result} -> result
+      :miss ->
+        result = list_offenders_with_filters!(opts)
+        put_in_cache(cache_key, result)
+        result
+    end
+  end
+
+  def count_offenders_cached!(opts \\ []) do
+    cache_key = build_cache_key("offenders_count", opts)
+    
+    case get_from_cache(cache_key) do
+      {:hit, result} -> result
+      :miss ->
+        result = count_offenders!(opts)
+        put_in_cache(cache_key, result)
+        result
+    end
+  end
+
   # Cache management functions
   
   defp build_cache_key(resource_type, opts) do
@@ -737,6 +840,24 @@ defmodule EhsEnforcement.Enforcement do
   def count_notices_monitored!(opts \\ []) do
     monitor_query_performance("count_notices!", opts, fn ->
       count_notices!(opts)
+    end)
+  end
+
+  @doc """
+  Monitored version of list_offenders_with_filters! that logs slow queries.
+  """
+  def list_offenders_with_filters_monitored!(opts \\ []) do
+    monitor_query_performance("list_offenders_with_filters!", opts, fn ->
+      list_offenders_with_filters!(opts)
+    end)
+  end
+
+  @doc """
+  Monitored version of count_offenders! that logs slow queries.
+  """
+  def count_offenders_monitored!(opts \\ []) do
+    monitor_query_performance("count_offenders!", opts, fn ->
+      count_offenders!(opts)
     end)
   end
 

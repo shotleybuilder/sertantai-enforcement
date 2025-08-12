@@ -26,9 +26,8 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
       |> assign(:search_query, "")
       |> assign(:sort_by, "total_fines")
       |> assign(:sort_order, "desc")
-      |> assign(:industry_stats, %{})
-      |> assign(:top_offenders, [])
-      |> assign(:repeat_offender_percentage, 0)
+      |> assign(:fuzzy_search, false)
+      |> assign(:search_active, false)
       |> load_offenders()
 
     {:ok, socket, temporary_assigns: [offenders: []]}
@@ -41,14 +40,17 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   end
 
   @impl true
-  def handle_event("filter_change", %{"filters" => filter_params}, socket) do
-    filters = parse_filters(filter_params)
+  def handle_event("filter_change", params, socket) do
+    filters = parse_filters(params["filters"] || %{})
+    search_query = get_in(params, ["search", "query"]) || params["search[query]"] || ""
+    
     require Logger
-    Logger.info("Filter change: #{inspect(filter_params)} -> #{inspect(filters)}")
+    Logger.info("Filter change: #{inspect(params)} -> filters: #{inspect(filters)}, search: #{inspect(search_query)}")
     
     socket =
       socket
       |> assign(:filters, filters)
+      |> assign(:search_query, search_query)
       |> assign(:current_page, 1)
       |> assign(:loading, true)
       |> load_offenders()
@@ -58,8 +60,8 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
 
   # Handle form change event (default form behavior)
   @impl true
-  def handle_event("validate", %{"filters" => filter_params}, socket) do
-    handle_event("filter_change", %{"filters" => filter_params}, socket)
+  def handle_event("validate", params, socket) do
+    handle_event("filter_change", params, socket)
   end
 
   @impl true
@@ -120,6 +122,47 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
       |> assign(:loading, true)
       |> push_patch(to: build_path(socket, socket.assigns.filters, socket.assigns.search_query, prev_page))
     
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("toggle_fuzzy_search", _params, socket) do
+    fuzzy_search = !socket.assigns.fuzzy_search
+    
+    socket =
+      socket
+      |> assign(:fuzzy_search, fuzzy_search)
+      |> assign(:current_page, 1)  # Reset to first page when changing search mode
+      |> assign(:loading, true)
+      |> load_offenders()
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("clear_filters", _params, socket) do
+    socket =
+      socket
+      |> assign(:filters, %{})
+      |> assign(:search_query, "")
+      |> assign(:current_page, 1)
+      |> assign(:loading, true)
+      |> load_offenders()
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("change_page_size", %{"page_size" => page_size_str}, socket) do
+    page_size = String.to_integer(page_size_str)
+    
+    socket =
+      socket
+      |> assign(:per_page, page_size)
+      |> assign(:current_page, 1)  # Reset to first page when changing page size
+      |> assign(:loading, true)
+      |> load_offenders()
+
     {:noreply, socket}
   end
 
@@ -189,49 +232,55 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   defp maybe_add_filter(filters, key, value), do: Map.put(filters, key, value)
 
   defp load_offenders(socket) do
-    offset = (socket.assigns.current_page - 1) * socket.assigns.per_page
+    %{filters: filters, search_query: search_query, sort_by: sort_by, sort_order: sort_order, 
+      current_page: page, per_page: page_size, fuzzy_search: fuzzy_search} = socket.assigns
     
-    # Build simpler query for testing
-    base_query = EhsEnforcement.Enforcement.Offender
-    |> Ash.Query.sort([{String.to_atom(socket.assigns.sort_by), String.to_atom(socket.assigns.sort_order)}])
-    |> Ash.Query.limit(socket.assigns.per_page)
-    |> Ash.Query.offset(offset)
-    
-    # Apply filters one by one
-    query = base_query
-    |> apply_industry_filter(socket.assigns.filters[:industry])
-    |> apply_authority_filter(socket.assigns.filters[:local_authority])
-    |> apply_business_type_filter(socket.assigns.filters[:business_type])
-    |> apply_repeat_filter(socket.assigns.filters[:repeat_only])
-    |> apply_search_filter(socket.assigns.search_query)
-
     try do
-      # Use direct Ash.read with the built query
-      offenders = case Ash.read(query) do
-        {:ok, offenders} -> offenders
-        {:error, _} -> []
+      # Check if fuzzy search is enabled and we have a search query
+      use_fuzzy = fuzzy_search && is_binary(search_query) && String.trim(search_query) != ""
+      
+      {offenders, total_count} = if use_fuzzy do
+        # Use fuzzy search with pg_trgm
+        trimmed_query = String.trim(search_query)
+        limited_query = if String.length(trimmed_query) > 100 do
+          String.slice(trimmed_query, 0, 100)
+        else
+          trimmed_query
+        end
+        
+        offset = (page - 1) * page_size
+        fuzzy_opts = [
+          limit: page_size,
+          offset: offset
+        ]
+        
+        {:ok, fuzzy_results} = Enforcement.fuzzy_search_offenders(limited_query, fuzzy_opts)
+        
+        # For fuzzy search, estimate total count
+        estimated_total = if length(fuzzy_results) == page_size do
+          (page * page_size) + 1  # Estimate there's at least one more page
+        else
+          offset + length(fuzzy_results)  # We've reached the end
+        end
+        
+        {fuzzy_results, estimated_total}
+      else
+        # Use regular filtering with optimized indexes
+        query_opts = build_optimized_query_options(filters, search_query, sort_by, sort_order, page, page_size)
+        regular_results = Enforcement.list_offenders_with_filters_cached!(query_opts)
+        
+        # Get total count using same optimized filter
+        count_opts = [filter: build_optimized_filter(filters, search_query)]
+        regular_total = Enforcement.count_offenders_cached!(count_opts)
+        
+        {regular_results, regular_total}
       end
       
-      # Get total count using code interface
-      total_count = case socket.assigns.filters do
-        filters when map_size(filters) == 0 ->
-          Enforcement.count_offenders!()
-        _ ->
-          length(offenders) # Simplified for now
-      end
-      
-      # Calculate analytics
-      industry_stats = calculate_industry_stats()
-      top_offenders = get_top_offenders()
-      repeat_percentage = calculate_repeat_offender_percentage()
-
       socket
       |> assign(:offenders, offenders)
       |> assign(:total_count, total_count)
-      |> assign(:industry_stats, industry_stats)
-      |> assign(:top_offenders, top_offenders)
-      |> assign(:repeat_offender_percentage, repeat_percentage)
       |> assign(:loading, false)
+      
     rescue
       error ->
         require Logger
@@ -245,101 +294,67 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     end
   end
 
-  # Individual filter functions that work with Ash.Query
-  defp apply_industry_filter(query, nil), do: query
-  defp apply_industry_filter(query, ""), do: query
-  defp apply_industry_filter(query, industry_name) do
-    require Logger
-    Logger.info("Applying industry filter: #{industry_name}")
-    query |> Ash.Query.filter(industry == ^industry_name)
+  defp build_optimized_query_options(filters, search_query, sort_by, sort_order, page, page_size) do
+    offset = (page - 1) * page_size
+    
+    [
+      filter: build_optimized_filter(filters, search_query),
+      sort: build_sort_options(sort_by, sort_order),
+      limit: page_size,
+      offset: offset
+    ]
   end
 
-  defp apply_authority_filter(query, nil), do: query
-  defp apply_authority_filter(query, ""), do: query
-  defp apply_authority_filter(query, authority_name) do
-    query |> Ash.Query.filter(local_authority == ^authority_name)
+  # Optimized filter building that formats data for the Enforcement context
+  # The Enforcement context handles optimized filtering internally
+  defp build_optimized_filter(filters, search_query) do
+    %{}
+    |> add_filter_if_present(filters, :industry)
+    |> add_filter_if_present(filters, :local_authority)
+    |> add_filter_if_present(filters, :business_type)
+    |> add_filter_if_present(filters, :repeat_only)
+    |> add_search_filter(search_query)
   end
-
-  defp apply_business_type_filter(query, nil), do: query
-  defp apply_business_type_filter(query, ""), do: query
-  defp apply_business_type_filter(query, business_type) do
-    type_atom = String.to_atom(business_type)
-    query |> Ash.Query.filter(business_type == ^type_atom)
+  
+  defp add_filter_if_present(acc, filters, key) do
+    case filters[key] do
+      value when is_binary(value) and value != "" -> Map.put(acc, key, value)
+      value when not is_nil(value) -> Map.put(acc, key, value)
+      _ -> acc
+    end
   end
-
-  defp apply_repeat_filter(query, nil), do: query
-  defp apply_repeat_filter(query, false), do: query
-  defp apply_repeat_filter(query, true) do
-    # Repeat offenders have more than 2 total cases + notices
-    query |> Ash.Query.filter(total_cases + total_notices > 2)
-  end
-
-  defp apply_search_filter(query, nil), do: query
-  defp apply_search_filter(query, ""), do: query
-  defp apply_search_filter(query, search_query) do
-    query |> Ash.Query.filter(
-      name |> ilike("%#{^search_query}%") or
-      postcode |> ilike("%#{^search_query}%") or 
-      main_activity |> ilike("%#{^search_query}%")
-    )
-  end
-
-
-  defp calculate_industry_stats do
-    try do
-      offenders = Enforcement.list_offenders!()
-      
-      offenders
-      |> Enum.group_by(& &1.industry)
-      |> Enum.map(fn {industry, group} ->
-        total_fines = Enum.reduce(group, Decimal.new(0), fn offender, acc ->
-          Decimal.add(acc, offender.total_fines || Decimal.new(0))
-        end)
+  
+  defp add_search_filter(acc, search_query) do
+    case search_query do
+      query when is_binary(query) and query != "" ->
+        trimmed_query = String.trim(query)
         
-        {industry || "Unknown", %{
-          count: length(group),
-          total_fines: total_fines,
-          avg_fines: Decimal.div(total_fines, Decimal.new(length(group)))
-        }}
-      end)
-      |> Enum.into(%{})
-    rescue
-      _ -> %{}
-    end
-  end
-
-  defp get_top_offenders do
-    try do
-      Enforcement.list_offenders!([
-        sort: [total_fines: :desc],
-        limit: 10
-      ])
-    rescue
-      _ -> []
-    end
-  end
-
-  defp calculate_repeat_offender_percentage do
-    try do
-      all_offenders = Enforcement.list_offenders!()
-      total_count = length(all_offenders)
-      
-      if total_count > 0 do
-        repeat_count = 
-          all_offenders
-          |> Enum.count(fn offender ->
-            total_enforcement = (offender.total_cases || 0) + (offender.total_notices || 0)
-            total_enforcement > 2
-          end)
+        # Limit search term length to prevent database issues
+        limited_query = if String.length(trimmed_query) > 100 do
+          String.slice(trimmed_query, 0, 100)
+        else
+          trimmed_query
+        end
         
-        round(repeat_count / total_count * 100)
-      else
-        0
-      end
-    rescue
-      _ -> 0
+        search_pattern = "%#{limited_query}%"
+        Map.put(acc, :search, search_pattern)
+      _ -> acc
     end
   end
+
+  defp build_sort_options(sort_by, sort_order) do
+    sort_by_atom = if is_binary(sort_by), do: String.to_atom(sort_by), else: sort_by
+    sort_order_atom = if is_binary(sort_order), do: String.to_atom(sort_order), else: sort_order
+    
+    case {sort_by_atom, sort_order_atom} do
+      {field, dir} when field in [:name, :total_fines, :total_cases, :total_notices, :first_seen_date, :last_seen_date] ->
+        [{field, dir}]
+      _ ->
+        [total_fines: :desc]  # Default sort
+    end
+  end
+
+
 
   defp build_path(socket, filters, search_query, page) do
     params = %{}

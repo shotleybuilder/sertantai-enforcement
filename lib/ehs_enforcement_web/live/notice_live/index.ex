@@ -175,7 +175,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   end
 
   defp build_optimized_query_opts(socket) do
-    %{filters: filters, search_query: search_query, sort_by: sort_by, sort_order: sort_order, 
+    %{sort_by: sort_by, sort_order: sort_order, 
       page: page, page_size: page_size} = socket.assigns
     
     offset = (page - 1) * page_size

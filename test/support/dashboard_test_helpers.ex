@@ -9,7 +9,6 @@ defmodule EhsEnforcementWeb.DashboardTestHelpers do
   alias EhsEnforcement.Enforcement
   
   require Ash.Query
-  import Ash.Expr
   import Phoenix.LiveViewTest
   import ExUnit.Assertions
 

@@ -16,7 +16,7 @@
   </div>
 
   <!-- Main Actions -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
     <!-- Generate Report Card -->
     <div class="bg-white rounded-lg border border-gray-200 p-6">
       <div class="flex items-center mb-4">
@@ -53,6 +53,25 @@
       >
         Export Data
       </button>
+    </div>
+
+    <!-- Offender Analytics Card -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="flex items-center mb-4">
+        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+          <span class="text-2xl">📈</span>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900">Offender Analytics</h2>
+          <p class="text-gray-600">Industry insights and repeat offender patterns</p>
+        </div>
+      </div>
+      <.link 
+        navigate={~p"/reports/offenders"}
+        class="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors block text-center"
+      >
+        View Analytics
+      </.link>
     </div>
   </div>
 
