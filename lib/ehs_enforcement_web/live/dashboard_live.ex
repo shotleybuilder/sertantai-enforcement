@@ -557,51 +557,101 @@ defmodule EhsEnforcementWeb.DashboardLive do
     
     cutoff_date = Date.add(Date.utc_today(), -days_ago)
     
-    # Get all cases and notices (for comprehensive stats)
-    all_cases = EhsEnforcement.Enforcement.list_cases_with_filters!([])
-    all_notices = EhsEnforcement.Enforcement.list_notices_with_filters!([])
-    
-    # Filter for recent items (based on selected period)
-    recent_cases_list = Enum.filter(all_cases, fn case_record ->
-      case_record.offence_action_date && Date.compare(case_record.offence_action_date, cutoff_date) != :lt
-    end)
-    
-    recent_notices_list = Enum.filter(all_notices, fn notice_record ->
-      notice_record.offence_action_date && Date.compare(notice_record.offence_action_date, cutoff_date) != :lt
-    end)
-    
-    recent_cases_count = length(recent_cases_list)
-    recent_notices_count = length(recent_notices_list)
-    
-    # Calculate total fines from recent cases only
-    recent_total_fines = recent_cases_list
-    |> Enum.map(& &1.offence_fine || Decimal.new(0))
-    |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
-    
-    # Get agency-specific stats for recent cases (based on selected period)
-    agency_stats = Enum.map(agencies, fn agency ->
-      agency_recent_cases = Enum.count(recent_cases_list, & &1.agency_id == agency.id)
+    try do
+      # Use database-level filtering instead of loading all records
+      recent_date_filter = [offence_action_date: [gte: cutoff_date]]
+      
+      # Get recent cases with database filtering
+      recent_cases_list = EhsEnforcement.Enforcement.list_cases_with_filters!(
+        filter: recent_date_filter,
+        load: [:agency]
+      )
+      
+      # Get recent notices with database filtering
+      recent_notices_list = EhsEnforcement.Enforcement.list_notices_with_filters!(
+        filter: recent_date_filter,
+        load: [:agency]
+      )
+      
+      recent_cases_count = length(recent_cases_list)
+      recent_notices_count = length(recent_notices_list)
+      
+      # Calculate total fines from recent cases only
+      recent_total_fines = recent_cases_list
+      |> Enum.map(& &1.offence_fine || Decimal.new(0))
+      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+      
+      # Get agency-specific stats for recent cases (based on selected period)
+      agency_stats = Enum.map(agencies, fn agency ->
+        agency_recent_cases = Enum.count(recent_cases_list, & &1.agency_id == agency.id)
+        
+        %{
+          agency_id: agency.id,
+          agency_code: agency.code,
+          agency_name: agency.name,
+          case_count: agency_recent_cases,
+          percentage: if(recent_cases_count > 0, do: Float.round(agency_recent_cases / recent_cases_count * 100, 1), else: 0)
+        }
+      end)
+      
+      # For totals, we need to count all records efficiently
+      # Use count queries instead of loading all data
+      total_cases_count = get_total_count(:cases)
+      total_notices_count = get_total_count(:notices)
       
       %{
-        agency_id: agency.id,
-        agency_code: agency.code,
-        agency_name: agency.name,
-        case_count: agency_recent_cases,
-        percentage: if(recent_cases_count > 0, do: Float.round(agency_recent_cases / recent_cases_count * 100, 1), else: 0)
+        recent_cases: recent_cases_count,
+        recent_notices: recent_notices_count,
+        total_cases: total_cases_count,
+        total_notices: total_notices_count,
+        total_fines: recent_total_fines,
+        active_agencies: Enum.count(agencies, & &1.enabled),
+        agency_stats: agency_stats,
+        period: "#{days_ago} days", 
+        timeframe: timeframe_label
       }
-    end)
-    
-    %{
-      recent_cases: recent_cases_count,
-      recent_notices: recent_notices_count,
-      total_cases: length(all_cases),
-      total_notices: length(all_notices),
-      total_fines: recent_total_fines,
-      active_agencies: Enum.count(agencies, & &1.enabled),
-      agency_stats: agency_stats,
-      period: "#{days_ago} days", 
-      timeframe: timeframe_label
-    }
+    rescue
+      error ->
+        require Logger
+        Logger.error("Failed to calculate stats efficiently: #{inspect(error)}")
+        
+        # Fallback to minimal stats to avoid complete failure
+        %{
+          recent_cases: 0,
+          recent_notices: 0,
+          total_cases: 0,
+          total_notices: 0,
+          total_fines: Decimal.new(0),
+          active_agencies: Enum.count(agencies, & &1.enabled),
+          agency_stats: [],
+          period: "#{days_ago} days", 
+          timeframe: timeframe_label
+        }
+    end
+  end
+
+  defp get_total_count(:cases) do
+    try do
+      # Use direct SQL count for efficiency - no data loading
+      case EhsEnforcement.Repo.query("SELECT COUNT(*) FROM cases") do
+        {:ok, %{rows: [[count]]}} -> count
+        _ -> 0
+      end
+    rescue
+      _ -> 0
+    end
+  end
+
+  defp get_total_count(:notices) do
+    try do
+      # Use direct SQL count for efficiency - no data loading
+      case EhsEnforcement.Repo.query("SELECT COUNT(*) FROM notices") do
+        {:ok, %{rows: [[count]]}} -> count
+        _ -> 0
+      end
+    rescue
+      _ -> 0
+    end
   end
 
   defp format_cases_as_recent_activity(activity_records) do
