@@ -9,6 +9,7 @@ defmodule EhsEnforcement.Enforcement.Metrics do
   use Ash.Resource,
     domain: EhsEnforcement.Enforcement,
     data_layer: AshPostgres.DataLayer,
+    extensions: [AshOban],
     notifiers: [Ash.Notifier.PubSub]
 
   postgres do
@@ -133,12 +134,50 @@ defmodule EhsEnforcement.Enforcement.Metrics do
         :active_agencies_count, :agency_stats, :calculated_at, :calculated_by, :cutoff_date
       ]
     end
+
+    create :scheduled_refresh do
+      description "Scheduled refresh of dashboard metrics after weekly scraping completion"
+      
+      change fn changeset, context ->
+        case __MODULE__.refresh_all_metrics(:automation) do
+          {:ok, results} ->
+            # Success - return changeset with success message
+            Ash.Changeset.add_error(changeset,
+              field: :refresh_result,
+              message: "Scheduled metric refresh completed successfully: #{length(results)} periods refreshed"
+            )
+          
+          {:error, error} ->
+            # Error during refresh
+            Ash.Changeset.add_error(changeset,
+              field: :refresh_error,
+              message: "Scheduled metric refresh failed: #{inspect(error)}"
+            )
+        end
+      end
+    end
   end
 
+
+  oban do
+    triggers do
+      trigger :weekly_metrics_refresh do
+        action :scheduled_refresh
+        
+        # Weekly on Sunday at 4 AM (after the weekly deep scrape at 3 AM)
+        scheduler_cron "0 4 * * 0"
+        max_attempts 3
+        queue :metrics
+        worker_module_name EhsEnforcement.Enforcement.Metrics.AshOban.Worker.WeeklyMetricsRefresh
+        scheduler_module_name EhsEnforcement.Enforcement.Metrics.AshOban.Scheduler.WeeklyMetricsRefresh
+      end
+    end
+  end
 
   code_interface do
     define :get_current_metrics, action: :get_current
     define :refresh_metrics, action: :refresh
+    define :scheduled_refresh_metrics, action: :scheduled_refresh
   end
 
   @doc """

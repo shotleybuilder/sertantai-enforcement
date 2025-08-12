@@ -16,6 +16,15 @@ defmodule EhsEnforcement.Enforcement.Case do
     identity_wheres_to_sql(
       unique_airtable_id: "airtable_id IS NOT NULL"
     )
+
+    custom_indexes do
+      # Performance indexes for dashboard metrics calculations
+      index [:offence_action_date], name: "cases_offence_action_date_index"
+      index [:agency_id], name: "cases_agency_id_index"
+      
+      # Composite index for common query patterns (agency + date filtering)
+      index [:agency_id, :offence_action_date], name: "cases_agency_date_index"
+    end
   end
 
   pub_sub do
