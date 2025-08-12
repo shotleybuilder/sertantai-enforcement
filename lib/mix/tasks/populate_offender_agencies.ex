@@ -14,7 +14,6 @@ defmodule Mix.Tasks.PopulateOffenderAgencies do
   """
   
   use Mix.Task
-  alias EhsEnforcement.Enforcement
   require Logger
   
   @impl Mix.Task
