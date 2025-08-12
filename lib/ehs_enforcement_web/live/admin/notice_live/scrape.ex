@@ -170,7 +170,9 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
           scraped_notices: [],  # Clear previous session's notices
           progress: Map.merge(socket.assigns.progress, %{
             status: :running,
-            current_page: validated_params.start_page
+            current_page: validated_params.start_page,
+            pages_processed: 0,  # Ensure we start from 0 processed pages
+            max_pages: validated_params.max_pages  # Store for percentage calculation
           })
         )
         
@@ -384,9 +386,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
       # Add to the beginning of the list (most recent first)
       updated_scraped_notices = [notice | socket.assigns.scraped_notices]
       
-      # Keep only the most recent 50 notices
-      updated_scraped_notices = Enum.take(updated_scraped_notices, 50)
-      
+      # Keep all notices from the current scraping session (no arbitrary limit)
       assign(socket, scraped_notices: updated_scraped_notices)
     else
       socket
@@ -589,10 +589,14 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         Logger.info("Scraping notice page #{page}")
         
         # Update session with current page and reset page counters (Ash PubSub will notify UI)
+        # pages_processed should be cumulative count, not current page offset
+        pages_completed_so_far = page - start_page
+        Logger.debug("Scraping page #{page}: updating session with pages_processed=#{pages_completed_so_far}")
+        
         session
         |> Ash.Changeset.for_update(:update, %{
           current_page: page,
-          pages_processed: page - start_page,
+          pages_processed: pages_completed_so_far,
           cases_exist_current_page: 0  # Reset page counter
         })
         |> Ash.update!(actor: actor)
@@ -620,45 +624,49 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
           basic_notices when is_list(basic_notices) ->
             Logger.info("Found #{length(basic_notices)} total notices on page #{page} (combined from all countries)")
             
+            # Filter processable notices upfront for accurate early stopping calculation
+            processable_notices = Enum.filter(basic_notices, fn notice ->
+              notice.regulator_id && notice.regulator_id != ""
+            end)
+            Logger.info("Processable notices (with regulator_id): #{length(processable_notices)} of #{length(basic_notices)}")
+            
             # Process each notice individually with real-time session updates
-            {page_results, page_existing_count} = Enum.reduce(basic_notices, {acc, 0}, fn basic_notice, {notice_acc, page_existing} ->
-              if basic_notice.regulator_id && basic_notice.regulator_id != "" do
-                # Process the notice
-                prev_existing = notice_acc.existing_count
-                updated_acc = process_single_notice_simple(basic_notice, database, actor, notice_acc)
-                
-                # Calculate if this notice was an existing (duplicate)
-                notice_was_existing = updated_acc.existing_count > prev_existing
-                new_page_existing = if notice_was_existing, do: page_existing + 1, else: page_existing
-                
-                # Update session immediately after each notice (match Cases pattern exactly)
-                total_found = updated_acc.created_count + updated_acc.existing_count
-                session
-                |> Ash.Changeset.for_update(:update, %{
-                  cases_found: total_found,
-                  cases_created: updated_acc.created_count,
-                  cases_exist_total: updated_acc.existing_count,
-                  cases_exist_current_page: new_page_existing,
-                  errors_count: updated_acc.error_count
-                })
-                |> Ash.update!(actor: actor)
-                
-                {updated_acc, new_page_existing}
-              else
-                {notice_acc, page_existing}
-              end
+            {page_results, page_existing_count} = Enum.reduce(processable_notices, {acc, 0}, fn basic_notice, {notice_acc, page_existing} ->
+              # Process the notice (no need for regulator_id check since we pre-filtered)
+              prev_existing = notice_acc.existing_count
+              updated_acc = process_single_notice_simple(basic_notice, database, actor, notice_acc)
+              
+              # Calculate if this notice was an existing (duplicate)
+              notice_was_existing = updated_acc.existing_count > prev_existing
+              new_page_existing = if notice_was_existing, do: page_existing + 1, else: page_existing
+              
+              # Update session immediately after each notice (match Cases pattern exactly)
+              total_found = updated_acc.created_count + updated_acc.existing_count
+              session
+              |> Ash.Changeset.for_update(:update, %{
+                cases_found: total_found,
+                cases_created: updated_acc.created_count,
+                cases_exist_total: updated_acc.existing_count,
+                cases_exist_current_page: new_page_existing,
+                errors_count: updated_acc.error_count
+              })
+              |> Ash.update!(actor: actor)
+              
+              {updated_acc, new_page_existing}
             end)
             
-            # Update session with completed page count
+            # Update session with completed page count (increment by 1 after page completion)
+            pages_completed = page - start_page + 1
             session
             |> Ash.Changeset.for_update(:update, %{
-              pages_processed: page - start_page + 1
+              pages_processed: pages_completed
             })
             |> Ash.update!(actor: actor)
             
-            # Check stop rule: if all notices on current page exist, stop scraping
-            if page_existing_count > 0 && page_existing_count == length(basic_notices) do
-              Logger.info("Stopping notice scraping: all #{page_existing_count} notices on page #{page} already exist")
+            # Check stop rule: if all processable notices on current page exist, stop scraping
+            # Compare against processable_notices count, not total basic_notices
+            if page_existing_count > 0 && page_existing_count == length(processable_notices) do
+              Logger.info("Stopping notice scraping: all #{page_existing_count} processable notices on page #{page} already exist (#{length(basic_notices)} total notices found)")
               {:halt, page_results}
             else
               {:cont, page_results}
@@ -669,10 +677,11 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
             updated_acc = %{acc | error_count: acc.error_count + 1}
             
             # Update session with error
+            pages_completed = page - start_page + 1
             session
             |> Ash.Changeset.for_update(:update, %{
               errors_count: updated_acc.error_count,
-              pages_processed: page - start_page + 1
+              pages_processed: pages_completed
             })
             |> Ash.update!(actor: actor)
             
@@ -753,23 +762,68 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   defp duplicate_error?(_), do: false
 
   defp handle_scrape_session_update(session_data, socket) do
-    # Update progress display with latest session data (matching Cases pattern exactly)
-    updated_progress = %{
-      status: session_data.status,
-      current_page: session_data.current_page,
-      pages_processed: session_data.pages_processed,
-      notices_found: session_data.cases_found || 0,  # Notice: session uses "cases_found" field
-      notices_created: session_data.cases_created || 0,  # Notice: session uses "cases_created" field
-      notices_exist_total: session_data.cases_exist_total || 0,
-      errors_count: session_data.errors_count || 0,
-      notices_exist_current_page: session_data.cases_exist_current_page || 0,
-      max_pages: session_data.max_pages  # Add for percentage calculation
-    }
+    # Log session update for debugging progress issues
+    Logger.debug("Scrape session update: status=#{session_data.status}, current_page=#{session_data.current_page}, pages_processed=#{session_data.pages_processed}, cases_found=#{session_data.cases_found}")
     
-    socket = assign(socket, 
-      progress: updated_progress,
-      last_update: System.monotonic_time(:millisecond)
-    )
+    # When status becomes :completed, preserve the best available progress data
+    # Don't let session updates reset progress values to 0 after completion
+    current_progress = socket.assigns.progress
+    
+    updated_progress = if session_data.status == :completed do
+      # For completed status, preserve the highest values we've seen
+      %{
+        status: :completed,
+        current_page: max(current_progress.current_page || 0, session_data.current_page || 0),
+        pages_processed: max(current_progress.pages_processed || 0, session_data.pages_processed || 0),
+        notices_found: max(current_progress.notices_found || 0, session_data.cases_found || 0),
+        notices_created: max(current_progress.notices_created || 0, session_data.cases_created || 0),
+        notices_exist_total: max(current_progress.notices_exist_total || 0, session_data.cases_exist_total || 0),
+        errors_count: max(current_progress.errors_count || 0, session_data.errors_count || 0),
+        notices_exist_current_page: current_progress.notices_exist_current_page || 0,  # Keep current page count
+        max_pages: current_progress.max_pages || session_data.max_pages  # Keep max_pages for percentage
+      }
+    else
+      # For non-completed status, use session data as before
+      %{
+        status: session_data.status,
+        current_page: session_data.current_page,
+        pages_processed: session_data.pages_processed,
+        notices_found: session_data.cases_found || 0,  # Notice: session uses "cases_found" field
+        notices_created: session_data.cases_created || 0,  # Notice: session uses "cases_created" field
+        notices_exist_total: session_data.cases_exist_total || 0,
+        errors_count: session_data.errors_count || 0,
+        notices_exist_current_page: session_data.cases_exist_current_page || 0,
+        max_pages: session_data.max_pages  # Add for percentage calculation
+      }
+    end
+    
+    # When session becomes completed, also update scraping_active and clean up session references
+    socket = if session_data.status == :completed do
+      # Store the final results for later viewing  
+      completion_result = %{
+        session_id: session_data.session_id,
+        completed_at: DateTime.utc_now(),
+        pages_processed: updated_progress.pages_processed,
+        notices_found: updated_progress.notices_found,
+        notices_created: updated_progress.notices_created,
+        notices_exist_total: updated_progress.notices_exist_total,
+        errors_count: updated_progress.errors_count
+      }
+      
+      assign(socket, 
+        progress: updated_progress,
+        last_update: System.monotonic_time(:millisecond),
+        scraping_active: false,  # Hide Stop button, show Start button 
+        current_session: nil,    # Clear session reference
+        scraping_task: nil,      # Clear task reference
+        session_results: [completion_result | socket.assigns.session_results]  # Add to results history
+      )
+    else
+      assign(socket, 
+        progress: updated_progress,
+        last_update: System.monotonic_time(:millisecond)
+      )
+    end
     
     # Also trigger keep_live refresh for active_sessions (matching Cases pattern)
     {:noreply, AshPhoenix.LiveView.handle_live(socket, "scrape_session:updated", [:active_sessions])}
