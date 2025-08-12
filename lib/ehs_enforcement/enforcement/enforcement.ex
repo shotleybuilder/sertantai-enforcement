@@ -299,6 +299,23 @@ defmodule EhsEnforcement.Enforcement do
     )
   end
 
+  # Apply fuzzy text search filter using pg_trgm trigram similarity.
+  # Uses the pg_trgm extension for fuzzy matching with similarity threshold.
+  # Minimum similarity score of 0.3 (30%) is used for reasonable fuzzy matching.
+  defp apply_fuzzy_search_filter(query, nil), do: query
+  defp apply_fuzzy_search_filter(query, search_term) when is_binary(search_term) and byte_size(search_term) >= 3 do
+    # Use pg_trgm trigram similarity for fuzzy search
+    # Similarity threshold of 0.3 provides good balance between accuracy and recall
+    similarity_threshold = 0.3
+    
+    Ash.Query.filter(query,
+      trigram_similarity(regulator_id, ^search_term) > ^similarity_threshold or
+      trigram_similarity(offence_breaches, ^search_term) > ^similarity_threshold or
+      trigram_similarity(offender.name, ^search_term) > ^similarity_threshold
+    )
+  end
+  defp apply_fuzzy_search_filter(query, _short_term), do: query  # Skip fuzzy search for terms < 3 chars
+
   def list_cases_with_filters!(opts \\ []) do
     case list_cases_with_filters(opts) do
       {:ok, cases} -> cases
@@ -447,6 +464,105 @@ defmodule EhsEnforcement.Enforcement do
     end)
     |> apply_search_filter(search_pattern)
   end
+
+  # Fuzzy search functions using pg_trgm trigram similarity
+
+  @doc """
+  Perform fuzzy search across cases using pg_trgm trigram similarity.
+  
+  This function uses PostgreSQL's pg_trgm extension to find cases with text fields
+  that are similar to the search term, even with typos or partial matches.
+  
+  ## Parameters
+  - `search_term` - The text to search for (minimum 3 characters)
+  - `opts` - Additional query options (limit, offset, etc.)
+  
+  ## Options
+  - `:similarity_threshold` - Minimum similarity score (0.0-1.0, default: 0.3)
+  - `:limit` - Maximum number of results to return
+  - `:offset` - Number of results to skip
+  - `:load` - Associations to preload
+  
+  ## Examples
+      iex> fuzzy_search_cases("construction", limit: 10)
+      [%Case{regulator_id: "HSE-2024-123", offence_breaches: "Construction (Design and Management) Regulations 2015"}]
+      
+      iex> fuzzy_search_cases("acme corp", similarity_threshold: 0.4)
+      [%Case{offender: %{name: "ACME Construction Ltd"}}]
+  """
+  def fuzzy_search_cases(search_term, opts \\ [])
+  def fuzzy_search_cases(search_term, opts) when is_binary(search_term) and byte_size(search_term) >= 3 do
+    similarity_threshold = opts[:similarity_threshold] || 0.3
+    
+    query = EhsEnforcement.Enforcement.Case
+    |> Ash.Query.filter(
+      trigram_similarity(regulator_id, ^search_term) > ^similarity_threshold or
+      trigram_similarity(offence_breaches, ^search_term) > ^similarity_threshold or
+      trigram_similarity(offender.name, ^search_term) > ^similarity_threshold
+    )
+    # Order by most recent cases first (GIN index handles relevance ranking)
+    |> Ash.Query.sort(inserted_at: :desc)
+    
+    query = if opts[:limit], do: Ash.Query.limit(query, opts[:limit]), else: query
+    query = if opts[:offset], do: Ash.Query.offset(query, opts[:offset]), else: query  
+    query = if opts[:load], do: Ash.Query.load(query, opts[:load]), else: Ash.Query.load(query, [:offender])
+    
+    Ash.read(query)
+  end
+  def fuzzy_search_cases(_short_term, _opts), do: {:ok, []}  # Return empty for short terms
+
+  @doc """
+  Perform fuzzy search across notices using pg_trgm trigram similarity.
+  
+  Similar to fuzzy_search_cases/2 but searches notice fields including notice body.
+  """
+  def fuzzy_search_notices(search_term, opts \\ [])
+  def fuzzy_search_notices(search_term, opts) when is_binary(search_term) and byte_size(search_term) >= 3 do
+    similarity_threshold = opts[:similarity_threshold] || 0.3
+    
+    query = EhsEnforcement.Enforcement.Notice
+    |> Ash.Query.filter(
+      trigram_similarity(regulator_id, ^search_term) > ^similarity_threshold or
+      trigram_similarity(offence_breaches, ^search_term) > ^similarity_threshold or
+      trigram_similarity(notice_body, ^search_term) > ^similarity_threshold or
+      trigram_similarity(offender.name, ^search_term) > ^similarity_threshold
+    )
+    # Order by most recent notices first (GIN index handles relevance ranking)
+    |> Ash.Query.sort(inserted_at: :desc)
+    
+    query = if opts[:limit], do: Ash.Query.limit(query, opts[:limit]), else: query
+    query = if opts[:offset], do: Ash.Query.offset(query, opts[:offset]), else: query
+    query = if opts[:load], do: Ash.Query.load(query, opts[:load]), else: Ash.Query.load(query, [:offender])
+    
+    Ash.read(query)
+  end
+  def fuzzy_search_notices(_short_term, _opts), do: {:ok, []}  # Return empty for short terms
+
+  @doc """
+  Perform fuzzy search across offenders using pg_trgm trigram similarity.
+  
+  Searches offender name, normalized name, local authority, and main activity fields.
+  """
+  def fuzzy_search_offenders(search_term, opts \\ [])  
+  def fuzzy_search_offenders(search_term, opts) when is_binary(search_term) and byte_size(search_term) >= 3 do
+    similarity_threshold = opts[:similarity_threshold] || 0.3
+    
+    query = EhsEnforcement.Enforcement.Offender
+    |> Ash.Query.filter(
+      trigram_similarity(name, ^search_term) > ^similarity_threshold or
+      trigram_similarity(normalized_name, ^search_term) > ^similarity_threshold or
+      trigram_similarity(local_authority, ^search_term) > ^similarity_threshold or
+      trigram_similarity(main_activity, ^search_term) > ^similarity_threshold
+    )
+    # Order by offender name (GIN index handles relevance ranking)
+    |> Ash.Query.sort(name: :asc)
+    
+    query = if opts[:limit], do: Ash.Query.limit(query, opts[:limit]), else: query
+    query = if opts[:offset], do: Ash.Query.offset(query, opts[:offset]), else: query
+    
+    Ash.read(query)
+  end
+  def fuzzy_search_offenders(_short_term, _opts), do: {:ok, []}  # Return empty for short terms
 
   # Cached query functions for common filter combinations
 

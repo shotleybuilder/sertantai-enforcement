@@ -24,12 +24,15 @@ defmodule EhsEnforcement.Enforcement.Notice do
       
       # Text search indexes for regulator_id and offence_breaches
       index [:regulator_id], name: "notices_regulator_id_index"
+      index [:offence_breaches], name: "notices_offence_breaches_index"
       
       # Action type filtering index
       index [:offence_action_type], name: "notices_offence_action_type_index"
       
-      # Text search index on offence_breaches (for ILIKE queries)
-      index [:offence_breaches], name: "notices_offence_breaches_index"
+      # pg_trgm GIN indexes for fuzzy text search
+      index [:regulator_id], name: "notices_regulator_id_gin_trgm", using: "GIN"
+      index [:offence_breaches], name: "notices_offence_breaches_gin_trgm", using: "GIN"
+      index [:notice_body], name: "notices_notice_body_gin_trgm", using: "GIN"
     end
   end
 

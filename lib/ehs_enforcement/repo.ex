@@ -8,6 +8,6 @@ defmodule EhsEnforcement.Repo do
   end
 
   def installed_extensions do
-    ["uuid-ossp", "citext"]
+    ["uuid-ossp", "citext", "pg_trgm"]
   end
 end

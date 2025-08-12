@@ -6,6 +6,7 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
   Renders the case filter form component
   """
   def filter_form(assigns) do
+    assigns = assign_new(assigns, :fuzzy_search, fn -> false end)
     ~H"""
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -64,6 +65,24 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <.icon name="hero-magnifying-glass" class="h-4 w-4 text-gray-400" />
               </div>
+            </div>
+            
+            <!-- Fuzzy Search Toggle -->
+            <div class="mt-2 flex items-center">
+              <input
+                id="fuzzy-search-toggle"
+                type="checkbox"
+                checked={@fuzzy_search}
+                phx-click="toggle_fuzzy_search"
+                phx-target={@target}
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label for="fuzzy-search-toggle" class="ml-2 text-sm text-gray-600">
+                Fuzzy search (finds similar matches)
+              </label>
+              <%= if @fuzzy_search do %>
+                <.icon name="hero-sparkles" class="h-4 w-4 ml-1 text-blue-500" />
+              <% end %>
             </div>
           </div>
 

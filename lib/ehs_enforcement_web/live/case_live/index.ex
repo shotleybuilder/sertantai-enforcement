@@ -27,6 +27,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      |> assign(:total_cases, 0)
      |> assign(:loading, true)
      |> assign(:search_active, false)
+     |> assign(:fuzzy_search, false)
      |> load_cases(), temporary_assigns: [cases: []]}
   end
 
@@ -81,6 +82,17 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      socket
      |> assign(:filters, %{})
      |> assign(:page, 1)
+     |> load_cases()}
+  end
+
+  @impl true
+  def handle_event("toggle_fuzzy_search", _params, socket) do
+    fuzzy_search = !socket.assigns.fuzzy_search
+    
+    {:noreply,
+     socket
+     |> assign(:fuzzy_search, fuzzy_search)
+     |> assign(:page, 1)  # Reset to first page when changing search mode
      |> load_cases()}
   end
 
@@ -180,18 +192,51 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   # Private functions
 
   defp load_cases(socket) do
-    %{filters: filters, sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size} = socket.assigns
+    %{filters: filters, sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size, fuzzy_search: fuzzy_search} = socket.assigns
     
     try do
-      # Build optimized query options using composite index patterns
-      query_opts = build_optimized_query_options(filters, sort_by, sort_dir, page, page_size)
+      # Check if fuzzy search is enabled and we have a search query
+      search_query = filters[:search]
+      use_fuzzy = fuzzy_search && is_binary(search_query) && String.trim(search_query) != ""
       
-      # Use optimized filtering function that leverages composite indexes
-      cases = Enforcement.list_cases_with_filters!(query_opts)
-      
-      # Get total count using same optimized filter
-      count_opts = [filter: build_optimized_filter(filters)]
-      total_cases = Enforcement.count_cases!(count_opts)
+      {cases, total_cases} = if use_fuzzy do
+        # Use fuzzy search with pg_trgm
+        trimmed_query = String.trim(search_query)
+        limited_query = if String.length(trimmed_query) > 100 do
+          String.slice(trimmed_query, 0, 100)
+        else
+          trimmed_query
+        end
+        
+        offset = (page - 1) * page_size
+        fuzzy_opts = [
+          limit: page_size,
+          offset: offset,
+          load: [:offender, :agency]
+        ]
+        
+        {:ok, fuzzy_results} = Enforcement.fuzzy_search_cases(limited_query, fuzzy_opts)
+        
+        # For fuzzy search, we can't easily get total count, so we estimate
+        # by checking if we got a full page of results
+        estimated_total = if length(fuzzy_results) == page_size do
+          (page * page_size) + 1  # Estimate there's at least one more page
+        else
+          offset + length(fuzzy_results)  # We've reached the end
+        end
+        
+        {fuzzy_results, estimated_total}
+      else
+        # Use regular filtering with optimized indexes
+        query_opts = build_optimized_query_options(filters, sort_by, sort_dir, page, page_size)
+        regular_results = Enforcement.list_cases_with_filters!(query_opts)
+        
+        # Get total count using same optimized filter
+        count_opts = [filter: build_optimized_filter(filters)]
+        regular_total = Enforcement.count_cases!(count_opts)
+        
+        {regular_results, regular_total}
+      end
       
       socket
       |> assign(:cases, cases)

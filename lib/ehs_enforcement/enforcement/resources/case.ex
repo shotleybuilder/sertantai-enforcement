@@ -30,9 +30,19 @@ defmodule EhsEnforcement.Enforcement.Case do
       
       # Text search indexes for regulator_id and offence_breaches
       index [:regulator_id], name: "cases_regulator_id_index"
-      
-      # Text search index on offence_breaches (for ILIKE queries)
       index [:offence_breaches], name: "cases_offence_breaches_index"
+      
+      # pg_trgm GIN indexes for fuzzy text search
+      index [:regulator_id], name: "cases_regulator_id_gin_trgm", using: "GIN"
+      index [:offence_breaches], name: "cases_offence_breaches_gin_trgm", using: "GIN"
+    end
+    
+    custom_statements do
+      # Enable pg_trgm extension for fuzzy text search
+      statement :enable_pg_trgm do
+        up "CREATE EXTENSION IF NOT EXISTS pg_trgm"
+        down "DROP EXTENSION IF EXISTS pg_trgm"
+      end
     end
   end
 

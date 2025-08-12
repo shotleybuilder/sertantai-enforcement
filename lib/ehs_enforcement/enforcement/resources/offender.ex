@@ -12,6 +12,15 @@ defmodule EhsEnforcement.Enforcement.Offender do
   postgres do
     table "offenders"
     repo EhsEnforcement.Repo
+    
+    custom_indexes do
+      # pg_trgm GIN indexes for fuzzy text search on offender fields
+      index [:name], name: "offenders_name_gin_trgm", using: "GIN"
+      index [:normalized_name], name: "offenders_normalized_name_gin_trgm", using: "GIN"
+      index [:local_authority], name: "offenders_local_authority_gin_trgm", using: "GIN"
+      index [:main_activity], name: "offenders_main_activity_gin_trgm", using: "GIN"
+      index [:postcode], name: "offenders_postcode_gin_trgm", using: "GIN"
+    end
   end
 
   pub_sub do
