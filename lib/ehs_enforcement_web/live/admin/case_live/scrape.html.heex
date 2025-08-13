@@ -172,16 +172,13 @@
       </div>
     </div>
 
-    <!-- Progress Panel - Conditional Rendering by Agency -->
+    <!-- Progress Panel - Unified Component -->
     <div>
-      <% selected_agency = Phoenix.HTML.Form.input_value(@form, :agency) %>
-      <%= if selected_agency in [:hse, "hse"] do %>
-        <!-- HSE Progress Component (Page-based) -->
-        <.hse_progress_component progress={@progress} />
-      <% else %>
-        <!-- EA Progress Component (Case-based) -->
-        <.ea_progress_component progress={@progress} />
-      <% end %>
+      <% selected_agency = Phoenix.HTML.Form.input_value(@form, :agency) || "hse" %>
+      <ProgressComponent.unified_progress_component 
+        agency={String.to_atom(selected_agency)} 
+        progress={@progress} 
+      />
     </div>
   </div>
 

@@ -19,6 +19,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   alias EhsEnforcement.Scraping.ScrapeRequest
   alias EhsEnforcement.Scraping.ScrapeSession
   alias EhsEnforcement.Scraping.ProcessingLog
+  alias EhsEnforcementWeb.Components.ProgressComponent
   alias AshPhoenix.Form
   alias Phoenix.PubSub
   
@@ -758,66 +759,9 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
     config.real_time_progress_enabled
   end
   
-  defp progress_percentage(progress) do
-    case progress.status do
-      :idle -> 0
-      :running when progress.pages_processed == 0 -> 5
-      :running -> 
-        # Calculate based on page range: (end_page - start_page) + 1
-        start_page = Map.get(progress, :start_page, 1)
-        end_page = Map.get(progress, :end_page, start_page + 9)
-        total_pages_to_scrape = (end_page - start_page) + 1
-        processed = Map.get(progress, :pages_processed, 0)
-        # Ensure we don't exceed 95% until completed
-        min(95, (processed / total_pages_to_scrape) * 100)
-      :completed -> 100
-      :stopped -> 
-        # Better estimate based on processed pages
-        min(100, progress.pages_processed * 10)
-      _ -> 0
-    end
-  end
+  # Progress percentage calculation moved to ProgressComponent module
 
-  defp ea_progress_percentage(progress) do
-    case progress.status do
-      :idle -> 0
-      :running -> 
-        # Calculate based on cases processed vs cases found
-        total_cases = max(1, progress.cases_found || 1)
-        processed_cases = (progress.cases_created || 0) + (progress.cases_updated || 0) + (progress.cases_exist_total || 0)
-        # Ensure we don't exceed 95% until completed
-        min(95, (processed_cases / total_cases) * 100)
-      :completed -> 100
-      :stopped -> 
-        # Calculate final percentage based on processed cases
-        total_cases = max(1, progress.cases_found || 1)  
-        processed_cases = (progress.cases_created || 0) + (progress.cases_updated || 0) + (progress.cases_exist_total || 0)
-        min(100, (processed_cases / total_cases) * 100)
-      _ -> 0
-    end
-  end
-  
-  defp status_color(status) do
-    case status do
-      :idle -> "bg-gray-200"
-      :running -> "bg-blue-500"
-      :processing_page -> "bg-yellow-500"
-      :completed -> "bg-green-500"
-      :stopped -> "bg-red-500"
-      _ -> "bg-gray-200"
-    end
-  end
-  
-  defp status_text(status) do
-    case status do
-      :idle -> "Ready to scrape"
-      :running -> "Scraping in progress..."
-      :processing_page -> "Processing page..."
-      :completed -> "Scraping completed"
-      :stopped -> "Scraping stopped"
-      _ -> "Unknown status"
-    end
-  end
+  # Progress helper functions moved to ProgressComponent module
   
   defp build_case_details(data) do
     %{
@@ -1192,159 +1136,8 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
     {:noreply, socket}
   end
 
-  # Progress Components
+  # Progress Components moved to ProgressComponent module
 
-  attr :progress, :map, required: true
-
-  defp hse_progress_component(assigns) do
-    ~H"""
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-semibold text-gray-900">HSE Progress</h2>
-        <%= if @progress.status in [:completed, :stopped] and (@progress.cases_created > 0 or @progress.cases_updated > 0) do %>
-          <button
-            type="button"
-            phx-click="clear_progress"
-            class="text-sm text-gray-500 hover:text-gray-700"
-          >
-            Clear Progress
-          </button>
-        <% end %>
-      </div>
-      
-      <!-- Progress Bar -->
-      <div class="mb-4">
-        <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
-          <span><%= status_text(@progress.status) %></span>
-          <span><%= trunc(progress_percentage(@progress)) %>%</span>
-        </div>
-        <div class="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            class={"h-2 rounded-full transition-all duration-300 #{status_color(@progress.status)}"}
-            style={"width: #{progress_percentage(@progress)}%"}
-          ></div>
-        </div>
-      </div>
-      
-      <!-- Current Status -->
-      <%= if @progress.current_page do %>
-        <div class="text-sm text-gray-600 mb-4">
-          Currently processing page: <span class="font-medium"><%= @progress.current_page %></span>
-        </div>
-      <% end %>
-      
-      <!-- HSE-specific Statistics -->
-      <div class="space-y-3">
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Pages Processed:</span>
-          <span class="font-medium"><%= @progress.pages_processed %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Found:</span>
-          <span class="font-medium"><%= @progress.cases_found %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Created (Total):</span>
-          <span class="font-medium text-green-600"><%= @progress.cases_created %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Created (This Page):</span>
-          <span class="font-medium text-green-500"><%= @progress.cases_created_current_page || 0 %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Updated (Total):</span>
-          <span class="font-medium text-blue-600"><%= @progress.cases_updated || 0 %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Updated (This Page):</span>
-          <span class="font-medium text-blue-500"><%= @progress.cases_updated_current_page || 0 %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Exist (Total):</span>
-          <span class="font-medium text-orange-600"><%= @progress.cases_exist_total %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Exist (Current Page):</span>
-          <span class="font-medium text-orange-500"><%= @progress.cases_exist_current_page %></span>
-        </div>
-        <%= if @progress.errors_count > 0 do %>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Errors:</span>
-            <span class="font-medium text-red-600"><%= @progress.errors_count %></span>
-          </div>
-        <% end %>
-      </div>
-    </div>
-    """
-  end
-
-  attr :progress, :map, required: true
-
-  defp ea_progress_component(assigns) do
-    ~H"""
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-semibold text-gray-900">EA Progress</h2>
-        <%= if @progress.status in [:completed, :stopped] and (@progress.cases_created > 0 or @progress.cases_updated > 0) do %>
-          <button
-            type="button"
-            phx-click="clear_progress"
-            class="text-sm text-gray-500 hover:text-gray-700"
-          >
-            Clear Progress
-          </button>
-        <% end %>
-      </div>
-      
-      <!-- Progress Bar -->
-      <div class="mb-4">
-        <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
-          <span><%= status_text(@progress.status) %></span>
-          <span><%= trunc(ea_progress_percentage(@progress)) %>%</span>
-        </div>
-        <div class="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            class={"h-2 rounded-full transition-all duration-300 #{status_color(@progress.status)}"}
-            style={"width: #{ea_progress_percentage(@progress)}%"}
-          ></div>
-        </div>
-      </div>
-      
-      <!-- Current Status -->
-      <div class="text-sm text-gray-600 mb-4">
-        Processing cases from EA enforcement data...
-      </div>
-      
-      <!-- EA-specific Statistics (Case-based only) -->
-      <div class="space-y-3">
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Found:</span>
-          <span class="font-medium"><%= @progress.cases_found %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Processed:</span>
-          <span class="font-medium"><%= (@progress.cases_created || 0) + (@progress.cases_updated || 0) + (@progress.cases_exist_total || 0) %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Created:</span>
-          <span class="font-medium text-green-600"><%= @progress.cases_created %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Updated:</span>
-          <span class="font-medium text-blue-600"><%= @progress.cases_updated || 0 %></span>
-        </div>
-        <div class="flex justify-between text-sm">
-          <span class="text-gray-600">Cases Exist:</span>
-          <span class="font-medium text-orange-600"><%= @progress.cases_exist_total %></span>
-        </div>
-        <%= if @progress.errors_count > 0 do %>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Errors:</span>
-            <span class="font-medium text-red-600"><%= @progress.errors_count %></span>
-          </div>
-        <% end %>
-      </div>
-    </div>
-    """
-  end
+  # Old HSE and EA progress components have been replaced by unified component
+  # See: EhsEnforcementWeb.Components.ProgressComponent.unified_progress_component/1
 end
