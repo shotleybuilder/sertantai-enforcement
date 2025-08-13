@@ -1,12 +1,13 @@
-defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapeSessions do
+defmodule EhsEnforcementWeb.Admin.ScrapeSessionsLive do
   @moduledoc """
-  LiveView for displaying case scraping session history with real-time updates.
+  Unified LiveView for displaying scraping session history with real-time updates.
   
   Features:
   - Real-time session monitoring via Phoenix PubSub
-  - Session filtering and sorting
+  - Session filtering and sorting (status and database type)
   - Session details and metrics
   - Proper Ash integration with actor context
+  - Supports both case and notice scraping sessions
   """
   
   use EhsEnforcementWeb, :live_view
@@ -15,21 +16,21 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapeSessions do
   require Ash.Query
   
   alias EhsEnforcement.Scraping.ScrapeSession
-  
+
   @impl true
   def mount(_params, _session, socket) do
     socket = assign(socket,
       # Page metadata
-      page_title: "Case Scraping Sessions",
+      page_title: "Scraping Sessions",
       
       # Loading state
       loading: false,
       
       # Filter state
       filter_status: "all",
-      filter_database: "convictions",
+      filter_database: "all",
       
-      # Sessions data - initialize as empty, will be populated by keep_live
+      # Sessions data - initialize as empty, will be populated by handle_params
       all_sessions: [],
       
       # UI state
@@ -76,12 +77,12 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapeSessions do
   def handle_event("clear_filters", _params, socket) do
     socket = assign(socket, 
       filter_status: "all", 
-      filter_database: "convictions",
+      filter_database: "all",
       loading: true
     )
     
     # Reload sessions with cleared filters
-    sessions = load_sessions("all", "convictions", socket.assigns.current_user)
+    sessions = load_sessions("all", "all", socket.assigns.current_user)
     socket = assign(socket, all_sessions: sessions, loading: false)
     
     {:noreply, socket}
@@ -107,7 +108,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapeSessions do
   # Catch-all handler for debugging
   @impl true
   def handle_info(message, socket) do
-    Logger.debug("CaseScrapeSessions: Received unhandled message: #{inspect(message, limit: :infinity) |> String.slice(0, 200)}...")
+    Logger.debug("ScrapeSessionsLive: Received unhandled message: #{inspect(message, limit: :infinity) |> String.slice(0, 200)}...")
     {:noreply, socket}
   end
   
@@ -200,6 +201,22 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapeSessions do
       
       _ -> 
         0
+    end
+  end
+  
+  defp database_type_badge_class(database) do
+    case database do
+      "convictions" -> "bg-red-100 text-red-800"
+      "notices" -> "bg-yellow-100 text-yellow-800"
+      _ -> "bg-gray-100 text-gray-800"
+    end
+  end
+  
+  defp format_database_type(database) do
+    case database do
+      "convictions" -> "Cases"
+      "notices" -> "Notices"
+      _ -> String.capitalize(database || "Unknown")
     end
   end
 end

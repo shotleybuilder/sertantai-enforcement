@@ -78,7 +78,7 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
     path = case type do
       "cases" -> "/admin/cases/scrape"
       "notices" -> "/admin/notices/scrape"
-      _ -> "/admin/scraping"
+      _ -> "/admin/scrape-sessions/monitor"
     end
     
     {:noreply, push_navigate(socket, to: path)}

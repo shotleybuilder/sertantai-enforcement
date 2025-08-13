@@ -70,23 +70,6 @@ defmodule EhsEnforcementWeb.Components.CasesActionCard do
         </.card_secondary_button>
       </:actions>
       
-      <:admin_actions :if={is_admin?(@current_user)} visible={true}>
-        <a
-          href="/admin"
-          class="w-full rounded-md px-4 py-2 text-sm font-medium transition-colors duration-200 border focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:bg-gray-100 relative"
-        >
-          <div class="flex items-center justify-between w-full">
-            <span>Admin Tools</span>
-            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-          </div>
-          <span class="absolute -top-1 -right-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            ADMIN
-          </span>
-        </a>
-      </:admin_actions>
     </.dashboard_action_card>
     """
   end
@@ -132,9 +115,6 @@ defmodule EhsEnforcementWeb.Components.CasesActionCard do
     end
   end
 
-  defp is_admin?(nil), do: false
-  defp is_admin?(%{is_admin: true}), do: true
-  defp is_admin?(_), do: false
 
   defp format_number(number) when is_integer(number) do
     number

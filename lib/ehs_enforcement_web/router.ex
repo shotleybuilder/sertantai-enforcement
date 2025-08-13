@@ -105,10 +105,9 @@ defmodule EhsEnforcementWeb.Router do
       
       # Admin Scraping Management Routes (existing)
       live "/admin/cases/scrape", Admin.CaseLive.Scrape, :scrape
-      live "/admin/cases/scrape-sessions", Admin.CaseLive.ScrapeSessions, :index
       live "/admin/notices/scrape", Admin.NoticeLive.Scrape, :scrape
-      live "/admin/notices/scrape-sessions", Admin.NoticeLive.ScrapeSessions, :index
-      live "/admin/scraping", Admin.ScrapingLive.Index, :index
+      live "/admin/scrape-sessions", Admin.ScrapeSessionsLive, :index
+      live "/admin/scrape-sessions/monitor", Admin.ScrapingLive.Index, :index
     end
   end
 

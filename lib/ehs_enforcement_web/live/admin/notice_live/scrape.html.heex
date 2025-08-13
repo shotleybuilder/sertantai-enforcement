@@ -7,6 +7,15 @@
     <!-- Navigation Links -->
     <div class="mt-4 flex space-x-4">
       <.link
+        navigate={~p"/admin"}
+        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Admin Dashboard
+      </.link>
+      <.link
         navigate={~p"/admin/cases/scrape"}
         class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       >
@@ -118,7 +127,7 @@
               
               <!-- View Sessions Button (opens in new tab) -->
               <a
-                href={~p"/admin/notices/scrape-sessions"}
+                href={~p"/admin/scrape-sessions"}
                 target="_blank"
                 class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
