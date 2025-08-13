@@ -57,6 +57,9 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
         pages_processed: 0,
         cases_found: 0,
         cases_created: 0,
+        cases_created_current_page: 0,
+        cases_updated: 0,
+        cases_updated_current_page: 0,
         cases_exist_total: 0,
         cases_exist_current_page: 0,
         errors_count: 0,
@@ -295,6 +298,27 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
       %Ash.BulkResult{} -> Logger.info("Cleared all case processing logs")
       {:error, reason} -> Logger.warning("Failed to clear processing logs: #{inspect(reason)}")
     end
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("clear_progress", _params, socket) do
+    # Reset progress counters to clear the display
+    cleared_progress = %{
+      pages_processed: 0,
+      cases_found: 0,
+      cases_created: 0,
+      cases_created_current_page: 0,
+      cases_updated: 0,
+      cases_updated_current_page: 0,
+      cases_exist_total: 0,
+      cases_exist_current_page: 0,
+      errors_count: 0,
+      current_page: nil,
+      status: :idle
+    }
+    
+    socket = assign(socket, progress: cleared_progress)
     {:noreply, socket}
   end
   
@@ -984,6 +1008,9 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
       pages_processed: session_data.pages_processed,
       cases_found: session_data.cases_found,
       cases_created: session_data.cases_created,
+      cases_created_current_page: session_data.cases_created_current_page || 0,
+      cases_updated: session_data.cases_updated || 0,
+      cases_updated_current_page: session_data.cases_updated_current_page || 0,
       cases_exist_total: session_data.cases_exist_total,
       errors_count: session_data.errors_count,
       cases_exist_current_page: session_data.cases_exist_current_page || 0,  # Page-level existing count
