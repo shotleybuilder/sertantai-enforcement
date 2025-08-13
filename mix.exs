@@ -113,6 +113,7 @@ defmodule EhsEnforcement.MixProject do
       {:number, "~> 1.0"},
       {:ex_prompt, "~> 0.2.0"},
       {:dotenv, "~> 3.1.0", only: [:dev, :test]},
+      {:lazy_html, ">= 0.1.0", only: :test},
       # Ash Authentication
       {:ash_authentication, "~> 4.0"},
       {:ash_authentication_phoenix, "~> 2.0"},

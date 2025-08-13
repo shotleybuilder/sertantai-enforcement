@@ -49,9 +49,9 @@
               <.input 
                 field={@form[:max_pages]} 
                 type="number" 
-                label="Max Pages"
+                label="End Page"
                 min="1"
-                max="100"
+                max="1000"
                 disabled={@scraping_active}
               />
             </div>
@@ -116,7 +116,10 @@
             <% end %>
             
             <div class="text-sm text-gray-500">
-              Will scrape <%= Phoenix.HTML.Form.input_value(@form, :max_pages) || 10 %> page<%= if (Phoenix.HTML.Form.input_value(@form, :max_pages) || 10) != 1, do: "s" %> starting from page <%= Phoenix.HTML.Form.input_value(@form, :start_page) || 1 %>
+              <% start_page = Phoenix.HTML.Form.input_value(@form, :start_page) || 1 %>
+              <% end_page = Phoenix.HTML.Form.input_value(@form, :max_pages) || 10 %>
+              <% page_count = max(1, end_page - start_page + 1) %>
+              Will scrape <%= page_count %> page<%= if page_count != 1, do: "s" %> from page <%= start_page %> to page <%= end_page %>
             </div>
           </div>
         </.simple_form>
@@ -126,7 +129,18 @@
     <!-- Progress Panel -->
     <div>
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Progress</h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-900">Progress</h2>
+          <%= if @progress.status in [:completed, :stopped] and (@progress.notices_created > 0 or @progress.notices_updated > 0) do %>
+            <button
+              type="button"
+              phx-click="clear_progress"
+              class="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Clear Progress
+            </button>
+          <% end %>
+        </div>
         
         <!-- Progress Bar -->
         <div class="mb-4">
@@ -160,16 +174,28 @@
             <span class="font-medium"><%= @progress.notices_found %></span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Notices Created:</span>
+            <span class="text-gray-600">Notices Created (Total):</span>
             <span class="font-medium text-green-600"><%= @progress.notices_created %></span>
           </div>
           <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Notices Created (This Page):</span>
+            <span class="font-medium text-green-500"><%= @progress.notices_created_current_page %></span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Notices Updated (Total):</span>
+            <span class="font-medium text-blue-600"><%= @progress.notices_updated %></span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Notices Updated (This Page):</span>
+            <span class="font-medium text-blue-500"><%= @progress.notices_updated_current_page %></span>
+          </div>
+          <div class="flex justify-between text-sm">
             <span class="text-gray-600">Notices Exist (Total):</span>
-            <span class="font-medium text-blue-600"><%= @progress.notices_exist_total %></span>
+            <span class="font-medium text-orange-600"><%= @progress.notices_exist_total %></span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">Notices Exist (Current Page):</span>
-            <span class="font-medium text-orange-600"><%= @progress.notices_exist_current_page %></span>
+            <span class="font-medium text-orange-500"><%= @progress.notices_exist_current_page %></span>
           </div>
           <%= if @progress.errors_count > 0 do %>
             <div class="flex justify-between text-sm">
@@ -190,7 +216,11 @@
           <h2 class="text-xl font-semibold text-gray-900">Scraped Notices</h2>
           <div class="flex items-center space-x-4">
             <div class="text-sm text-gray-500">
-              Showing <%= length(@scraped_notices) %> scraped notices
+              <%= if length(@scraped_notices) > 50 do %>
+                Showing latest 50 of <%= length(@scraped_notices) %> scraped notices
+              <% else %>
+                Showing <%= length(@scraped_notices) %> scraped notices
+              <% end %>
             </div>
             <%= if length(@scraped_notices) > 0 do %>
               <button
@@ -288,12 +318,6 @@
             </tbody>
           </table>
         </div>
-        
-        <%= if length(@scraped_notices) > 50 do %>
-          <div class="mt-4 text-center text-sm text-gray-500">
-            Showing latest 50 of <%= length(@scraped_notices) %> scraped notices
-          </div>
-        <% end %>
       </div>
     </div>
   <% end %>

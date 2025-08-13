@@ -54,6 +54,9 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         pages_processed: 0,
         notices_found: 0,
         notices_created: 0,
+        notices_created_current_page: 0,  # New: track created notices on current page
+        notices_updated: 0,               # New: track total updated notices
+        notices_updated_current_page: 0,  # New: track updated notices on current page
         notices_exist_total: 0,
         notices_exist_current_page: 0,
         errors_count: 0,
@@ -144,9 +147,15 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
       case Form.submit(validated_form, params: params_with_notices) do
         {:ok, scrape_request} ->
           # Extract validated parameters from the created resource
+          # Note: max_pages field now represents "end page" instead of "number of pages"
+          end_page = scrape_request.max_pages
+          start_page = scrape_request.start_page
+          pages_to_scrape = max(1, end_page - start_page + 1)
+          
           validated_params = %{
-            start_page: scrape_request.start_page,
-            max_pages: scrape_request.max_pages,
+            start_page: start_page,
+            end_page: end_page,
+            max_pages: pages_to_scrape,  # Calculated number of pages
             database: "notices",  # Force notices
             country: scrape_request.country || "All"
           }
@@ -177,7 +186,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         )
         
         # Start simple scraping task
-        Logger.info("Starting simple notice scraping: pages #{scraping_opts.start_page}-#{scraping_opts.start_page + scraping_opts.max_pages - 1}")
+        Logger.info("Starting simple notice scraping: pages #{scraping_opts.start_page}-#{validated_params.end_page}")
         
         # Create ScrapeSession using Ash (pure Ash approach)
         session = EhsEnforcement.Scraping.ScrapeSession
@@ -185,6 +194,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
           session_id: :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower),
           start_page: validated_params.start_page,
           max_pages: validated_params.max_pages,
+          end_page: validated_params.end_page,
           database: "notices",
           status: :running,
           current_page: validated_params.start_page
@@ -267,6 +277,27 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     socket = assign(socket, 
       scraped_notices: [],
       scraping_session_started_at: nil
+    )
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("clear_progress", _params, socket) do
+    # Reset progress to initial state
+    socket = assign(socket, 
+      progress: %{
+        pages_processed: 0,
+        notices_found: 0,
+        notices_created: 0,
+        notices_created_current_page: 0,
+        notices_updated: 0,
+        notices_updated_current_page: 0,
+        notices_exist_total: 0,
+        notices_exist_current_page: 0,
+        errors_count: 0,
+        current_page: nil,
+        status: :idle
+      }
     )
     {:noreply, socket}
   end
@@ -581,11 +612,12 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     database = opts.database
     actor = opts.actor
     
-    results = %{created_count: 0, error_count: 0, existing_count: 0}
+    results = %{created_count: 0, error_count: 0, existing_count: 0, updated_count: 0}
     
     try do
-      # Process each page (with early stopping)
-      final_results = Enum.reduce_while(start_page..(start_page + max_pages - 1), results, fn page, acc ->
+      # Process each page (with early stopping) - use end_page from session or calculate from max_pages
+      end_page = session.end_page || (start_page + max_pages - 1)
+      final_results = Enum.reduce_while(start_page..end_page, results, fn page, acc ->
         Logger.info("Scraping notice page #{page}")
         
         # Update session with current page and reset page counters (Ash PubSub will notify UI)
@@ -597,7 +629,9 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         |> Ash.Changeset.for_update(:update, %{
           current_page: page,
           pages_processed: pages_completed_so_far,
-          cases_exist_current_page: 0  # Reset page counter
+          cases_exist_current_page: 0,     # Reset page counter
+          cases_created_current_page: 0,   # Reset page counter
+          cases_updated_current_page: 0    # Reset page counter
         })
         |> Ash.update!(actor: actor)
         
@@ -631,14 +665,22 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
             Logger.info("Processable notices (with regulator_id): #{length(processable_notices)} of #{length(basic_notices)}")
             
             # Process each notice individually with real-time session updates
-            {page_results, page_existing_count} = Enum.reduce(processable_notices, {acc, 0}, fn basic_notice, {notice_acc, page_existing} ->
+            {page_results, page_existing_count, _page_created_count, _page_updated_count} = Enum.reduce(processable_notices, {acc, 0, 0, 0}, fn basic_notice, {notice_acc, page_existing, page_created, page_updated} ->
               # Process the notice (no need for regulator_id check since we pre-filtered)
               prev_existing = notice_acc.existing_count
+              prev_created = notice_acc.created_count
+              prev_updated = notice_acc.updated_count || 0
+              
               updated_acc = process_single_notice_simple(basic_notice, database, actor, notice_acc)
               
-              # Calculate if this notice was an existing (duplicate)
+              # Calculate what happened with this notice
               notice_was_existing = updated_acc.existing_count > prev_existing
+              notice_was_created = updated_acc.created_count > prev_created
+              notice_was_updated = (updated_acc.updated_count || 0) > prev_updated
+              
               new_page_existing = if notice_was_existing, do: page_existing + 1, else: page_existing
+              new_page_created = if notice_was_created, do: page_created + 1, else: page_created
+              new_page_updated = if notice_was_updated, do: page_updated + 1, else: page_updated
               
               # Update session immediately after each notice (match Cases pattern exactly)
               total_found = updated_acc.created_count + updated_acc.existing_count
@@ -646,13 +688,16 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
               |> Ash.Changeset.for_update(:update, %{
                 cases_found: total_found,
                 cases_created: updated_acc.created_count,
+                cases_created_current_page: new_page_created,
+                cases_updated: updated_acc.updated_count || 0,
+                cases_updated_current_page: new_page_updated,
                 cases_exist_total: updated_acc.existing_count,
                 cases_exist_current_page: new_page_existing,
                 errors_count: updated_acc.error_count
               })
               |> Ash.update!(actor: actor)
               
-              {updated_acc, new_page_existing}
+              {updated_acc, new_page_existing, new_page_created, new_page_updated}
             end)
             
             # Update session with completed page count (increment by 1 after page completion)
@@ -727,14 +772,15 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
               case Ash.update(existing_notice, %{}, actor: actor) do
                 {:ok, _updated_notice} ->
                   Logger.info("✅ Updated existing notice: #{basic_notice.regulator_id}")
+                  %{results | existing_count: results.existing_count + 1, updated_count: results.updated_count + 1}
                 {:error, error} ->
                   Logger.warning("Failed to update existing notice: #{inspect(error)}")
+                  %{results | existing_count: results.existing_count + 1}
               end
             _ ->
               Logger.warning("Could not find existing notice to update: #{basic_notice.regulator_id}")
+              %{results | existing_count: results.existing_count + 1}
           end
-          
-          %{results | existing_count: results.existing_count + 1}
         else
           Logger.warning("❌ Error creating notice #{basic_notice.regulator_id}: #{inspect(errors)}")
           %{results | error_count: results.error_count + 1}
@@ -777,9 +823,12 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         pages_processed: max(current_progress.pages_processed || 0, session_data.pages_processed || 0),
         notices_found: max(current_progress.notices_found || 0, session_data.cases_found || 0),
         notices_created: max(current_progress.notices_created || 0, session_data.cases_created || 0),
+        notices_created_current_page: max(current_progress.notices_created_current_page || 0, session_data.cases_created_current_page || 0),
+        notices_updated: max(current_progress.notices_updated || 0, session_data.cases_updated || 0),
+        notices_updated_current_page: max(current_progress.notices_updated_current_page || 0, session_data.cases_updated_current_page || 0),
         notices_exist_total: max(current_progress.notices_exist_total || 0, session_data.cases_exist_total || 0),
+        notices_exist_current_page: max(current_progress.notices_exist_current_page || 0, session_data.cases_exist_current_page || 0),
         errors_count: max(current_progress.errors_count || 0, session_data.errors_count || 0),
-        notices_exist_current_page: current_progress.notices_exist_current_page || 0,  # Keep current page count
         max_pages: current_progress.max_pages || session_data.max_pages  # Keep max_pages for percentage
       }
     else
@@ -790,9 +839,12 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         pages_processed: session_data.pages_processed,
         notices_found: session_data.cases_found || 0,  # Notice: session uses "cases_found" field
         notices_created: session_data.cases_created || 0,  # Notice: session uses "cases_created" field
+        notices_created_current_page: session_data.cases_created_current_page || 0,
+        notices_updated: session_data.cases_updated || 0,
+        notices_updated_current_page: session_data.cases_updated_current_page || 0,
         notices_exist_total: session_data.cases_exist_total || 0,
-        errors_count: session_data.errors_count || 0,
         notices_exist_current_page: session_data.cases_exist_current_page || 0,
+        errors_count: session_data.errors_count || 0,
         max_pages: session_data.max_pages  # Add for percentage calculation
       }
     end

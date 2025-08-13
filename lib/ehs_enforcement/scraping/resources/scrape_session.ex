@@ -38,6 +38,10 @@ defmodule EhsEnforcement.Scraping.ScrapeSession do
       default 10
     end
 
+    attribute :end_page, :integer do
+      allow_nil? true
+    end
+
     attribute :database, :string do
       allow_nil? false
       default "convictions"
@@ -54,6 +58,9 @@ defmodule EhsEnforcement.Scraping.ScrapeSession do
     attribute :pages_processed, :integer, default: 0
     attribute :cases_found, :integer, default: 0
     attribute :cases_created, :integer, default: 0
+    attribute :cases_created_current_page, :integer, default: 0
+    attribute :cases_updated, :integer, default: 0
+    attribute :cases_updated_current_page, :integer, default: 0
     attribute :cases_exist_total, :integer, default: 0
     attribute :cases_exist_current_page, :integer, default: 0
     attribute :errors_count, :integer, default: 0
@@ -67,8 +74,9 @@ defmodule EhsEnforcement.Scraping.ScrapeSession do
     create :create do
       primary? true
       accept [
-        :session_id, :start_page, :max_pages, :database, :status,
+        :session_id, :start_page, :max_pages, :end_page, :database, :status,
         :current_page, :pages_processed, :cases_found, :cases_created,
+        :cases_created_current_page, :cases_updated, :cases_updated_current_page,
         :cases_exist_total, :errors_count
       ]
     end
@@ -78,7 +86,8 @@ defmodule EhsEnforcement.Scraping.ScrapeSession do
       require_atomic? false
       accept [
         :status, :current_page, :pages_processed, :cases_found,
-        :cases_created, :cases_exist_total, :cases_exist_current_page, :errors_count
+        :cases_created, :cases_created_current_page, :cases_updated, :cases_updated_current_page,
+        :cases_exist_total, :cases_exist_current_page, :errors_count
       ]
     end
     
