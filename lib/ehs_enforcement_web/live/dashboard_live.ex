@@ -207,12 +207,6 @@ defmodule EhsEnforcementWeb.DashboardLive do
      |> assign(:recent_activity_page, 1)}
   end
 
-  @impl true
-  def handle_event("export_data", %{"format" => format}, socket) do
-    # In a real implementation, this would generate and download the file
-    # For now, we'll just send a flash message
-    {:noreply, put_flash(socket, :info, "Export to #{format} started")}
-  end
 
   @impl true
   def handle_event("browse_recent_cases", _params, socket) do
@@ -228,18 +222,6 @@ defmodule EhsEnforcementWeb.DashboardLive do
     {:noreply, push_navigate(socket, to: "/cases?filter=recent&period=#{time_period}")}  
   end
 
-  @impl true
-  def handle_event("scrape_cases", _params, socket) do
-    current_user = socket.assigns[:current_user]
-    
-    # Check admin privileges
-    case current_user do
-      %{is_admin: true} ->
-        {:noreply, push_navigate(socket, to: "/admin/cases/scrape")}
-      _ ->
-        {:noreply, put_flash(socket, :error, "Admin privileges required to scrape cases")}
-    end
-  end
 
   @impl true
   def handle_event("browse_recent_notices", _params, socket) do
@@ -253,18 +235,6 @@ defmodule EhsEnforcementWeb.DashboardLive do
     {:noreply, push_navigate(socket, to: "/notices?filter=search")}  
   end
 
-  @impl true
-  def handle_event("scrape_notices", _params, socket) do
-    current_user = socket.assigns[:current_user]
-    
-    # Check admin privileges
-    case current_user do
-      %{is_admin: true} ->
-        {:noreply, push_navigate(socket, to: "/admin/notices/scrape")}
-      _ ->
-        {:noreply, put_flash(socket, :error, "Admin privileges required to scrape notices")}
-    end
-  end
 
   @impl true
   def handle_event("navigate_to_new_case", _params, socket) do
@@ -287,28 +257,6 @@ defmodule EhsEnforcementWeb.DashboardLive do
     {:noreply, push_navigate(socket, to: "/reports")}
   end
 
-  @impl true
-  def handle_event("export_data", _params, socket) do
-    {:noreply, push_navigate(socket, to: "/reports")}
-  end
-
-  @impl true
-  def handle_event("refresh_metrics", _params, socket) do
-    current_user = socket.assigns[:current_user]
-    
-    # Check admin privileges
-    case current_user do
-      %{is_admin: true} ->
-        # Refresh metrics in the background
-        Task.start(fn ->
-          EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:admin)
-        end)
-        
-        {:noreply, put_flash(socket, :info, "Metrics refresh started. Dashboard will update automatically when complete.")}
-      _ ->
-        {:noreply, put_flash(socket, :error, "Admin privileges required to refresh metrics")}
-    end
-  end
 
   @impl true
   def handle_info({:sync_progress, agency_code, progress}, socket) do

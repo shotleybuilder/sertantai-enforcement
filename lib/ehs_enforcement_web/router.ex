@@ -95,6 +95,9 @@ defmodule EhsEnforcementWeb.Router do
       
       # Admin Notice Management Routes - READ ONLY (notices are scraped data)
       
+      # Admin Dashboard
+      live "/admin", Admin.DashboardLive, :index
+      
       # Admin Configuration Management Routes
       live "/admin/config", Admin.ConfigLive.Index, :index
       live "/admin/config/scraping", Admin.ConfigLive.Scraping, :edit

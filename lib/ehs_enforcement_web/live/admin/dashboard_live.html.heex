@@ -1,0 +1,399 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Page Header -->
+    <div class="md:flex md:items-center md:justify-between mb-8">
+      <div class="min-w-0 flex-1">
+        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+          🔧 Admin Dashboard
+        </h2>
+        <p class="mt-1 text-sm text-gray-500">
+          Administrative tools and system management
+        </p>
+      </div>
+      <div class="mt-4 flex items-center space-x-3 md:ml-4 md:mt-0">
+        <!-- User info -->
+        <div class="flex items-center space-x-2">
+          <span class="text-sm text-gray-600">Welcome, <%= Map.get(@current_user, :display_name) || Map.get(@current_user, :name) || @current_user.email %></span>
+          <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+            ADMIN
+          </span>
+          <a href="/" class="text-sm text-gray-500 hover:text-gray-700">← Main Dashboard</a>
+        </div>
+        
+        <!-- Time Period Selector -->
+        <div class="mr-3">
+          <form phx-change="change_time_period">
+            <select
+              name="period"
+              class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+            >
+              <option value="week" selected={@time_period == "week"}>Last Week</option>
+              <option value="month" selected={@time_period == "month"}>Last Month</option>
+              <option value="year" selected={@time_period == "year"}>Last Year</option>
+            </select>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Statistics Overview -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6 mb-8">
+      <!-- System Health -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">Data Quality</dt>
+                <dd class="text-lg font-medium text-gray-900"><%= @stats.data_quality_score %>%</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Agencies -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">Active Agencies</dt>
+                <dd class="text-lg font-medium text-gray-900"><%= @stats.active_agencies %> Agencies</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Cases -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">Recent Cases</dt>
+                <dd class="text-lg font-medium text-gray-900"><%= @stats.recent_cases %> Cases</dd>
+                <dd class="text-xs text-gray-400"><%= @stats.timeframe %></dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Notices -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">Recent Notices</dt>
+                <dd class="text-lg font-medium text-gray-900"><%= @stats.recent_notices %> Notices</dd>
+                <dd class="text-xs text-gray-400"><%= @stats.timeframe %></dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Fines -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">Recent Fines</dt>
+                <dd class="text-lg font-medium text-gray-900">£<%= Decimal.to_string(@stats.total_fines, :normal) %></dd>
+                <dd class="text-xs text-gray-400"><%= @stats.timeframe %></dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sync Errors -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class={[
+                "w-8 h-8 rounded-md flex items-center justify-center",
+                if(@stats.sync_errors == 0, do: "bg-green-500", else: "bg-red-500")
+              ]}>
+                <%= if @stats.sync_errors == 0 do %>
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                <% else %>
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  </svg>
+                <% end %>
+              </div>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+              <dl>
+                <dt class="text-sm font-medium text-gray-500 truncate">Sync Status</dt>
+                <dd class={[
+                  "text-lg font-medium",
+                  if(@stats.sync_errors == 0, do: "text-green-600", else: "text-red-600")
+                ]}>
+                  <%= if @stats.sync_errors == 0, do: "Healthy", else: "#{@stats.sync_errors} Errors" %>
+                </dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Action Cards -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+      <!-- Data Management -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5">
+              <h3 class="text-lg font-medium text-gray-900">Data Management</h3>
+              <p class="text-sm text-gray-500">Scraping, imports, and data quality</p>
+            </div>
+          </div>
+          <div class="mt-6 space-y-3">
+            <button
+              phx-click="navigate_to_scraping"
+              phx-value-type="cases"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Scrape Cases</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </button>
+            <button
+              phx-click="navigate_to_scraping"
+              phx-value-type="notices"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Scrape Notices</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </button>
+            <button
+              phx-click="navigate_to_scraping"
+              phx-value-type="all"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">All Scraping</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Operations -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5">
+              <h3 class="text-lg font-medium text-gray-900">System Operations</h3>
+              <p class="text-sm text-gray-500">Monitoring and maintenance</p>
+            </div>
+          </div>
+          <div class="mt-6 space-y-3">
+            <button
+              phx-click="refresh_metrics"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Refresh Metrics</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+              </div>
+            </button>
+            <button
+              phx-click="navigate_to_config"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">System Config</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports & Export -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5">
+              <h3 class="text-lg font-medium text-gray-900">Reports & Export</h3>
+              <p class="text-sm text-gray-500">Data export and analytics</p>
+            </div>
+          </div>
+          <div class="mt-6 space-y-3">
+            <button
+              phx-click="export_data"
+              phx-value-format="csv"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Export CSV</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+            </button>
+            <button
+              phx-click="export_data"
+              phx-value-format="json"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Export JSON</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+            </button>
+            <button
+              phx-click="export_data"
+              phx-value-format="xlsx"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Export Excel</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agency Status Overview -->
+    <%= if length(@agencies) > 0 do %>
+      <div class="bg-white shadow overflow-hidden sm:rounded-md mb-8">
+        <div class="px-4 py-5 sm:px-6">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Agency Status</h3>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">Current sync and data collection status</p>
+        </div>
+        <ul role="list" class="divide-y divide-gray-200">
+          <%= for agency <- @agencies do %>
+            <li class="px-4 py-4 sm:px-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <div class={[
+                    "flex-shrink-0 w-2.5 h-2.5 rounded-full",
+                    if(agency.enabled, do: "bg-green-400", else: "bg-gray-300")
+                  ]}></div>
+                  <div class="ml-4">
+                    <div class="flex items-center">
+                      <p class="text-sm font-medium text-gray-900"><%= agency.name %></p>
+                      <p class="ml-2 text-sm text-gray-500">(<%= agency.code %>)</p>
+                    </div>
+                    <p class="text-sm text-gray-500">
+                      Status: <%= if agency.enabled, do: "Active", else: "Inactive" %>
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <%= if Map.has_key?(@sync_status, agency.code) do %>
+                    <% status = @sync_status[agency.code] %>
+                    <span class={[
+                      "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                      case status.status do
+                        "syncing" -> "bg-blue-100 text-blue-800"
+                        "completed" -> "bg-green-100 text-green-800"
+                        "error" -> "bg-red-100 text-red-800"
+                        _ -> "bg-gray-100 text-gray-800"
+                      end
+                    ]}>
+                      <%= String.capitalize(status.status) %>
+                    </span>
+                  <% else %>
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                      Idle
+                    </span>
+                  <% end %>
+                </div>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </div>
+</div>
