@@ -99,6 +99,13 @@ defmodule EhsEnforcement.Enforcement.Case do
     attribute(:url, :string)
     attribute(:last_synced_at, :utc_datetime)
 
+    # EA-specific extensions for Environment Agency enforcement data
+    attribute(:ea_event_reference, :string, description: "EA event ID (e.g., '205107')")
+    attribute(:ea_total_violation_count, :integer, description: "Number of violations in EA case")
+    attribute(:environmental_impact, :string, description: "Environmental impact level: 'none', 'minor', 'major'")
+    attribute(:environmental_receptor, :string, description: "Environmental receptor affected: 'land', 'water', 'air'")
+    attribute(:is_ea_multi_violation, :boolean, default: false, description: "True if EA case has multiple distinct violations")
+
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
   end
@@ -113,6 +120,9 @@ defmodule EhsEnforcement.Enforcement.Case do
     end
 
     has_many :breaches, EhsEnforcement.Enforcement.Breach
+    
+    # EA multi-violation support - for cases with multiple distinct violations
+    has_many :violations, EhsEnforcement.Enforcement.Violation
   end
 
   identities do
@@ -152,7 +162,13 @@ defmodule EhsEnforcement.Enforcement.Case do
         :related_cases,
         :offence_action_type,
         :url,
-        :last_synced_at
+        :last_synced_at,
+        # EA-specific fields
+        :ea_event_reference,
+        :ea_total_violation_count,
+        :environmental_impact,
+        :environmental_receptor,
+        :is_ea_multi_violation
       ])
 
       argument(:agency_code, :atom)
@@ -371,6 +387,127 @@ defmodule EhsEnforcement.Enforcement.Case do
       end)
     end
 
+    create :scrape_ea_cases do
+      description("Scheduled scraping of EA cases - recent date range with conservative pagination")
+
+      argument(:date_from, :date, default: fn -> Date.add(Date.utc_today(), -30) end)
+      argument(:date_to, :date, default: &Date.utc_today/0)
+      argument(:action_types, {:array, :atom}, default: [:court_case])
+      argument(:max_pages, :integer, default: 20)
+      argument(:start_page, :integer, default: 1)
+
+      change(fn changeset, context ->
+        date_from = Ash.Changeset.get_argument(changeset, :date_from)
+        date_to = Ash.Changeset.get_argument(changeset, :date_to)
+        action_types = Ash.Changeset.get_argument(changeset, :action_types)
+        max_pages = Ash.Changeset.get_argument(changeset, :max_pages)
+        start_page = Ash.Changeset.get_argument(changeset, :start_page)
+
+        session_opts = [
+          agency: :ea,
+          date_from: date_from,
+          date_to: date_to,
+          action_types: action_types,
+          max_pages: max_pages,
+          start_page: start_page,
+          scrape_type: :scheduled
+        ]
+
+        case EhsEnforcement.Scraping.ScrapeCoordinator.start_scraping_session(session_opts) do
+          {:ok, session_result} ->
+            Ash.Changeset.add_error(changeset,
+              field: :scraping_result,
+              message:
+                "EA scraping completed: #{session_result.cases_created} cases created, #{session_result.cases_updated} updated"
+            )
+
+          {:error, error} ->
+            Ash.Changeset.add_error(changeset,
+              field: :scraping_error,
+              message: "EA scraping failed: #{inspect(error)}"
+            )
+        end
+      end)
+    end
+
+    create :scrape_ea_cases_historical do
+      description("Manual EA historical scraping - user controls dates, pages, and action types")
+
+      argument(:date_from, :date, allow_nil?: false)
+      argument(:date_to, :date, allow_nil?: false)
+      argument(:start_page, :integer, allow_nil?: false)
+      argument(:max_pages, :integer, allow_nil?: false)
+      argument(:action_types, {:array, :atom}, default: [:court_case, :caution, :enforcement_notice])
+
+      change(fn changeset, context ->
+        date_from = Ash.Changeset.get_argument(changeset, :date_from)
+        date_to = Ash.Changeset.get_argument(changeset, :date_to)
+        start_page = Ash.Changeset.get_argument(changeset, :start_page)
+        max_pages = Ash.Changeset.get_argument(changeset, :max_pages)
+        action_types = Ash.Changeset.get_argument(changeset, :action_types)
+
+        session_opts = [
+          agency: :ea,
+          date_from: date_from,
+          date_to: date_to,
+          start_page: start_page,
+          max_pages: max_pages,
+          action_types: action_types,
+          scrape_type: :manual
+        ]
+
+        case EhsEnforcement.Scraping.ScrapeCoordinator.start_scraping_session(session_opts) do
+          {:ok, session_result} ->
+            Ash.Changeset.add_error(changeset,
+              field: :scraping_result,
+              message:
+                "EA historical scraping completed: #{session_result.cases_created} cases created, #{session_result.cases_updated} updated"
+            )
+
+          {:error, error} ->
+            Ash.Changeset.add_error(changeset,
+              field: :scraping_error,
+              message: "EA historical scraping failed: #{inspect(error)}"
+            )
+        end
+      end)
+    end
+
+    create :handle_scrape_error_ea do
+      description("Handle errors from scheduled EA scraping jobs")
+
+      argument(:error_details, :map)
+      argument(:job_name, :string)
+      argument(:attempt_number, :integer)
+      argument(:date_from, :date)
+      argument(:date_to, :date)
+
+      change(fn changeset, context ->
+        error_details = Ash.Changeset.get_argument(changeset, :error_details)
+        job_name = Ash.Changeset.get_argument(changeset, :job_name)
+        attempt_number = Ash.Changeset.get_argument(changeset, :attempt_number)
+        date_from = Ash.Changeset.get_argument(changeset, :date_from)
+        date_to = Ash.Changeset.get_argument(changeset, :date_to)
+
+        # Log the error for monitoring
+        require Logger
+
+        Logger.error("Scheduled EA scraping job failed", %{
+          job_name: job_name,
+          attempt: attempt_number,
+          date_range: "#{date_from} to #{date_to}",
+          error_details: error_details
+        })
+
+        # For now, just record the error - could extend to send notifications
+        Ash.Changeset.add_error(changeset,
+          field: :job_error,
+          message:
+            "EA job #{job_name} failed on attempt #{attempt_number} for date range #{date_from} to #{date_to}: #{inspect(error_details)}"
+        )
+      end)
+    end
+
     read :duplicate_detection do
       description("Efficient duplicate checking by regulator_id for scraping operations")
 
@@ -490,6 +627,21 @@ defmodule EhsEnforcement.Enforcement.Case do
         worker_module_name(EhsEnforcement.Enforcement.Case.AshOban.Worker.WeeklyScrapeDeep)
         scheduler_module_name(EhsEnforcement.Enforcement.Case.AshOban.Scheduler.WeeklyScrapeDeep)
       end
+
+      trigger :scheduled_scrape_ea do
+        action(:scrape_ea_cases)
+
+        # Weekly on Monday at 4 AM (offset from HSE scraping)
+        scheduler_cron("0 4 * * 1")
+        max_attempts(3)
+        queue(:scraping)
+        on_error(:handle_scrape_error_ea)
+        worker_module_name(EhsEnforcement.Enforcement.Case.AshOban.Worker.ScheduledScrapeEa)
+
+        scheduler_module_name(
+          EhsEnforcement.Enforcement.Case.AshOban.Scheduler.ScheduledScrapeEa
+        )
+      end
     end
   end
 
@@ -499,6 +651,8 @@ defmodule EhsEnforcement.Enforcement.Case do
     define(:sync_from_airtable)
     define(:scrape_hse_cases)
     define(:scrape_hse_cases_deep)
+    define(:scrape_ea_cases)
+    define(:scrape_ea_cases_historical)
     define(:duplicate_detection)
     define(:bulk_create)
   end

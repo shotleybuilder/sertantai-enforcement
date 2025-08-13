@@ -17,7 +17,7 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
   alias EhsEnforcement.Scraping.Hse.CaseProcessor
   alias EhsEnforcement.Configuration.ScrapingConfig
   alias EhsEnforcement.Scraping.ScrapeSession
-  alias EhsEnforcement.Scraping.CaseProcessingLog
+  alias EhsEnforcement.Scraping.ProcessingLog
   
   # Dual notification system:
   # 1. Ash PubSub notifications for session-level updates (handled automatically)
@@ -123,6 +123,28 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
   Returns {:ok, session_results} or {:error, reason}
   """
   def start_scraping_session(opts \\ []) do
+    # Detect agency from options (default to HSE for backwards compatibility)
+    agency = Keyword.get(opts, :agency, :hse)
+    
+    # Route to agency-specific scraping session
+    case agency do
+      :hse -> start_hse_scraping_session(opts)
+      :ea -> start_ea_scraping_session(opts)
+      _ -> {:error, "Unsupported agency: #{agency}. Supported agencies: :hse, :ea"}
+    end
+  end
+
+  @doc """
+  Start HSE-specific scraping session (original implementation).
+  
+  Options:
+  - start_page: Page to start scraping from (default: 1)
+  - max_pages: Maximum pages to process (default: 100)
+  - database: HSE database to scrape (default: "convictions")
+  - stop_on_existing: Stop when consecutive existing threshold reached (default: true)
+  - actor: Actor for Ash operations (default: nil)
+  """
+  def start_hse_scraping_session(opts \\ []) do
     # Load active configuration from database
     config = load_scraping_config(opts)
     
@@ -211,6 +233,103 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
       {:error, reason} ->
         Logger.error("Failed to create ScrapeSession record: #{inspect(reason)}")
         {:error, "Failed to create scraping session: #{inspect(reason)}"}
+    end
+    end
+  end
+  
+  @doc """
+  Start EA-specific scraping session with date range and pagination.
+  
+  Options:
+  - date_from: Start date for EA search (required)
+  - date_to: End date for EA search (required)
+  - action_types: List of action types [:court_case, :caution, :enforcement_notice] (default: [:court_case])
+  - start_page: Page to start scraping from (default: 1)
+  - max_pages: Maximum pages to process (default: 20)
+  - actor: Actor for Ash operations (default: nil)
+  
+  Returns {:ok, session_results} or {:error, reason}
+  """
+  def start_ea_scraping_session(opts \\ []) do
+    # Load active configuration from database
+    config = load_scraping_config(opts)
+    
+    # Check if scraping is enabled
+    scrape_type = Keyword.get(opts, :scrape_type, :manual)
+    unless scraping_enabled?(type: scrape_type, actor: opts[:actor]) do
+      {:error, "#{scrape_type} EA scraping is disabled in configuration"}
+    else
+    
+    # Validate required EA-specific arguments
+    date_from = Keyword.get(opts, :date_from)
+    date_to = Keyword.get(opts, :date_to)
+    
+    unless date_from && date_to do
+      {:error, "EA scraping requires date_from and date_to parameters"}
+    else
+    
+    # Build EA session options
+    default_opts = %{
+      start_page: 1,
+      max_pages: 20,  # Conservative default for EA
+      action_types: [:court_case],
+      actor: opts[:actor],
+      network_timeout: config.network_timeout_ms,
+      max_consecutive_errors: config.max_consecutive_errors,
+      pause_between_pages_ms: config.pause_between_pages_ms,
+      batch_size: config.batch_size
+    }
+    
+    session_opts = Enum.into(opts, default_opts)
+    
+    Logger.info("Starting EA scraping session", 
+                date_from: date_from, 
+                date_to: date_to,
+                action_types: session_opts.action_types,
+                pages: "#{session_opts.start_page} to #{session_opts.start_page + session_opts.max_pages - 1}")
+    
+    # Create Ash ScrapeSession record for EA scraping
+    ash_session_params = %{
+      session_id: generate_session_id(),
+      start_page: session_opts.start_page,
+      max_pages: session_opts.max_pages,
+      database: "ea_enforcement",  # EA-specific database identifier
+      status: :running,
+      current_page: session_opts.start_page,
+      pages_processed: 0,
+      cases_found: 0,
+      cases_created: 0,
+      cases_exist_total: 0,
+      errors_count: 0
+    }
+    
+    case Ash.create(ScrapeSession, ash_session_params) do
+      {:ok, session} ->
+        Logger.info("Starting EA scraping session #{session.session_id}")
+        
+        # Store session_opts including EA-specific parameters
+        session_with_opts = Map.merge(session, %{
+          session_opts: session_opts,
+          date_from: date_from,
+          date_to: date_to,
+          action_types: session_opts.action_types
+        })
+        
+        # Execute EA scraping session
+        execute_ea_scraping_session_result = execute_ea_scraping_session(session_with_opts)
+        
+        Logger.info("EA scraping session completed", 
+                    session_id: execute_ea_scraping_session_result.session_id,
+                    status: execute_ea_scraping_session_result.status,
+                    pages_processed: execute_ea_scraping_session_result.pages_processed,
+                    cases_created: execute_ea_scraping_session_result.cases_created)
+        
+        {:ok, execute_ea_scraping_session_result}
+        
+      {:error, reason} ->
+        Logger.error("Failed to create EA ScrapeSession record: #{inspect(reason)}")
+        {:error, "Failed to create EA scraping session: #{inspect(reason)}"}
+    end
     end
     end
   end
@@ -554,21 +673,25 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
       }
     end)
     
+    # HSE-specific processing log with correct field names
+    # Use unified ProcessingLog with field mapping: cases_scraped -> items_found, etc.
     log_params = %{
       session_id: session.session_id,
-      page: session.current_page,
-      cases_scraped: length(scraped_cases),
-      cases_created: results.cases_created,
-      cases_existing: results.cases_existing,
+      agency: :hse,
+      batch_or_page: session.current_page,  # HSE page number
+      items_found: length(scraped_cases),   # was cases_scraped
+      items_created: results.cases_created,
+      items_failed: results.cases_errors,   # was cases_skipped
+      items_existing: results.cases_existing,  # was existing_count
       creation_errors: [],  # Individual errors already logged
-      scraped_case_summary: case_summary
+      scraped_items: case_summary  # was scraped_cases
     }
     
-    case Ash.create(CaseProcessingLog, log_params) do
+    case Ash.create(ProcessingLog, log_params) do
       {:ok, _log} ->
-        Logger.debug("Created processing log for page #{session.current_page}")
+        Logger.debug("Created unified processing log for HSE page #{session.current_page}")
       {:error, reason} ->
-        Logger.warning("Failed to create processing log: #{inspect(reason)}")
+        Logger.warning("Failed to create unified processing log: #{inspect(reason)}")
     end
   end
   
@@ -599,5 +722,162 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
     end
   end
 
+  # EA-specific scraping session execution
   
+  defp execute_ea_scraping_session(session) do
+    Logger.debug("Starting EA scraping session execution: #{session.session_id}")
+    Logger.info("EA scraping date range: #{session.date_from} to #{session.date_to}")
+    
+    session
+    |> process_ea_single_request()
+    |> finalize_session()
+  end
+  
+  defp process_ea_single_request(session) do
+    Logger.debug("Processing EA single request for session #{session.session_id}")
+    
+    # Get session options for EA scraping parameters
+    session_opts = Map.get(session, :session_opts, %{})
+    
+    # Load config for timeout settings (rate limiting handled internally by EA scraper)
+    config = load_scraping_config()
+    
+    # Use EA CaseScraper to get ALL cases for the date range in a single request
+    # Pass rate limiting config to EA scraper for detail page throttling
+    case EhsEnforcement.Scraping.Ea.CaseScraper.scrape_enforcement_actions(
+           session.date_from, 
+           session.date_to, 
+           session.action_types,
+           timeout_ms: config.network_timeout_ms,
+           detail_delay_ms: config.pause_between_pages_ms
+         ) do
+      {:ok, ea_cases} ->
+        Logger.info("Found #{length(ea_cases)} EA enforcement actions for date range")
+        
+        # Update session with cases found
+        cases_found_params = %{
+          cases_found: length(ea_cases),
+          current_page: 1,  # EA only has "1 page" since it's all results
+          pages_processed: 1
+        }
+        
+        updated_session = case Ash.update(session, cases_found_params) do
+          {:ok, updated} -> updated
+          {:error, reason} ->
+            Logger.error("Failed to update session with cases found: #{inspect(reason)}")
+            session
+        end
+        
+        # Process EA cases and convert to Case resource format
+        process_ea_cases_serially(updated_session, ea_cases, session_opts[:actor])
+        
+      {:error, reason} ->
+        Logger.error("Failed to scrape EA enforcement actions: #{inspect(reason)}")
+        
+        # Update session with error
+        error_params = %{
+          errors_count: session.errors_count + 1,
+          current_page: 1,
+          pages_processed: 1
+        }
+        
+        case Ash.update(session, error_params) do
+          {:ok, updated_session} -> updated_session
+          {:error, update_reason} ->
+            Logger.error("Failed to update ScrapeSession with error: #{inspect(update_reason)}")
+            session  # Return original session if update fails
+        end
+    end
+  end
+  
+  
+  defp process_ea_cases_serially(session, ea_cases, actor) do
+    Logger.debug("Processing #{length(ea_cases)} EA cases serially for session #{session.session_id}")
+    
+    # Track results for session updates
+    results = %{
+      cases_created: 0,
+      cases_existing: 0,
+      cases_errors: 0,
+      processed_cases: []
+    }
+    
+    # Process each EA case and transform to Case/Violation resources
+    final_results = Enum.reduce(ea_cases, results, fn ea_case, acc ->
+      process_single_ea_case(session, ea_case, actor, acc)
+    end)
+    
+    # Create processing log for the completed EA batch
+    create_ea_processing_log(session, final_results.processed_cases, final_results)
+    
+    # Update session with final page results
+    update_session_with_page_results(session, final_results)
+  end
+  
+  defp process_single_ea_case(_session, ea_case, actor, acc) do
+    Logger.debug("🔍 Processing EA case: #{inspect(ea_case)}")
+    
+    # Transform EA case to Case resource format using EA DataTransformer
+    transformed_case = EhsEnforcement.Agencies.Ea.DataTransformer.transform_ea_record(ea_case)
+    
+    # Create Case resource using EA CaseProcessor pattern
+    case EhsEnforcement.Agencies.Ea.CaseProcessor.process_and_create_case(transformed_case, actor) do
+      {:ok, case_record} ->
+        Logger.info("✅ Created EA case: #{case_record.regulator_id}")
+        %{acc | 
+          cases_created: acc.cases_created + 1,
+          processed_cases: [transformed_case | acc.processed_cases]
+        }
+        
+      {:error, reason} ->
+        # Check if error indicates case already exists
+        if duplicate_error?(reason) do
+          Logger.info("⏭️ EA case already exists: #{transformed_case[:regulator_id]}")
+          %{acc | 
+            cases_existing: acc.cases_existing + 1,
+            processed_cases: [transformed_case | acc.processed_cases]
+          }
+        else
+          Logger.warning("❌ Error creating EA case: #{inspect(reason)}")
+          %{acc | 
+            cases_errors: acc.cases_errors + 1,
+            processed_cases: [transformed_case | acc.processed_cases]
+          }
+        end
+    end
+  end
+  
+  defp create_ea_processing_log(session, processed_cases, results) do
+    # Create summary of processed EA cases for UI display
+    case_summary = Enum.map(processed_cases, fn case_data ->
+      %{
+        regulator_id: case_data[:regulator_id],
+        offender_name: case_data[:offender_name], 
+        case_date: case_data[:offence_action_date],
+        fine_amount: case_data[:offence_fine]
+      }
+    end)
+    
+    # EA-specific processing log with correct field names
+    # Use unified ProcessingLog with field mapping: cases_found -> items_found, etc.
+    log_params = %{
+      session_id: session.session_id,
+      agency: :ea,
+      batch_or_page: 1,  # EA batch number (single batch)
+      items_found: length(processed_cases),  # was cases_found
+      items_created: results.cases_created,
+      items_existing: results.cases_existing,  # was cases_existing
+      items_failed: results.cases_errors,  # was cases_failed
+      creation_errors: [],  # Individual errors already logged
+      scraped_items: case_summary  # was scraped_case_summary
+    }
+    
+    case Ash.create(ProcessingLog, log_params) do
+      {:ok, _log} ->
+        Logger.debug("Created unified processing log for EA session #{session.session_id}")
+      {:error, reason} ->
+        Logger.warning("Failed to create unified processing log: #{inspect(reason)}")
+    end
+  end
+
 end

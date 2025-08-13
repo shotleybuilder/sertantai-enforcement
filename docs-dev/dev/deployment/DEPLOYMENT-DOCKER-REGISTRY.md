@@ -292,6 +292,9 @@ docker build -t ehs-enforcement:test .
   docker build -t ghcr.io/shotleybuilder/ehs-enforcement:$VERSION .
   docker build -t ghcr.io/shotleybuilder/ehs-enforcement:latest .
 
+  # Using this one
+  docker build -f Dockerfile.phoenix -t ghcr.io/shotleybuilder/ehs-enforcement:latest .
+
   # Push both tags
   docker push ghcr.io/shotleybuilder/ehs-enforcement:$VERSION
   docker push ghcr.io/shotleybuilder/ehs-enforcement:latest

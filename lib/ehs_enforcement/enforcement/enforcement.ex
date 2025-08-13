@@ -65,6 +65,17 @@ defmodule EhsEnforcement.Enforcement do
       define :get_current_metrics, action: :get_current
       define :refresh_metrics, action: :refresh
     end
+    
+    resource EhsEnforcement.Enforcement.Violation do
+      define :list_violations, action: :read
+      define :get_violation, action: :read, get_by: [:id]
+      define :create_violation, action: :create
+      define :update_violation, action: :update
+      define :destroy_violation, action: :destroy
+      define :list_violations_by_case, action: :by_case, args: [:case_id]
+      define :get_violation_by_case_reference, action: :by_case_reference, args: [:case_reference]
+      define :bulk_create_violations, action: :bulk_create
+    end
   end
 
   forms do
@@ -132,6 +143,16 @@ defmodule EhsEnforcement.Enforcement do
   ## Metrics Functions
   - `get_current_metrics/1` - Get current cached dashboard metrics
   - `refresh_metrics/1` - Refresh all dashboard metrics from current data
+  
+  ## Violation Functions (EA Multi-offence Support)
+  - `list_violations/1` - List all violations with options
+  - `get_violation/2` - Get violation by ID
+  - `create_violation/2` - Create new violation
+  - `update_violation/3` - Update existing violation
+  - `destroy_violation/2` - Delete violation
+  - `list_violations_by_case/2` - List violations for specific case
+  - `get_violation_by_case_reference/2` - Get violation by EA case reference
+  - `bulk_create_violations/2` - Bulk create multiple violations for EA cases
   """
 
   # Complex functions that extend beyond basic code interfaces

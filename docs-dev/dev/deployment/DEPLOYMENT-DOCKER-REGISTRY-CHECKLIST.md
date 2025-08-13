@@ -5,11 +5,11 @@ This comprehensive checklist ensures reliable deployment using the Docker Regist
 ## 📋 Complete at First Deploy
 
 ### Local Development Setup
-- [ ] **Install Docker and verify functionality** - Ensure Docker is installed locally and can build/push images
-- [ ] **Set up container registry access** - Configure authentication for Docker Hub, GitHub Container Registry, or private registry using `docker login`
-- [ ] **Optimize Dockerfile for Phoenix releases** - Verify multi-stage Dockerfile follows Phoenix best practices with hex, rebar, asset compilation, and release generation
-- [ ] **Generate application secrets locally** - Run `mix phx.gen.secret` twice to generate SECRET_KEY_BASE and TOKEN_SIGNING_SECRET (64 characters each)
-- [ ] **Test local Docker build** - Successfully build image locally with `docker build -t your-registry/ehs-enforcement:test .`
+- [✅] **Install Docker and verify functionality** - Ensure Docker is installed locally and can build/push images
+- [✅] **Set up container registry access** - Configure authentication for Docker Hub, GitHub Container Registry, or private registry using `docker login`
+- [✅] **Optimize Dockerfile for Phoenix releases** - Verify multi-stage Dockerfile follows Phoenix best practices with hex, rebar, asset compilation, and release generation
+- [✅] **Generate application secrets locally** - Run `mix phx.gen.secret` twice to generate SECRET_KEY_BASE and TOKEN_SIGNING_SECRET (64 characters each)
+- [✅] **Test local Docker build** - build image locally with `docker build -f Dockerfile.debian -t ehs-enforcement:debian .`
 
 ### Production Server Preparation
 - [ ] **Provision VPS with minimum 1GB RAM** - Set up Ubuntu 20.04+ server with adequate resources for Phoenix application

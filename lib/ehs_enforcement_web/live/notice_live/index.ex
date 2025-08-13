@@ -161,7 +161,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   # Private functions
 
   defp load_notices(socket) do
-    %{filters: filters, search_query: search_query, fuzzy_search: fuzzy_search, 
+    %{filters: _filters, search_query: search_query, fuzzy_search: fuzzy_search, 
       page: page, page_size: page_size} = socket.assigns
     
     try do

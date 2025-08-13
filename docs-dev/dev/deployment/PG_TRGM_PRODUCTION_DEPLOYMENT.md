@@ -18,7 +18,7 @@ This guide provides step-by-step instructions for deploying the pg_trgm extensio
 
 **⚠️ IMPORTANT**: Install the extension BEFORE deploying application code changes.
 
-#### Option A: Via Database Administrator (Recommended)
+#### Via Database Administrator (Recommended)
 ```bash
 docker compose exec postgres psql -U postgres -d ehs_enforcement_prod
 ```
@@ -39,13 +39,6 @@ SELECT similarity('construction', 'construktion');
 
 -- Quit PostgreSQL prompt
 \q
-```
-
-#### Option B: Via Application Migration (Alternative)
-If your production database user has CREATE EXTENSION privileges:
-```bash
-# Deploy the application with pg_trgm migration
-mix ash.migrate
 ```
 
 ### 2. Verify Extension Installation
@@ -82,6 +75,9 @@ mix ash.migrate
 - `offenders_postcode_gin_trgm`
 
 ### 4. Verify Index Creation
+```bash
+docker compose exec postgres psql -U postgres -d ehs_enforcement_prod
+```
 
 ```sql
 -- Check all pg_trgm GIN indexes were created
@@ -118,27 +114,20 @@ SHOW pg_trgm.similarity_threshold;
 SET pg_trgm.similarity_threshold = 0.2;  -- More permissive
 ```
 
-### 6. Deploy Application Code
-
-Deploy the application code with fuzzy search functionality:
-
-```bash
-# Deploy latest application version with pg_trgm features
-# Follow your standard deployment procedure
-```
-
 ### 7. Test Fuzzy Search Functionality
 
 After deployment, test the new functionality:
 
 ```bash
 # Test via IEx console
-iex -S mix
-
+docker compose exec app /app/bin/ehs_enforcement remote
+```
+```iex
 # Test fuzzy search functions
 {:ok, results} = EhsEnforcement.Enforcement.fuzzy_search_cases("construction", limit: 5)
 {:ok, results} = EhsEnforcement.Enforcement.fuzzy_search_offenders("acme", limit: 5)
 {:ok, results} = EhsEnforcement.Enforcement.fuzzy_search_notices("safety", limit: 5)
+exit
 ```
 
 Test via web interface:
@@ -237,3 +226,14 @@ DROP EXTENSION IF EXISTS pg_trgm;
 **Implementation Date**: 2025-08-12
 **Document Version**: 1.0
 **Contact**: Development Team for questions or issues
+
+docker compose exec postgres psql -U postgres -d ehs_enforcement_prod -c "\d offenders"
+docker compose exec app /app/bin/ehs_enforcement eval "EhsEnforcement.Release.migrate"
+
+docker compose exec postgres psql -U postgres -d ehs_enforcement_prod
+```sql
+SELECT column_name, data_type FROM information_schema.columns
+WHERE table_name = 'offenders' AND column_name = 'agencies';
+```
+
+docker compose exec app /app/bin/ehs_enforcement eval "Mix.Tasks.PopulateOffenderAgencies.run([\"--dry-run\"])"

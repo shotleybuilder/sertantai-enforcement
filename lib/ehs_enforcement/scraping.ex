@@ -9,7 +9,7 @@ defmodule EhsEnforcement.Scraping do
   resources do
     resource EhsEnforcement.Scraping.ScrapeRequest
     resource EhsEnforcement.Scraping.ScrapeSession
-    resource EhsEnforcement.Scraping.CaseProcessingLog
+    resource EhsEnforcement.Scraping.ProcessingLog
     resource EhsEnforcement.Scraping.ScrapedCase
   end
 end
