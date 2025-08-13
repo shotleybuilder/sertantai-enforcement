@@ -92,28 +92,45 @@
           </div>
           
           <div class="flex items-center justify-between">
-            <%= if @scraping_active do %>
-              <button
-                type="button"
-                phx-click="stop_scraping"
-                class="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            <div class="flex items-center space-x-3">
+              <%= if @scraping_active do %>
+                <button
+                  type="button"
+                  phx-click="stop_scraping"
+                  class="inline-flex items-center px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Stop Scraping
+                </button>
+              <% else %>
+                <.button
+                  type="submit"
+                  class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Start Notice Scraping
+                </.button>
+              <% end %>
+              
+              <!-- View Sessions Button (opens in new tab) -->
+              <a
+                href={~p"/admin/notices/scrape-sessions"}
+                target="_blank"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                Stop Scraping
-              </button>
-            <% else %>
-              <.button
-                type="submit"
-                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                View Sessions
+                <svg class="h-3 w-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                Start Notice Scraping
-              </.button>
-            <% end %>
+              </a>
+            </div>
             
             <div class="text-sm text-gray-500">
               <% start_page = Phoenix.HTML.Form.input_value(@form, :start_page) || 1 %>
@@ -322,62 +339,6 @@
     </div>
   <% end %>
 
-  <!-- Session Results -->
-  <%= if @session_results != [] do %>
-    <div class="mt-8">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-semibold text-gray-900">Recent Notice Scraping Sessions</h2>
-          <button
-            type="button"
-            phx-click="clear_results"
-            class="text-sm text-gray-500 hover:text-gray-700"
-          >
-            Clear Results
-          </button>
-        </div>
-        
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session ID</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pages</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notices Created</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Errors</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <%= for result <- Enum.take(@session_results, 10) do %>
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                    <%= String.slice(result.session_id, 0, 8) %>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <%= Calendar.strftime(result.completed_at, "%Y-%m-%d %H:%M") %>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <%= result.pages_processed %>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
-                    <%= result.notices_created %>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    <%= if result.errors_count > 0 do %>
-                      <span class="text-red-600 font-medium"><%= result.errors_count %></span>
-                    <% else %>
-                      <span class="text-gray-400">0</span>
-                    <% end %>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  <% end %>
 
   <!-- Recent Errors -->
   <%= if @recent_errors != [] do %>
