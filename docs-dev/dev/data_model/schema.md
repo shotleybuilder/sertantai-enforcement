@@ -223,7 +223,7 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 
 ### `notices` Table
 
-**Purpose**: Enforcement notices issued to offenders (improvement notices, prohibition notices, etc.).
+**Purpose**: Enforcement notices issued to offenders (improvement notices, prohibition notices, etc.). Supports fuzzy text search across notice content using PostgreSQL pg_trgm extension.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -247,6 +247,17 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 
 **Indexes**:
 - `notices_unique_airtable_id_index` (UNIQUE on `airtable_id` WHERE `airtable_id IS NOT NULL`)
+- `notices_offence_action_date_index` on `offence_action_date` (dashboard metrics)
+- `notices_agency_id_index` on `agency_id` (filtering performance)
+- `notices_agency_date_index` (COMPOSITE on `[:agency_id, :offence_action_date]`)
+- `notices_regulator_id_index` on `regulator_id` (standard B-tree)
+- `notices_offence_breaches_index` on `offence_breaches` (standard B-tree)
+- `notices_offence_action_type_index` on `offence_action_type` (filtering)
+
+**Fuzzy Search Indexes (pg_trgm GIN)**:
+- `notices_regulator_id_gin_trgm` on `regulator_id` (trigram similarity search)
+- `notices_offence_breaches_gin_trgm` on `offence_breaches` (trigram similarity search)
+- `notices_notice_body_gin_trgm` on `notice_body` (trigram similarity search)
 
 **Ash Identity**: `unique_airtable_id` on `[:airtable_id]` WHERE `not is_nil(airtable_id)`
 
@@ -257,6 +268,13 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 **Relationships**:
 - `belongs_to :agency` → `agencies`
 - `belongs_to :offender` → `offenders`
+
+**Fuzzy Search Features**:
+- **Function**: `Enforcement.fuzzy_search_notices/2` supports trigram similarity search
+- **Search Fields**: `regulator_id`, `notice_body`, `offence_breaches`
+- **UI Integration**: Toggle-enabled fuzzy search in LiveView interface
+- **Performance**: GIN indexes with `gin_trgm_ops` operator class for fast similarity queries
+- **Similarity Threshold**: Configurable threshold (default 0.3) for match sensitivity
 
 ---
 

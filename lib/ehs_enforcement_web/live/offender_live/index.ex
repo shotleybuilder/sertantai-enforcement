@@ -19,7 +19,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
 
     socket =
       socket
-      |> assign(:page_title, "Offender Management")
+      |> assign(:page_title, "Offenders")
       |> assign(:loading, true)
       |> assign(:offenders, [])
       |> assign(:agencies, agencies)
