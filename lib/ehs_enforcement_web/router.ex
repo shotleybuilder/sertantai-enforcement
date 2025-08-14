@@ -99,7 +99,9 @@ defmodule EhsEnforcementWeb.Router do
       session: {AshAuthentication.Phoenix.LiveSession, :generate_session, []} do
       
       # Admin Case Management Routes  
-      live "/cases/:id/edit", CaseLive.Form, :edit
+      # Redirect /admin/cases to the main cases page since we removed the separate admin index
+      get "/admin/cases", PageController, :redirect_to_cases
+      live "/admin/cases/:id/edit", Admin.CaseLive.Edit, :edit
       
       # Admin Notice Management Routes - READ ONLY (notices are scraped data)
       

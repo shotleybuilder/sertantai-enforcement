@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>EhsEnforcementWeb.Components.ProgressComponent — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-F76A53D2.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">EhsEnforcementWeb.Components.ProgressComponent</span> 
+      <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
+
+    </h1>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Unified progress component for agency-specific scraping operations.</p><p>This component replaces separate HSE and EA progress components with a single
+intelligent component that handles agency-specific display logic internally.</p><h2 id="module-features" class="section-heading"><a href="#module-features" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Features</span></h2><ul><li><strong>Agency Detection</strong>: Automatically detects HSE vs EA based on progress data</li><li><strong>Conditional Rendering</strong>: Shows page-based progress for HSE, case-based for EA</li><li><strong>Unified Interface</strong>: Single component call replaces template agency switching</li><li><strong>Progress Calculation</strong>: Handles different progress calculation methods per agency</li></ul><h2 id="module-usage" class="section-heading"><a href="#module-usage" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Usage</span></h2><pre><code class="heex">&lt;!-- Before: Agency-specific components --&gt;
+&lt;%= if selected_agency in [:hse, &quot;hse&quot;] do %&gt;
+  &lt;.hse_progress_component progress={@progress} /&gt;
+&lt;% else %&gt;
+  &lt;.ea_progress_component progress={@progress} /&gt;
+&lt;% end %&gt;
+
+&lt;!-- After: Unified component --&gt;
+&lt;.unified_progress_component agency={@selected_agency} progress={@progress} /&gt;</code></pre>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#unified_progress_component/1" data-no-tooltip="" translate="no">unified_progress_component(assigns)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Unified progress component that handles both HSE and EA scraping progress display.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="unified_progress_component/1">
+
+  <div class="detail-header">
+    <a href="#unified_progress_component/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">unified_progress_component(assigns)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Unified progress component that handles both HSE and EA scraping progress display.</p><h2 id="unified_progress_component/1-attributes" class="section-heading"><a href="#unified_progress_component/1-attributes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Attributes</span></h2><ul><li><code class="inline">agency</code> - The agency type (:hse, :ea, &quot;hse&quot;, &quot;ea&quot;)</li><li><code class="inline">progress</code> - Progress map containing scraping session data</li></ul><h2 id="unified_progress_component/1-progress-data-structure" class="section-heading"><a href="#unified_progress_component/1-progress-data-structure" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Progress Data Structure</span></h2><p>Expected progress fields:</p><ul><li><code class="inline">status</code> - :idle, :running, :completed, :stopped</li><li><code class="inline">current_page</code> - Current page being processed (HSE only)</li><li><code class="inline">pages_processed</code> - Number of pages completed (HSE only)</li><li><code class="inline">cases_found</code> - Total cases discovered</li><li><code class="inline">cases_created</code> - New cases created</li><li><code class="inline">cases_updated</code> - Existing cases updated (optional)</li><li><code class="inline">cases_exist_total</code> - Cases that already existed</li><li><code class="inline">start_page</code>, <code class="inline">end_page</code> - Page range for HSE scraping</li></ul><h2 id="unified_progress_component/1-attributes-1" class="section-heading"><a href="#unified_progress_component/1-attributes-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Attributes</span></h2><ul><li><code class="inline">agency</code> (<code class="inline">:atom</code>) (required) - Agency type (:hse or :ea).</li><li><code class="inline">progress</code> (<code class="inline">:map</code>) (required) - Progress data from scraping session.</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>

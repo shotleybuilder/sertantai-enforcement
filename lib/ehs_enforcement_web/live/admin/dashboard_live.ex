@@ -90,6 +90,30 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
   end
 
   @impl true
+  def handle_event("check_duplicates", _params, socket) do
+    case find_duplicate_cases(socket.assigns.current_user) do
+      {:ok, duplicate_groups} ->
+        total_duplicates = Enum.reduce(duplicate_groups, 0, fn group, acc ->
+          acc + length(group) - 1  # Count all but one from each group as duplicates
+        end)
+        
+        result_text = if total_duplicates == 0 do
+          "No duplicate cases found"
+        else
+          "Found #{length(duplicate_groups)} duplicate groups (#{total_duplicates} duplicate records)"
+        end
+        
+        {:noreply, assign(socket, :duplicate_results, result_text)}
+      
+      {:error, error} ->
+        {:noreply, 
+         socket
+         |> assign(:duplicate_results, "Error checking duplicates: #{inspect(error)}")
+         |> put_flash(:error, "Failed to check for duplicates")}
+    end
+  end
+
+  @impl true
   def handle_info({:sync_progress, agency_code, progress}, socket) do
     sync_status = Map.update(
       socket.assigns.sync_status,
@@ -228,5 +252,92 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
   defp calculate_data_quality_score do
     # In a real implementation, calculate data quality metrics
     85.0
+  end
+
+  defp find_duplicate_cases(current_user) do
+    try do
+      alias EhsEnforcement.Enforcement.Case
+      
+      # Strategy 1: Find cases with exact regulator_id matches
+      regulator_id_duplicates = case Ash.read(Case, actor: current_user) do
+        {:ok, cases} ->
+          cases
+          |> Enum.filter(fn case -> case.regulator_id && String.trim(case.regulator_id) != "" end)
+          |> Enum.group_by(fn case -> String.trim(case.regulator_id) end)
+          |> Enum.filter(fn {_regulator_id, cases} -> length(cases) > 1 end)
+          |> Enum.map(fn {_regulator_id, cases} -> cases end)
+        
+        {:error, error} ->
+          []
+      end
+      
+      # Strategy 2: Find cases with same offender + action date
+      offender_date_duplicates = case Ash.read(Case, actor: current_user) do
+        {:ok, cases} ->
+          cases
+          |> Enum.filter(fn case -> case.offender_id && case.offence_action_date end)
+          |> Enum.group_by(fn case -> {case.offender_id, case.offence_action_date} end)
+          |> Enum.filter(fn {_key, cases} -> length(cases) > 1 end)
+          |> Enum.map(fn {_key, cases} -> cases end)
+        
+        {:error, error} ->
+          []
+      end
+      
+      # Strategy 3: Find cases with same offender + exact fine + costs amounts
+      financial_duplicates = case Ash.read(Case, actor: current_user) do
+        {:ok, cases} ->
+          cases
+          |> Enum.filter(fn case -> 
+            case.offender_id && case.offence_fine && case.offence_costs &&
+            Decimal.compare(case.offence_fine, Decimal.new(0)) == :gt
+          end)
+          |> Enum.group_by(fn case -> {case.offender_id, case.offence_fine, case.offence_costs} end)
+          |> Enum.filter(fn {_key, cases} -> length(cases) > 1 end)
+          |> Enum.map(fn {_key, cases} -> cases end)
+        
+        {:error, error} ->
+          []
+      end
+      
+      # Combine all duplicate groups and remove overlaps
+      all_duplicates = regulator_id_duplicates ++ offender_date_duplicates ++ financial_duplicates
+      unique_groups = remove_overlapping_groups(all_duplicates)
+      
+      {:ok, unique_groups}
+      
+    rescue
+      error ->
+        {:error, error}
+    end
+  end
+  
+  defp remove_overlapping_groups(groups) do
+    # Remove duplicate groups where cases appear in multiple groups
+    # Keep the largest group for each case
+    case_to_group = %{}
+    
+    groups
+    |> Enum.with_index()
+    |> Enum.reduce(case_to_group, fn {group, index}, acc ->
+      Enum.reduce(group, acc, fn case, inner_acc ->
+        case_id = case.id
+        existing_group_size = case Map.get(inner_acc, case_id) do
+          {_, size} -> size
+          nil -> 0
+        end
+        
+        if length(group) > existing_group_size do
+          Map.put(inner_acc, case_id, {index, length(group)})
+        else
+          inner_acc
+        end
+      end)
+    end)
+    |> Map.values()
+    |> Enum.map(fn {index, _size} -> index end)
+    |> Enum.uniq()
+    |> Enum.map(fn index -> Enum.at(groups, index) end)
+    |> Enum.filter(fn group -> group != nil end)
   end
 end

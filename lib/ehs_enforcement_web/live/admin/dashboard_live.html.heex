@@ -339,6 +339,54 @@
         </div>
       </div>
 
+      <!-- Case Management -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5">
+              <h3 class="text-lg font-medium text-gray-900">Case Management</h3>
+              <p class="text-sm text-gray-500">Manage enforcement cases and records</p>
+            </div>
+          </div>
+          <div class="mt-6 space-y-3">
+            <a
+              href={~p"/cases"}
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors block"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Manage Cases</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </a>
+            <button
+              phx-click="check_duplicates"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Check for Duplicates</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2v0M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                </svg>
+              </div>
+              <%= if assigns[:duplicate_results] do %>
+                <div class={"mt-2 text-xs font-medium #{if String.contains?(@duplicate_results, "No duplicate"), do: "text-green-600", else: "text-orange-600"}"}>
+                  <%= @duplicate_results %>
+                </div>
+              <% end %>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Reports & Export -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-6">

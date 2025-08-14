@@ -171,6 +171,30 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   end
 
   @impl true
+  def handle_event("delete_case", %{"case_id" => case_id}, socket) do
+    case Ash.get(Enforcement.Case, case_id, actor: socket.assigns.current_user) do
+      {:ok, case_record} ->
+        case Ash.destroy(case_record, actor: socket.assigns.current_user) do
+          :ok ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Case deleted successfully")
+             |> load_cases()}
+          
+          {:error, error} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Failed to delete case: #{inspect(error)}")}
+        end
+      
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Case not found")}
+    end
+  end
+
+  @impl true
   def handle_event(_event, _params, socket) do
     # Catch-all for unknown events
     {:noreply, socket}
