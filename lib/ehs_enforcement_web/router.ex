@@ -98,6 +98,11 @@ defmodule EhsEnforcementWeb.Router do
       # Admin Dashboard
       live "/admin", Admin.DashboardLive, :index
       
+      # Admin Agency Management Routes
+      live "/admin/agencies", Admin.AgencyLive.Index, :index
+      live "/admin/agencies/new", Admin.AgencyLive.New, :new
+      live "/admin/agencies/:id/edit", Admin.AgencyLive.Edit, :edit
+      
       # Admin Configuration Management Routes
       live "/admin/config", Admin.ConfigLive.Index, :index
       live "/admin/config/scraping", Admin.ConfigLive.Scraping, :edit

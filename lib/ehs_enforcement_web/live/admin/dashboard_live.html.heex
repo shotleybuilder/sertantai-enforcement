@@ -296,6 +296,49 @@
         </div>
       </div>
 
+      <!-- Agency Management -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5">
+              <h3 class="text-lg font-medium text-gray-900">Agency Management</h3>
+              <p class="text-sm text-gray-500">Configure enforcement agencies</p>
+            </div>
+          </div>
+          <div class="mt-6 space-y-3">
+            <a
+              href={~p"/admin/agencies"}
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors block"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Manage Agencies</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </a>
+            <a
+              href={~p"/admin/agencies/new"}
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors block"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">New Agency</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+
       <!-- Reports & Export -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-6">
