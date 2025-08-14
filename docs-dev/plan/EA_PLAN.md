@@ -28,7 +28,7 @@ High-level plan for integrating Environment Agency (EA) enforcement data into th
 
 **✅ COMPLETED COMPONENTS:**
 - URL construction and HTTP connectivity ✅
-- Table structure analysis (Name, Address, Date columns) ✅ 
+- Table structure analysis (Name, Address, Date columns) ✅
 - HTML parsing logic (3-column format) ✅
 - Case resource integration with EA actions ✅
 - ScrapeCoordinator routing for EA agency ✅
@@ -51,7 +51,7 @@ offenceType=&agencyFunction=&after=2024-01-01&before=
 Key Parameters:
 ├── name-search: Must be present (can be empty)
 ├── actionType: URL-encoded action type (required)
-├── offenceType: Must be present (can be empty) 
+├── offenceType: Must be present (can be empty)
 ├── agencyFunction: Must be present (can be empty)
 ├── after: Start date (YYYY-MM-DD format)
 └── before: End date (often empty)
@@ -68,7 +68,7 @@ Example: 103 results for 2020-present returned in one response
 
 **Issues Found & Resolved:**
 1. **Boolean Logic Error** - Fixed `and` operator usage with Date structs (changed to `&&`)
-2. **URL Building Duplication** - Fixed duplicate path construction in detail URLs  
+2. **URL Building Duplication** - Fixed duplicate path construction in detail URLs
 3. **Validation Logic** - Comprehensive unit tests created to verify parsing functions
 4. **End-to-End Verification** - Confirmed EA case creation in database (1 test case found)
 
@@ -301,13 +301,8 @@ New EA-Specific Extensions:
 ├── company_registration_number (String) - "04622955" (Companies House)
 ├── town (String) - "BARNSLEY" (EA structured address)
 ├── county (String) - "SOUTH YORKSHIRE" (EA structured address)
-├── ea_industry_sectors (Array[String]) - ["Manufacturing - General Engineering"]
-├── primary_ea_sector (String) - Most common EA sector for this offender
-├── industry_confidence_score (Decimal) - Industry classification confidence
-├── industry_risk_multiplier (Decimal) - Sector-specific risk adjustment
-├── ea_enforcement_count (Integer) - Count of EA enforcement actions
-├── total_ea_fines (Decimal) - Sum of EA financial penalties
-└── cross_agency_risk_score (Integer) - Enhanced risk score across agencies
+├── industry_sectors (Array[String]) - ["Manufacturing - General Engineering"]
+└── enforcement_count (Integer) - Count of enforcement actions
 ```
 
 #### Extended Resource: Notice (existing HSE resource + EA fields)

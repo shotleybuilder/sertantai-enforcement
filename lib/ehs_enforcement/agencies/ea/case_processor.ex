@@ -16,6 +16,9 @@ defmodule EhsEnforcement.Agencies.Ea.CaseProcessor do
   alias EhsEnforcement.Scraping.Ea.CaseScraper.EaDetailRecord
   alias EhsEnforcement.Agencies.Ea.DataTransformer
   alias EhsEnforcement.Enforcement
+  alias EhsEnforcement.Enforcement.UnifiedCaseProcessor
+  
+  @behaviour EhsEnforcement.Enforcement.CaseProcessorBehaviour
   
   @ea_agency_code :environment_agency
   
@@ -191,6 +194,20 @@ defmodule EhsEnforcement.Agencies.Ea.CaseProcessor do
   end
 
   @doc """
+  Behavior implementation: Process and create case with status for UI display.
+  """
+  @impl EhsEnforcement.Enforcement.CaseProcessorBehaviour
+  def process_and_create_case_with_status(processed_case, actor \\ nil)
+  def process_and_create_case_with_status(%ProcessedEaCase{} = processed_case, actor) do
+    case_attrs = build_case_attrs(processed_case)
+    UnifiedCaseProcessor.process_and_create_case_with_status(case_attrs, actor)
+  end
+  def process_and_create_case_with_status(transformed_case, actor) when is_map(transformed_case) do
+    case_attrs = build_case_attrs_from_transformed(transformed_case)
+    UnifiedCaseProcessor.process_and_create_case_with_status(case_attrs, actor)
+  end
+  
+  @doc """
   Create Ash Case resource from processed EA case data.
   
   Returns {:ok, case} or {:error, ash_error}
@@ -228,20 +245,20 @@ defmodule EhsEnforcement.Agencies.Ea.CaseProcessor do
     case Enforcement.create_case(case_attrs, create_opts) do
       {:ok, case_record} ->
         Logger.info("Successfully created EA case: #{case_record.regulator_id}")
-        {:ok, case_record}
+        {:ok, case_record, :created}
       
       {:error, ash_error} ->
         # Handle duplicate by updating existing case with new EA data
         if is_duplicate_error?(ash_error) do
-          Logger.debug("EA case already exists, updating with :update_from_scraping: #{processed_case.regulator_id}")
+          Logger.debug("EA case already exists, checking if update needed: #{processed_case.regulator_id}")
           
-          # Find the existing case and update it
+          # Find the existing case and check if update is needed
           query_opts = if actor, do: [actor: actor], else: []
           case Enforcement.Case 
                |> Ash.Query.filter(regulator_id == ^processed_case.regulator_id)
                |> Ash.read_one(query_opts) do
             {:ok, existing_case} when not is_nil(existing_case) ->
-              # Update with the new EA data using our scraping action
+              # Check if any fields actually need updating
               update_attrs = %{
                 offence_result: case_attrs.offence_result,
                 offence_fine: case_attrs.offence_fine,
@@ -251,15 +268,28 @@ defmodule EhsEnforcement.Agencies.Ea.CaseProcessor do
                 related_cases: case_attrs.related_cases
               }
               
-              update_opts = if actor, do: [actor: actor], else: []
-              case Enforcement.update_case_from_scraping(existing_case, update_attrs, update_opts) do
-                {:ok, updated_case} ->
-                  Logger.info("Successfully updated existing EA case via :update_from_scraping: #{updated_case.regulator_id}")
-                  # Still return the original duplicate error to preserve existing counting logic
-                  {:error, ash_error}
-                {:error, update_error} ->
-                  Logger.error("Failed to update existing EA case #{processed_case.regulator_id}: #{inspect(update_error)}")
-                  {:error, ash_error}
+              # Check if any field values actually differ
+              needs_update = Enum.any?(update_attrs, fn {field, new_value} ->
+                case field do
+                  :url -> existing_case.regulator_url != new_value
+                  _ -> Map.get(existing_case, field) != new_value
+                end
+              end)
+              
+              if needs_update do
+                # Actually update the case
+                update_opts = if actor, do: [actor: actor], else: []
+                case Enforcement.update_case_from_scraping(existing_case, update_attrs, update_opts) do
+                  {:ok, updated_case} ->
+                    Logger.info("Successfully updated existing EA case via :update_from_scraping: #{updated_case.regulator_id}")
+                    {:ok, updated_case, :updated}
+                  {:error, update_error} ->
+                    Logger.error("Failed to update existing EA case #{processed_case.regulator_id}: #{inspect(update_error)}")
+                    {:error, ash_error}
+                end
+              else
+                Logger.debug("EA case already exists with identical data, no update needed: #{existing_case.regulator_id}")
+                {:ok, existing_case, :existing}
               end
             
             {:ok, nil} ->
@@ -494,7 +524,7 @@ defmodule EhsEnforcement.Agencies.Ea.CaseProcessor do
   
   defp create_case_from_transformed_data(transformed_case, actor) do
     case_attrs = %{
-      agency_code: :environment_agency,
+      agency_code: transformed_case[:agency_code] || transformed_case.agency_code || :ea,
       regulator_id: transformed_case[:regulator_id] || transformed_case.regulator_id,
       offender_attrs: build_offender_attrs_from_transformed(transformed_case),
       offence_result: transformed_case[:offence_result] || "Regulatory Action",
@@ -511,7 +541,54 @@ defmodule EhsEnforcement.Agencies.Ea.CaseProcessor do
     }
     
     create_opts = if actor, do: [actor: actor], else: []
-    Enforcement.create_case(case_attrs, create_opts)
+    
+    case Enforcement.create_case(case_attrs, create_opts) do
+      {:ok, case_record} ->
+        {:ok, case_record}
+      
+      {:error, ash_error} ->
+        # Handle duplicate by updating existing case with new EA data
+        if is_duplicate_error?(ash_error) do
+          Logger.debug("EA transformed case already exists, updating: #{case_attrs.regulator_id}")
+          
+          # Find the existing case and update it
+          query_opts = if actor, do: [actor: actor], else: []
+          case Enforcement.Case 
+               |> Ash.Query.filter(regulator_id == ^case_attrs.regulator_id)
+               |> Ash.read_one(query_opts) do
+            {:ok, existing_case} when not is_nil(existing_case) ->
+              # Update with the new EA data using our scraping action
+              update_attrs = %{
+                offence_result: case_attrs.offence_result,
+                offence_fine: case_attrs.offence_fine,
+                offence_costs: case_attrs.offence_costs,
+                offence_hearing_date: case_attrs.offence_hearing_date,
+                url: case_attrs.regulator_url,
+                related_cases: case_attrs.related_cases
+              }
+              
+              update_opts = if actor, do: [actor: actor], else: []
+              case Enforcement.update_case_from_scraping(existing_case, update_attrs, update_opts) do
+                {:ok, updated_case} ->
+                  Logger.info("Successfully updated existing EA transformed case: #{updated_case.regulator_id}")
+                  {:ok, updated_case}
+                {:error, update_error} ->
+                  Logger.error("Failed to update existing EA transformed case #{case_attrs.regulator_id}: #{inspect(update_error)}")
+                  {:error, ash_error}
+              end
+            
+            {:ok, nil} ->
+              Logger.warning("EA transformed case marked as duplicate but not found: #{case_attrs.regulator_id}")
+              {:error, ash_error}
+            
+            {:error, query_error} ->
+              Logger.error("Failed to query existing EA transformed case #{case_attrs.regulator_id}: #{inspect(query_error)}")
+              {:error, ash_error}
+          end
+        else
+          {:error, ash_error}
+        end
+    end
   end
   
   defp build_offender_attrs_from_transformed(transformed_case) do
@@ -522,11 +599,66 @@ defmodule EhsEnforcement.Agencies.Ea.CaseProcessor do
       postcode: transformed_case[:postcode],
       main_activity: transformed_case[:industry_sector],
       industry: "Unknown",  # Would need additional mapping
+      # EA-specific fields (now supported)
       company_registration_number: transformed_case[:company_registration_number],
       town: transformed_case[:town],
-      county: transformed_case[:county]
+      county: transformed_case[:county],
+      industry_sectors: build_industry_sectors_array(transformed_case[:industry_sector])
     }
     |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
     |> Map.new()
+  end
+  
+  defp build_industry_sectors_array(nil), do: []
+  defp build_industry_sectors_array(""), do: []
+  defp build_industry_sectors_array(industry_sector) when is_binary(industry_sector) do
+    [industry_sector]
+  end
+  
+  # Helper functions for unified case processor
+  
+  defp build_case_attrs(%ProcessedEaCase{} = processed_case) do
+    %{
+      agency_code: processed_case.agency_code,
+      regulator_id: processed_case.regulator_id,
+      offender_attrs: processed_case.offender_attrs,
+      offence_result: processed_case.offence_result,
+      offence_fine: processed_case.offence_fine,
+      offence_costs: processed_case.offence_costs,
+      offence_action_date: processed_case.offence_action_date,
+      offence_hearing_date: processed_case.offence_hearing_date,
+      offence_breaches: processed_case.offence_breaches,
+      offence_breaches_clean: processed_case.offence_breaches_clean,
+      regulator_function: processed_case.regulator_function,
+      regulator_url: processed_case.regulator_url,
+      related_cases: processed_case.related_cases,
+      offence_action_type: processed_case.offence_action_type,
+      
+      # EA-specific fields
+      ea_event_reference: processed_case.ea_event_reference,
+      ea_total_violation_count: processed_case.ea_total_violation_count,
+      environmental_impact: processed_case.environmental_impact,
+      environmental_receptor: processed_case.environmental_receptor,
+      is_ea_multi_violation: processed_case.is_ea_multi_violation
+    }
+  end
+  
+  defp build_case_attrs_from_transformed(transformed_case) do
+    %{
+      agency_code: transformed_case[:agency_code] || transformed_case.agency_code || :ea,
+      regulator_id: transformed_case[:regulator_id] || transformed_case.regulator_id,
+      offender_attrs: build_offender_attrs_from_transformed(transformed_case),
+      offence_result: transformed_case[:offence_result] || "Regulatory Action",
+      offence_fine: transformed_case[:total_fine] || Decimal.new(0),
+      offence_costs: Decimal.new(0),
+      offence_action_date: transformed_case[:action_date],
+      offence_hearing_date: nil,
+      offence_breaches: transformed_case[:offence_description],
+      offence_breaches_clean: transformed_case[:legal_reference],
+      regulator_function: transformed_case[:agency_function] || "Environmental",
+      regulator_url: transformed_case[:regulator_url],
+      related_cases: nil,
+      offence_action_type: transformed_case[:offence_action_type] || "Other"
+    }
   end
 end

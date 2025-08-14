@@ -208,10 +208,11 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
       assert compliance_dates == [~D[2025-01-15], ~D[2025-02-01]]
 
       # Verify PubSub events were sent
-      assert_received {:scraping_started, %{session_id: ^session.id}}
-      assert_received {:scraping_page_completed, %{session_id: ^session.id, page: 1, found: 2, created: 2}}
-      assert_received {:scraping_page_completed, %{session_id: ^session.id, page: 2, found: 1, created: 1}}
-      assert_received {:scraping_completed, %{session_id: ^session.id, total_found: 3, total_created: 3}}
+      session_id = session.id
+      assert_received {:scraping_started, %{session_id: ^session_id}}
+      assert_received {:scraping_page_completed, %{session_id: ^session_id, page: 1, found: 2, created: 2}}
+      assert_received {:scraping_page_completed, %{session_id: ^session_id, page: 2, found: 1, created: 1}}
+      assert_received {:scraping_completed, %{session_id: ^session_id, total_found: 3, total_created: 3}}
     end
 
     test "handles partial failures gracefully", %{agency: agency, actor: actor} do

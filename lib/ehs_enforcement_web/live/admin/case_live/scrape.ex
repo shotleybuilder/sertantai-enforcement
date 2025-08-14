@@ -62,6 +62,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
       progress: %{
         pages_processed: 0,
         cases_found: 0,
+        cases_processed: 0,
         cases_created: 0,
         cases_created_current_page: 0,
         cases_updated: 0,
@@ -80,7 +81,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
       # Initialize empty values - will be populated by event-driven updates
       active_sessions: [],
       case_processing_log: [],
-      scraped_cases: [],  # Initial empty state before event-driven updates take over
+      scraped_cases: [],  # All scraped cases (both HSE and EA) - unified list
       
       # UI state
       loading: false,
@@ -113,8 +114,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
       Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
       
       # Use event-driven updates for case processing logs instead of polling  
-      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "hse_page_processing_log:created")
-      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "ea_case_processing_log:created")
+      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "processing_log:created")
       
       # Manual PubSub subscription for scraped cases - use direct state management
       # instead of keep_live to avoid timing issues with session-specific data
@@ -169,9 +169,9 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   def handle_event("stop_scraping", _params, socket) do
     case {socket.assigns.current_session, socket.assigns.scraping_task} do
       {%{session_id: session_id}, task} when not is_nil(task) ->
-        Logger.info("Admin requested to stop scraping session: #{session_id}")
+        # HSE scraping with session
+        Logger.info("Admin requested to stop HSE scraping session: #{session_id}")
         
-        # Actually stop the background task
         Task.shutdown(task, :brutal_kill)
         
         broadcast_scraping_event(:stopped, %{
@@ -183,21 +183,39 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
           scraping_active: false,
           current_session: nil,
           scraping_task: nil,
-          scraping_session_started_at: nil,  # Clear session start time
+          scraping_session_started_at: nil,
           progress: Map.put(socket.assigns.progress, :status, :stopped)
         )
         
         {:noreply, socket}
       
-      {nil, _} ->
-        {:noreply, socket}
+      {nil, task} when not is_nil(task) ->
+        # EA scraping without session
+        Logger.info("Admin requested to stop EA scraping task")
         
-      {_, nil} ->
-        # Still update UI state in case it's out of sync
+        Task.shutdown(task, :brutal_kill)
+        
+        # No session to broadcast about, just update UI
         socket = assign(socket,
           scraping_active: false,
           current_session: nil,
-          scraping_session_started_at: nil,  # Clear session start time
+          scraping_task: nil,
+          scraping_session_started_at: nil,
+          progress: Map.put(socket.assigns.progress, :status, :stopped)
+        )
+        
+        {:noreply, socket}
+      
+      {nil, nil} ->
+        # No scraping running
+        {:noreply, socket}
+        
+      {_, nil} ->
+        # Session exists but no task (shouldn't happen, but handle gracefully)
+        socket = assign(socket,
+          scraping_active: false,
+          current_session: nil,
+          scraping_session_started_at: nil,
           progress: Map.put(socket.assigns.progress, :status, :stopped)
         )
         {:noreply, socket}
@@ -213,13 +231,14 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
 
   @impl true
   def handle_event("clear_scraped_cases", _params, socket) do
-    # Clear the scraped cases list and session start time
+    # Clear scraped cases list and session start time
     socket = assign(socket, 
       scraped_cases: [],
       scraping_session_started_at: nil
     )
     {:noreply, socket}
   end
+  
   
   @impl true
   def handle_event("clear_processing_log", _params, socket) do
@@ -238,6 +257,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
     cleared_progress = %{
       pages_processed: 0,
       cases_found: 0,
+      cases_processed: 0,
       cases_created: 0,
       cases_created_current_page: 0,
       cases_updated: 0,
@@ -474,6 +494,14 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
           case = EhsEnforcement.Enforcement.Case
           |> Ash.get!(notification.data.id, load: [:agency, :offender], actor: socket.assigns.current_user)
           
+          # Get actual processing status from notification metadata or fall back to :updated
+          processing_status = case notification.metadata[:processing_status] do
+            status when status in [:created, :updated, :existing] -> status
+            _ -> :updated  # Default for scraped:updated events without metadata
+          end
+          
+          # Add processing status to case for template use
+          case_with_status = Map.put(case, :processing_status, processing_status)
           
           # Remove any existing entry for this case (deduplicate by regulator_id)
           existing_cases = Enum.reject(socket.assigns.scraped_cases, fn existing -> 
@@ -481,10 +509,10 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
           end)
           
           # Add to the beginning of the list (most recent first)
-          updated_scraped_cases = [case | existing_cases]
+          updated_scraped_cases = [case_with_status | existing_cases]
           
-          # Keep only the most recent 50 cases
-          updated_scraped_cases = Enum.take(updated_scraped_cases, 50)
+          # Keep only the most recent 100 cases (increased to handle large EA batches)
+          updated_scraped_cases = Enum.take(updated_scraped_cases, 100)
           
           assign(socket, scraped_cases: updated_scraped_cases)
         else
@@ -501,19 +529,21 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   @impl true
   def handle_info(%Phoenix.Socket.Broadcast{topic: "case:created", event: "create", payload: %Ash.Notifier.Notification{} = notification}, socket) do
     
-    # Only add to scraped_cases if we have an active session
+    # Only add cases if we have an active session
     socket = if socket.assigns.scraping_session_started_at do
       # Load full case data with associations
       case = EhsEnforcement.Enforcement.Case
       |> Ash.get!(notification.data.id, load: [:agency, :offender], actor: socket.assigns.current_user)
       
+      # Add processing status - for case:created events, it's always :created
+      case_with_status = Map.put(case, :processing_status, :created)
       
-      # Add to the beginning of the list (most recent first)
-      updated_scraped_cases = [case | socket.assigns.scraped_cases]
-      
-      # Keep only the most recent 50 cases
-      updated_scraped_cases = Enum.take(updated_scraped_cases, 50)
-      
+      # All cases (HSE and EA) go to the same unified scraped_cases list
+      existing_cases = Enum.reject(socket.assigns.scraped_cases, fn existing -> 
+        existing.regulator_id == case.regulator_id 
+      end)
+      updated_scraped_cases = [case_with_status | existing_cases]
+      updated_scraped_cases = Enum.take(updated_scraped_cases, 100)
       assign(socket, scraped_cases: updated_scraped_cases)
     else
       socket
@@ -560,12 +590,23 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   
   @impl true  
   def handle_info(%Phoenix.Socket.Broadcast{topic: "scrape_session:updated", payload: %Ash.Notifier.Notification{data: session_data}}, socket) do
-    # Update progress when session is updated
-    progress = extract_progress_from_session(session_data)
+    Logger.debug("UI: Received session update - scraping_active: #{socket.assigns.scraping_active}, session_id: #{session_data.session_id}")
+    Logger.debug("UI: Session update data - status: #{session_data.status}, cases_found: #{session_data.cases_found}, cases_created: #{session_data.cases_created}, cases_exist_total: #{session_data.cases_exist_total}")
     
-    socket = socket
-    |> assign(progress: progress)
-    |> update(:active_sessions, fn sessions ->
+    # Update progress ONLY when actively scraping
+    # Do NOT update progress after completion to preserve final results
+    socket = if socket.assigns.scraping_active do
+      # If scraping is active, update the progress with session data
+      progress = extract_progress_from_session(session_data)
+      Logger.debug("UI: Updating progress during scraping - cases_found: #{progress.cases_found}, cases_created: #{progress.cases_created}, cases_exist_total: #{progress.cases_exist_total}")
+      assign(socket, progress: progress, current_session: session_data)
+    else
+      # If not actively scraping, DO NOT update progress - preserve completion results
+      Logger.debug("UI: Ignoring session update after completion to preserve progress")
+      socket
+    end
+    
+    socket = update(socket, :active_sessions, fn sessions ->
       # Update the session in the list
       Enum.map(sessions, fn s -> 
         if s.id == session_data.id, do: session_data, else: s 
@@ -576,18 +617,8 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   end
   
   @impl true
-  def handle_info(%Phoenix.Socket.Broadcast{topic: "hse_page_processing_log:created", payload: %Ash.Notifier.Notification{data: log_data}}, socket) do
-    # Add new HSE processing log entry
-    socket = update(socket, :case_processing_log, fn logs ->
-      [log_data | logs] |> Enum.take(50)  # Keep latest 50 entries
-    end)
-    
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_info(%Phoenix.Socket.Broadcast{topic: "ea_case_processing_log:created", payload: %Ash.Notifier.Notification{data: log_data}}, socket) do
-    # Add new EA processing log entry
+  def handle_info(%Phoenix.Socket.Broadcast{topic: "processing_log:created", payload: %Ash.Notifier.Notification{data: log_data}}, socket) do
+    # Add new processing log entry (supports both HSE and EA)
     socket = update(socket, :case_processing_log, fn logs ->
       [log_data | logs] |> Enum.take(50)  # Keep latest 50 entries
     end)
@@ -598,16 +629,51 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   # Task completion handlers
   
   @impl true
-  def handle_info({:scraping_completed, _session}, socket) do
-    Logger.info("UI: Scraping task completed successfully")
+  def handle_info({:scraping_completed, session_result}, socket) do
+    Logger.info("UI: Scraping task completed successfully - session_result: #{inspect(session_result)}")
+    
+    # Preserve current progress and only update status to completed
+    # Don't reset progress counters - user should see final results
+    final_progress = socket.assigns.progress
+    |> Map.put(:status, :completed)
+    
+    # If session result has higher counts, use those instead
+    final_progress = if session_result do
+      Logger.info("UI: Merging session results with current progress")
+      session_progress = extract_progress_from_session(session_result)
+      
+      # Take the maximum of current progress and session results to avoid reset
+      %{
+        status: :completed,
+        pages_processed: max(final_progress.pages_processed || 0, session_progress.pages_processed || 0),
+        cases_found: max(final_progress.cases_found || 0, session_progress.cases_found || 0),
+        cases_processed: max(final_progress.cases_processed || 0, session_progress.cases_processed || 0),
+        cases_created: max(final_progress.cases_created || 0, session_progress.cases_created || 0),
+        cases_created_current_page: final_progress.cases_created_current_page || 0,
+        cases_updated: max(final_progress.cases_updated || 0, session_progress.cases_updated || 0),
+        cases_updated_current_page: final_progress.cases_updated_current_page || 0,
+        cases_exist_total: max(final_progress.cases_exist_total || 0, session_progress.cases_exist_total || 0),
+        cases_exist_current_page: final_progress.cases_exist_current_page || 0,
+        errors_count: max(final_progress.errors_count || 0, session_progress.errors_count || 0),
+        current_page: session_progress.current_page || final_progress.current_page
+      }
+    else
+      Logger.info("UI: No session result, preserving current progress")
+      final_progress
+    end
+    
+    Logger.info("UI: Final progress: #{inspect(final_progress)}")
+    
     socket = assign(socket,
       scraping_active: false,
-      current_session: nil,
+      current_session: session_result,  # Store completed session for reference
       scraping_task: nil,
       # Don't clear scraping_session_started_at here - keep showing results after completion
-      progress: Map.put(socket.assigns.progress, :status, :completed)
+      progress: final_progress
       # Keep scraped_cases after completion so user can see results
     )
+    
+    Logger.info("UI: Scraping completion handled - scraping_active: #{socket.assigns.scraping_active}, final_progress: #{inspect(final_progress)}")
     {:noreply, socket}
   end
 
@@ -685,6 +751,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
     %{
       pages_processed: session_data.pages_processed || 0,
       cases_found: session_data.cases_found || 0,
+      cases_processed: Map.get(session_data, :cases_processed, 0),
       cases_created: session_data.cases_created || 0,
       cases_created_current_page: session_data.cases_created_current_page || 0,
       cases_updated: session_data.cases_updated || 0,
@@ -765,13 +832,25 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   
   defp build_case_details(data) do
     %{
-      page: data.current_page,
+      agency: Map.get(data, :agency, :hse),  # Default to HSE for backward compatibility
+      batch_or_page: data.current_page,  # Unified field name for template
+      page: data.current_page,  # Keep for backward compatibility
       timestamp: DateTime.utc_now(),
+      
+      # Unified field names for new template
+      items_found: length(data[:scraped_cases] || []),
+      items_created: Map.get(data, :cases_created, 0),
+      items_existing: Map.get(data, :existing_count, 0),
+      items_failed: Map.get(data, :cases_skipped, 0),
+      
+      # Legacy field names for backward compatibility
       cases_scraped: length(data[:scraped_cases] || []),
       cases_created: Map.get(data, :cases_created, 0),
       cases_skipped: Map.get(data, :cases_skipped, 0),
       existing_count: Map.get(data, :existing_count, 0),
-      scraped_cases: extract_case_summary(data[:scraped_cases] || []),
+      
+      scraped_items: extract_case_summary(data[:scraped_cases] || []),  # Unified field name
+      scraped_cases: extract_case_summary(data[:scraped_cases] || []),  # Legacy field name
       creation_errors: extract_creation_errors(data[:creation_results])
     }
   end
@@ -893,7 +972,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
     socket = assign(socket,
       scraping_active: true,
       scraping_session_started_at: session_start_time,
-      scraped_cases: [],
+      scraped_cases: [],  # Clear any existing cases
       progress: Map.merge(socket.assigns.progress, %{
         status: :running,
         current_page: nil  # EA doesn't use pagination
@@ -902,35 +981,43 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
     
     Logger.info("Starting EA case scraping: #{ea_params.date_from} to #{ea_params.date_to}, action_types: #{inspect(ea_params.action_types)}")
     
+    # Capture parent PID to send completion message
+    parent_pid = self()
+    
     task = Task.async(fn ->
-      # Use the EA scraping action directly
-      case Ash.create(EhsEnforcement.Enforcement.Case, %{}, 
-          action: :scrape_ea_cases,
+      # Use the EA scraping behavior - pass parameters as keyword list
+      case EhsEnforcement.Scraping.Agencies.Ea.validate_params([
           date_from: ea_params.date_from,
           date_to: ea_params.date_to,
           action_types: ea_params.action_types,
-          max_pages: 10,  # Reasonable default for EA
-          start_page: 1) do
-        {:ok, _result} ->
-          Logger.info("EA scraping completed successfully")
+          actor: socket.assigns.current_user,
+          scrape_type: :manual,
+          start_page: 1,
+          max_pages: 1
+        ]) do
+        {:ok, validated_params} ->
+          # Now start the actual scraping with validated parameters
+          EhsEnforcement.Scraping.Agencies.Ea.start_scraping(validated_params, nil)
           
-        {:error, %Ash.Error.Invalid{} = error} ->
-          # EA actions return success messages as "errors"
-          error.errors
-          |> Enum.each(fn err ->
-            if err.field == :scraping_result do
-              Logger.info("✅ #{err.message}")
-            else
-              Logger.error("❌ #{err.field}: #{err.message}")
-            end
-          end)
+        {:error, reason} ->
+          Logger.error("EA parameter validation failed: #{inspect(reason)}")
+          {:error, reason}
+      end |> case do
+        {:ok, session_result} ->
+          Logger.info("EA scraping completed successfully")
+          # Send completion message to LiveView with session data
+          send(parent_pid, {:scraping_completed, session_result})
+          session_result
           
         {:error, reason} ->
           Logger.error("EA scraping failed: #{inspect(reason)}")
+          # Send failure message to LiveView
+          send(parent_pid, {:scraping_failed, reason})
+          {:error, reason}
       end
     end)
     
-    # For EA, we don't use ScrapeSession (different architecture)
+    # For EA, store the task (session will be created by EA scraping behavior)
     socket = assign(socket, scraping_task: task)
     
     {:noreply, socket}
@@ -1102,6 +1189,35 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
   
   defp duplicate_error?(_), do: false
 
+  # Helper functions for template to handle mixed atom/string keys in scraped_items
+
+  defp get_case_field(case_info, field) when is_map(case_info) do
+    # Try atom key first, then string key
+    case_info[field] || case_info[to_string(field)]
+  end
+
+  defp get_case_field(_, _), do: nil
+
+  defp parse_case_date(nil), do: nil
+  defp parse_case_date(%Date{} = date), do: date
+  defp parse_case_date(date_string) when is_binary(date_string) do
+    case Date.from_iso8601(date_string) do
+      {:ok, date} -> date
+      {:error, _} -> nil
+    end
+  end
+  defp parse_case_date(_), do: nil
+
+  defp parse_fine_amount(nil), do: nil
+  defp parse_fine_amount(%Decimal{} = amount), do: amount
+  defp parse_fine_amount(amount_string) when is_binary(amount_string) do
+    case Decimal.parse(amount_string) do
+      {amount, _} -> amount
+      :error -> nil
+    end
+  end
+  defp parse_fine_amount(_), do: nil
+
   # Private helper to handle ScrapeSession updates from either format
   defp handle_scrape_session_update(session_data, socket) do
     
@@ -1111,6 +1227,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
       current_page: session_data.current_page,
       pages_processed: session_data.pages_processed,
       cases_found: session_data.cases_found,
+      cases_processed: Map.get(session_data, :cases_processed, 0),
       cases_created: session_data.cases_created,
       cases_created_current_page: session_data.cases_created_current_page || 0,
       cases_updated: session_data.cases_updated || 0,

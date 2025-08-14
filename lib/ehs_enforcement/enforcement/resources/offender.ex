@@ -55,6 +55,12 @@ defmodule EhsEnforcement.Enforcement.Offender do
     # This allows efficient filtering without complex joins across cases and notices
     attribute :agencies, {:array, :string}, default: []
     
+    # EA-specific extensions for Environment Agency enforcement data
+    attribute :company_registration_number, :string, description: "Companies House registration number (e.g., '04622955')"
+    attribute :town, :string, description: "Town from EA structured address (e.g., 'BARNSLEY')"
+    attribute :county, :string, description: "County from EA structured address (e.g., 'SOUTH YORKSHIRE')"
+    attribute :industry_sectors, {:array, :string}, default: [], description: "EA detailed industry sectors (e.g., ['Manufacturing - General Engineering'])"
+    
     # Aggregated statistics
     attribute :first_seen_date, :date
     attribute :last_seen_date, :date
@@ -81,7 +87,9 @@ defmodule EhsEnforcement.Enforcement.Offender do
     create :create do
       primary? true
       accept [:name, :address, :local_authority, :country, :postcode, :main_activity, :sic_code, :business_type, :industry,
-              :first_seen_date, :last_seen_date, :total_cases, :total_notices, :total_fines, :agencies]
+              :first_seen_date, :last_seen_date, :total_cases, :total_notices, :total_fines, :agencies,
+              # EA-specific fields
+              :company_registration_number, :town, :county, :industry_sectors]
       
       change fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :name) do

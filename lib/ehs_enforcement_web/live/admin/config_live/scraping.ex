@@ -140,13 +140,15 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   - `{:noreply, socket}` with updated mode and form state
   """
   @impl true
-  def handle_params(params, _uri, socket) do
-    case params do
-      %{"action" => "new"} ->
+  def handle_params(_params, _uri, socket) do
+    # The action (:new, :edit) is determined by the route, not by params
+    # LiveView routes like "/admin/config/scraping/new" automatically set the live_action
+    case socket.assigns.live_action do
+      :new ->
         socket = start_creating_config(socket)
         {:noreply, socket}
         
-      %{"action" => "edit"} ->
+      :edit ->
         socket = start_editing_config(socket)  
         {:noreply, socket}
         
@@ -157,7 +159,7 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   
   @impl true
   def handle_event("start_editing", _params, socket) do
-    {:noreply, push_patch(socket, to: ~p"/admin/config/scraping?action=edit")}
+    {:noreply, push_patch(socket, to: ~p"/admin/config/scraping")}
   end
   
   @impl true

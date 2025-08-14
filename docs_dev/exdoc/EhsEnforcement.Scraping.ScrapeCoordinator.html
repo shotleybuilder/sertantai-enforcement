@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-602DA365.js"></script>
+    <script defer src="dist/sidebar_items-3D73C391.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -153,6 +153,26 @@ ehs_enforcement
 
     <div class="summary-row">
       <div class="summary-signature">
+        <a href="#start_ea_scraping_session/1" data-no-tooltip="" translate="no">start_ea_scraping_session(opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Start EA-specific scraping session with date range and pagination.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#start_hse_scraping_session/1" data-no-tooltip="" translate="no">start_hse_scraping_session(opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Start HSE-specific scraping session (original implementation).</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
         <a href="#start_scraping_session/1" data-no-tooltip="" translate="no">start_scraping_session(opts \\ [])</a>
 
       </div>
@@ -270,6 +290,46 @@ ehs_enforcement
   <section class="docstring">
 
 <p>Get scraping session statistics and progress information.</p><p>Returns summary map with key metrics.</p>
+  </section>
+</section>
+<section class="detail" id="start_ea_scraping_session/1">
+
+    <span id="start_ea_scraping_session/0"></span>
+
+  <div class="detail-header">
+    <a href="#start_ea_scraping_session/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_ea_scraping_session(opts \\ [])</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Start EA-specific scraping session with date range and pagination.</p><p>Options:</p><ul><li>date_from: Start date for EA search (required)</li><li>date_to: End date for EA search (required)</li><li>action_types: List of action types [:court_case, :caution, :enforcement_notice] (default: [:court_case])</li><li>start_page: Page to start scraping from (default: 1)</li><li>max_pages: Maximum pages to process (default: 20)</li><li>actor: Actor for Ash operations (default: nil)</li></ul><p>Returns {:ok, session_results} or {:error, reason}</p>
+  </section>
+</section>
+<section class="detail" id="start_hse_scraping_session/1">
+
+    <span id="start_hse_scraping_session/0"></span>
+
+  <div class="detail-header">
+    <a href="#start_hse_scraping_session/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">start_hse_scraping_session(opts \\ [])</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Start HSE-specific scraping session (original implementation).</p><p>Options:</p><ul><li>start_page: Page to start scraping from (default: 1)</li><li>max_pages: Maximum pages to process (default: 100)</li><li>database: HSE database to scrape (default: &quot;convictions&quot;)</li><li>stop_on_existing: Stop when consecutive existing threshold reached (default: true)</li><li>actor: Actor for Ash operations (default: nil)</li></ul>
   </section>
 </section>
 <section class="detail" id="start_scraping_session/1">

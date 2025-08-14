@@ -76,7 +76,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
   end
   
   @impl true
-  def start_scraping(validated_params, config) do
+  def start_scraping(validated_params, _config) do
     Logger.info("EA: Starting scraping session", 
                 date_from: validated_params.date_from,
                 date_to: validated_params.date_to,
@@ -94,6 +94,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
       current_page: validated_params.start_page,
       pages_processed: 0,
       cases_found: 0,
+      cases_processed: 0,
       cases_created: 0,
       cases_exist_total: 0,
       errors_count: 0
@@ -202,7 +203,10 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
   end
   
   defp validate_scraping_enabled(params) do
-    if EhsEnforcement.Scraping.AgencyBehavior.scraping_enabled?(:ea, params.scrape_type, params) do
+    # Load the actual scraping configuration for checking enabled flags
+    config = load_scraping_config([])
+    
+    if EhsEnforcement.Scraping.AgencyBehavior.scraping_enabled?(:ea, params.scrape_type, config) do
       :ok
     else
       {:error, "#{params.scrape_type} EA scraping is disabled in configuration"}
@@ -225,111 +229,226 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
     
     validated_params = Map.get(session, :validated_params, %{})
     
-    # Use EA CaseScraper to get ALL cases for the date range in a single request
-    case CaseScraper.scrape_enforcement_actions(
+    # Process each action type individually for real-time feedback
+    process_ea_action_types_individually(session, session.action_types, validated_params)
+  end
+  
+  defp process_ea_action_types_individually(session, action_types, validated_params) do
+    Logger.debug("EA: Processing #{length(action_types)} action types individually")
+    
+    # Process each action type one by one
+    final_session = Enum.reduce(action_types, session, fn action_type, current_session ->
+      Logger.info("EA: Processing action type: #{action_type}")
+      
+      case process_single_action_type_individually(current_session, action_type, validated_params) do
+        {:ok, updated_session} -> updated_session
+        {:error, reason} ->
+          Logger.error("EA: Failed to process action type #{action_type}: #{inspect(reason)}")
+          # Continue with other action types even if one fails
+          current_session
+      end
+    end)
+    
+    # Update final session status
+    update_session_final_processing(final_session)
+  end
+  
+  defp process_single_action_type_individually(session, action_type, validated_params) do
+    Logger.debug("EA: Getting summary records for action type #{action_type}")
+    
+    # Get summary records for this action type (Stage 1)
+    case CaseScraper.collect_summary_records_for_action_type(
            session.date_from, 
            session.date_to, 
-           session.action_types,
-           timeout_ms: validated_params.network_timeout,
-           detail_delay_ms: validated_params.pause_between_pages_ms
+           action_type,
+           [timeout_ms: validated_params.network_timeout]
          ) do
-      {:ok, ea_cases} ->
-        Logger.info("EA: Found #{length(ea_cases)} enforcement actions for date range")
+      {:ok, summary_records} ->
+        total_cases_for_action = length(summary_records)
+        Logger.info("EA: Found #{total_cases_for_action} summary records for #{action_type}")
         
-        # Update session with cases found
-        cases_found_params = %{
-          cases_found: length(ea_cases),
-          current_page: 1,  # EA only has "1 page" since it's all results
-          pages_processed: 1
-        }
-        
-        updated_session = case Ash.update(session, cases_found_params) do
+        # Update session with total expected cases for this action type
+        updated_session = case Ash.update(session, %{cases_found: session.cases_found + total_cases_for_action}) do
           {:ok, updated} -> updated
           {:error, reason} ->
-            Logger.error("EA: Failed to update session with cases found: #{inspect(reason)}")
+            Logger.warning("EA: Failed to update cases_found total: #{inspect(reason)}")
             session
         end
         
-        # Process EA cases and convert to Case resource format
-        process_ea_cases_serially(updated_session, ea_cases)
+        # Process each summary record individually with real-time feedback
+        process_summary_records_individually(updated_session, summary_records, action_type, validated_params)
         
       {:error, reason} ->
-        Logger.error("EA: Failed to scrape enforcement actions: #{inspect(reason)}")
-        
-        # Update session with error
-        error_params = %{
-          errors_count: session.errors_count + 1,
-          current_page: 1,
-          pages_processed: 1
-        }
-        
-        case Ash.update(session, error_params) do
-          {:ok, updated_session} -> updated_session
-          {:error, update_reason} ->
-            Logger.error("EA: Failed to update ScrapeSession with error: #{inspect(update_reason)}")
-            session
-        end
+        Logger.error("EA: Failed to get summary records for #{action_type}: #{inspect(reason)}")
+        {:error, {:summary_failed, action_type, reason}}
     end
   end
   
-  defp process_ea_cases_serially(session, ea_cases) do
-    Logger.debug("EA: Processing #{length(ea_cases)} cases serially for session #{session.session_id}")
+  defp process_summary_records_individually(session, summary_records, action_type, validated_params) do
+    Logger.debug("EA: Processing #{length(summary_records)} summary records individually")
     
-    validated_params = Map.get(session, :validated_params, %{})
     actor = Map.get(validated_params, :actor)
     
-    # Track results for session updates
-    results = %{
+    # Track cumulative results and current session state
+    initial_state = %{
       cases_created: 0,
       cases_existing: 0,
       cases_errors: 0,
-      processed_cases: []
+      processed_cases: [],
+      current_session: session  # Track the current session state
     }
     
-    # Process each EA case and transform to Case/Violation resources
-    final_results = Enum.reduce(ea_cases, results, fn ea_case, acc ->
-      process_single_ea_case(session, ea_case, actor, acc)
+    # Process each summary record individually and save immediately
+    final_state = Enum.reduce(summary_records, initial_state, fn summary_record, acc ->
+      Logger.debug("EA: Processing case #{summary_record.ea_record_id} individually")
+      
+      # Fetch detail record (Stage 2)
+      case CaseScraper.fetch_detail_record_individual(summary_record, [
+        detail_delay_ms: validated_params.pause_between_pages_ms,
+        timeout_ms: validated_params.network_timeout
+      ]) do
+        {:ok, detail_record} ->
+          # Process and save this case immediately
+          case_result = process_and_save_single_ea_case(acc.current_session, detail_record, actor)
+          
+          # Update accumulated results
+          updated_acc = merge_case_result(acc, case_result)
+          
+          # Update session with this single case progress for real-time UI feedback
+          # IMPORTANT: Capture the updated session for next iteration
+          updated_session = update_session_with_single_case_progress(acc.current_session, case_result)
+          
+          # Return updated accumulator with new session state
+          Map.put(updated_acc, :current_session, updated_session)
+          
+        {:error, reason} ->
+          Logger.warning("EA: Failed to fetch detail for #{summary_record.ea_record_id}: #{inspect(reason)}")
+          # Continue processing other cases
+          acc
+      end
     end)
     
-    # Create processing log for the completed EA batch
-    create_ea_processing_log(session, final_results.processed_cases, final_results)
+    # Extract the final results (excluding current_session)
+    final_results = Map.drop(final_state, [:current_session])
     
-    # Update session with final batch results
-    update_session_with_batch_results(session, final_results)
+    # Create processing log for this action type batch using the original session for logging context
+    create_ea_action_type_processing_log(session, action_type, final_results.processed_cases, final_results)
+    
+    # Return the final session with accumulated progress, not the original session
+    {:ok, final_state.current_session}
   end
   
-  defp process_single_ea_case(_session, ea_case, actor, acc) do
-    Logger.debug("EA: Processing case: #{inspect(ea_case)}")
+  defp process_and_save_single_ea_case(_session, detail_record, actor) do
+    Logger.debug("EA: Processing and saving case: #{detail_record.ea_record_id}")
     
     # Transform EA case to Case resource format using EA DataTransformer
-    transformed_case = DataTransformer.transform_ea_record(ea_case)
+    transformed_case = DataTransformer.transform_ea_record(detail_record)
     
-    # Create Case resource using EA CaseProcessor pattern
-    case CaseProcessor.process_and_create_case(transformed_case, actor) do
-      {:ok, case_record} ->
-        Logger.info("EA: Created case: #{case_record.regulator_id}")
-        %{acc | 
-          cases_created: acc.cases_created + 1,
-          processed_cases: [transformed_case | acc.processed_cases]
+    # Create Case resource using unified processor for consistent UI status
+    case CaseProcessor.process_and_create_case_with_status(transformed_case, actor) do
+      {:ok, case_record, status} ->
+        case status do
+          :created ->
+            Logger.info("EA: Created case: #{case_record.regulator_id}")
+          :updated ->
+            Logger.info("EA: Updated case: #{case_record.regulator_id}")
+          :existing ->
+            Logger.info("EA: Case already exists: #{case_record.regulator_id}")
+        end
+        
+        %{
+          status: status,
+          case_record: case_record,
+          transformed_case: transformed_case
         }
         
       {:error, reason} ->
-        # Check if error indicates case already exists
-        if duplicate_error?(reason) do
-          Logger.info("EA: Case already exists: #{transformed_case[:regulator_id]}")
-          %{acc | 
-            cases_existing: acc.cases_existing + 1,
-            processed_cases: [transformed_case | acc.processed_cases]
-          }
-        else
-          Logger.warning("EA: Error creating case: #{inspect(reason)}")
-          %{acc | 
-            cases_errors: acc.cases_errors + 1,
-            processed_cases: [transformed_case | acc.processed_cases]
-          }
-        end
+        Logger.warning("EA: Error creating case: #{inspect(reason)}")
+        %{
+          status: :error,
+          error: reason,
+          regulator_id: transformed_case[:regulator_id],
+          transformed_case: transformed_case
+        }
     end
   end
+  
+  defp merge_case_result(acc, case_result) do
+    case case_result.status do
+      :created ->
+        %{acc | 
+          cases_created: acc.cases_created + 1,
+          processed_cases: [case_result.transformed_case | acc.processed_cases]
+        }
+      :updated ->
+        %{acc | 
+          cases_created: acc.cases_created + 1,  # Count updates as "created" for UI purposes
+          processed_cases: [case_result.transformed_case | acc.processed_cases]
+        }
+      :existing ->
+        %{acc | 
+          cases_existing: acc.cases_existing + 1,
+          processed_cases: [case_result.transformed_case | acc.processed_cases]
+        }
+      :error ->
+        %{acc | 
+          cases_errors: acc.cases_errors + 1,
+          processed_cases: [case_result.transformed_case | acc.processed_cases]
+        }
+    end
+  end
+  
+  defp update_session_with_single_case_progress(session, case_result) do
+    # Update session counters for real-time UI feedback
+    # cases_processed tracks running count, cases_found holds the total expected
+    update_params = case case_result.status do
+      :created ->
+        %{
+          cases_processed: session.cases_processed + 1,
+          cases_created: session.cases_created + 1
+        }
+      :updated ->
+        %{
+          cases_processed: session.cases_processed + 1,
+          cases_created: session.cases_created + 1  # Count updates as "created" for UI purposes
+        }
+      :existing ->
+        %{
+          cases_processed: session.cases_processed + 1,
+          cases_exist_total: session.cases_exist_total + 1
+        }
+      :error ->
+        %{
+          cases_processed: session.cases_processed + 1,
+          errors_count: session.errors_count + 1
+        }
+    end
+    
+    case Ash.update(session, update_params) do
+      {:ok, updated_session} ->
+        Logger.debug("EA: Updated session progress for real-time feedback")
+        updated_session
+      {:error, reason} ->
+        Logger.error("EA: Failed to update session progress: #{inspect(reason)}")
+        session
+    end
+  end
+  
+  defp update_session_final_processing(session) do
+    # Mark processing as complete
+    update_params = %{
+      current_page: 1,
+      pages_processed: 1
+    }
+    
+    case Ash.update(session, update_params) do
+      {:ok, updated_session} -> updated_session
+      {:error, reason} ->
+        Logger.error("EA: Failed to update final session processing: #{inspect(reason)}")
+        session
+    end
+  end
+  
   
   defp finalize_session(session) do
     # Update session to completed status using Ash.update
@@ -352,26 +471,9 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
   
   # Helper functions
   
-  defp duplicate_error?(reason) do
-    case reason do
-      %Ash.Error.Invalid{errors: errors} -> duplicate_error_list?(errors)
-      %{message: message} -> String.contains?(message, "already exists") or String.contains?(message, "duplicate")
-      _ -> false
-    end
-  end
+  # Duplicate error handling now handled by UnifiedCaseProcessor
   
-  defp duplicate_error_list?(errors) when is_list(errors) do
-    Enum.any?(errors, fn error ->
-      case error do
-        %{message: message} -> String.contains?(message, "already exists") or String.contains?(message, "duplicate")
-        _ -> false
-      end
-    end)
-  end
-  
-  defp duplicate_error_list?(_), do: false
-  
-  defp create_ea_processing_log(session, processed_cases, results) do
+  defp create_ea_action_type_processing_log(session, action_type, processed_cases, results) do
     # Create summary of processed EA cases for UI display
     case_summary = Enum.map(processed_cases, fn case_data ->
       %{
@@ -382,11 +484,11 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
       }
     end)
     
-    # EA-specific processing log with unified field names
+    # EA-specific processing log with unified field names for each action type
     log_params = %{
       session_id: session.session_id,
       agency: :ea,
-      batch_or_page: 1,  # EA batch number (single batch)
+      batch_or_page: 1,  # EA batch number (integer, not string)
       items_found: length(processed_cases),
       items_created: results.cases_created,
       items_existing: results.cases_existing,
@@ -397,30 +499,9 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
     
     case Ash.create(ProcessingLog, log_params) do
       {:ok, _log} ->
-        Logger.debug("EA: Created unified processing log for session #{session.session_id}")
+        Logger.debug("EA: Created unified processing log for #{action_type} in session #{session.session_id}")
       {:error, reason} ->
-        Logger.warning("EA: Failed to create unified processing log: #{inspect(reason)}")
-    end
-  end
-  
-  defp update_session_with_batch_results(session, results) do
-    total_cases = results.cases_created + results.cases_existing + results.cases_errors
-    
-    update_params = %{
-      cases_found: session.cases_found + total_cases,
-      cases_created: session.cases_created + results.cases_created,
-      cases_exist_total: session.cases_exist_total + results.cases_existing,
-      errors_count: session.errors_count + results.cases_errors
-    }
-    
-    case Ash.update(session, update_params) do
-      {:ok, updated_session} ->
-        Logger.info("EA: Updated session with batch results: #{total_cases} total cases processed")
-        updated_session
-        
-      {:error, reason} ->
-        Logger.error("EA: Failed to update ScrapeSession: #{inspect(reason)}")
-        session
+        Logger.warning("EA: Failed to create unified processing log for #{action_type}: #{inspect(reason)}")
     end
   end
 end

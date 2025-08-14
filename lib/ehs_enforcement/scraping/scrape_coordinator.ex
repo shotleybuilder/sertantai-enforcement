@@ -13,11 +13,7 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
   require Logger
   require Ash.Query
   
-  alias EhsEnforcement.Scraping.Hse.CaseScraper
-  alias EhsEnforcement.Scraping.Hse.CaseProcessor
   alias EhsEnforcement.Configuration.ScrapingConfig
-  alias EhsEnforcement.Scraping.ScrapeSession
-  alias EhsEnforcement.Scraping.ProcessingLog
   alias EhsEnforcement.Scraping.AgencyBehavior
   
   # Dual notification system:
@@ -163,7 +159,7 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
           {:error, reason}
       end
     rescue
-      ArgumentError = error ->
+      error in ArgumentError ->
         Logger.error("Unsupported agency: #{agency}")
         {:error, error.message}
     end
@@ -214,11 +210,6 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinator do
     # Delegate to new behavior-based implementation
     opts_with_agency = Keyword.put(opts, :agency, :ea)
     start_scraping_session(opts_with_agency)
-  end
-  
-  # Helper function to generate session IDs
-  defp generate_session_id do
-    :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)
   end
   
   @doc """

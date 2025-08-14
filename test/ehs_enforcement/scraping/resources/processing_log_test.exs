@@ -254,6 +254,53 @@ defmodule EhsEnforcement.Scraping.ProcessingLogTest do
       assert length(log_entry.creation_errors) == 1
       assert length(log_entry.scraped_items) == 1
     end
+    
+    test "rejects invalid string batch_or_page values from EA scraping" do
+      # This test reproduces the exact bug from production logs
+      invalid_ea_data = %{
+        session_id: "ea_session_bug", 
+        agency: :ea,
+        batch_or_page: "court_case_batch",  # This exact string causes the error
+        items_found: 5,
+        items_created: 3,
+        items_existing: 1, 
+        items_failed: 1,
+        creation_errors: [],
+        scraped_items: []
+      }
+      
+      # This should fail with Ash.Error.Invalid due to type mismatch
+      {:error, %Ash.Error.Invalid{} = error} = Ash.create(ProcessingLog, invalid_ea_data)
+      
+      # Find the batch_or_page error
+      batch_error = Enum.find(error.errors, fn err -> err.field == :batch_or_page end)
+      assert batch_error != nil, "Should have batch_or_page error"
+      assert batch_error.message == "is invalid"
+      assert batch_error.value == "court_case_batch"
+    end
+    
+    test "accepts correct integer batch_or_page values from EA scraping after fix" do
+      # This test verifies the fix works correctly
+      fixed_ea_data = %{
+        session_id: "ea_session_fixed", 
+        agency: :ea,
+        batch_or_page: 1,  # FIXED: Now correctly using integer
+        items_found: 5,
+        items_created: 3,
+        items_existing: 1, 
+        items_failed: 1,
+        creation_errors: [],
+        scraped_items: []
+      }
+      
+      # This should succeed now
+      {:ok, log_entry} = Ash.create(ProcessingLog, fixed_ea_data)
+      
+      assert log_entry.session_id == "ea_session_fixed"
+      assert log_entry.agency == :ea
+      assert log_entry.batch_or_page == 1
+      assert is_integer(log_entry.batch_or_page)
+    end
   end
   
   describe "Query capabilities" do

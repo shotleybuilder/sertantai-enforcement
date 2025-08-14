@@ -174,122 +174,17 @@
 
     <!-- Progress Panel - Unified Component -->
     <div>
-      <% selected_agency = Phoenix.HTML.Form.input_value(@form, :agency) || "hse" %>
+      <% 
+        selected_agency = Phoenix.HTML.Form.input_value(@form, :agency) || "hse" 
+        agency_atom = if is_atom(selected_agency), do: selected_agency, else: String.to_atom(selected_agency)
+      %>
       <ProgressComponent.unified_progress_component 
-        agency={String.to_atom(selected_agency)} 
+        agency={agency_atom} 
         progress={@progress} 
       />
     </div>
   </div>
 
-  <!-- Live Case Processing Details -->
-  <%= if @case_processing_log != [] do %>
-    <div class="mt-8">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Live Processing Details</h2>
-        
-        <div class="space-y-4 max-h-96 overflow-y-auto">
-          <%= for details <- @case_processing_log do %>
-            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center space-x-2">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    <%= if details.agency == :hse do %>
-                      Page <%= details.batch_or_page %>
-                    <% else %>
-                      Batch <%= details.batch_or_page %>
-                    <% end %>
-                  </span>
-                  <span class="text-sm text-gray-500">
-                    <%= Calendar.strftime(Map.get(details, :inserted_at, Map.get(details, :timestamp, DateTime.utc_now())), "%H:%M:%S") %>
-                  </span>
-                </div>
-                <div class="flex items-center space-x-4 text-sm">
-                  <span class="text-gray-600">
-                    <span class="font-medium"><%= details.items_found %></span> scraped
-                  </span>
-                  <span class="text-green-600">
-                    <span class="font-medium"><%= details.items_created %></span> created
-                  </span>
-                  <%= if details.items_existing > 0 do %>
-                    <span class="text-blue-600">
-                      <span class="font-medium"><%= details.items_existing %></span> existing
-                    </span>
-                  <% end %>
-                  <%= if details.items_failed > 0 do %>
-                    <span class="text-red-600">
-                      <span class="font-medium"><%= details.items_failed %></span> failed
-                    </span>
-                  <% end %>
-                </div>
-              </div>
-              
-              <!-- Case Details -->
-              <% case_list = details.scraped_items || [] %>
-              <%= if case_list != [] do %>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  <%= for case_info <- Enum.take(case_list, 6) do %>
-                    <div class="bg-white rounded p-3 border border-gray-200">
-                      <div class="text-xs text-gray-500 mb-1">ID: <%= case_info.regulator_id %></div>
-                      <div class="text-sm font-medium text-gray-900 truncate">
-                        <%= case_info.offender_name %>
-                      </div>
-                      <div class="text-xs text-gray-500 mt-1">
-                        <%= if case_info.case_date do %>
-                          <%= Calendar.strftime(case_info.case_date, "%Y-%m-%d") %>
-                        <% end %>
-                        <%= if case_info.fine_amount && Decimal.positive?(case_info.fine_amount) do %>
-                          • £<%= Decimal.to_string(case_info.fine_amount) %>
-                        <% end %>
-                      </div>
-                    </div>
-                  <% end %>
-                  
-                  <%= if length(case_list) > 6 do %>
-                    <div class="bg-gray-100 rounded p-3 border border-gray-200 flex items-center justify-center">
-                      <span class="text-sm text-gray-500">
-                        +<%= length(case_list) - 6 %> more
-                      </span>
-                    </div>
-                  <% end %>
-                </div>
-              <% end %>
-              
-              <!-- Creation Errors -->
-              <%= if details.creation_errors != [] do %>
-                <div class="mt-3 pt-3 border-t border-gray-200">
-                  <div class="text-sm font-medium text-red-700 mb-2">Creation Errors:</div>
-                  <div class="space-y-1">
-                    <%= for error <- Enum.take(details.creation_errors, 3) do %>
-                      <div class="text-xs text-red-600 bg-red-50 rounded px-2 py-1">
-                        <%= if error.case_id do %>
-                          Case <%= error.case_id %>: <%= error.error %>
-                        <% else %>
-                          <%= error.error %>
-                        <% end %>
-                      </div>
-                    <% end %>
-                  </div>
-                </div>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-        
-        <%= if length(@case_processing_log) > 10 do %>
-          <div class="mt-4 text-center">
-            <button
-              type="button"
-              phx-click="clear_processing_log"
-              class="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Clear Processing Log
-            </button>
-          </div>
-        <% end %>
-      </div>
-    </div>
-  <% end %>
 
   <!-- Records Component -->
   
@@ -300,10 +195,10 @@
           <h2 class="text-xl font-semibold text-gray-900">Scraped Cases</h2>
           <div class="flex items-center space-x-4">
             <div class="text-sm text-gray-500">
-              <%= if length(@scraped_cases) > 50 do %>
-                Showing latest 50 of <%= length(@scraped_cases) %> scraped cases
+              <%= if length(@scraped_cases) > 100 do %>
+                Showing latest 100 of <%= length(@scraped_cases) %> cases
               <% else %>
-                Showing <%= length(@scraped_cases) %> scraped cases
+                Showing <%= length(@scraped_cases) %> cases
               <% end %>
             </div>
             <%= if length(@scraped_cases) > 0 do %>
@@ -331,7 +226,7 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <%= for case <- Enum.take(@scraped_cases, 50) do %>
+              <%= for case <- Enum.take(@scraped_cases, 100) do %>
                 <tr class="hover:bg-gray-50">
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
                     <%= case.regulator_id %>
@@ -356,25 +251,22 @@
                     <% end %>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <% 
-                      today = Date.utc_today()
-                      case_updated_date = DateTime.to_date(case.updated_at)
-                      case_created_date = DateTime.to_date(case.inserted_at)
-                      is_updated_today = Date.compare(case_updated_date, today) == :eq
-                      is_created_today = Date.compare(case_created_date, today) == :eq
-                    %>
-                    <%= cond do %>
-                      <% is_created_today -> %>
+                    <%= case Map.get(case, :processing_status, :unknown) do %>
+                      <% :created -> %>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           Created
                         </span>
-                      <% is_updated_today -> %>
+                      <% :updated -> %>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           Updated
                         </span>
-                      <% true -> %>
+                      <% :existing -> %>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                           Exists
+                        </span>
+                      <% _ -> %>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          Unknown
                         </span>
                     <% end %>
                   </td>
@@ -387,9 +279,9 @@
           </table>
         </div>
         
-        <%= if length(@scraped_cases) > 50 do %>
+        <%= if length(@scraped_cases) > 100 do %>
           <div class="mt-4 text-center text-sm text-gray-500">
-            Showing latest 50 of <%= length(@scraped_cases) %> scraped cases
+            Showing latest 100 of <%= length(@scraped_cases) %> cases
           </div>
         <% end %>
       </div>

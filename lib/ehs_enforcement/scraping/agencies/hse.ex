@@ -73,7 +73,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
   end
   
   @impl true
-  def start_scraping(validated_params, config) do
+  def start_scraping(validated_params, _config) do
     Logger.info("HSE: Starting scraping session", 
                 start_page: validated_params.start_page,
                 max_pages: validated_params.max_pages,
@@ -91,6 +91,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
       current_page: validated_params.start_page,
       pages_processed: 0,
       cases_found: 0,
+      cases_processed: 0,
       cases_created: 0,
       cases_exist_total: 0,
       errors_count: 0
@@ -180,7 +181,10 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
   defp validate_database(database), do: {:error, "Invalid HSE database: #{database}. Supported: convictions, notices, appeals"}
   
   defp validate_scraping_enabled(params) do
-    if EhsEnforcement.Scraping.AgencyBehavior.scraping_enabled?(:hse, params.scrape_type, params) do
+    # Load the actual scraping configuration for checking enabled flags
+    config = load_scraping_config([])
+    
+    if EhsEnforcement.Scraping.AgencyBehavior.scraping_enabled?(:hse, params.scrape_type, config) do
       :ok
     else
       {:error, "#{params.scrape_type} HSE scraping is disabled in configuration"}
@@ -460,7 +464,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
     should_stop_all_exist = (results.cases_existing == total_cases) and total_cases > 0
     
     update_params = %{
-      cases_found: session.cases_found + total_cases,
+      cases_processed: session.cases_processed + total_cases,
       cases_created: session.cases_created + results.cases_created,
       cases_exist_total: session.cases_exist_total + results.cases_existing,
       errors_count: session.errors_count + results.cases_errors,

@@ -59,7 +59,7 @@ defmodule EhsEnforcement.Agencies.Ea.DataTransformer do
       scraped_at: ea_record.scraped_at || DateTime.utc_now(),
       
       # Integration mapping (use existing HSE schema fields)
-      agency_code: :environment_agency,
+      agency_code: :ea,
       regulator_id: ea_record.case_reference || generate_regulator_id_from_detail(ea_record),
       regulator_url: ea_record.detail_url, # Maps to existing regulator_url column
       offence_action_type: map_to_hse_action_type(ea_record.action_type)
@@ -113,7 +113,7 @@ defmodule EhsEnforcement.Agencies.Ea.DataTransformer do
       scraped_at: DateTime.utc_now(),
       
       # Integration mapping (use existing HSE schema fields)
-      agency_code: :environment_agency,
+      agency_code: :ea,
       regulator_id: raw_ea_data.case_reference || generate_regulator_id(raw_ea_data),
       regulator_url: build_record_url(raw_ea_data), # Maps to existing regulator_url column
       offence_action_type: map_to_hse_action_type(raw_ea_data.action_type)
@@ -133,17 +133,21 @@ defmodule EhsEnforcement.Agencies.Ea.DataTransformer do
     :crypto.hash(:sha256, content) |> Base.encode16() |> String.slice(0, 12)
   end
   
-  defp clean_company_name(name) do
+  defp clean_company_name(name) when is_binary(name) do
     name
     |> String.trim()
     |> String.replace(~r/\s+/, " ")
   end
   
-  defp normalize_address(address) do
+  defp clean_company_name(nil), do: nil
+  
+  defp normalize_address(address) when is_binary(address) do
     address
     |> String.trim()
     |> String.replace(~r/\s+/, " ")
   end
+  
+  defp normalize_address(nil), do: nil
   
   defp parse_ea_date(date_string) when is_binary(date_string) do
     # TODO: Handle various EA date formats

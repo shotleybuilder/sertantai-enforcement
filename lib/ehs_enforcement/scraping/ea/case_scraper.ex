@@ -526,12 +526,15 @@ defmodule EhsEnforcement.Scraping.Ea.CaseScraper do
   # Utility functions
   
   defp build_absolute_detail_url(relative_url) when is_binary(relative_url) do
-    if String.starts_with?(relative_url, "http") do
-      relative_url
+    # Trim whitespace and newlines that may be present in HTML extraction
+    cleaned_url = String.trim(relative_url)
+    
+    if String.starts_with?(cleaned_url, "http") do
+      cleaned_url
     else
       # Handle relative URLs
-      relative_url = String.trim_leading(relative_url, "/")
-      "#{@detail_url_base}/#{relative_url}"
+      cleaned_url = String.trim_leading(cleaned_url, "/")
+      "#{@detail_url_base}/#{cleaned_url}"
     end
   end
   
@@ -572,6 +575,22 @@ defmodule EhsEnforcement.Scraping.Ea.CaseScraper do
   
   defp parse_ea_date(_), do: nil
   
+  @doc """
+  Public function to collect summary records for a single action type.
+  Used by individual processing workflow for real-time feedback.
+  """
+  def collect_summary_records_for_action_type(date_from, date_to, action_type, opts \\ []) do
+    collect_summary_records_for_action_type(date_from, date_to, action_type, 1, 20, opts)
+  end
+  
+  @doc """
+  Public function to fetch detail record for individual processing.
+  Used by individual processing workflow for real-time feedback.
+  """
+  def fetch_detail_record_individual(summary_record, opts \\ []) do
+    fetch_detail_record(summary_record, opts)
+  end
+
   # Test helpers - only available in test environment
   if Mix.env() == :test do
     def test_parse_summary_page(html, action_type), do: parse_summary_page(html, action_type)

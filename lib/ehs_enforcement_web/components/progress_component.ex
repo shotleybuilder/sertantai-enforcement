@@ -140,19 +140,16 @@ defmodule EhsEnforcementWeb.Components.ProgressComponent do
     case progress.status do
       :idle -> 0
       :running -> 
-        # Calculate based on cases processed vs cases found
+        # Calculate based on cases processed vs total cases expected
+        # cases_found = total expected cases, cases_processed = running count
         total_cases = max(1, progress.cases_found || 1)
-        processed_cases = (progress.cases_created || 0) + 
-                         (Map.get(progress, :cases_updated, 0)) + 
-                         (progress.cases_exist_total || 0)
+        processed_cases = progress.cases_processed || 0
         # Ensure we don't exceed 95% until completed
         min(95, (processed_cases / total_cases) * 100)
       :completed -> 100
       :stopped -> 
         total_cases = max(1, progress.cases_found || 1)
-        processed_cases = (progress.cases_created || 0) + 
-                         (Map.get(progress, :cases_updated, 0)) + 
-                         (progress.cases_exist_total || 0)
+        processed_cases = progress.cases_processed || 0
         (processed_cases / total_cases) * 100
       _ -> 0
     end
@@ -191,9 +188,7 @@ defmodule EhsEnforcementWeb.Components.ProgressComponent do
       <div class="flex justify-between text-sm">
         <span class="text-gray-600">Cases Processed:</span>
         <span class="font-medium">
-          <%= (@progress.cases_created || 0) + 
-              (Map.get(@progress, :cases_updated, 0)) + 
-              (@progress.cases_exist_total || 0) %>
+          <%= @progress.cases_processed || 0 %> / <%= @progress.cases_found || 0 %>
         </span>
       </div>
     </div>

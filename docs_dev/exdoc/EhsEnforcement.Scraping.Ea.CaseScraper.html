@@ -8,11 +8,11 @@
     <meta name="project" content="ehs_enforcement v0.1.0">
 
 
-    <title>EhsEnforcement.Agencies.Hse.CaseScraper — ehs_enforcement v0.1.0</title>
+    <title>EhsEnforcement.Scraping.Ea.CaseScraper — ehs_enforcement v0.1.0</title>
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-602DA365.js"></script>
+    <script defer src="dist/sidebar_items-3D73C391.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -75,7 +75,7 @@ ehs_enforcement
 <div id="top-content">
   <div class="heading-with-actions top-heading">
     <h1>
-      <span translate="no">EhsEnforcement.Agencies.Hse.CaseScraper</span> 
+      <span translate="no">EhsEnforcement.Scraping.Ea.CaseScraper</span> 
       <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
 
     </h1>
@@ -84,8 +84,8 @@ ehs_enforcement
 
 
     <section id="moduledoc">
-<p>HSE case scraper module.
-Handles scraping of HSE court case data from the HSE website.</p>
+<p>Environment Agency enforcement action scraper - Two-stage URI pattern.</p><p>Stage 1: Single summary request (no pagination) gets ALL cases for date range
+Stage 2: Individual detail page requests with throttling between each request</p><p>Rate limiting: Configurable delay between detail page requests (default 3s)</p>
     </section>
 
 </div>
@@ -104,17 +104,11 @@ Handles scraping of HSE court case data from the HSE website.</p>
 
     <div class="summary-row">
       <div class="summary-signature">
-        <a href="#get_case_details/2" data-no-tooltip="" translate="no">get_case_details(case_number, opts \\ %{database: &quot;convictions&quot;})</a>
+        <a href="#scrape_enforcement_actions/4" data-no-tooltip="" translate="no">scrape_enforcement_actions(date_from, date_to, action_types, opts \\ [])</a>
 
       </div>
 
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#get_hse_cases/2" data-no-tooltip="" translate="no">get_hse_cases(search, opts \\ %{database: &quot;convictions&quot;})</a>
-
-      </div>
+        <div class="summary-synopsis"><p>Main scraping entry point - implements two-stage scraping pattern.</p></div>
 
     </div>
 
@@ -131,16 +125,16 @@ Handles scraping of HSE court case data from the HSE website.</p>
       <span class="text">Functions</span>
     </h1>
     <div class="functions-list">
-<section class="detail" id="get_case_details/2">
+<section class="detail" id="scrape_enforcement_actions/4">
 
-    <span id="get_case_details/1"></span>
+    <span id="scrape_enforcement_actions/3"></span>
 
   <div class="detail-header">
-    <a href="#get_case_details/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+    <a href="#scrape_enforcement_actions/4" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
       <i class="ri-link-m" aria-hidden="true"></i>
     </a>
     <div class="heading-with-actions">
-      <h1 class="signature" translate="no">get_case_details(case_number, opts \\ %{database: &quot;convictions&quot;})</h1>
+      <h1 class="signature" translate="no">scrape_enforcement_actions(date_from, date_to, action_types, opts \\ [])</h1>
 
 
     </div>
@@ -148,27 +142,7 @@ Handles scraping of HSE court case data from the HSE website.</p>
 
   <section class="docstring">
 
-
-  </section>
-</section>
-<section class="detail" id="get_hse_cases/2">
-
-    <span id="get_hse_cases/1"></span>
-
-  <div class="detail-header">
-    <a href="#get_hse_cases/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">get_hse_cases(search, opts \\ %{database: &quot;convictions&quot;})</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-
+<p>Main scraping entry point - implements two-stage scraping pattern.</p><p>Returns fully enriched EaDetailRecord structs ready for Case resource creation.</p>
   </section>
 </section>
 

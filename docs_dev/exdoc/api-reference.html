@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-602DA365.js"></script>
+    <script defer src="dist/sidebar_items-3D73C391.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -130,39 +130,60 @@ Stores authentication tokens and session management.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Ea.CaseProcessor.html" translate="no">EhsEnforcement.Agencies.Ea.CaseProcessor</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>EA case processing pipeline - transforms scraped EA data for Ash resource creation.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Ea.CaseProcessor.ProcessedEaCase.html" translate="no">EhsEnforcement.Agencies.Ea.CaseProcessor.ProcessedEaCase</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Struct representing an EA case ready for Ash resource creation</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Ea.DataTransformer.html" translate="no">EhsEnforcement.Agencies.Ea.DataTransformer</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Transforms raw EA enforcement data into standardized format compatible 
+with existing HSE data structures and new EA Case resource extensions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Ea.IndustryClassifier.html" translate="no">EhsEnforcement.Agencies.Ea.IndustryClassifier</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Handles mapping of EA industry sectors to HSE high-level categories.
+Supports automated classification with confidence scoring and admin overrides.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Ea.OffenderMatcher.html" translate="no">EhsEnforcement.Agencies.Ea.OffenderMatcher</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Matches EA enforcement records to existing offenders or creates new ones.
+Handles company name variations and address normalization.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="EhsEnforcement.Agencies.Hse.Breaches.html" translate="no">EhsEnforcement.Agencies.Hse.Breaches</a>
 
   </div>
 
     <div class="summary-synopsis"><p>HSE breaches processing module.
 Handles parsing and linking of HSE breach data to legislation records.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="EhsEnforcement.Agencies.Hse.CaseScraper.html" translate="no">EhsEnforcement.Agencies.Hse.CaseScraper</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>HSE case scraper module.
-Handles scraping of HSE court case data from the HSE website.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="EhsEnforcement.Agencies.Hse.Cases.html" translate="no">EhsEnforcement.Agencies.Hse.Cases</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>HSE court cases processing module.
-Handles fetching, processing, and storing HSE court case data.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="EhsEnforcement.Agencies.Hse.Cases.HSECase.html" translate="no">EhsEnforcement.Agencies.Hse.Cases.HSECase</a>
-
-  </div>
 
 </div>
 <div class="summary-row">
@@ -312,6 +333,13 @@ Normalized from the breaches text in cases.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Case.AshOban.Scheduler.ScheduledScrapeEa.html" translate="no">EhsEnforcement.Enforcement.Case.AshOban.Scheduler.ScheduledScrapeEa</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="EhsEnforcement.Enforcement.Case.AshOban.Scheduler.ScheduledScrapeHse.html" translate="no">EhsEnforcement.Enforcement.Case.AshOban.Scheduler.ScheduledScrapeHse</a>
 
   </div>
@@ -320,6 +348,13 @@ Normalized from the breaches text in cases.</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="EhsEnforcement.Enforcement.Case.AshOban.Scheduler.WeeklyScrapeDeep.html" translate="no">EhsEnforcement.Enforcement.Case.AshOban.Scheduler.WeeklyScrapeDeep</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Case.AshOban.Worker.ScheduledScrapeEa.html" translate="no">EhsEnforcement.Enforcement.Case.AshOban.Worker.ScheduledScrapeEa</a>
 
   </div>
 
@@ -388,6 +423,15 @@ Normalized to eliminate duplication between cases and notices.</p></div>
 
     <div class="summary-synopsis"><p>Context for fetching and managing recent enforcement activity data.
 Combines court cases and enforcement notices for Recent Activity table.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Violation.html" translate="no">EhsEnforcement.Enforcement.Violation</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents an individual violation within an EA enforcement case.</p></div>
 
 </div>
 <div class="summary-row">
@@ -697,11 +741,39 @@ circuit breaker patterns, rate limiting, and performance monitoring.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="EhsEnforcement.Scraping.CaseProcessingLog.html" translate="no">EhsEnforcement.Scraping.CaseProcessingLog</a>
+    <a href="EhsEnforcement.Scraping.Ea.CaseScraper.html" translate="no">EhsEnforcement.Scraping.Ea.CaseScraper</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>Ash resource for tracking detailed case processing events during scraping sessions.</p></div>
+    <div class="summary-synopsis"><p>Environment Agency enforcement action scraper - Two-stage URI pattern.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Ea.CaseScraper.EaDetailRecord.html" translate="no">EhsEnforcement.Scraping.Ea.CaseScraper.EaDetailRecord</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Complete record from EA detail pages (Stage 2)</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Ea.CaseScraper.EaSummaryRecord.html" translate="no">EhsEnforcement.Scraping.Ea.CaseScraper.EaSummaryRecord</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Basic record from EA summary pages (Stage 1)</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Ea.HistoricalScraper.html" translate="no">EhsEnforcement.Scraping.Ea.HistoricalScraper</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Handles systematic historical scraping of EA enforcement data.
+Manages date range chunking to handle 2000-record limits.</p></div>
 
 </div>
 <div class="summary-row">
@@ -756,6 +828,16 @@ circuit breaker patterns, rate limiting, and performance monitoring.</p></div>
   </div>
 
     <div class="summary-synopsis"><p>Struct representing a notice ready for Ash resource creation</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.ProcessingLog.html" translate="no">EhsEnforcement.Scraping.ProcessingLog</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Unified processing log for all agency scraping operations.
+Replaces separate HSE and EA processing log resources.</p></div>
 
 </div>
 <div class="summary-row">
