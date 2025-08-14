@@ -74,6 +74,14 @@ defmodule EhsEnforcementWeb.Router do
       # Reports & Analytics Routes (Open Access)
       live "/reports", ReportsLive.Index, :index
       live "/reports/offenders", ReportsLive.Offenders, :index
+      
+      # Static Pages (Open Access)
+      live "/about", AboutLive, :index
+      live "/docs", DocsLive, :index
+      live "/privacy", PrivacyLive, :index
+      live "/terms", TermsLive, :index
+      live "/support", SupportLive, :index
+      live "/contact", ContactLive, :index
     end
     
     # Non-LiveView routes
