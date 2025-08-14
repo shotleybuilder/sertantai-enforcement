@@ -8,10 +8,15 @@
             <h1 class="text-3xl font-bold text-gray-900">Notices</h1>
             <p class="mt-2 text-sm text-gray-700">
               Enforcement Notices
-              <%= if @total_notices > 0 do %>
-                · <%= @total_notices %> notices
-              <% else %>
-                · No notices found
+              <%= cond do %>
+                <% @total_notices > 0 -> %>
+                  · <%= @total_notices %> notices loaded
+                <% @filters_applied && @total_notices == 0 -> %>
+                  · No notices found for current filters
+                <% (map_size(@filters) > 0 || @search_query != "") && !@filters_applied -> %>
+                  · <%= @filter_count %> notices match current criteria
+                <% true -> %>
+                  · Apply filters to view notices. Limited to 1000 records.
               <% end %>
             </p>
           </div>
@@ -173,8 +178,53 @@
               </div>
             </div>
             
-            <!-- Clear Filters Button -->
-            <div>
+            <!-- Filter Count and Action Buttons -->
+            <div class="flex items-center space-x-3">
+              <!-- Real-time Filter Count -->
+              <%= if @counting_filters do %>
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  Counting...
+                </div>
+              <% else %>
+                <%= if map_size(@filters) > 0 || @search_query != "" do %>
+                  <div class="flex items-center text-sm">
+                    <span class="text-gray-600">Found:</span>
+                    <span class={"ml-1 font-semibold #{if @filter_count > 1000, do: "text-red-600", else: "text-blue-600"}"}>
+                      <%= @filter_count %> notices
+                    </span>
+                    <%= if @filter_count > 1000 do %>
+                      <span class="ml-2 text-xs text-red-600 font-medium">(Too many)</span>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% end %>
+              
+              <!-- Apply Filter Button -->
+              <%= if (map_size(@filters) > 0 || @search_query != "") && !@filters_applied do %>
+                <%= if @filter_count <= 1000 do %>
+                  <button
+                    type="button"
+                    phx-click="apply_filters"
+                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
+                    Apply Filters
+                  </button>
+                <% else %>
+                  <button
+                    type="button"
+                    disabled
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-75"
+                    title="Too many records found. Please refine your filters to 1,000 or fewer records."
+                  >
+                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
+                    Apply Filters
+                  </button>
+                <% end %>
+              <% end %>
+              
+              <!-- Clear Filters Button -->
               <button
                 type="button"
                 phx-click="clear_filters"
@@ -237,11 +287,19 @@
           <%= if Enum.empty?(@notices) do %>
             <!-- Empty State -->
             <div class="text-center py-12">
-              <.icon name="hero-folder-open" class="mx-auto h-12 w-12 text-gray-400" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900">No notices found</h3>
-              <p class="mt-1 text-sm text-gray-500">
-                Try adjusting your filters or search criteria.
-              </p>
+              <%= if !@filters_applied && map_size(@filters) == 0 && @search_query == "" do %>
+                <.icon name="hero-funnel" class="mx-auto h-12 w-12 text-gray-400" />
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No filters applied</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  Apply filters or search criteria to view notices.
+                </p>
+              <% else %>
+                <.icon name="hero-folder-open" class="mx-auto h-12 w-12 text-gray-400" />
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No notices found</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  Try adjusting your filters or search criteria.
+                </p>
+              <% end %>
             </div>
           <% else %>
             <!-- Table View -->
@@ -326,13 +384,35 @@
                         <%= format_date(notice.notice_date) %>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <.link
-                          navigate={~p"/notices/#{notice.id}"}
-                          class="text-blue-600 hover:text-blue-900"
-                          title="View details"
-                        >
-                          <.icon name="hero-eye" class="h-4 w-4" />
-                        </.link>
+                        <div class="flex items-center justify-end space-x-2">
+                          <.link
+                            navigate={~p"/notices/#{notice.id}"}
+                            class="text-blue-600 hover:text-blue-900"
+                            title="View details"
+                          >
+                            <.icon name="hero-eye" class="h-4 w-4" />
+                          </.link>
+                          
+                          <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
+                            <.link
+                              navigate={~p"/admin/notices/#{notice.id}/edit"}
+                              class="text-green-600 hover:text-green-900"
+                              title="Edit notice"
+                            >
+                              <.icon name="hero-pencil" class="h-4 w-4" />
+                            </.link>
+                            <button
+                              type="button"
+                              phx-click="delete_notice"
+                              phx-value-notice_id={notice.id}
+                              data-confirm="Are you sure you want to delete this notice? This action cannot be undone."
+                              class="text-red-600 hover:text-red-900"
+                              title="Delete notice"
+                            >
+                              <.icon name="hero-trash" class="h-4 w-4" />
+                            </button>
+                          <% end %>
+                        </div>
                       </td>
                     </tr>
                   <% end %>

@@ -114,6 +114,30 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
   end
 
   @impl true
+  def handle_event("check_notice_duplicates", _params, socket) do
+    case find_duplicate_notices(socket.assigns.current_user) do
+      {:ok, duplicate_groups} ->
+        total_duplicates = Enum.reduce(duplicate_groups, 0, fn group, acc ->
+          acc + length(group) - 1  # Count all but one from each group as duplicates
+        end)
+        
+        result_text = if total_duplicates == 0 do
+          "No duplicate notices found"
+        else
+          "Found #{length(duplicate_groups)} duplicate groups (#{total_duplicates} duplicate records)"
+        end
+        
+        {:noreply, assign(socket, :notice_duplicate_results, result_text)}
+      
+      {:error, error} ->
+        {:noreply, 
+         socket
+         |> assign(:notice_duplicate_results, "Error checking duplicates: #{inspect(error)}")
+         |> put_flash(:error, "Failed to check for notice duplicates")}
+    end
+  end
+
+  @impl true
   def handle_info({:sync_progress, agency_code, progress}, socket) do
     sync_status = Map.update(
       socket.assigns.sync_status,
@@ -339,5 +363,62 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
     |> Enum.uniq()
     |> Enum.map(fn index -> Enum.at(groups, index) end)
     |> Enum.filter(fn group -> group != nil end)
+  end
+
+  defp find_duplicate_notices(current_user) do
+    try do
+      alias EhsEnforcement.Enforcement.Notice
+      
+      # Strategy 1: Find notices with exact regulator_id matches
+      regulator_id_duplicates = case Ash.read(Notice, actor: current_user) do
+        {:ok, notices} ->
+          notices
+          |> Enum.filter(fn notice -> notice.regulator_id && String.trim(notice.regulator_id) != "" end)
+          |> Enum.group_by(fn notice -> String.trim(notice.regulator_id) end)
+          |> Enum.filter(fn {_regulator_id, notices} -> length(notices) > 1 end)
+          |> Enum.map(fn {_regulator_id, notices} -> notices end)
+        
+        {:error, error} ->
+          []
+      end
+      
+      # Strategy 2: Find notices with same offender + action date
+      offender_date_duplicates = case Ash.read(Notice, actor: current_user) do
+        {:ok, notices} ->
+          notices
+          |> Enum.filter(fn notice -> notice.offender_id && notice.offence_action_date end)
+          |> Enum.group_by(fn notice -> {notice.offender_id, notice.offence_action_date} end)
+          |> Enum.filter(fn {_key, notices} -> length(notices) > 1 end)
+          |> Enum.map(fn {_key, notices} -> notices end)
+        
+        {:error, error} ->
+          []
+      end
+      
+      # Strategy 3: Find notices with same regulator_ref_number (if available)
+      ref_number_duplicates = case Ash.read(Notice, actor: current_user) do
+        {:ok, notices} ->
+          notices
+          |> Enum.filter(fn notice -> 
+            notice.regulator_ref_number && String.trim(notice.regulator_ref_number) != ""
+          end)
+          |> Enum.group_by(fn notice -> String.trim(notice.regulator_ref_number) end)
+          |> Enum.filter(fn {_ref, notices} -> length(notices) > 1 end)
+          |> Enum.map(fn {_ref, notices} -> notices end)
+        
+        {:error, error} ->
+          []
+      end
+      
+      # Combine all duplicate groups and remove overlaps
+      all_duplicates = regulator_id_duplicates ++ offender_date_duplicates ++ ref_number_duplicates
+      unique_groups = remove_overlapping_groups(all_duplicates)
+      
+      {:ok, unique_groups}
+      
+    rescue
+      error ->
+        {:error, error}
+    end
   end
 end

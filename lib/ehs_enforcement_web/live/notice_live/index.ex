@@ -27,6 +27,10 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      |> assign(:total_notices, 0)
      |> assign(:search_active, false)
      |> assign(:fuzzy_search, false)
+     |> assign(:sort_requested, false)
+     |> assign(:filter_count, 0)
+     |> assign(:counting_filters, false)
+     |> assign(:filters_applied, false)
      |> assign(:agencies, load_agencies())
      |> load_notices()}
   end
@@ -40,11 +44,14 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   def handle_event("filter", %{"filters" => filter_params}, socket) do
     filters = parse_filters(filter_params)
     
+    # Count records that match the filters in real-time
+    socket_with_filters = assign(socket, :filters, filters)
+    
     {:noreply,
-     socket
-     |> assign(:filters, filters)
+     socket_with_filters
      |> assign(:page, 1)
-     |> load_notices()}
+     |> assign(:filters_applied, false)  # Reset applied state
+     |> count_filtered_notices()}
   end
 
   @impl true
@@ -54,6 +61,9 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      |> assign(:filters, %{})
      |> assign(:search_query, "")
      |> assign(:page, 1)
+     |> assign(:sort_requested, false)  # Reset sort flag when clearing
+     |> assign(:filters_applied, false)
+     |> assign(:filter_count, 0)
      |> load_notices()}
   end
 
@@ -63,7 +73,8 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      socket
      |> assign(:search_query, search_query)
      |> assign(:page, 1)
-     |> load_notices()}
+     |> assign(:filters_applied, false)  # Reset applied state
+     |> count_filtered_notices()}
   end
 
   @impl true
@@ -72,7 +83,8 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      socket
      |> assign(:search_query, search_query)
      |> assign(:page, 1)
-     |> load_notices()}
+     |> assign(:filters_applied, false)  # Reset applied state
+     |> count_filtered_notices()}
   end
 
   @impl true
@@ -101,6 +113,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      socket
      |> assign(:sort_by, sort_by)
      |> assign(:sort_order, sort_order)
+     |> assign(:sort_requested, true)  # Flag to indicate sorting was requested
      |> load_notices()}
   end
 
@@ -137,6 +150,38 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   end
 
   @impl true
+  def handle_event("apply_filters", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:filters_applied, true)
+     |> load_notices()}
+  end
+
+  @impl true
+  def handle_event("delete_notice", %{"notice_id" => notice_id}, socket) do
+    case Ash.get(Enforcement.Notice, notice_id, actor: socket.assigns.current_user) do
+      {:ok, notice_record} ->
+        case Ash.destroy(notice_record, actor: socket.assigns.current_user) do
+          :ok ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Notice deleted successfully")
+             |> load_notices()}
+          
+          {:error, error} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Failed to delete notice: #{inspect(error)}")}
+        end
+      
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Notice not found")}
+    end
+  end
+
+  @impl true
   def handle_event("export", %{"format" => _format}, socket) do
     # TODO: Implement export functionality
     {:noreply, put_flash(socket, :info, "Export functionality coming soon")}
@@ -161,14 +206,25 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   # Private functions
 
   defp load_notices(socket) do
-    %{filters: _filters, search_query: search_query, fuzzy_search: fuzzy_search, 
-      page: page, page_size: page_size} = socket.assigns
+    %{filters: filters, search_query: search_query, fuzzy_search: fuzzy_search, 
+      page: page, page_size: page_size, sort_requested: sort_requested, 
+      filters_applied: filters_applied} = socket.assigns
     
     try do
-      # Check if fuzzy search is enabled and we have a search query
-      use_fuzzy = fuzzy_search && is_binary(search_query) && String.trim(search_query) != ""
+      # Don't load any notices unless filters have been explicitly applied or sort was requested
+      has_filters = map_size(filters) > 0
+      has_search = is_binary(search_query) && String.trim(search_query) != ""
       
-      {notices, total_notices} = if use_fuzzy do
+      if (!has_filters && !has_search && !sort_requested) || (!filters_applied && !sort_requested) do
+        socket
+        |> assign(:notices, [])
+        |> assign(:total_notices, 0)
+        |> assign(:loading, false)
+      else
+        # Check if fuzzy search is enabled and we have a search query
+        use_fuzzy = fuzzy_search && has_search
+        
+        {notices, total_notices} = if use_fuzzy do
         # Use fuzzy search with pg_trgm
         trimmed_query = String.trim(search_query)
         limited_query = if String.length(trimmed_query) > 100 do
@@ -207,16 +263,19 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
         {regular_results, regular_total}
       end
       
-      socket
-      |> assign(:notices, notices)
-      |> assign(:total_notices, total_notices)
-      |> assign(:loading, false)
+        socket
+        |> assign(:notices, notices)
+        |> assign(:total_notices, total_notices)
+        |> assign(:loading, false)
+        |> assign(:sort_requested, false)  # Reset the flag after loading
+      end
     rescue
       error ->
         socket
         |> assign(:notices, [])
         |> assign(:total_notices, 0)
         |> assign(:loading, false)
+        |> assign(:sort_requested, false)  # Reset flag on error too
         |> put_flash(:error, "Failed to load notices: #{inspect(error)}")
     end
   end
@@ -372,6 +431,37 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
       "Prohibition Notice" -> "bg-red-100 text-red-800"
       "Enforcement Notice" -> "bg-blue-100 text-blue-800"
       _ -> "bg-gray-100 text-gray-800"
+    end
+  end
+
+  defp count_filtered_notices(socket) do
+    %{filters: filters, search_query: search_query} = socket.assigns
+    
+    try do
+      has_filters = map_size(filters) > 0
+      has_search = is_binary(search_query) && String.trim(search_query) != ""
+      
+      if !has_filters && !has_search do
+        socket
+        |> assign(:filter_count, 0)
+        |> assign(:counting_filters, false)
+      else
+        # Set counting state
+        socket = assign(socket, :counting_filters, true)
+        
+        # Count records using same filter logic as load_notices
+        filter = build_optimized_notice_filter(socket)
+        count = Enforcement.count_notices!([filter: filter])
+        
+        socket
+        |> assign(:filter_count, count)
+        |> assign(:counting_filters, false)
+      end
+    rescue
+      _error ->
+        socket
+        |> assign(:filter_count, 0)
+        |> assign(:counting_filters, false)
     end
   end
 end
