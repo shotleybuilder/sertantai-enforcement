@@ -381,6 +381,15 @@
                 <div class={"mt-2 text-xs font-medium #{if String.contains?(@duplicate_results, "No duplicate"), do: "text-green-600", else: "text-orange-600"}"}>
                   <%= @duplicate_results %>
                 </div>
+                <%= if not String.contains?(@duplicate_results, "No duplicate") do %>
+                  <.link
+                    navigate={~p"/admin/duplicates?tab=cases"}
+                    class="mt-2 inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    <.icon name="hero-arrow-right" class="h-3 w-3 mr-1" />
+                    Manage Duplicates
+                  </.link>
+                <% end %>
               <% end %>
             </button>
           </div>
@@ -429,6 +438,15 @@
                 <div class={"mt-2 text-xs font-medium #{if String.contains?(@notice_duplicate_results, "No duplicate"), do: "text-green-600", else: "text-orange-600"}"}>
                   <%= @notice_duplicate_results %>
                 </div>
+                <%= if not String.contains?(@notice_duplicate_results, "No duplicate") do %>
+                  <.link
+                    navigate={~p"/admin/duplicates?tab=notices"}
+                    class="mt-2 inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    <.icon name="hero-arrow-right" class="h-3 w-3 mr-1" />
+                    Manage Duplicates
+                  </.link>
+                <% end %>
               <% end %>
             </button>
           </div>

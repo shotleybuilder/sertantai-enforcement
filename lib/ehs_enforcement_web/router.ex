@@ -103,10 +103,14 @@ defmodule EhsEnforcementWeb.Router do
       get "/admin/cases", PageController, :redirect_to_cases
       live "/admin/cases/:id/edit", Admin.CaseLive.Edit, :edit
       
-      # Admin Notice Management Routes - READ ONLY (notices are scraped data)
+      # Admin Notice Management Routes
+      live "/admin/notices/:id/edit", Admin.NoticeLive.Edit, :edit
       
       # Admin Dashboard
       live "/admin", Admin.DashboardLive, :index
+      
+      # Admin Duplicate Management
+      live "/admin/duplicates", Admin.DuplicatesLive, :index
       
       # Admin Agency Management Routes
       live "/admin/agencies", Admin.AgencyLive.Index, :index

@@ -22,6 +22,28 @@
           </div>
           
           <div class="flex space-x-3">
+            <!-- Back to Admin Button (Admin Users Only) -->
+            <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
+              <.link
+                navigate={~p"/admin"}
+                class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
+                <.icon name="hero-cog-6-tooth" class="h-4 w-4 mr-2" />
+                Admin
+              </.link>
+            <% end %>
+            
+            <!-- Back to Dashboard Button -->
+            <.link
+              navigate={~p"/"}
+              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
+              <.icon name="hero-home" class="h-4 w-4 mr-2" />
+              Dashboard
+            </.link>
+            
             <!-- Export Button (Disabled) -->
             <button
               disabled
