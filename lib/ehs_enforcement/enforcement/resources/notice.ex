@@ -69,6 +69,14 @@ defmodule EhsEnforcement.Enforcement.Notice do
     attribute :url, :string
     attribute :last_synced_at, :utc_datetime
     
+    # EA-specific fields for environmental enforcement notices
+    attribute :regulator_event_reference, :string
+    attribute :environmental_impact, :string
+    attribute :environmental_receptor, :string  
+    attribute :legal_act, :string
+    attribute :legal_section, :string
+    attribute :regulator_function, :string
+    
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -95,7 +103,8 @@ defmodule EhsEnforcement.Enforcement.Notice do
       accept [:airtable_id, :regulator_id, :regulator_ref_number,
               :notice_date, :operative_date, :compliance_date, :notice_body,
               :offence_action_type, :offence_action_date, :offence_breaches, :url,
-              :last_synced_at]
+              :last_synced_at, :regulator_event_reference, :environmental_impact,
+              :environmental_receptor, :legal_act, :legal_section, :regulator_function]
       
       argument :agency_code, :atom
       argument :offender_attrs, :map

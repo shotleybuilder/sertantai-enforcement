@@ -25,6 +25,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
   alias EhsEnforcement.Scraping.ScrapeSession
   alias EhsEnforcement.Scraping.Ea.CaseScraper
   alias EhsEnforcement.Scraping.Ea.CaseProcessor
+  alias EhsEnforcement.Scraping.Ea.NoticeProcessor
   alias EhsEnforcement.Agencies.Ea.DataTransformer
   alias EhsEnforcement.Scraping.ProcessingLog
   
@@ -308,15 +309,15 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
         timeout_ms: validated_params.network_timeout
       ]) do
         {:ok, detail_record} ->
-          # Process and save this case immediately
-          case_result = process_and_save_single_ea_case(acc.current_session, detail_record, actor)
+          # Route to appropriate processor based on action type
+          record_result = process_and_save_single_ea_record(acc.current_session, detail_record, action_type, actor)
           
           # Update accumulated results
-          updated_acc = merge_case_result(acc, case_result)
+          updated_acc = merge_record_result(acc, record_result)
           
-          # Update session with this single case progress for real-time UI feedback
+          # Update session with this single record progress for real-time UI feedback
           # IMPORTANT: Capture the updated session for next iteration
-          updated_session = update_session_with_single_case_progress(acc.current_session, case_result)
+          updated_session = update_session_with_single_record_progress(acc.current_session, record_result)
           
           # Return updated accumulator with new session state
           Map.put(updated_acc, :current_session, updated_session)
@@ -338,8 +339,59 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
     {:ok, final_state.current_session}
   end
   
-  defp process_and_save_single_ea_case(_session, detail_record, actor) do
-    Logger.debug("EA: Processing and saving case: #{detail_record.ea_record_id}")
+  defp process_and_save_single_ea_record(_session, detail_record, action_type, actor) do
+    Logger.debug("EA: Processing and saving #{action_type} record: #{detail_record.ea_record_id}")
+    
+    case action_type do
+      :enforcement_notice ->
+        # Route to notice processor for enforcement notices
+        process_ea_notice_record(detail_record, actor)
+        
+      action_type when action_type in [:court_case, :caution] ->
+        # Route to case processor for cases and cautions
+        process_ea_case_record(detail_record, actor)
+        
+      _ ->
+        Logger.warning("EA: Unknown action type #{action_type}, treating as case")
+        process_ea_case_record(detail_record, actor)
+    end
+  end
+  
+  defp process_ea_notice_record(detail_record, actor) do
+    Logger.debug("EA: Processing enforcement notice: #{detail_record.ea_record_id}")
+    
+    case NoticeProcessor.process_and_create_notice_with_status(detail_record, actor) do
+      {:ok, notice_record, status} ->
+        case status do
+          :created ->
+            Logger.info("EA: Created notice: #{notice_record.regulator_id}")
+          :updated ->
+            Logger.info("EA: Updated notice: #{notice_record.regulator_id}")
+          :existing ->
+            Logger.info("EA: Notice already exists: #{notice_record.regulator_id}")
+        end
+        
+        %{
+          status: status,
+          record: notice_record,
+          record_type: :notice,
+          transformed_data: %{regulator_id: notice_record.regulator_id}
+        }
+        
+      {:error, reason} ->
+        Logger.warning("EA: Error creating notice: #{inspect(reason)}")
+        %{
+          status: :error,
+          error: reason,
+          record_type: :notice,
+          regulator_id: detail_record.ea_record_id,
+          transformed_data: %{regulator_id: detail_record.ea_record_id}
+        }
+    end
+  end
+  
+  defp process_ea_case_record(detail_record, actor) do
+    Logger.debug("EA: Processing case: #{detail_record.ea_record_id}")
     
     # Transform EA case to Case resource format using EA DataTransformer
     transformed_case = DataTransformer.transform_ea_record(detail_record)
@@ -358,8 +410,9 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
         
         %{
           status: status,
-          case_record: case_record,
-          transformed_case: transformed_case
+          record: case_record,
+          record_type: :case,
+          transformed_data: transformed_case
         }
         
       {:error, reason} ->
@@ -367,41 +420,43 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
         %{
           status: :error,
           error: reason,
+          record_type: :case,
           regulator_id: transformed_case[:regulator_id],
-          transformed_case: transformed_case
+          transformed_data: transformed_case
         }
     end
   end
   
-  defp merge_case_result(acc, case_result) do
-    case case_result.status do
+  defp merge_record_result(acc, record_result) do
+    case record_result.status do
       :created ->
         %{acc | 
           cases_created: acc.cases_created + 1,
-          processed_cases: [case_result.transformed_case | acc.processed_cases]
+          processed_cases: [record_result.transformed_data | acc.processed_cases]
         }
       :updated ->
         %{acc | 
           cases_created: acc.cases_created + 1,  # Count updates as "created" for UI purposes
-          processed_cases: [case_result.transformed_case | acc.processed_cases]
+          processed_cases: [record_result.transformed_data | acc.processed_cases]
         }
       :existing ->
         %{acc | 
           cases_existing: acc.cases_existing + 1,
-          processed_cases: [case_result.transformed_case | acc.processed_cases]
+          processed_cases: [record_result.transformed_data | acc.processed_cases]
         }
       :error ->
         %{acc | 
           cases_errors: acc.cases_errors + 1,
-          processed_cases: [case_result.transformed_case | acc.processed_cases]
+          processed_cases: [record_result.transformed_data | acc.processed_cases]
         }
     end
   end
   
-  defp update_session_with_single_case_progress(session, case_result) do
+  defp update_session_with_single_record_progress(session, record_result) do
     # Update session counters for real-time UI feedback
     # cases_processed tracks running count, cases_found holds the total expected
-    update_params = case case_result.status do
+    # Note: We use "cases" terminology for both cases and notices in session tracking
+    update_params = case record_result.status do
       :created ->
         %{
           cases_processed: session.cases_processed + 1,
@@ -426,7 +481,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
     
     case Ash.update(session, update_params) do
       {:ok, updated_session} ->
-        Logger.debug("EA: Updated session progress for real-time feedback")
+        Logger.debug("EA: Updated session progress for real-time feedback (#{record_result.record_type})")
         updated_session
       {:error, reason} ->
         Logger.error("EA: Failed to update session progress: #{inspect(reason)}")
