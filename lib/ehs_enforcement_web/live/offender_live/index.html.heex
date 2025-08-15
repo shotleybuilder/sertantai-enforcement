@@ -8,29 +8,47 @@
             <h1 class="text-3xl font-bold text-gray-900">Offenders</h1>
             <p class="mt-2 text-sm text-gray-700">
               Enforcement Offenders
-              <%= if @total_count > 0 do %>
-                · <%= @total_count %> offenders
-              <% else %>
-                · No offenders found
+              <%= cond do %>
+                <% @total_count > 0 -> %>
+                  · <%= @total_count %> offenders loaded
+                <% @filters_applied && @total_count == 0 -> %>
+                  · No offenders found for current filters
+                <% (map_size(@filters) > 0 || @search_query != "") && !@filters_applied -> %>
+                  · <%= @filter_count %> offenders match current criteria
+                <% true -> %>
+                  · Apply filters to view offenders. Limited to 1000 records.
               <% end %>
             </p>
           </div>
           
           <div class="flex space-x-3">
-            <!-- Back Button -->
+            <!-- Back to Admin Button (Admin Users Only) -->
+            <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
+              <.link
+                navigate={~p"/admin"}
+                class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
+                <.icon name="hero-cog-6-tooth" class="h-4 w-4 mr-2" />
+                Admin
+              </.link>
+            <% end %>
+            
+            <!-- Back to Dashboard Button -->
             <.link
               navigate={~p"/"}
               class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <.icon name="hero-arrow-left" class="h-4 w-4 mr-2" />
-              Back to Dashboard
+              <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
+              <.icon name="hero-home" class="h-4 w-4 mr-2" />
+              Dashboard
             </.link>
             
-            <!-- Export Button -->
+            <!-- Export Button (Disabled) -->
             <button
               disabled
-              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-60"
-              title="Export functionality will be available after user management is implemented"
+              title="Export functionality coming soon"
+              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-50"
             >
               <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" />
               Export CSV
@@ -72,6 +90,9 @@
       fuzzy_search={@fuzzy_search}
       total_count={@total_count}
       agencies={@agencies}
+      filter_count={@filter_count}
+      counting_filters={@counting_filters}
+      filters_applied={@filters_applied}
       target={nil}
     />
 
@@ -130,21 +151,29 @@
 
           <%= if @offenders == [] do %>
             <div class="text-center py-12">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h3 class="mt-2 text-sm font-medium text-gray-900">No offenders found</h3>
-              <p class="mt-1 text-sm text-gray-500">No enforcement data available with the current filters.</p>
-              
-              <%= if map_size(@filters) > 0 or @search_query != "" do %>
-                <div class="mt-4">
-                  <button
-                    phx-click="clear_filters"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Clear all filters
-                  </button>
-                </div>
+              <%= if !@filters_applied && (map_size(@filters) == 0 && @search_query == "") do %>
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No filters applied</h3>
+                <p class="mt-1 text-sm text-gray-500">Apply filters or search criteria to view offenders.</p>
+              <% else %>
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No offenders found</h3>
+                <p class="mt-1 text-sm text-gray-500">No enforcement data available with the current filters.</p>
+                
+                <%= if map_size(@filters) > 0 or @search_query != "" do %>
+                  <div class="mt-4">
+                    <button
+                      phx-click="clear_filters"
+                      class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Clear all filters
+                    </button>
+                  </div>
+                <% end %>
               <% end %>
             </div>
           <% else %>
@@ -209,13 +238,35 @@
                           </td>
                           
                           <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                            <.link
-                              patch={~p"/offenders/#{offender.id}"}
-                              tabindex="0"
-                              class="text-blue-600 hover:text-blue-900"
-                            >
-                              View Details
-                            </.link>
+                            <div class="flex items-center justify-end space-x-2">
+                              <.link
+                                navigate={~p"/offenders/#{offender.id}"}
+                                class="text-blue-600 hover:text-blue-900"
+                                title="View details"
+                              >
+                                <.icon name="hero-eye" class="h-4 w-4" />
+                              </.link>
+                              
+                              <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
+                                <.link
+                                  navigate={~p"/admin/offenders/#{offender.id}/edit"}
+                                  class="text-green-600 hover:text-green-900"
+                                  title="Edit offender"
+                                >
+                                  <.icon name="hero-pencil" class="h-4 w-4" />
+                                </.link>
+                                <button
+                                  type="button"
+                                  phx-click="delete_offender"
+                                  phx-value-offender_id={offender.id}
+                                  data-confirm="Are you sure you want to delete this offender? This action cannot be undone."
+                                  class="text-red-600 hover:text-red-900"
+                                  title="Delete offender"
+                                >
+                                  <.icon name="hero-trash" class="h-4 w-4" />
+                                </button>
+                              <% end %>
+                            </div>
                           </td>
                         </tr>
                       <% end %>

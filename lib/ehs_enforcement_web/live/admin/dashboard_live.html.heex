@@ -453,6 +453,119 @@
         </div>
       </div>
 
+      <!-- Offender Management -->
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 bg-emerald-500 rounded-md flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ml-5">
+              <h3 class="text-lg font-medium text-gray-900">Offender Management</h3>
+              <p class="text-sm text-gray-500">Manage offender records and duplicates</p>
+            </div>
+          </div>
+          <div class="mt-6 space-y-3">
+            <a
+              href={~p"/offenders"}
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors block"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Manage Offenders</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </a>
+            <button
+              phx-click="check_offender_duplicates"
+              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">Check for Duplicates</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2v0M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                </svg>
+              </div>
+              <%= if assigns[:offender_duplicate_results] do %>
+                <div class={"mt-2 text-xs font-medium #{if String.contains?(@offender_duplicate_results, "No duplicate"), do: "text-green-600", else: "text-orange-600"}"}>
+                  <%= @offender_duplicate_results %>
+                </div>
+                <%= if not String.contains?(@offender_duplicate_results, "No duplicate") do %>
+                  <.link
+                    navigate={~p"/admin/duplicates?tab=offenders"}
+                    class="mt-2 inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    <.icon name="hero-arrow-right" class="h-3 w-3 mr-1" />
+                    Manage Duplicates
+                  </.link>
+                <% end %>
+              <% end %>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary Grid for Agency Status and Reports -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-8">
+      <!-- Agency Status -->
+      <%= if length(@agencies) > 0 do %>
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+          <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Agency Status</h3>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">Current sync and data collection status</p>
+          </div>
+          <ul role="list" class="divide-y divide-gray-200">
+            <%= for agency <- @agencies do %>
+              <li class="px-4 py-4 sm:px-6">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <div class={[
+                      "flex-shrink-0 w-2.5 h-2.5 rounded-full",
+                      if(agency.enabled, do: "bg-green-400", else: "bg-gray-300")
+                    ]}></div>
+                    <div class="ml-4">
+                      <div class="flex items-center">
+                        <p class="text-sm font-medium text-gray-900"><%= agency.name %></p>
+                        <p class="ml-2 text-sm text-gray-500">(<%= agency.code %>)</p>
+                      </div>
+                      <p class="text-sm text-gray-500">
+                        Status: <%= if agency.enabled, do: "Active", else: "Inactive" %>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <%= if Map.has_key?(@sync_status, agency.code) do %>
+                      <% status = @sync_status[agency.code] %>
+                      <span class={[
+                        "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                        case status.status do
+                          "syncing" -> "bg-blue-100 text-blue-800"
+                          "completed" -> "bg-green-100 text-green-800"
+                          "error" -> "bg-red-100 text-red-800"
+                          _ -> "bg-gray-100 text-gray-800"
+                        end
+                      ]}>
+                        <%= String.capitalize(status.status) %>
+                      </span>
+                    <% else %>
+                      <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                        Idle
+                      </span>
+                    <% end %>
+                  </div>
+                </div>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
       <!-- Reports & Export -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-6">
@@ -510,58 +623,5 @@
         </div>
       </div>
     </div>
-
-    <!-- Agency Status Overview -->
-    <%= if length(@agencies) > 0 do %>
-      <div class="bg-white shadow overflow-hidden sm:rounded-md mb-8">
-        <div class="px-4 py-5 sm:px-6">
-          <h3 class="text-lg leading-6 font-medium text-gray-900">Agency Status</h3>
-          <p class="mt-1 max-w-2xl text-sm text-gray-500">Current sync and data collection status</p>
-        </div>
-        <ul role="list" class="divide-y divide-gray-200">
-          <%= for agency <- @agencies do %>
-            <li class="px-4 py-4 sm:px-6">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                  <div class={[
-                    "flex-shrink-0 w-2.5 h-2.5 rounded-full",
-                    if(agency.enabled, do: "bg-green-400", else: "bg-gray-300")
-                  ]}></div>
-                  <div class="ml-4">
-                    <div class="flex items-center">
-                      <p class="text-sm font-medium text-gray-900"><%= agency.name %></p>
-                      <p class="ml-2 text-sm text-gray-500">(<%= agency.code %>)</p>
-                    </div>
-                    <p class="text-sm text-gray-500">
-                      Status: <%= if agency.enabled, do: "Active", else: "Inactive" %>
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <%= if Map.has_key?(@sync_status, agency.code) do %>
-                    <% status = @sync_status[agency.code] %>
-                    <span class={[
-                      "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
-                      case status.status do
-                        "syncing" -> "bg-blue-100 text-blue-800"
-                        "completed" -> "bg-green-100 text-green-800"
-                        "error" -> "bg-red-100 text-red-800"
-                        _ -> "bg-gray-100 text-gray-800"
-                      end
-                    ]}>
-                      <%= String.capitalize(status.status) %>
-                    </span>
-                  <% else %>
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                      Idle
-                    </span>
-                  <% end %>
-                </div>
-              </div>
-            </li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
   </div>
 </div>

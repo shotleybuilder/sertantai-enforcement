@@ -32,6 +32,9 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
       |> assign(:sort_order, "desc")
       |> assign(:fuzzy_search, false)
       |> assign(:search_active, false)
+      |> assign(:filter_count, 0)
+      |> assign(:counting_filters, false)
+      |> assign(:filters_applied, false)
       |> load_offenders()
 
     {:ok, socket, temporary_assigns: [offenders: []]}
@@ -48,18 +51,36 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     filters = parse_filters(params["filters"] || %{})
     search_query = get_in(params, ["search", "query"]) || params["search[query]"] || ""
     
-    require Logger
-    Logger.info("Filter change: #{inspect(params)} -> filters: #{inspect(filters)}, search: #{inspect(search_query)}")
-    
-    socket =
-      socket
+    # Count records that match the filters in real-time
+    socket_with_filters = socket
       |> assign(:filters, filters)
       |> assign(:search_query, search_query)
-      |> assign(:current_page, 1)
-      |> assign(:loading, true)
-      |> load_offenders()
+      |> assign(:filters_applied, false)  # Reset applied state
+    
+    {:noreply,
+     socket_with_filters
+     |> assign(:current_page, 1)
+     |> count_filtered_offenders()}
+  end
 
-    {:noreply, socket}
+  @impl true
+  def handle_event("apply_filters", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:filters_applied, true)
+     |> load_offenders()}
+  end
+
+  @impl true  
+  def handle_event("clear_filters", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:filters, %{})
+     |> assign(:search_query, "")
+     |> assign(:current_page, 1)
+     |> assign(:filters_applied, false)
+     |> assign(:filter_count, 0)
+     |> load_offenders()}
   end
 
   # Handle form change event (default form behavior)
@@ -185,6 +206,32 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   end
 
   @impl true
+  def handle_event("delete_offender", %{"offender_id" => offender_id}, socket) do
+    case Ash.get(Enforcement.Offender, offender_id, actor: socket.assigns.current_user) do
+      {:ok, offender_record} ->
+        case Ash.destroy(offender_record, actor: socket.assigns.current_user) do
+          :ok ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "Offender deleted successfully")
+             |> load_offenders()}
+          
+          {:error, error} ->
+            {:noreply,
+             socket
+             |> put_flash(:error, "Failed to delete offender: #{Exception.message(error)}")
+             |> load_offenders()}
+        end
+      
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Offender not found")
+         |> load_offenders()}
+    end
+  end
+
+  @impl true
   def handle_info({:case_created, _case_record}, socket) do
     {:noreply, refresh_offender_stats(socket)}
   end
@@ -238,53 +285,65 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
 
   defp load_offenders(socket) do
     %{filters: filters, search_query: search_query, sort_by: sort_by, sort_order: sort_order, 
-      current_page: page, per_page: page_size, fuzzy_search: fuzzy_search} = socket.assigns
+      current_page: page, per_page: page_size, fuzzy_search: fuzzy_search, 
+      filters_applied: filters_applied} = socket.assigns
     
     try do
-      # Check if fuzzy search is enabled and we have a search query
-      use_fuzzy = fuzzy_search && is_binary(search_query) && String.trim(search_query) != ""
+      # Don't load any offenders unless filters have been explicitly applied
+      has_filters = map_size(filters) > 0
+      has_search = is_binary(search_query) && String.trim(search_query) != ""
       
-      {offenders, total_count} = if use_fuzzy do
-        # Use fuzzy search with pg_trgm
-        trimmed_query = String.trim(search_query)
-        limited_query = if String.length(trimmed_query) > 100 do
-          String.slice(trimmed_query, 0, 100)
-        else
-          trimmed_query
-        end
-        
-        offset = (page - 1) * page_size
-        fuzzy_opts = [
-          limit: page_size,
-          offset: offset
-        ]
-        
-        {:ok, fuzzy_results} = Enforcement.fuzzy_search_offenders(limited_query, fuzzy_opts)
-        
-        # For fuzzy search, estimate total count
-        estimated_total = if length(fuzzy_results) == page_size do
-          (page * page_size) + 1  # Estimate there's at least one more page
-        else
-          offset + length(fuzzy_results)  # We've reached the end
-        end
-        
-        {fuzzy_results, estimated_total}
+      if (!has_filters && !has_search) || (!filters_applied) do
+        socket
+        |> assign(:offenders, [])
+        |> assign(:total_count, 0)
+        |> assign(:loading, false)
       else
-        # Use regular filtering with optimized indexes
-        query_opts = build_optimized_query_options(filters, search_query, sort_by, sort_order, page, page_size)
-        regular_results = Enforcement.list_offenders_with_filters_cached!(query_opts)
+        # Check if fuzzy search is enabled and we have a search query
+        use_fuzzy = fuzzy_search && has_search
         
-        # Get total count using same optimized filter
-        count_opts = [filter: build_optimized_filter(filters, search_query)]
-        regular_total = Enforcement.count_offenders_cached!(count_opts)
+        {offenders, total_count} = if use_fuzzy do
+          # Use fuzzy search with pg_trgm
+          trimmed_query = String.trim(search_query)
+          limited_query = if String.length(trimmed_query) > 100 do
+            String.slice(trimmed_query, 0, 100)
+          else
+            trimmed_query
+          end
+          
+          offset = (page - 1) * page_size
+          fuzzy_opts = [
+            limit: page_size,
+            offset: offset
+          ]
+          
+          {:ok, fuzzy_results} = Enforcement.fuzzy_search_offenders(limited_query, fuzzy_opts)
+          
+          # For fuzzy search, estimate total count
+          estimated_total = if length(fuzzy_results) == page_size do
+            (page * page_size) + 1  # Estimate there's at least one more page
+          else
+            offset + length(fuzzy_results)  # We've reached the end
+          end
+          
+          {fuzzy_results, estimated_total}
+        else
+          # Use regular filtering with optimized indexes
+          query_opts = build_optimized_query_options(filters, search_query, sort_by, sort_order, page, page_size)
+          regular_results = Enforcement.list_offenders_with_filters_cached!(query_opts)
+          
+          # Get total count using same optimized filter
+          count_opts = [filter: build_optimized_filter(filters, search_query)]
+          regular_total = Enforcement.count_offenders_cached!(count_opts)
+          
+          {regular_results, regular_total}
+        end
         
-        {regular_results, regular_total}
+        socket
+        |> assign(:offenders, offenders)
+        |> assign(:total_count, total_count)
+        |> assign(:loading, false)
       end
-      
-      socket
-      |> assign(:offenders, offenders)
-      |> assign(:total_count, total_count)
-      |> assign(:loading, false)
       
     rescue
       error ->
@@ -420,4 +479,35 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
 
   defp format_date(nil), do: ""
   defp format_date(date), do: Date.to_string(date)
+
+  defp count_filtered_offenders(socket) do
+    %{filters: filters, search_query: search_query} = socket.assigns
+    
+    try do
+      has_filters = map_size(filters) > 0
+      has_search = is_binary(search_query) && String.trim(search_query) != ""
+      
+      if !has_filters && !has_search do
+        socket
+        |> assign(:filter_count, 0)
+        |> assign(:counting_filters, false)
+      else
+        # Set counting state
+        socket = assign(socket, :counting_filters, true)
+        
+        # Count records using same filter logic as load_offenders
+        filter = build_optimized_filter(filters, search_query)
+        count = Enforcement.count_offenders_cached!([filter: filter])
+        
+        socket
+        |> assign(:filter_count, count)
+        |> assign(:counting_filters, false)
+      end
+    rescue
+      _error ->
+        socket
+        |> assign(:filter_count, 0)
+        |> assign(:counting_filters, false)
+    end
+  end
 end

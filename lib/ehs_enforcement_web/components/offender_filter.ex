@@ -10,15 +10,8 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
     assigns = assign_new(assigns, :agencies, fn -> [] end)
     ~H"""
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-      <div class="flex items-center justify-between mb-4">
+      <div class="mb-4">
         <h3 class="text-lg font-medium text-gray-900">Filter Offenders</h3>
-        <button
-          phx-click="clear_filters"
-          phx-target={@target}
-          class="text-sm text-gray-500 hover:text-gray-700 underline"
-        >
-          Clear All
-        </button>
       </div>
       
       <.form for={%{}} phx-change="filter_change" phx-target={@target} data-testid="offender-filters">
@@ -215,6 +208,71 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
               <option value="desc" selected={@sort_order == "desc"}>High to Low</option>
               <option value="asc" selected={@sort_order == "asc"}>Low to High</option>
             </select>
+          </div>
+        </div>
+        
+        <!-- Filter Count and Action Buttons -->
+        <div class="mt-4 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <!-- Real-time Filter Count -->
+            <%= if assigns[:counting_filters] && @counting_filters do %>
+              <div class="flex items-center text-sm text-gray-600">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                Counting...
+              </div>
+            <% else %>
+              <%= if (assigns[:filters] && map_size(@filters) > 0) || (assigns[:search_query] && @search_query != "") do %>
+                <div class="flex items-center text-sm">
+                  <span class="text-gray-600">Found:</span>
+                  <span class={"ml-1 font-semibold #{if assigns[:filter_count] && @filter_count > 1000, do: "text-red-600", else: "text-blue-600"}"}>
+                    <%= assigns[:filter_count] || 0 %> offenders
+                  </span>
+                  <%= if assigns[:filter_count] && @filter_count > 1000 do %>
+                    <span class="ml-2 text-xs text-red-600 font-medium">(Too many)</span>
+                  <% end %>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+          
+          <div class="flex items-center space-x-3">
+            <!-- Apply Filter Button -->
+            <%= if ((assigns[:filters] && map_size(@filters) > 0) || (assigns[:search_query] && @search_query != "")) && !(assigns[:filters_applied] && @filters_applied) do %>
+              <%= if !assigns[:filter_count] || @filter_count <= 1000 do %>
+                <button
+                  type="button"
+                  phx-click="apply_filters"
+                  phx-target={@target}
+                  class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
+                  Apply Filters
+                </button>
+              <% else %>
+                <button
+                  type="button"
+                  disabled
+                  class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-75"
+                  title="Too many records found. Please refine your filters to 1,000 or fewer records."
+                >
+                  <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
+                  Apply Filters
+                </button>
+              <% end %>
+            <% end %>
+            
+            <!-- Clear Filters Button -->
+            <%= if (assigns[:filters] && map_size(@filters) > 0) || (assigns[:search_query] && @search_query != "") do %>
+              <button
+                type="button"
+                phx-click="clear_filters"
+                phx-target={@target}
+                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <.icon name="hero-x-mark" class="h-4 w-4 mr-2" />
+                Clear Filters
+              </button>
+            <% end %>
           </div>
         </div>
       </.form>

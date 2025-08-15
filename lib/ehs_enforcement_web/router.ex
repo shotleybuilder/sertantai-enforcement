@@ -106,6 +106,9 @@ defmodule EhsEnforcementWeb.Router do
       # Admin Notice Management Routes
       live "/admin/notices/:id/edit", Admin.NoticeLive.Edit, :edit
       
+      # Admin Offender Management Routes
+      live "/admin/offenders/:id/edit", Admin.OffenderLive.Edit, :edit
+      
       # Admin Dashboard
       live "/admin", Admin.DashboardLive, :index
       
