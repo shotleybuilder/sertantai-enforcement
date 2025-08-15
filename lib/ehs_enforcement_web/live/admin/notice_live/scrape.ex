@@ -30,9 +30,16 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     # Check if manual scraping is enabled via feature flag
     manual_scraping_enabled = ScrapeCoordinator.scraping_enabled?(type: :manual, actor: socket.assigns[:current_user])
     
-    # Create AshPhoenix.Form for scraping parameters with notices database default
+    # Create AshPhoenix.Form for scraping parameters with agency and database defaults
     form = Form.for_create(ScrapeRequest, :create, as: "scrape_request", forms: [auto?: false]) 
-    |> Form.validate(%{"database" => "notices", "country" => "All"})
+    |> Form.validate(%{
+      "agency" => "hse",
+      "database" => "notices", 
+      "country" => "All",
+      "date_from" => Date.add(Date.utc_today(), -30) |> Date.to_string(),
+      "date_to" => Date.utc_today() |> Date.to_string(),
+      "action_types" => ["enforcement_notice"]
+    })
     |> to_form()
     
     socket = assign(socket,
@@ -74,7 +81,8 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
       
       # UI state
       loading: false,
-      last_update: System.monotonic_time(:millisecond)
+      last_update: System.monotonic_time(:millisecond),
+      selected_agency: :hse  # Track selected agency for dynamic UI
     )
     
     # Load recent notices data using proper AshPhoenix.LiveView reactive patterns
@@ -119,13 +127,36 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   
   @impl true 
   def handle_event("validate", %{"scrape_request" => params}, socket) do
-    # Ensure database is always "notices" for this interface
-    params_with_notices = params
-    |> Map.put("database", "notices")
-    |> Map.put_new("country", "All")  # Default to All if not provided
+    # Get selected agency and set appropriate defaults
+    selected_agency = case params["agency"] do
+      "environment_agency" -> :environment_agency
+      "hse" -> :hse
+      _ -> :hse  # Default to HSE
+    end
     
-    form = Form.validate(socket.assigns.form, params_with_notices) |> to_form()
-    {:noreply, assign(socket, form: form)}
+    # Set agency-specific defaults
+    params_with_defaults = case selected_agency do
+      :environment_agency ->
+        params
+        |> Map.put("agency", "environment_agency")
+        |> Map.put("action_types", ["enforcement_notice"])
+        |> Map.put_new("date_from", Date.add(Date.utc_today(), -30) |> Date.to_string())
+        |> Map.put_new("date_to", Date.utc_today() |> Date.to_string())
+        |> Map.delete("database")  # EA doesn't use database parameter
+        |> Map.delete("country")   # EA doesn't use country parameter
+        
+      :hse ->
+        params
+        |> Map.put("agency", "hse")
+        |> Map.put("database", "notices")
+        |> Map.put_new("country", "All")
+        |> Map.delete("action_types")  # HSE doesn't use action_types for notices
+        |> Map.delete("date_from")     # HSE doesn't use date range
+        |> Map.delete("date_to")
+    end
+    
+    form = Form.validate(socket.assigns.form, params_with_defaults) |> to_form()
+    {:noreply, assign(socket, form: form, selected_agency: selected_agency)}
   end
 
   @impl true

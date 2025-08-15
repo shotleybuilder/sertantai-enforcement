@@ -134,6 +134,50 @@
               <% end %>
             </dd>
           </div>
+
+          <!-- EA-specific fields (only show if present) -->
+          <%= if @notice.legal_act do %>
+            <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
+              <dt class="text-sm font-medium text-gray-500">Legal Act</dt>
+              <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <%= @notice.legal_act %>
+                <%= if @notice.legal_section do %>
+                  - Section <%= @notice.legal_section %>
+                <% end %>
+              </dd>
+            </div>
+          <% end %>
+
+          <%= if @notice.environmental_impact do %>
+            <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
+              <dt class="text-sm font-medium text-gray-500">Environmental Impact</dt>
+              <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <span class={[
+                  "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+                  case @notice.environmental_impact do
+                    "none" -> "bg-gray-100 text-gray-800"
+                    "minor" -> "bg-yellow-100 text-yellow-800"
+                    "major" -> "bg-red-100 text-red-800"
+                    _ -> "bg-gray-100 text-gray-800"
+                  end
+                ]}>
+                  <%= String.capitalize(@notice.environmental_impact) %> Impact
+                </span>
+                <%= if @notice.environmental_receptor do %>
+                  <span class="ml-2 text-gray-500">(<%= String.capitalize(@notice.environmental_receptor) %>)</span>
+                <% end %>
+              </dd>
+            </div>
+          <% end %>
+
+          <%= if @notice.regulator_event_reference do %>
+            <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
+              <dt class="text-sm font-medium text-gray-500">Event Reference</dt>
+              <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <%= @notice.regulator_event_reference %>
+              </dd>
+            </div>
+          <% end %>
         </dl>
       </div>
 
