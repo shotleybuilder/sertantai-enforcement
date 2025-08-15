@@ -1,4 +1,4 @@
-defmodule EhsEnforcement.Agencies.Hse.NoticeScraper do
+defmodule EhsEnforcement.Scraping.Hse.NoticeScraper do
   @moduledoc """
   HSE notice scraper module.
   Handles scraping of HSE enforcement notice data from the HSE website with rate limiting.

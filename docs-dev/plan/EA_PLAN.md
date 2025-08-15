@@ -324,14 +324,12 @@ Existing HSE Fields (retained):
 └── agency_id (FK), offender_id (FK) - Existing relationships
 
 New EA-Specific Extensions:
-├── ea_case_reference (String) - EA internal reference
-├── ea_event_reference (String) - EA event ID
-├── water_impact (String) - Environmental impact on water
-├── land_impact (String) - Environmental impact on land
-├── air_impact (String) - Environmental impact on air quality
+├── regulator_event_reference (String) - EA event ID
+├── environmental_impact (String) - "none", "minor", "major" (EA environmental impact)
+├── environmental_receptor (String) - "land", "water", "air"
 ├── legal_act (String) - Relevant environmental act
 ├── legal_section (String) - Specific regulation section
-└── agency_function (String) - "Waste", "Water Quality", etc.
+└── regulator_function (String) - "Waste", "Water Quality", etc.
 ```
 
 #### Schema Integration Approach

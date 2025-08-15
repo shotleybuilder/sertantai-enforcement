@@ -24,7 +24,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
   alias EhsEnforcement.Configuration.ScrapingConfig
   alias EhsEnforcement.Scraping.ScrapeSession
   alias EhsEnforcement.Scraping.Ea.CaseScraper
-  alias EhsEnforcement.Agencies.Ea.CaseProcessor
+  alias EhsEnforcement.Scraping.Ea.CaseProcessor
   alias EhsEnforcement.Agencies.Ea.DataTransformer
   alias EhsEnforcement.Scraping.ProcessingLog
   

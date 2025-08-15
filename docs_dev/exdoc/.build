@@ -31,6 +31,7 @@ EhsEnforcement.Enforcement.Case.AshOban.Worker.ScheduledScrapeHse.html
 EhsEnforcement.Enforcement.Case.AshOban.Worker.WeeklyScrapeDeep.html
 EhsEnforcement.Enforcement.Case.html
 EhsEnforcement.Enforcement.CaseProcessorBehaviour.html
+EhsEnforcement.Enforcement.DuplicateDetector.html
 EhsEnforcement.Enforcement.Metrics.AshOban.Scheduler.WeeklyMetricsRefresh.html
 EhsEnforcement.Enforcement.Metrics.AshOban.Worker.WeeklyMetricsRefresh.html
 EhsEnforcement.Enforcement.Metrics.html
@@ -109,7 +110,10 @@ EhsEnforcementWeb.Admin.CaseLive.Scrape.html
 EhsEnforcementWeb.Admin.ConfigLive.Index.html
 EhsEnforcementWeb.Admin.ConfigLive.Scraping.html
 EhsEnforcementWeb.Admin.DashboardLive.html
+EhsEnforcementWeb.Admin.DuplicatesLive.html
+EhsEnforcementWeb.Admin.NoticeLive.Edit.html
 EhsEnforcementWeb.Admin.NoticeLive.Scrape.html
+EhsEnforcementWeb.Admin.OffenderLive.Edit.html
 EhsEnforcementWeb.Admin.ScrapeSessionsLive.html
 EhsEnforcementWeb.Admin.ScrapingLive.Index.html
 EhsEnforcementWeb.AgencyLive.html
@@ -172,8 +176,8 @@ dist/lato-latin-700-normal-2XVSBPG4.woff2
 dist/lato-latin-ext-400-normal-N27NCBWW.woff2
 dist/lato-latin-ext-700-normal-Q2L5DVMW.woff2
 dist/remixicon-QPNJX265.woff2
-dist/search_data-B5B74450.js
-dist/sidebar_items-B0FD9B02.js
+dist/search_data-1EE30ED2.js
+dist/sidebar_items-A508647F.js
 index.html
 readme.html
 search.html

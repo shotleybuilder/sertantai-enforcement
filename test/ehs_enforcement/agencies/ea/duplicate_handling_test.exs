@@ -9,7 +9,7 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
   use EhsEnforcementWeb.ConnCase
   
   require Logger
-  alias EhsEnforcement.Agencies.Ea.CaseProcessor
+  alias EhsEnforcement.Scraping.Ea.CaseProcessor
   alias EhsEnforcement.Agencies.Ea.DataTransformer
   alias EhsEnforcement.Enforcement
   

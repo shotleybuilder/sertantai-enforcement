@@ -1,13 +1,20 @@
 defmodule EhsEnforcement.Agencies.Hse.Notices do
   @moduledoc """
-  HSE notices processing module.
-  Handles fetching, processing, and storing HSE enforcement notice data.
+  DEPRECATED: Legacy HSE notices processing module.
+  
+  This module is deprecated in favor of the standardized architecture:
+  - Use `EhsEnforcement.Scraping.Hse.NoticeScraper` for HTTP scraping
+  - Use `EhsEnforcement.Scraping.Hse.NoticeProcessor` for processing and Ash integration
+  
+  This module will be removed in a future version.
   """
+  
+  @deprecated "Use EhsEnforcement.Scraping.Hse.NoticeProcessor instead"
   require Logger
   
   alias EhsEnforcement.Agencies.Hse.Common
   alias EhsEnforcement.Agencies.Hse.Breaches
-  alias EhsEnforcement.Agencies.Hse.NoticeScraper
+  alias EhsEnforcement.Scraping.Hse.NoticeScraper
   alias EhsEnforcement.Integrations.Airtable.Post
 
   defmodule HSENotice do

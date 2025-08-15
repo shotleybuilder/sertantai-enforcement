@@ -605,7 +605,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
 
   # Pure Ash scraping function - updates ScrapeSession for progress tracking
   defp scrape_notices_with_session(session, opts) do
-    alias EhsEnforcement.Agencies.Hse.NoticeScraper
+    alias EhsEnforcement.Scraping.Hse.NoticeScraper
     
     start_page = opts.start_page
     max_pages = opts.max_pages

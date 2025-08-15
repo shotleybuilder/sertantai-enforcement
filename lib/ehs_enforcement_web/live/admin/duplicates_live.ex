@@ -164,7 +164,7 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
     try do
       case active_tab do
         :cases ->
-          case find_duplicate_cases(current_user) do
+          case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_cases(current_user) do
             {:ok, duplicates} ->
               assign(socket, :case_duplicates, Enum.take(duplicates, 20))  # Reduced limit
             {:error, _} ->
@@ -172,7 +172,7 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
           end
         
         :notices ->
-          case find_duplicate_notices(current_user) do
+          case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_notices(current_user) do
             {:ok, duplicates} ->
               assign(socket, :notice_duplicates, Enum.take(duplicates, 20))
             {:error, _} ->
@@ -180,7 +180,7 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
           end
         
         :offenders ->
-          case find_duplicate_offenders(current_user) do
+          case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_offenders(current_user) do
             {:ok, duplicates} ->
               assign(socket, :offender_duplicates, Enum.take(duplicates, 20))
             {:error, _} ->

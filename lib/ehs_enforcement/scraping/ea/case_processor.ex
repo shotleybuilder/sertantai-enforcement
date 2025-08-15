@@ -1,4 +1,4 @@
-defmodule EhsEnforcement.Agencies.Ea.CaseProcessor do
+defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
   @moduledoc """
   EA case processing pipeline - transforms scraped EA data for Ash resource creation.
   
