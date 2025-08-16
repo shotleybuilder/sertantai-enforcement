@@ -68,6 +68,10 @@ defmodule EhsEnforcementWeb.Router do
       live "/offenders", OffenderLive.Index, :index
       live "/offenders/:id", OffenderLive.Show, :show
       
+      # Read-only Legislation Management Routes
+      live "/legislation", LegislationLive.Index, :index
+      live "/legislation/:id", LegislationLive.Show, :show
+      
       # Agency Management Routes (Open Access)
       live "/agencies", AgencyLive, :index
       
@@ -108,6 +112,11 @@ defmodule EhsEnforcementWeb.Router do
       
       # Admin Offender Management Routes
       live "/admin/offenders/:id/edit", Admin.OffenderLive.Edit, :edit
+      
+      # Admin Legislation Management Routes
+      live "/admin/legislation", Admin.LegislationLive.Index, :index
+      live "/admin/legislation/new", Admin.LegislationLive.New, :new
+      live "/admin/legislation/:id/edit", Admin.LegislationLive.Edit, :edit
       
       # Admin Dashboard
       live "/admin", Admin.DashboardLive, :index

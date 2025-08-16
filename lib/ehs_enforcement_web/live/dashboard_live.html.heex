@@ -171,6 +171,15 @@
       <!-- Offenders Database Card -->
       <.offenders_action_card />
 
+      <!-- Legislation Management Card -->
+      <.legislation_action_card 
+        total_legislation={@stats.total_legislation}
+        acts_count={@stats.acts_count}
+        regulations_count={@stats.regulations_count}
+        orders_count={@stats.orders_count}
+        acops_count={@stats.acops_count}
+      />
+
       <!-- Reports & Analytics Card -->
       <.reports_action_card />
     </.dashboard_card_grid>

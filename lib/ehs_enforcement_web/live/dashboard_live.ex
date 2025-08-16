@@ -11,6 +11,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
   import EhsEnforcementWeb.Components.NoticesActionCard
   import EhsEnforcementWeb.Components.OffendersActionCard
   import EhsEnforcementWeb.Components.ReportsActionCard
+  import EhsEnforcementWeb.Components.LegislationActionCard
 
   @default_recent_activity_page_size 10
 
@@ -257,6 +258,16 @@ defmodule EhsEnforcementWeb.DashboardLive do
     {:noreply, push_navigate(socket, to: "/reports")}
   end
 
+  @impl true
+  def handle_event("browse_legislation", _params, socket) do
+    {:noreply, push_navigate(socket, to: "/legislation")}
+  end
+
+  @impl true
+  def handle_event("search_legislation", _params, socket) do
+    {:noreply, push_navigate(socket, to: "/legislation?filter=search")}
+  end
+
 
   @impl true
   def handle_info({:sync_progress, agency_code, progress}, socket) do
@@ -452,6 +463,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
           case Enum.find(metrics, fn metric -> metric.period == period_atom end) do
             %EhsEnforcement.Enforcement.Metrics{} = metric ->
               # Convert cached metrics to expected stats format
+              legislation_stats = get_legislation_stats()
               %{
                 recent_cases: metric.recent_cases_count,
                 recent_notices: metric.recent_notices_count,
@@ -461,7 +473,12 @@ defmodule EhsEnforcementWeb.DashboardLive do
                 active_agencies: metric.active_agencies_count,
                 agency_stats: convert_agency_stats_to_list(metric.agency_stats),
                 period: "#{metric.days_ago} days",
-                timeframe: metric.period_label
+                timeframe: metric.period_label,
+                total_legislation: legislation_stats.total_legislation,
+                acts_count: legislation_stats.acts_count,
+                regulations_count: legislation_stats.regulations_count,
+                orders_count: legislation_stats.orders_count,
+                acops_count: legislation_stats.acops_count
               }
             nil ->
               # Fallback to real-time calculation if no cached data
@@ -546,6 +563,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
       # Use count queries instead of loading all data
       total_cases_count = get_total_count(:cases)
       total_notices_count = get_total_count(:notices)
+      legislation_stats = get_legislation_stats()
       
       %{
         recent_cases: recent_cases_count,
@@ -556,7 +574,12 @@ defmodule EhsEnforcementWeb.DashboardLive do
         active_agencies: Enum.count(agencies, & &1.enabled),
         agency_stats: agency_stats,
         period: "#{days_ago} days", 
-        timeframe: timeframe_label
+        timeframe: timeframe_label,
+        total_legislation: legislation_stats.total_legislation,
+        acts_count: legislation_stats.acts_count,
+        regulations_count: legislation_stats.regulations_count,
+        orders_count: legislation_stats.orders_count,
+        acops_count: legislation_stats.acops_count
       }
     rescue
       error ->
@@ -573,7 +596,12 @@ defmodule EhsEnforcementWeb.DashboardLive do
           active_agencies: Enum.count(agencies, & &1.enabled),
           agency_stats: [],
           period: "#{days_ago} days", 
-          timeframe: timeframe_label
+          timeframe: timeframe_label,
+          total_legislation: 0,
+          acts_count: 0,
+          regulations_count: 0,
+          orders_count: 0,
+          acops_count: 0
         }
     end
   end
@@ -599,6 +627,57 @@ defmodule EhsEnforcementWeb.DashboardLive do
       end
     rescue
       _ -> 0
+    end
+  end
+
+  defp get_legislation_stats do
+    try do
+      # Use direct SQL query for efficiency - get counts by type
+      case EhsEnforcement.Repo.query("""
+        SELECT 
+          legislation_type,
+          COUNT(*) as count 
+        FROM legislation 
+        GROUP BY legislation_type
+      """) do
+        {:ok, %{rows: rows}} ->
+          # Convert rows to a map for easy lookup
+          type_counts = Enum.reduce(rows, %{}, fn [type, count], acc ->
+            Map.put(acc, type, count)
+          end)
+          
+          # Calculate totals
+          acts_count = Map.get(type_counts, "act", 0)
+          regulations_count = Map.get(type_counts, "regulation", 0)
+          orders_count = Map.get(type_counts, "order", 0)
+          acops_count = Map.get(type_counts, "acop", 0)
+          total_legislation = acts_count + regulations_count + orders_count + acops_count
+          
+          %{
+            total_legislation: total_legislation,
+            acts_count: acts_count,
+            regulations_count: regulations_count,
+            orders_count: orders_count,
+            acops_count: acops_count
+          }
+        _ ->
+          %{
+            total_legislation: 0,
+            acts_count: 0,
+            regulations_count: 0,
+            orders_count: 0,
+            acops_count: 0
+          }
+      end
+    rescue
+      _ ->
+        %{
+          total_legislation: 0,
+          acts_count: 0,
+          regulations_count: 0,
+          orders_count: 0,
+          acops_count: 0
+        }
     end
   end
 
