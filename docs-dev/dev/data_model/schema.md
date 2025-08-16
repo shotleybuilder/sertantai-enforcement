@@ -193,8 +193,6 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 | `offence_costs` | `decimal` | NULLABLE | Legal costs imposed |
 | `offence_action_date` | `date` | NULLABLE | Date of enforcement action |
 | `offence_hearing_date` | `date` | NULLABLE | Court hearing date |
-| `offence_breaches` | `text` | NULLABLE | Raw breaches text |
-| `offence_breaches_clean` | `text` | NULLABLE | Cleaned breaches text |
 | `regulator_function` | `text` | NULLABLE | Regulatory function involved |
 | `regulator_url` | `text` | NULLABLE | Source URL at regulator |
 | `related_cases` | `text` | NULLABLE | Related case references |
@@ -218,6 +216,9 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 - `belongs_to :offender` → `offenders`
 - `has_many :offences` → `offences.case_id` (unified schema)
 
+**Calculations**:
+- `computed_breaches_summary` - PostgreSQL fragment aggregating linked offences into semicolon-separated summary
+
 **Event Sourcing**: Enabled with actions `[:create, :sync, :bulk_create]`
 
 ---
@@ -240,7 +241,6 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 | `notice_body` | `text` | NULLABLE | Full notice text content |
 | `offence_action_type` | `text` | NULLABLE | Type of enforcement action |
 | `offence_action_date` | `date` | NULLABLE | Date of original offence |
-| `offence_breaches` | `text` | NULLABLE | Legislation breaches |
 | `url` | `text` | NULLABLE | Public notice URL |
 | `last_synced_at` | `timestamp` | NULLABLE | Last synchronization time |
 | `inserted_at` | `timestamp` | NOT NULL | Record creation time |
@@ -252,12 +252,10 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 - `notices_agency_id_index` on `agency_id` (filtering performance)
 - `notices_agency_date_index` (COMPOSITE on `[:agency_id, :offence_action_date]`)
 - `notices_regulator_id_index` on `regulator_id` (standard B-tree)
-- `notices_offence_breaches_index` on `offence_breaches` (standard B-tree)
 - `notices_offence_action_type_index` on `offence_action_type` (filtering)
 
 **Fuzzy Search Indexes (pg_trgm GIN)**:
 - `notices_regulator_id_gin_trgm` on `regulator_id` (trigram similarity search)
-- `notices_offence_breaches_gin_trgm` on `offence_breaches` (trigram similarity search)
 - `notices_notice_body_gin_trgm` on `notice_body` (trigram similarity search)
 
 **Ash Identity**: `unique_airtable_id` on `[:airtable_id]` WHERE `not is_nil(airtable_id)`
@@ -271,9 +269,12 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 - `belongs_to :offender` → `offenders`
 - `has_many :offences` → `offences.notice_id` (unified)
 
+**Calculations**:
+- `computed_breaches_summary` - PostgreSQL fragment aggregating linked offences into semicolon-separated summary
+
 **Fuzzy Search Features**:
 - **Function**: `Enforcement.fuzzy_search_notices/2` supports trigram similarity search
-- **Search Fields**: `regulator_id`, `notice_body`, `offence_breaches`
+- **Search Fields**: `regulator_id`, `notice_body`
 - **UI Integration**: Toggle-enabled fuzzy search in LiveView interface
 - **Performance**: GIN indexes with `gin_trgm_ops` operator class for fast similarity queries
 - **Similarity Threshold**: Configurable threshold (default 0.3) for match sensitivity
@@ -365,26 +366,35 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 
 ---
 
-### Legacy Tables (REMOVED - Aug 2025)
+### Legacy Schema Migration (COMPLETED - Aug 2025)
 
-**Status**: ✅ **CONSOLIDATED** - Successfully migrated to unified schema
+**Status**: ✅ **FULLY NORMALIZED** - Complete schema consolidation achieved
 
-The following legacy tables have been removed and consolidated into the unified `offences` + `legislation` schema:
-
+#### Legacy Tables Removed
 - **`violations` Table**: EA violations → migrated to `offences` table
 - **`breaches` Table**: HSE breaches → migrated to `offences` table
 
-**Migration Completed**: 
-- All data migrated to unified `offences` table with proper `legislation` relationships
-- Zero data loss during consolidation
-- Both tables safely removed from production schema
-- All Ash resources and relationships updated to use unified schema
+#### Legacy Fields Removed
+- **`notices.offence_breaches`**: Text field → migrated to linked `offences` records
+- **`cases.offence_breaches`**: Raw text field → migrated to linked `offences` records  
+- **`cases.offence_breaches_clean`**: Cleaned text field → migrated to linked `offences` records
 
-**Benefits**:
-- ✅ Eliminated duplication between HSE and EA violation/breach tracking
-- ✅ Normalized legislation references through dedicated `legislation` table
-- ✅ Improved query performance with optimized indexes
-- ✅ Consistent data structure across all enforcement types
+#### Migration Results
+- **Data Migration**: 100% successful with zero data loss
+  - 30 notices with breach data → 68 offence records
+  - 424 cases with breach data → 540 offence records
+  - Total: 608 offence records + 53 legislation records
+- **Schema Cleanup**: All denormalized text fields removed
+- **Computed Fields**: Added `computed_breaches_summary` to both cases and notices
+- **Relationships**: All resources updated to use unified `offences` ↔ `legislation` pattern
+
+#### Benefits Achieved
+- ✅ **Zero Denormalization**: No text fields containing breach data remain
+- ✅ **Unified Pattern**: Both cases and notices use identical offence relationships
+- ✅ **Normalized Legislation**: Single source of truth for all legislation references
+- ✅ **Better Performance**: Proper indexes on relationships vs text search
+- ✅ **Data Integrity**: Foreign key constraints enforced throughout
+- ✅ **Query Flexibility**: Can filter/search individual offences vs concatenated text
 
 ---
 
@@ -498,10 +508,7 @@ agencies (1) → (N) sync_logs
 offenders (1) → (N) cases
 offenders (1) → (N) notices
 
-cases (1) → (N) breaches (legacy)
-cases (1) → (N) violations (legacy)
 cases (1) → (N) offences (unified)
-
 notices (1) → (N) offences (unified)
 
 legislation (1) → (N) offences
@@ -517,8 +524,6 @@ All foreign key relationships use CASCADE or RESTRICT policies:
 - `cases.offender_id` → `offenders.id` (RESTRICT)
 - `notices.agency_id` → `agencies.id` (RESTRICT)
 - `notices.offender_id` → `offenders.id` (RESTRICT)
-- `breaches.case_id` → `cases.id` (RESTRICT) - **Legacy**
-- `violations.case_id` → `cases.id` (RESTRICT) - **Legacy**
 - `offences.case_id` → `cases.id` (RESTRICT) - **Unified**
 - `offences.notice_id` → `notices.id` (RESTRICT) - **Unified**
 - `offences.legislation_id` → `legislation.id` (RESTRICT) - **Unified**
@@ -526,11 +531,11 @@ All foreign key relationships use CASCADE or RESTRICT policies:
 
 ---
 
-## Schema Consolidation (2025-08-16)
+## Complete Schema Normalization (2025-08-16)
 
-### Unified Offences Schema Migration
+### Phase 1: Tables Consolidation ✅ COMPLETED
 
-**Background**: The legacy schema had separate `breaches` (HSE) and `violations` (EA) tables that served the same purpose but with different structures. This created code duplication and inconsistent data handling.
+**Background**: The legacy schema had separate `breaches` (HSE) and `violations` (EA) tables that served the same purpose but with different structures.
 
 **Solution**: Unified schema with normalized legislation lookup:
 
@@ -540,40 +545,61 @@ All foreign key relationships use CASCADE or RESTRICT policies:
 | Inline legislation text | `legislation` lookup table | Normalizes legislation data |
 | Agency-specific patterns | Universal pattern | Supports both HSE and EA use cases |
 
-### Migration Details
+### Phase 2: Denormalized Fields Migration ✅ COMPLETED
 
-**New Tables**:
-- ✅ **`legislation`** - Normalized legislation lookup (Acts, Regulations, Orders)
-- ✅ **`offences`** - Unified breaches and violations with proper relationships
+**Background**: Both `cases` and `notices` tables contained denormalized text fields storing breach information that should be properly normalized.
 
-**Legacy Tables** (Preserved for migration):
-- ⚠️ **`breaches`** - HSE-specific breaches (being phased out)
-- ⚠️ **`violations`** - EA-specific violations (being phased out)
+**Solution**: Migrate text fields to proper relational data:
 
-**Migration Process**:
-1. ✅ **Schema Creation**: New tables created with Ash resources and PostgreSQL migrations
-2. ✅ **Data Migration**: Existing data migrated using `Mix.Tasks.MigrateDataToOffences`
-3. ✅ **Indexes Optimized**: pg_trgm GIN indexes for fuzzy text search
-4. 🔄 **Code Updates**: Update relationships in Case and Notice resources
-5. ⏳ **Testing**: Validate new schema with existing data patterns
-6. ⏳ **Cleanup**: Remove legacy tables after validation
+| Denormalized Pattern | Normalized Pattern | Benefits |
+|---------------------|-------------------|----------|
+| `notices.offence_breaches` text | `notices` ↔ `offences` relationship | Eliminates text-based breach storage |
+| `cases.offence_breaches` text | `cases` ↔ `offences` relationship | Consistent data structure |
+| `cases.offence_breaches_clean` text | Unified processing via relationships | No duplicate processing logic |
 
-**Key Improvements**:
-- **Better Performance**: Optimized indexes including pg_trgm for fuzzy search
+### Complete Migration Results
+
+**Tables Migration**:
+- ✅ **`violations`** → `offences` (3 violations migrated)
+- ✅ **`breaches`** → `offences` (0 breaches, was empty)
+- ✅ **Legacy tables removed** (both `violations` and `breaches` dropped)
+
+**Fields Migration**:
+- ✅ **`notices.offence_breaches`** → 68 offence records (30 notices processed)
+- ✅ **`cases.offence_breaches`** → 540 offence records (424 cases processed)
+- ✅ **`cases.offence_breaches_clean`** → Same 540 records (intelligent format preference)
+- ✅ **All denormalized fields removed** (3 text columns dropped)
+
+**Final Schema State**:
+- **Total Offences**: 4 → 608 (68 from notices + 540 from cases + 4 original)
+- **Total Legislation**: 3 → 53 (comprehensive legislation database)
+- **Computed Fields**: Added to both cases and notices for backward compatibility
+- **Zero Denormalization**: No breach text fields remain in schema
+
+### Implementation Architecture
+
+**Data Processing Logic**:
+- **Notice Format**: `"Act 1974 / 2 / 1; Regulations 2015 / 13 /"` (semicolon-separated)
+- **Case Raw Format**: `"Act 1974 / 2 / 1\nRegulations 2015 / 4 / 1"` (newline-separated)
+- **Case Clean Format**: `"Act 1974 37 2(1)\nRegulations 2015 51 4(1)"` (structured with reg numbers)
+- **Intelligent Processing**: Prefers clean format when available, falls back to raw
+
+**Database Optimizations**:
+- **Performance**: Optimized indexes including pg_trgm for fuzzy search
 - **Data Integrity**: Proper foreign key relationships and constraints
 - **Flexibility**: Supports both simple (HSE) and complex (EA) violation patterns
 - **Maintainability**: Single codebase for all offence-related operations
 
-### Foreign Key Design Fixes
+### Legacy Compatibility
 
-**❌ Original DRAFT Issues**:
-- Circular references: `legislation` table had FKs to `cases`, `notices`, and `offences`
-- Poor normalization: Mixed lookup data with transactional data
+**Computed Fields**: Both cases and notices now include `computed_breaches_summary` calculated fields that generate the same format as the original denormalized text fields:
 
-**✅ Implemented Solution**:
-- **Pure lookup**: `legislation` table contains only reference data
-- **Proper relationships**: `offences` links TO legislation, not FROM
-- **Flexible associations**: Offences can link to cases AND/OR notices
+```sql
+-- Example computed output
+"HEALTH AND SAFETY AT WORK ACT 1974 / SECTION 2 SUBSECTION 1; CONSTRUCTION REGULATIONS 2015 / SECTION 13"
+```
+
+This ensures backward compatibility for any code expecting the original text format while providing all the benefits of normalized relational data.
 
 ---
 

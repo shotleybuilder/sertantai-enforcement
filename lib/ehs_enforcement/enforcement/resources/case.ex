@@ -28,13 +28,11 @@ defmodule EhsEnforcement.Enforcement.Case do
       # Fine amount filtering index for range queries
       index [:offence_fine], name: "cases_offence_fine_index"
       
-      # Text search indexes for regulator_id and offence_breaches
+      # Text search indexes for regulator_id
       index [:regulator_id], name: "cases_regulator_id_index"
-      index [:offence_breaches], name: "cases_offence_breaches_index"
       
       # pg_trgm GIN indexes for fuzzy text search
       index [:regulator_id], name: "cases_regulator_id_gin_trgm", using: "GIN"
-      index [:offence_breaches], name: "cases_offence_breaches_gin_trgm", using: "GIN"
     end
     
     custom_statements do
@@ -90,8 +88,6 @@ defmodule EhsEnforcement.Enforcement.Case do
     attribute(:offence_costs, :decimal)
     attribute(:offence_action_date, :date)
     attribute(:offence_hearing_date, :date)
-    attribute(:offence_breaches, :string)
-    attribute(:offence_breaches_clean, :string)
     attribute(:regulator_function, :string)
     attribute(:regulator_url, :string)
     attribute(:related_cases, :string)
@@ -108,6 +104,25 @@ defmodule EhsEnforcement.Enforcement.Case do
 
     create_timestamp(:inserted_at)
     update_timestamp(:updated_at)
+  end
+
+  calculations do
+    calculate :computed_breaches_summary, :string, expr(
+      fragment("COALESCE(
+        (SELECT string_agg(
+          CONCAT(l.legislation_title, 
+                 CASE WHEN o.legislation_part IS NOT NULL 
+                      THEN CONCAT(' / ', o.legislation_part) 
+                      ELSE '' END), 
+          '; ' ORDER BY o.sequence_number
+        )
+        FROM offences o
+        JOIN legislation l ON l.id = o.legislation_id  
+        WHERE o.case_id = ?), 
+        '')", id)
+    ) do
+      description "Computed summary of all offences/breaches linked to this case"
+    end
   end
 
   relationships do
@@ -153,8 +168,6 @@ defmodule EhsEnforcement.Enforcement.Case do
         :offence_costs,
         :offence_action_date,
         :offence_hearing_date,
-        :offence_breaches,
-        :offence_breaches_clean,
         :regulator_function,
         :regulator_url,
         :related_cases,

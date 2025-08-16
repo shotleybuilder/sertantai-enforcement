@@ -22,16 +22,14 @@ defmodule EhsEnforcement.Enforcement.Notice do
       # Composite index for common query patterns (agency + date filtering)
       index [:agency_id, :offence_action_date], name: "notices_agency_date_index"
       
-      # Text search indexes for regulator_id and offence_breaches
+      # Text search indexes for regulator_id
       index [:regulator_id], name: "notices_regulator_id_index"
-      index [:offence_breaches], name: "notices_offence_breaches_index"
       
       # Action type filtering index
       index [:offence_action_type], name: "notices_offence_action_type_index"
       
       # pg_trgm GIN indexes for fuzzy text search
       index [:regulator_id], name: "notices_regulator_id_gin_trgm", using: "GIN"
-      index [:offence_breaches], name: "notices_offence_breaches_gin_trgm", using: "GIN"
       index [:notice_body], name: "notices_notice_body_gin_trgm", using: "GIN"
     end
   end
@@ -65,7 +63,6 @@ defmodule EhsEnforcement.Enforcement.Notice do
     attribute :notice_body, :string
     attribute :offence_action_type, :string
     attribute :offence_action_date, :date
-    attribute :offence_breaches, :string
     attribute :url, :string
     attribute :last_synced_at, :utc_datetime
     
@@ -79,6 +76,25 @@ defmodule EhsEnforcement.Enforcement.Notice do
     
     create_timestamp :inserted_at
     update_timestamp :updated_at
+  end
+
+  calculations do
+    calculate :computed_breaches_summary, :string, expr(
+      fragment("COALESCE(
+        (SELECT string_agg(
+          CONCAT(l.legislation_title, 
+                 CASE WHEN o.legislation_part IS NOT NULL 
+                      THEN CONCAT(' / ', o.legislation_part) 
+                      ELSE '' END), 
+          '; ' ORDER BY o.sequence_number
+        )
+        FROM offences o
+        JOIN legislation l ON l.id = o.legislation_id  
+        WHERE o.notice_id = ?), 
+        '')", id)
+    ) do
+      description "Computed summary of all offences/breaches linked to this notice"
+    end
   end
 
   relationships do
@@ -105,7 +121,7 @@ defmodule EhsEnforcement.Enforcement.Notice do
       primary? true
       accept [:airtable_id, :regulator_id, :regulator_ref_number,
               :notice_date, :operative_date, :compliance_date, :notice_body,
-              :offence_action_type, :offence_action_date, :offence_breaches, :url,
+              :offence_action_type, :offence_action_date, :url,
               :last_synced_at, :regulator_event_reference, :environmental_impact,
               :environmental_receptor, :legal_act, :legal_section, :regulator_function]
       
