@@ -1,0 +1,225 @@
+{
+  "attributes": [
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"gen_random_uuid()\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": true,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "legislation_title",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "legislation_year",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "legislation_number",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"act\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "legislation_type",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "created_at",
+      "type": "utc_datetime_usec"
+    },
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "updated_at",
+      "type": "utc_datetime_usec"
+    }
+  ],
+  "base_filter": null,
+  "check_constraints": [],
+  "custom_indexes": [
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "legislation_title",
+        "legislation_year",
+        "legislation_number"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "legislation_title"
+        },
+        {
+          "type": "atom",
+          "value": "legislation_year"
+        },
+        {
+          "type": "atom",
+          "value": "legislation_number"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "legislation_title_year_number_unique",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": true,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "legislation_type"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "legislation_type"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "legislation_type_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "legislation_year"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "legislation_year"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "legislation_year_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "legislation_title"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "legislation_title"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "legislation_title_gin_trgm",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": "GIN",
+      "where": null
+    }
+  ],
+  "custom_statements": [],
+  "has_create_action": true,
+  "hash": "4D58666E8177CD796E2B43FB6BE6E0EA2474F1035E8C4950AE45A546279E4F6A",
+  "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "legislation_unique_legislation_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "legislation_title"
+        },
+        {
+          "type": "atom",
+          "value": "legislation_year"
+        },
+        {
+          "type": "atom",
+          "value": "legislation_number"
+        }
+      ],
+      "name": "unique_legislation",
+      "nils_distinct?": true,
+      "where": null
+    }
+  ],
+  "multitenancy": {
+    "attribute": null,
+    "global": null,
+    "strategy": null
+  },
+  "repo": "Elixir.EhsEnforcement.Repo",
+  "schema": null,
+  "table": "legislation"
+}

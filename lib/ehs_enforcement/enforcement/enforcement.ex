@@ -54,27 +54,37 @@ defmodule EhsEnforcement.Enforcement do
       define :destroy_notice, action: :destroy
     end
     
-    resource EhsEnforcement.Enforcement.Breach do
-      define :list_breaches, action: :read
-      define :get_breach, action: :read, get_by: [:id]
-      define :create_breach, action: :create
-      define :update_breach, action: :update
-    end
     
     resource EhsEnforcement.Enforcement.Metrics do
       define :get_current_metrics, action: :get_current
       define :refresh_metrics, action: :refresh
     end
     
-    resource EhsEnforcement.Enforcement.Violation do
-      define :list_violations, action: :read
-      define :get_violation, action: :read, get_by: [:id]
-      define :create_violation, action: :create
-      define :update_violation, action: :update
-      define :destroy_violation, action: :destroy
-      define :list_violations_by_case, action: :by_case, args: [:case_id]
-      define :get_violation_by_case_reference, action: :by_case_reference, args: [:case_reference]
-      define :bulk_create_violations, action: :bulk_create
+    
+    resource EhsEnforcement.Enforcement.Legislation do
+      define :list_legislation, action: :read
+      define :get_legislation, action: :read, get_by: [:id]
+      define :create_legislation, action: :create
+      define :update_legislation, action: :update
+      define :destroy_legislation, action: :destroy
+      define :list_legislation_by_type, action: :by_type, args: [:legislation_type]
+      define :list_legislation_by_year_range, action: :by_year_range, args: [:start_year, :end_year]
+      define :search_legislation_title, action: :search_title, args: [:search_term]
+    end
+    
+    resource EhsEnforcement.Enforcement.Offence do
+      define :list_offences, action: :read
+      define :get_offence, action: :read, get_by: [:id]
+      define :create_offence, action: :create
+      define :update_offence, action: :update
+      define :destroy_offence, action: :destroy
+      define :list_offences_by_case, action: :by_case, args: [:case_id]
+      define :list_offences_by_notice, action: :by_notice, args: [:notice_id]
+      define :list_offences_by_legislation, action: :by_legislation, args: [:legislation_id]
+      define :get_offence_by_reference, action: :by_reference, args: [:offence_reference]
+      define :list_offences_with_fines, action: :with_fines
+      define :search_offence_description, action: :search_description, args: [:search_term]
+      define :bulk_create_offences, action: :bulk_create
     end
   end
 
@@ -134,25 +144,34 @@ defmodule EhsEnforcement.Enforcement do
   - `destroy_notice/2` - Delete notice
   - `sync_notice/3` - Sync notice data
   
-  ## Breach Functions
-  - `list_breaches/1` - List all breaches with options
-  - `get_breach/2` - Get breach by ID
-  - `create_breach/2` - Create new breach
-  - `update_breach/3` - Update existing breach
   
   ## Metrics Functions
   - `get_current_metrics/1` - Get current cached dashboard metrics
   - `refresh_metrics/1` - Refresh all dashboard metrics from current data
   
-  ## Violation Functions (EA Multi-offence Support)
-  - `list_violations/1` - List all violations with options
-  - `get_violation/2` - Get violation by ID
-  - `create_violation/2` - Create new violation
-  - `update_violation/3` - Update existing violation
-  - `destroy_violation/2` - Delete violation
-  - `list_violations_by_case/2` - List violations for specific case
-  - `get_violation_by_case_reference/2` - Get violation by EA case reference
-  - `bulk_create_violations/2` - Bulk create multiple violations for EA cases
+  ## Legislation Functions
+  - `list_legislation/1` - List all legislation with options
+  - `get_legislation/2` - Get legislation by ID
+  - `create_legislation/2` - Create new legislation
+  - `update_legislation/3` - Update existing legislation
+  - `destroy_legislation/2` - Delete legislation
+  - `list_legislation_by_type/2` - List legislation by type (act, regulation, etc.)
+  - `list_legislation_by_year_range/3` - List legislation within year range
+  - `search_legislation_title/2` - Fuzzy search legislation titles
+  
+  ## Offence Functions (Unified Violation/Breach Support)
+  - `list_offences/1` - List all offences with options  
+  - `get_offence/2` - Get offence by ID
+  - `create_offence/2` - Create new offence
+  - `update_offence/3` - Update existing offence
+  - `destroy_offence/2` - Delete offence
+  - `list_offences_by_case/2` - List offences for specific case
+  - `list_offences_by_notice/2` - List offences for specific notice
+  - `list_offences_by_legislation/2` - List offences referencing specific legislation
+  - `get_offence_by_reference/2` - Get offence by reference ID
+  - `list_offences_with_fines/1` - List offences that have associated fines
+  - `search_offence_description/2` - Fuzzy search offence descriptions
+  - `bulk_create_offences/2` - Bulk create multiple offences
   """
 
   # Complex functions that extend beyond basic code interfaces

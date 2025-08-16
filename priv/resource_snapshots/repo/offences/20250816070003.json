@@ -1,0 +1,494 @@
+{
+  "attributes": [
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"gen_random_uuid()\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": true,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "offence_description",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "offence_reference",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "legislation_part",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "fine",
+      "type": "decimal"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "sequence_number",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "created_at",
+      "type": "utc_datetime_usec"
+    },
+    {
+      "allow_nil?": false,
+      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "updated_at",
+      "type": "utc_datetime_usec"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "offences_case_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "cases"
+      },
+      "scale": null,
+      "size": null,
+      "source": "case_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "offences_notice_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "notices"
+      },
+      "scale": null,
+      "size": null,
+      "source": "notice_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "offences_legislation_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "legislation"
+      },
+      "scale": null,
+      "size": null,
+      "source": "legislation_id",
+      "type": "uuid"
+    }
+  ],
+  "base_filter": null,
+  "check_constraints": [],
+  "custom_indexes": [
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "case_id"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "case_id"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_case_id_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "notice_id"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "notice_id"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_notice_id_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "legislation_id"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "legislation_id"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_legislation_id_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "case_id",
+        "sequence_number"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "case_id"
+        },
+        {
+          "type": "atom",
+          "value": "sequence_number"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_case_sequence_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "legislation_id",
+        "fine"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "legislation_id"
+        },
+        {
+          "type": "atom",
+          "value": "fine"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_legislation_fine_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "fine"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "fine"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_fine_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "sequence_number"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "sequence_number"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_sequence_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "offence_reference"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "offence_reference"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_reference_unique",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": true,
+      "using": null,
+      "where": "offence_reference IS NOT NULL"
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "offence_description"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "offence_description"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_description_gin_trgm",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": "GIN",
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "offence_reference"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "offence_reference"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_reference_gin_trgm",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": "GIN",
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "legislation_part"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "legislation_part"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "offences_legislation_part_gin_trgm",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": "GIN",
+      "where": null
+    }
+  ],
+  "custom_statements": [],
+  "has_create_action": false,
+  "hash": "B0145E1B973F937605E701EB71E1CABBB33D1D4357546AC5962B2BA260997726",
+  "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "offences_unique_case_sequence_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "case_id"
+        },
+        {
+          "type": "atom",
+          "value": "sequence_number"
+        }
+      ],
+      "name": "unique_case_sequence",
+      "nils_distinct?": true,
+      "where": "case_id IS NOT NULL AND sequence_number IS NOT NULL"
+    },
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "offences_unique_offence_reference_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "offence_reference"
+        }
+      ],
+      "name": "unique_offence_reference",
+      "nils_distinct?": true,
+      "where": "offence_reference IS NOT NULL"
+    }
+  ],
+  "multitenancy": {
+    "attribute": null,
+    "global": null,
+    "strategy": null
+  },
+  "repo": "Elixir.EhsEnforcement.Repo",
+  "schema": null,
+  "table": "offences"
+}

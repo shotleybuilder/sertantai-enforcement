@@ -119,10 +119,8 @@ defmodule EhsEnforcement.Enforcement.Case do
       allow_nil?(false)
     end
 
-    has_many :breaches, EhsEnforcement.Enforcement.Breach
-    
-    # EA multi-violation support - for cases with multiple distinct violations
-    has_many :violations, EhsEnforcement.Enforcement.Violation
+    # Unified relationship (consolidated schema)
+    has_many :offences, EhsEnforcement.Enforcement.Offence
   end
 
   identities do

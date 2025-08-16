@@ -89,6 +89,9 @@ defmodule EhsEnforcement.Enforcement.Notice do
     belongs_to :offender, EhsEnforcement.Enforcement.Offender do
       allow_nil? false
     end
+    
+    # Unified relationship (new schema)
+    has_many :offences, EhsEnforcement.Enforcement.Offence
   end
 
   identities do

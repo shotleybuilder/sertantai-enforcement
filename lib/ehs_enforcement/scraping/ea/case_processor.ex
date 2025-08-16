@@ -314,11 +314,11 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
   """
   def create_case_violations(case_record, violations_data, _actor \\ nil) do
     if is_list(violations_data) and length(violations_data) > 0 do
-      Logger.debug("Creating #{length(violations_data)} violations for EA case: #{case_record.regulator_id}")
+      Logger.debug("Creating #{length(violations_data)} offences for EA case: #{case_record.regulator_id}")
       
-      # Use bulk_create action for efficient violation creation
-      case Enforcement.Violation.bulk_create(
-             violations_data: violations_data,
+      # Use bulk_create action for efficient offence creation (unified schema)
+      case Enforcement.bulk_create_offences(
+             offences_data: violations_data,
              case_id: case_record.id
            ) do
         {:ok, _bulk_result} ->
