@@ -8,15 +8,42 @@
             <h1 class="text-3xl font-bold text-gray-900">Cases</h1>
             <p class="mt-2 text-sm text-gray-700">
               Enforcement Cases
-              <%= if @total_cases > 0 do %>
-                · <%= @total_cases %> cases
-              <% else %>
-                · No cases found
+              <%= cond do %>
+                <% @total_cases > 0 -> %>
+                  · <%= @total_cases %> cases loaded
+                <% @filters_applied && @total_cases == 0 -> %>
+                  · No cases found for current filters
+                <% (map_size(@filters) > 0 || @search_query != "") && !@filters_applied -> %>
+                  · <%= @filter_count %> cases match current criteria
+                <% true -> %>
+                  · Apply filters to view cases. Limited to 1000 records.
               <% end %>
             </p>
           </div>
           
           <div class="flex space-x-3">
+            <!-- Back to Admin Button (Admin Users Only) -->
+            <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
+              <.link
+                navigate={~p"/admin"}
+                class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
+                <.icon name="hero-cog-6-tooth" class="h-4 w-4 mr-2" />
+                Admin
+              </.link>
+            <% end %>
+            
+            <!-- Back to Dashboard Button -->
+            <.link
+              navigate={~p"/"}
+              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
+              <.icon name="hero-home" class="h-4 w-4 mr-2" />
+              Dashboard
+            </.link>
+            
             <!-- Export Button (Disabled) -->
             <button
               disabled
@@ -26,7 +53,6 @@
               <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" />
               Export CSV
             </button>
-            
           </div>
         </div>
       </div>
@@ -35,13 +61,199 @@
 
   <!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Filters -->
-    <EhsEnforcementWeb.Components.CaseFilter.filter_form
-      agencies={@agencies}
-      filters={@filters}
-      fuzzy_search={@fuzzy_search}
-      target={nil}
-    />
+    <!-- Filters Section -->
+    <div class="bg-white shadow rounded-lg mb-6">
+      <div class="px-4 py-5 sm:p-6">
+        <form phx-change="filter" data-testid="case-filters" class="space-y-4">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <!-- Row 1, Column 1: Agency Filter -->
+            <div>
+              <label for="agency_id" class="block text-sm font-medium text-gray-700">
+                Agency
+              </label>
+              <select
+                name="filters[agency_id]"
+                id="agency_id"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              >
+                <option value="">All Agencies</option>
+                <%= for agency <- @agencies do %>
+                  <option value={agency.id} selected={@filters[:agency_id] == agency.id}>
+                    <%= agency.name %>
+                  </option>
+                <% end %>
+              </select>
+            </div>
+
+            <!-- Row 1, Column 2: Date From Filter -->
+            <div>
+              <label for="date_from" class="block text-sm font-medium text-gray-700">
+                Date From
+              </label>
+              <input
+                type="date"
+                name="filters[date_from]"
+                id="date_from"
+                value={@filters[:date_from]}
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+
+            <!-- Row 1, Column 3: Date To Filter -->
+            <div>
+              <label for="date_to" class="block text-sm font-medium text-gray-700">
+                Date To
+              </label>
+              <input
+                type="date"
+                name="filters[date_to]"
+                id="date_to"
+                value={@filters[:date_to]}
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+
+            <!-- Row 2, Column 1: Min Fine Filter -->
+            <div>
+              <label for="min_fine" class="block text-sm font-medium text-gray-700">
+                Min Fine (£)
+              </label>
+              <input
+                type="number"
+                name="filters[min_fine]"
+                id="min_fine"
+                value={@filters[:min_fine]}
+                min="0"
+                step="100"
+                placeholder="0"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+
+            <!-- Row 2, Column 2: Max Fine Filter -->
+            <div>
+              <label for="max_fine" class="block text-sm font-medium text-gray-700">
+                Max Fine (£)
+              </label>
+              <input
+                type="number"
+                name="filters[max_fine]"
+                id="max_fine"
+                value={@filters[:max_fine]}
+                min="0"
+                step="100"
+                placeholder="No limit"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-between items-end">
+            <!-- Search Bar -->
+            <div class="w-1/2 space-y-2">
+              <div class="relative">
+                <input
+                  type="text"
+                  name="search"
+                  value={@search_query}
+                  placeholder="Search by regulator ID, case body, or offender name..."
+                  phx-change="search"
+                  phx-value-search={@search_query}
+                  class="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <.icon name="hero-magnifying-glass" class="h-4 w-4 text-gray-400" />
+                </div>
+                <%= if @search_query != "" do %>
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <button
+                      type="button"
+                      phx-click="clear_search"
+                      class="text-gray-400 hover:text-gray-600"
+                    >
+                      <.icon name="hero-x-mark" class="h-4 w-4" />
+                    </button>
+                  </div>
+                <% end %>
+              </div>
+              
+              <!-- Fuzzy Search Toggle -->
+              <div class="flex items-center">
+                <input
+                  id="fuzzy-search-toggle"
+                  type="checkbox"
+                  checked={@fuzzy_search}
+                  phx-click="toggle_fuzzy_search"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label for="fuzzy-search-toggle" class="ml-2 text-sm text-gray-600">
+                  Fuzzy search (finds similar matches)
+                </label>
+                <%= if @fuzzy_search do %>
+                  <.icon name="hero-sparkles" class="h-4 w-4 ml-1 text-blue-500" />
+                <% end %>
+              </div>
+            </div>
+            
+            <!-- Filter Count and Action Buttons -->
+            <div class="flex items-center space-x-3">
+              <!-- Real-time Filter Count -->
+              <%= if @counting_filters do %>
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  Counting...
+                </div>
+              <% else %>
+                <%= if map_size(@filters) > 0 || @search_query != "" do %>
+                  <div class="flex items-center text-sm">
+                    <span class="text-gray-600">Found:</span>
+                    <span class={"ml-1 font-semibold #{if @filter_count > 1000, do: "text-red-600", else: "text-blue-600"}"}>
+                      <%= @filter_count %> cases
+                    </span>
+                    <%= if @filter_count > 1000 do %>
+                      <span class="ml-2 text-xs text-red-600 font-medium">(Too many)</span>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% end %>
+              
+              <!-- Apply Filter Button -->
+              <%= if (map_size(@filters) > 0 || @search_query != "") && !@filters_applied do %>
+                <%= if @filter_count <= 1000 do %>
+                  <button
+                    type="button"
+                    phx-click="apply_filters"
+                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
+                    Apply Filters
+                  </button>
+                <% else %>
+                  <button
+                    type="button"
+                    disabled
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-75"
+                    title="Too many records found. Please refine your filters to 1,000 or fewer records."
+                  >
+                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
+                    Apply Filters
+                  </button>
+                <% end %>
+              <% end %>
+              
+              <!-- Clear Filters Button -->
+              <button
+                type="button"
+                phx-click="clear_filters"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Loading State -->
     <%= if @loading do %>
@@ -217,7 +429,7 @@
                       
                       <td class="px-6 py-4">
                         <div class="text-sm text-gray-900 max-w-xs">
-                          <%= truncate_text(case.offence_breaches, 80) %>
+                          <%= truncate_text(case.computed_breaches_summary, 80) %>
                         </div>
                       </td>
                       
@@ -260,25 +472,19 @@
           <% else %>
             <!-- Empty State -->
             <div class="text-center py-12">
-              <.icon name="hero-folder-open" class="mx-auto h-12 w-12 text-gray-400" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900">
-                <%= if map_size(@filters) > 0 do %>
-                  No matching cases found
-                <% else %>
-                  Ready to search cases
-                <% end %>
-              </h3>
-              <p class="mt-1 text-sm text-gray-500">
-                <%= if map_size(@filters) > 0 do %>
-                  No cases match your current filters. Try adjusting your search criteria.
-                <% else %>
-                  Use the filters above to search and view enforcement cases from our database.
-                <% end %>
-              </p>
-              
-              <div class="mt-6">
-                <!-- Clear button removed - use Clear All link in filter component -->
-              </div>
+              <%= if !@filters_applied && map_size(@filters) == 0 && @search_query == "" do %>
+                <.icon name="hero-funnel" class="mx-auto h-12 w-12 text-gray-400" />
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No filters applied</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  Apply filters or search criteria to view cases.
+                </p>
+              <% else %>
+                <.icon name="hero-folder-open" class="mx-auto h-12 w-12 text-gray-400" />
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No cases found</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  Try adjusting your filters or search criteria.
+                </p>
+              <% end %>
             </div>
           <% end %>
         </div>

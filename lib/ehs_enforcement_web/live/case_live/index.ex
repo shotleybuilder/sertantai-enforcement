@@ -20,6 +20,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      socket
      |> assign(:agencies, Enforcement.list_agencies!())
      |> assign(:filters, %{})
+     |> assign(:search_query, "")
      |> assign(:sort_by, :offence_action_date) 
      |> assign(:sort_dir, :desc)
      |> assign(:page, 1)
@@ -29,6 +30,9 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      |> assign(:search_active, false)
      |> assign(:fuzzy_search, false)
      |> assign(:sort_requested, false)
+     |> assign(:filter_count, 0)
+     |> assign(:counting_filters, false)
+     |> assign(:filters_applied, false)
      |> load_cases(), temporary_assigns: [cases: []]}
   end
 
@@ -70,11 +74,14 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   def handle_event("filter", %{"filters" => filter_params}, socket) do
     filters = atomize_and_clean_filters(filter_params)
     
+    # Count records that match the filters in real-time
+    socket_with_filters = assign(socket, :filters, filters)
+    
     {:noreply,
-     socket
-     |> assign(:filters, filters)
-     |> assign(:page, 1)  # Reset to first page when filtering
-     |> load_cases()}
+     socket_with_filters
+     |> assign(:page, 1)
+     |> assign(:filters_applied, false)  # Reset applied state
+     |> count_filtered_cases()}
   end
 
   @impl true
@@ -82,8 +89,48 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     {:noreply,
      socket
      |> assign(:filters, %{})
+     |> assign(:search_query, "")
      |> assign(:page, 1)
      |> assign(:sort_requested, false)  # Reset sort flag when clearing
+     |> assign(:filters_applied, false)
+     |> assign(:filter_count, 0)
+     |> load_cases()}
+  end
+
+  @impl true
+  def handle_event("search", %{"search" => search_query}, socket) do
+    {:noreply,
+     socket
+     |> assign(:search_query, search_query)
+     |> assign(:page, 1)
+     |> assign(:filters_applied, false)  # Reset applied state
+     |> count_filtered_cases()}
+  end
+
+  @impl true
+  def handle_event("search", %{"_target" => ["search"], "search" => search_query}, socket) do
+    {:noreply,
+     socket
+     |> assign(:search_query, search_query)
+     |> assign(:page, 1)
+     |> assign(:filters_applied, false)  # Reset applied state
+     |> count_filtered_cases()}
+  end
+
+  @impl true
+  def handle_event("clear_search", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:search_query, "")
+     |> assign(:page, 1)
+     |> load_cases()}
+  end
+
+  @impl true
+  def handle_event("apply_filters", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:filters_applied, true)
      |> load_cases()}
   end
 
@@ -219,23 +266,29 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   # Private functions
 
   defp load_cases(socket) do
-    %{filters: filters, sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size, fuzzy_search: fuzzy_search, sort_requested: sort_requested} = socket.assigns
+    %{filters: filters, search_query: search_query, fuzzy_search: fuzzy_search, 
+      sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size,
+      sort_requested: sort_requested, filters_applied: filters_applied} = socket.assigns
     
     try do
-      # Don't load any cases if no filters are applied AND no sort was requested
-      if map_size(filters) == 0 && !sort_requested do
+      # Don't load any cases unless filters have been explicitly applied or sort was requested
+      has_filters = map_size(filters) > 0
+      has_search = is_binary(search_query) && String.trim(search_query) != ""
+      
+      if (!has_filters && !has_search && !sort_requested) || (!filters_applied && !sort_requested) do
         socket
         |> assign(:cases, [])
         |> assign(:total_cases, 0)
         |> assign(:loading, false)
       else
         # Check if fuzzy search is enabled and we have a search query
-        search_query = filters[:search]
-        use_fuzzy = fuzzy_search && is_binary(search_query) && String.trim(search_query) != ""
+        # Use search_query from assigns or search filter
+        actual_search = if has_search, do: search_query, else: filters[:search]
+        use_fuzzy = fuzzy_search && is_binary(actual_search) && String.trim(actual_search) != ""
         
         {cases, total_cases} = if use_fuzzy do
         # Use fuzzy search with pg_trgm
-        trimmed_query = String.trim(search_query)
+        trimmed_query = String.trim(actual_search)
         limited_query = if String.length(trimmed_query) > 100 do
           String.slice(trimmed_query, 0, 100)
         else
@@ -246,7 +299,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
         fuzzy_opts = [
           limit: page_size,
           offset: offset,
-          load: [:offender, :agency]
+          load: [:offender, :agency, :computed_breaches_summary]
         ]
         
         {:ok, fuzzy_results} = Enforcement.fuzzy_search_cases(limited_query, fuzzy_opts)
@@ -300,7 +353,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
       sort: build_sort_options(sort_by, sort_dir),
       limit: page_size,
       offset: offset,
-      load: [:offender, :agency]
+      load: [:offender, :agency, :computed_breaches_summary]
     ]
   end
 
@@ -494,5 +547,43 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     end_page = min(total_pages, current_page + delta)
     
     Enum.to_list(start_page..end_page)
+  end
+
+  defp count_filtered_cases(socket) do
+    %{filters: filters, search_query: search_query} = socket.assigns
+    
+    try do
+      has_filters = map_size(filters) > 0
+      has_search = is_binary(search_query) && String.trim(search_query) != ""
+      
+      if !has_filters && !has_search do
+        socket
+        |> assign(:filter_count, 0)
+        |> assign(:counting_filters, false)
+      else
+        # Set counting state
+        socket = assign(socket, :counting_filters, true)
+        
+        # Count records using same filter logic as load_cases
+        # Build filter including search_query if present
+        search_aware_filters = if has_search do
+          Map.put(filters, :search, "%#{String.trim(search_query)}%")
+        else
+          filters
+        end
+        
+        filter = build_optimized_filter(search_aware_filters)
+        count = Enforcement.count_cases!([filter: filter])
+        
+        socket
+        |> assign(:filter_count, count)
+        |> assign(:counting_filters, false)
+      end
+    rescue
+      _error ->
+        socket
+        |> assign(:filter_count, 0)
+        |> assign(:counting_filters, false)
+    end
   end
 end
