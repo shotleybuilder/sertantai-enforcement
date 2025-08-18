@@ -468,4 +468,169 @@ defmodule EhsEnforcement.Utility do
   defp to_utf8("", acc), do: acc
 
   defp to_utf8(_, acc), do: acc
+
+  # ============================================================================
+  # Legislation Normalization Functions
+  # ============================================================================
+
+  @doc """
+  Normalizes legislation titles to prevent duplicates.
+  
+  Converts to proper title case with exceptions for small joining words.
+  Works for both HSE and EA legislation parsing.
+  
+  ## Examples
+      iex> normalize_legislation_title("HEALTH AND SAFETY AT WORK ACT")
+      "Health and Safety at Work Act"
+      
+      iex> normalize_legislation_title("control of substances hazardous to health regulations")
+      "Control of Substances Hazardous to Health Regulations"
+  """
+  @spec normalize_legislation_title(String.t()) :: String.t()
+  def normalize_legislation_title(title) when is_binary(title) do
+    title
+    |> String.trim()
+    |> String.downcase()
+    # Convert to proper title case
+    |> String.split(" ")
+    |> Enum.with_index()
+    |> Enum.map(fn {word, index} -> title_case_word(word, index) end)
+    |> Enum.join(" ")
+    |> clean_common_patterns()
+  end
+
+  def normalize_legislation_title(nil), do: nil
+
+  # Words that should remain lowercase in title case (except at start)
+  @small_words ~w[at of and the in on for with to by under from etc]
+
+  defp title_case_word(word, 0), do: String.capitalize(word)  # Always capitalize first word
+  defp title_case_word(word, _index) when word in @small_words, do: word
+  defp title_case_word(word, _index), do: String.capitalize(word)
+
+  # Clean up common patterns and abbreviations
+  defp clean_common_patterns(title) do
+    title
+    # Fix "etc." placement - must be lowercase
+    |> String.replace(~r/\b[Ee]tc\.?\b/, "etc.")
+    # Remove double dots that might have been created
+    |> String.replace("etc..", "etc.")
+    # Standardize "H&S" vs "health and safety"
+    |> String.replace(~r/\bh&s\b/i, "Health and Safety")
+    # Fix common abbreviations
+    |> String.replace(~r/\bcdm\b/i, "Construction (Design and Management)")
+    |> String.replace(~r/\bcoshh\b/i, "Control of Substances Hazardous to Health")
+    |> String.replace(~r/\bpuwer\b/i, "Provision and Use of Work Equipment Regulations")
+    |> String.replace(~r/\bdsear\b/i, "Dangerous Substances and Explosive Atmospheres")
+    |> String.replace(~r/\bloler\b/i, "Lifting Operations and Lifting Equipment")
+    |> String.replace(~r/\bcomah\b/i, "Control of Major Accident Hazards")
+    # Ensure proper spacing
+    |> String.replace(~r/\s+/, " ")
+    |> String.trim()
+  end
+
+  @doc """
+  Determines legislation type from title and context.
+  
+  ## Examples
+      iex> determine_legislation_type("Health and Safety at Work etc. Act")
+      :act
+      
+      iex> determine_legislation_type("Control of Substances Hazardous to Health Regulations")
+      :regulation
+  """
+  @spec determine_legislation_type(String.t()) :: atom()
+  def determine_legislation_type(title) when is_binary(title) do
+    title_lower = String.downcase(title)
+    
+    cond do
+      String.contains?(title_lower, "acop") or String.contains?(title_lower, "approved code of practice") -> :acop
+      String.contains?(title_lower, "regulation") -> :regulation
+      String.contains?(title_lower, "order") -> :order
+      String.contains?(title_lower, "act") -> :act
+      true -> :act  # Default to act
+    end
+  end
+
+  @doc """
+  Extracts year from legislation title if present.
+  
+  ## Examples
+      iex> extract_year_from_title("Health and Safety at Work Act 1974")
+      1974
+      
+      iex> extract_year_from_title("Control of Substances Hazardous to Health Regulations 2002")
+      2002
+      
+      iex> extract_year_from_title("Some Act without year")
+      nil
+  """
+  @spec extract_year_from_title(String.t()) :: integer() | nil
+  def extract_year_from_title(title) when is_binary(title) do
+    case Regex.run(~r/\b((19|20)\d{2})\b/, title) do
+      [_full_match, year_str, _prefix] -> String.to_integer(year_str)
+      nil -> nil
+    end
+  end
+
+  @doc """
+  Extracts legislation number from title or context.
+  
+  For HSE: Usually not present in title, comes from lookup table
+  For EA: May be present in structured data
+  """
+  @spec extract_number_from_context(String.t(), map()) :: integer() | nil
+  def extract_number_from_context(_title, %{number: number}) when is_integer(number), do: number
+  def extract_number_from_context(_title, %{"number" => number}) when is_integer(number), do: number
+  def extract_number_from_context(_title, %{"number" => number}) when is_binary(number) do
+    case Integer.parse(number) do
+      {num, _} -> num
+      :error -> nil
+    end
+  end
+  def extract_number_from_context(_title, _context), do: nil
+
+  @doc """
+  Validates legislation data completeness.
+  
+  Returns {:ok, normalized_data} or {:error, reason}
+  """
+  @spec validate_legislation_data(map()) :: {:ok, map()} | {:error, String.t()}
+  def validate_legislation_data(%{title: title} = data) when is_binary(title) and title != "" do
+    normalized_title = normalize_legislation_title(title)
+    legislation_type = determine_legislation_type(normalized_title)
+    
+    validated_data = %{
+      legislation_title: normalized_title,
+      legislation_type: legislation_type,
+      legislation_year: data[:year] || data["year"] || extract_year_from_title(title),
+      legislation_number: data[:number] || data["number"] || extract_number_from_context(title, data)
+    }
+    
+    {:ok, validated_data}
+  end
+
+  def validate_legislation_data(%{title: title}) when title in [nil, ""] do
+    {:error, "Legislation title cannot be empty"}
+  end
+
+  def validate_legislation_data(_data) do
+    {:error, "Legislation data must include title"}
+  end
+
+  @doc """
+  Calculates similarity between two legislation titles using trigram similarity.
+  Returns a score between 0.0 and 1.0.
+  """
+  @spec calculate_title_similarity(String.t(), String.t()) :: float()
+  def calculate_title_similarity(title1, title2) when is_binary(title1) and is_binary(title2) do
+    # Normalize both titles for comparison
+    norm1 = normalize_legislation_title(title1)
+    norm2 = normalize_legislation_title(title2)
+    
+    # Simple Jaro-Winkler approximation for similarity
+    String.jaro_distance(norm1, norm2)
+  end
+
+  def calculate_title_similarity(_, _), do: 0.0
 end

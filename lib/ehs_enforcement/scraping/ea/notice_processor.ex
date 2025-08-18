@@ -313,6 +313,192 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
       _ -> nil
     end
   end
+
+  @doc """
+  Process EA notice with legislation deduplication.
+  
+  Creates or links to legislation records to prevent duplicates.
+  Links the notice to offences that reference the legislation.
+  """
+  def process_notice_with_legislation_linking(ea_detail_record, actor) do
+    case process_notice(ea_detail_record) do
+      {:ok, processed_notice} ->
+        # Extract and process legislation from the EA notice
+        case process_ea_legislation(processed_notice) do
+          {:ok, legislation_data} ->
+            # Create notice and link to legislation
+            create_notice_with_legislation_links(processed_notice, legislation_data, actor)
+          
+          {:error, reason} ->
+            # Still create notice even if legislation processing fails
+            Logger.warning("EA legislation processing failed for notice #{processed_notice.regulator_id}: #{inspect(reason)}")
+            create_notice_from_processed(processed_notice, actor)
+        end
+      
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Process EA legislation from notice data.
+  
+  EA notices include legal framework information that needs to be
+  processed into structured legislation records.
+  """
+  @spec process_ea_legislation(ProcessedEaNotice.t()) :: {:ok, map()} | {:error, term()}
+  def process_ea_legislation(%ProcessedEaNotice{} = processed_notice) do
+    if processed_notice.legal_act do
+      try do
+        # Parse EA legislation components
+        components = %{
+          title: processed_notice.legal_act,
+          section: processed_notice.legal_section,
+          year: extract_year_from_ea_act(processed_notice.legal_act),
+          context: %{
+            environmental_impact: processed_notice.environmental_impact,
+            environmental_receptor: processed_notice.environmental_receptor,
+            regulator_function: processed_notice.regulator_function
+          }
+        }
+        
+        # Find or create the legislation record
+        case find_or_create_ea_legislation(components) do
+          {:ok, legislation} ->
+            legislation_data = %{
+              legislation: legislation,
+              section: components.section,
+              description: build_ea_offence_description(components, processed_notice)
+            }
+            
+            {:ok, legislation_data}
+          
+          {:error, reason} ->
+            {:error, {:legislation_creation_error, reason}}
+        end
+      rescue
+        error ->
+          {:error, {:processing_error, error}}
+      end
+    else
+      # No legal act specified in EA notice
+      Logger.debug("No legal act found in EA notice #{processed_notice.regulator_id}")
+      {:ok, nil}
+    end
+  end
+
+  defp extract_year_from_ea_act(act_title) when is_binary(act_title) do
+    # EA acts typically include year in title
+    case Regex.run(~r/\b(19|20)\d{2}\b/, act_title) do
+      [year_str] -> String.to_integer(year_str)
+      nil -> guess_ea_act_year(act_title)
+    end
+  end
+
+  defp guess_ea_act_year(act_title) do
+    # Common EA legislation years
+    title_lower = String.downcase(act_title)
+    
+    cond do
+      String.contains?(title_lower, "environmental protection") -> 1990
+      String.contains?(title_lower, "water resources") -> 1991
+      String.contains?(title_lower, "environment") and String.contains?(title_lower, "act") -> 1995
+      String.contains?(title_lower, "pollution prevention") -> 1999
+      String.contains?(title_lower, "waste") -> 2005
+      String.contains?(title_lower, "climate change") -> 2008
+      true -> nil
+    end
+  end
+
+  @doc """
+  Find or create EA legislation using the new deduplication system.
+  """
+  @spec find_or_create_ea_legislation(map()) :: {:ok, struct()} | {:error, term()}
+  def find_or_create_ea_legislation(%{title: title, year: year} = components) do
+    Logger.debug("Processing EA legislation: #{title}")
+    
+    # Determine number from EA context if possible
+    number = extract_number_from_ea_context(components)
+    
+    # Use the unified legislation system
+    EhsEnforcement.Enforcement.find_or_create_legislation(
+      title,
+      year,
+      number,
+      nil  # Let the utility determine type
+    )
+  end
+
+  defp extract_number_from_ea_context(%{title: title}) do
+    # EA legislation numbers are less commonly available in notices
+    # This could be enhanced with a lookup table similar to HSE
+    case title do
+      "Environmental Protection Act" <> _ -> 143  # EPA 1990 Chapter 43
+      "Water Resources Act" <> _ -> 57           # WRA 1991 Chapter 57
+      _ -> nil
+    end
+  end
+
+  defp build_ea_offence_description(%{title: title, section: section}, processed_notice) do
+    base = title
+    section_part = if section, do: " - Section #{section}", else: ""
+    
+    # Include environmental context if available
+    context_parts = [
+      if processed_notice.environmental_impact && processed_notice.environmental_impact != "none" do
+        "Environmental Impact: #{String.capitalize(processed_notice.environmental_impact)}"
+      end,
+      if processed_notice.environmental_receptor do
+        "Receptor: #{String.capitalize(processed_notice.environmental_receptor)}"
+      end
+    ]
+    |> Enum.filter(& &1)
+    
+    context_suffix = if Enum.any?(context_parts) do
+      " (#{Enum.join(context_parts, ", ")})"
+    else
+      ""
+    end
+    
+    "#{base}#{section_part}#{context_suffix}"
+  end
+
+  defp create_notice_with_legislation_links(processed_notice, legislation_data, actor) do
+    case create_notice_from_processed(processed_notice, actor) do
+      {:ok, notice, status} when legislation_data != nil ->
+        # Create offence record linking the notice to legislation
+        case create_ea_notice_offence(notice.id, legislation_data) do
+          {:ok, _offence} ->
+            Logger.info("Created EA notice #{notice.regulator_id} with legislation link")
+            {:ok, notice, status}
+          
+          {:error, reason} ->
+            Logger.warning("Failed to create legislation link for notice #{notice.regulator_id}: #{inspect(reason)}")
+            # Still return success for notice creation
+            {:ok, notice, status}
+        end
+      
+      {:ok, notice, status} ->
+        # No legislation data to link
+        {:ok, notice, status}
+      
+      error ->
+        error
+    end
+  end
+
+  defp create_ea_notice_offence(notice_id, legislation_data) do
+    offence_attrs = %{
+      notice_id: notice_id,
+      legislation_id: legislation_data.legislation.id,
+      offence_description: legislation_data.description,
+      legislation_part: legislation_data.section,
+      sequence_number: 1,  # EA notices typically have single offence
+      fine: Decimal.new("0.00")  # EA notices don't typically include fines
+    }
+    
+    EhsEnforcement.Enforcement.create_offence(offence_attrs)
+  end
   
   defp extract_legal_section(ea_detail_record) do
     legal_framework = Map.get(ea_detail_record, :legal_framework) ||

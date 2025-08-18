@@ -341,7 +341,7 @@ defmodule EhsEnforcement.Enforcement do
     # Optimized search using OR conditions with proper Ash syntax
     Ash.Query.filter(query, 
       ilike(regulator_id, ^pattern) or 
-      ilike(offence_breaches, ^pattern) or 
+      ilike(computed_breaches_summary, ^pattern) or 
       ilike(offender.name, ^pattern)
     )
   end
@@ -587,6 +587,36 @@ defmodule EhsEnforcement.Enforcement do
     )
   end
 
+  defp build_optimized_legislation_filter(query, filters) do
+    # Start with base query
+    query
+    |> apply_legislation_type_filter(filters[:legislation_type])
+    |> apply_legislation_year_range_filter(filters[:legislation_year])
+    |> apply_legislation_search_filter(filters[:search])
+  end
+
+  defp apply_legislation_type_filter(query, nil), do: query
+  defp apply_legislation_type_filter(query, type) when is_atom(type) do
+    Ash.Query.filter(query, legislation_type == ^type)
+  end
+
+  defp apply_legislation_year_range_filter(query, nil), do: query
+  defp apply_legislation_year_range_filter(query, year_conditions) when is_list(year_conditions) do
+    Enum.reduce(year_conditions, query, fn
+      {:greater_than_or_equal_to, year}, acc ->
+        Ash.Query.filter(acc, legislation_year >= ^year)
+      {:less_than_or_equal_to, year}, acc ->
+        Ash.Query.filter(acc, legislation_year <= ^year)
+      _, acc -> acc
+    end)
+  end
+
+  defp apply_legislation_search_filter(query, nil), do: query
+  defp apply_legislation_search_filter(query, pattern) when is_binary(pattern) do
+    # Search in legislation title using ILIKE for broad compatibility
+    Ash.Query.filter(query, ilike(legislation_title, ^pattern))
+  end
+
   # Fuzzy search functions using pg_trgm trigram similarity
 
   @doc """
@@ -607,7 +637,7 @@ defmodule EhsEnforcement.Enforcement do
   
   ## Examples
       iex> fuzzy_search_cases("construction", limit: 10)
-      [%Case{regulator_id: "HSE-2024-123", offence_breaches: "Construction (Design and Management) Regulations 2015"}]
+      [%Case{regulator_id: "HSE-2024-123", computed_breaches_summary: "Construction (Design and Management) Regulations 2015"}]
       
       iex> fuzzy_search_cases("acme corp", similarity_threshold: 0.4)
       [%Case{offender: %{name: "ACME Construction Ltd"}}]
@@ -619,7 +649,7 @@ defmodule EhsEnforcement.Enforcement do
     query = EhsEnforcement.Enforcement.Case
     |> Ash.Query.filter(
       trigram_similarity(regulator_id, ^search_term) > ^similarity_threshold or
-      trigram_similarity(offence_breaches, ^search_term) > ^similarity_threshold or
+      trigram_similarity(computed_breaches_summary, ^search_term) > ^similarity_threshold or
       trigram_similarity(offender.name, ^search_term) > ^similarity_threshold
     )
     # Order by most recent cases first (GIN index handles relevance ranking)
@@ -645,7 +675,6 @@ defmodule EhsEnforcement.Enforcement do
     query = EhsEnforcement.Enforcement.Notice
     |> Ash.Query.filter(
       trigram_similarity(regulator_id, ^search_term) > ^similarity_threshold or
-      trigram_similarity(offence_breaches, ^search_term) > ^similarity_threshold or
       trigram_similarity(notice_body, ^search_term) > ^similarity_threshold or
       trigram_similarity(offender.name, ^search_term) > ^similarity_threshold
     )
@@ -772,6 +801,60 @@ defmodule EhsEnforcement.Enforcement do
         result = count_offenders!(opts)
         put_in_cache(cache_key, result)
         result
+    end
+  end
+
+  def list_legislation_with_filters!(opts \\ []) do
+    query = EhsEnforcement.Enforcement.Legislation
+    
+    # Apply complex filters if provided
+    query = case opts[:filter] do
+      nil -> query
+      filters -> build_optimized_legislation_filter(query, filters)
+    end
+    
+    # Apply sort if provided
+    query = case opts[:sort] do
+      nil -> Ash.Query.sort(query, [legislation_year: :desc])  # Default sort by year
+      sorts -> Ash.Query.sort(query, sorts)
+    end
+    
+    # Apply load if provided
+    query = case opts[:load] do
+      nil -> query
+      loads -> Ash.Query.load(query, loads)
+    end
+    
+    # Apply pagination if provided
+    query = case opts[:limit] do
+      nil -> query
+      limit -> Ash.Query.limit(query, limit)
+    end
+    
+    # Apply offset if provided (for consistent pagination)
+    query = case opts[:offset] do
+      nil -> query
+      offset -> Ash.Query.offset(query, offset)
+    end
+    
+    case Ash.read(query) do
+      {:ok, legislation} -> legislation
+      {:error, error} -> raise error
+    end
+  end
+
+  def count_legislation!(opts \\ []) do
+    query = EhsEnforcement.Enforcement.Legislation
+    
+    # Apply filters if provided - use same optimized filtering as list function
+    query = case opts[:filter] do
+      nil -> query
+      filters -> build_optimized_legislation_filter(query, filters)
+    end
+    
+    case Ash.count(query) do
+      {:ok, count} -> count
+      {:error, error} -> raise error
     end
   end
 
@@ -1019,5 +1102,247 @@ defmodule EhsEnforcement.Enforcement do
         _pid -> "active"
       end
     }
+  end
+
+  # ============================================================================
+  # Legislation Deduplication Functions
+  # ============================================================================
+
+  require Logger
+
+  @doc """
+  Find or create legislation with deduplication logic.
+  
+  This function prevents duplicate legislation records by:
+  1. Normalizing the title
+  2. Searching for exact matches first
+  3. Using fuzzy matching for similar titles
+  4. Creating new records only when no match exists
+  
+  Works for both HSE and EA legislation processing.
+  
+  ## Parameters
+  - `title` - The legislation title (required)
+  - `year` - The year enacted (optional, extracted from title if not provided)
+  - `number` - The legislation number (optional)
+  - `type` - The legislation type (optional, determined from title if not provided)
+  
+  ## Examples
+      iex> find_or_create_legislation("Health and Safety at Work Act 1974", 1974, 37)
+      {:ok, %Legislation{legislation_title: "Health and Safety at Work etc. Act", ...}}
+      
+      iex> find_or_create_legislation("COSHH REGULATIONS 2002")
+      {:ok, %Legislation{legislation_title: "Control of Substances Hazardous to Health Regulations", ...}}
+  """
+  @spec find_or_create_legislation(String.t(), integer() | nil, integer() | nil, atom() | nil) :: 
+    {:ok, struct()} | {:error, term()}
+  def find_or_create_legislation(title, year \\ nil, number \\ nil, type \\ nil) when is_binary(title) do
+    require Logger
+    
+    # Validate and normalize input data
+    input_data = %{
+      title: title,
+      year: year,
+      number: number,
+      type: type
+    }
+    
+    case EhsEnforcement.Utility.validate_legislation_data(input_data) do
+      {:ok, validated_data} ->
+        do_find_or_create_legislation(validated_data)
+      
+      {:error, reason} ->
+        Logger.warning("Invalid legislation data: #{reason} - Input: #{inspect(input_data)}")
+        {:error, reason}
+    end
+  end
+
+  defp do_find_or_create_legislation(validated_data) do
+    %{
+      legislation_title: title,
+      legislation_year: year,
+      legislation_number: number,
+      legislation_type: _type
+    } = validated_data
+    
+    # Try exact match first using Ash identity
+    case find_exact_legislation(title, year, number) do
+      {:ok, legislation} ->
+        Logger.debug("Found exact legislation match: #{title}")
+        {:ok, legislation}
+      
+      {:error, :not_found} ->
+        # Try fuzzy match for similar titles
+        case find_similar_legislation(title, year) do
+          {:ok, legislation} ->
+            Logger.info("Found similar legislation match: #{title} -> #{legislation.legislation_title}")
+            {:ok, legislation}
+          
+          {:error, :not_found} ->
+            # Create new legislation record
+            Logger.info("Creating new legislation: #{title}")
+            create_new_legislation(validated_data)
+          
+          error ->
+            error
+        end
+      
+      error ->
+        error
+    end
+  end
+
+  defp find_exact_legislation(title, year, number) do
+    query = EhsEnforcement.Enforcement.Legislation
+    |> Ash.Query.filter(
+      legislation_title == ^title and
+      legislation_year == ^year and
+      legislation_number == ^number
+    )
+    
+    case Ash.read_one(query) do
+      {:ok, nil} -> {:error, :not_found}
+      {:ok, legislation} -> {:ok, legislation}
+      error -> error
+    end
+  end
+
+  defp find_similar_legislation(title, year, similarity_threshold \\ 0.85) do
+    # Get all legislation with the same year (or nil year)
+    base_query = EhsEnforcement.Enforcement.Legislation
+    |> Ash.Query.filter(legislation_year == ^year or is_nil(legislation_year))
+    
+    case Ash.read(base_query) do
+      {:ok, candidates} ->
+        # Find the best match using similarity scoring
+        best_match = candidates
+        |> Enum.map(fn candidate ->
+          similarity = EhsEnforcement.Utility.calculate_title_similarity(title, candidate.legislation_title)
+          {candidate, similarity}
+        end)
+        |> Enum.filter(fn {_candidate, similarity} -> similarity >= similarity_threshold end)
+        |> Enum.max_by(fn {_candidate, similarity} -> similarity end, fn -> nil end)
+        
+        case best_match do
+          {legislation, _similarity} -> {:ok, legislation}
+          nil -> {:error, :not_found}
+        end
+      
+      error -> error
+    end
+  end
+
+  defp create_new_legislation(validated_data) do
+    EhsEnforcement.Enforcement.create_legislation(validated_data)
+  end
+
+  @doc """
+  Batch find or create multiple legislation records.
+  
+  Useful for processing multiple breaches or offences at once.
+  Returns a map of original titles to legislation records.
+  """
+  @spec batch_find_or_create_legislation([map()]) :: {:ok, map()} | {:error, term()}
+  def batch_find_or_create_legislation(legislation_data_list) when is_list(legislation_data_list) do
+    results = Enum.reduce_while(legislation_data_list, %{}, fn data, acc ->
+      title = data[:title] || data["title"]
+      year = data[:year] || data["year"]
+      number = data[:number] || data["number"]
+      type = data[:type] || data["type"]
+      
+      case find_or_create_legislation(title, year, number, type) do
+        {:ok, legislation} ->
+          {:cont, Map.put(acc, title, legislation)}
+        
+        {:error, reason} ->
+          {:halt, {:error, {title, reason}}}
+      end
+    end)
+    
+    case results do
+      %{} = success_map -> {:ok, success_map}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Search for existing legislation by title with fuzzy matching.
+  
+  Useful for manual deduplication or verification.
+  """
+  @spec search_legislation_fuzzy(String.t(), float()) :: {:ok, [struct()]} | {:error, term()}
+  def search_legislation_fuzzy(search_title, similarity_threshold \\ 0.7) when is_binary(search_title) do
+    normalized_search = EhsEnforcement.Utility.normalize_legislation_title(search_title)
+    
+    case EhsEnforcement.Enforcement.list_legislation() do
+      {:ok, all_legislation} ->
+        matches = all_legislation
+        |> Enum.map(fn legislation ->
+          similarity = EhsEnforcement.Utility.calculate_title_similarity(
+            normalized_search, 
+            legislation.legislation_title
+          )
+          {legislation, similarity}
+        end)
+        |> Enum.filter(fn {_legislation, similarity} -> similarity >= similarity_threshold end)
+        |> Enum.sort_by(fn {_legislation, similarity} -> similarity end, :desc)
+        |> Enum.map(fn {legislation, _similarity} -> legislation end)
+        
+        {:ok, matches}
+      
+      error -> error
+    end
+  end
+
+  @doc """
+  Get legislation statistics for monitoring duplicate prevention.
+  """
+  def get_legislation_stats do
+    case EhsEnforcement.Enforcement.list_legislation() do
+      {:ok, all_legislation} ->
+        stats = %{
+          total_count: length(all_legislation),
+          by_type: group_by_type(all_legislation),
+          missing_year: count_missing_field(all_legislation, :legislation_year),
+          missing_number: count_missing_field(all_legislation, :legislation_number),
+          potential_duplicates: find_potential_duplicates(all_legislation)
+        }
+        {:ok, stats}
+      
+      error -> error
+    end
+  end
+
+  defp group_by_type(legislation_list) do
+    Enum.group_by(legislation_list, & &1.legislation_type)
+    |> Enum.map(fn {type, items} -> {type, length(items)} end)
+    |> Enum.into(%{})
+  end
+
+  defp count_missing_field(legislation_list, field) do
+    Enum.count(legislation_list, fn item ->
+      Map.get(item, field) |> is_nil()
+    end)
+  end
+
+  defp find_potential_duplicates(legislation_list) do
+    # Group by normalized title and look for groups with multiple items
+    legislation_list
+    |> Enum.group_by(fn legislation ->
+      # Group by title + year to identify potential duplicates
+      {
+        EhsEnforcement.Utility.normalize_legislation_title(legislation.legislation_title),
+        legislation.legislation_year
+      }
+    end)
+    |> Enum.filter(fn {_key, items} -> length(items) > 1 end)
+    |> Enum.map(fn {{title, year}, items} ->
+      %{
+        normalized_title: title,
+        year: year,
+        count: length(items),
+        records: Enum.map(items, & &1.id)
+      }
+    end)
   end
 end

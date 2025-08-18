@@ -65,11 +65,19 @@ defmodule EhsEnforcement.Enforcement.Legislation do
   end
 
   identities do
-    identity :unique_legislation, [:legislation_title, :legislation_year, :legislation_number]
+    # Prevent duplicates even with nil values  
+    identity :unique_legislation, [:legislation_title, :legislation_year, :legislation_number] do
+      nils_distinct? false  # Treat multiple nil values as duplicates
+    end
+    
+    # Secondary identity for title + year only (useful for fuzzy matching)
+    identity :unique_title_year, [:legislation_title, :legislation_year] do
+      nils_distinct? false
+    end
   end
 
   actions do
-    defaults [:read, :update, :destroy]
+    defaults [:read, :destroy]
 
     create :create do
       primary? true
@@ -77,6 +85,67 @@ defmodule EhsEnforcement.Enforcement.Legislation do
 
       validate present(:legislation_title)
       validate present(:legislation_type)
+      
+      # Normalize title before creation
+      change fn changeset, _context ->
+        case Ash.Changeset.get_attribute(changeset, :legislation_title) do
+          nil -> changeset
+          title ->
+            normalized_title = EhsEnforcement.Utility.normalize_legislation_title(title)
+            Ash.Changeset.force_change_attribute(changeset, :legislation_title, normalized_title)
+        end
+      end
+      
+      # Auto-determine type if not provided
+      change fn changeset, _context ->
+        case Ash.Changeset.get_attribute(changeset, :legislation_type) do
+          nil ->
+            title = Ash.Changeset.get_attribute(changeset, :legislation_title)
+            if title do
+              auto_type = EhsEnforcement.Utility.determine_legislation_type(title)
+              Ash.Changeset.force_change_attribute(changeset, :legislation_type, auto_type)
+            else
+              changeset
+            end
+          _type -> changeset
+        end
+      end
+      
+      # Validate year range if provided
+      validate fn changeset, _context ->
+        case Ash.Changeset.get_attribute(changeset, :legislation_year) do
+          nil -> :ok
+          year when year >= 1800 and year <= 2100 -> :ok
+          invalid_year -> 
+            {:error, field: :legislation_year, message: "Year must be between 1800 and 2100, got: #{invalid_year}"}
+        end
+      end
+      
+      # Validate number if provided
+      validate fn changeset, _context ->
+        case Ash.Changeset.get_attribute(changeset, :legislation_number) do
+          nil -> :ok
+          number when is_integer(number) and number > 0 -> :ok
+          invalid_number -> 
+            {:error, field: :legislation_number, message: "Number must be a positive integer, got: #{invalid_number}"}
+        end
+      end
+    end
+
+    update :update do
+      primary? true
+      accept [:legislation_title, :legislation_year, :legislation_number, :legislation_type]
+      require_atomic? false
+      
+      # Normalize title on update as well
+      change fn changeset, _context ->
+        case Ash.Changeset.get_attribute(changeset, :legislation_title) do
+          nil -> changeset
+          title ->
+            normalized_title = EhsEnforcement.Utility.normalize_legislation_title(title)
+            Ash.Changeset.force_change_attribute(changeset, :legislation_title, normalized_title)
+        end
+      end
     end
 
     read :by_type do
