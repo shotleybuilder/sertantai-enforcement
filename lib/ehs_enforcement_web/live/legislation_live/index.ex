@@ -16,6 +16,7 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     {:ok,
      socket
      |> assign(:filters, %{})
+     |> assign(:search_query, "")
      |> assign(:sort_by, :legislation_year) 
      |> assign(:sort_dir, :desc)
      |> assign(:page, 1)
@@ -25,6 +26,9 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
      |> assign(:search_active, false)
      |> assign(:fuzzy_search, false)
      |> assign(:sort_requested, false)
+     |> assign(:filter_count, 0)
+     |> assign(:counting_filters, false)
+     |> assign(:filters_applied, false)
      |> load_legislation(), temporary_assigns: [legislation: []]}
   end
 
@@ -53,9 +57,41 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
   def handle_event("filter", %{"filters" => filter_params}, socket) do
     filters = atomize_and_clean_filters(filter_params)
     
+    # Count records that match the filters in real-time
+    socket_with_filters = assign(socket, :filters, filters)
+    
+    {:noreply,
+     socket_with_filters
+     |> assign(:page, 1)
+     |> assign(:counting_filters, true)
+     |> count_filtered_legislation()}
+  end
+
+  @impl true
+  def handle_event("search", %{"search" => search_query}, socket) do
     {:noreply,
      socket
-     |> assign(:filters, filters)
+     |> assign(:search_query, search_query)
+     |> assign(:page, 1)
+     |> assign(:counting_filters, true)
+     |> count_filtered_legislation()}
+  end
+
+  @impl true
+  def handle_event("clear_search", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:search_query, "")
+     |> assign(:page, 1)
+     |> assign(:counting_filters, true)
+     |> count_filtered_legislation()}
+  end
+
+  @impl true
+  def handle_event("apply_filters", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:filters_applied, true)
      |> assign(:page, 1)
      |> load_legislation()}
   end
@@ -65,8 +101,11 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     {:noreply,
      socket
      |> assign(:filters, %{})
+     |> assign(:search_query, "")
      |> assign(:page, 1)
      |> assign(:sort_requested, false)
+     |> assign(:filters_applied, false)
+     |> assign(:filter_count, 0)
      |> load_legislation()}
   end
 
@@ -82,9 +121,14 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
   end
 
   @impl true
-  def handle_event("sort", %{"field" => field, "direction" => direction}, socket) do
+  def handle_event("sort", %{"field" => field}, socket) do
     sort_by = String.to_atom(field)
-    sort_dir = String.to_atom(direction)
+    # Toggle sort direction if same field, otherwise default to desc
+    sort_dir = if socket.assigns.sort_by == sort_by do
+      if socket.assigns.sort_dir == :desc, do: :asc, else: :desc
+    else
+      :desc
+    end
     
     {:noreply,
      socket
@@ -173,21 +217,56 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     {:noreply, load_legislation(socket)}
   end
 
-  defp load_legislation(socket) do
-    %{filters: filters, sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size, fuzzy_search: fuzzy_search, sort_requested: sort_requested} = socket.assigns
+  defp count_filtered_legislation(socket) do
+    %{filters: filters, search_query: search_query} = socket.assigns
     
     try do
-      if map_size(filters) == 0 && !sort_requested do
+      # Only count if there are filters or search query
+      if map_size(filters) > 0 || (search_query != "" && search_query != nil) do
+        count_filters = build_filter(filters)
+        count_filters = if search_query != "" && search_query != nil do
+          Map.put(count_filters, :search, "%#{String.trim(search_query)}%")
+        else
+          count_filters
+        end
+        
+        count_opts = [filter: count_filters]
+        filter_count = Enforcement.count_legislation!(count_opts)
+        
+        socket
+        |> assign(:filter_count, filter_count)
+        |> assign(:counting_filters, false)
+      else
+        socket
+        |> assign(:filter_count, 0)
+        |> assign(:counting_filters, false)
+      end
+    rescue
+      error ->
+        require Logger
+        Logger.error("Failed to count filtered legislation: #{inspect(error)}")
+        
+        socket
+        |> assign(:filter_count, 0)
+        |> assign(:counting_filters, false)
+    end
+  end
+
+  defp load_legislation(socket) do
+    %{filters: filters, search_query: search_query, sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size, fuzzy_search: fuzzy_search, sort_requested: sort_requested, filters_applied: filters_applied} = socket.assigns
+    
+    try do
+      if !filters_applied && map_size(filters) == 0 && (search_query == "" || search_query == nil) && !sort_requested do
         socket
         |> assign(:legislation, [])
         |> assign(:total_legislation, 0)
         |> assign(:loading, false)
       else
-        search_query = filters[:search]
-        use_fuzzy = fuzzy_search && is_binary(search_query) && String.trim(search_query) != ""
+        combined_search = search_query || filters[:search] || ""
+        use_fuzzy = fuzzy_search && is_binary(combined_search) && String.trim(combined_search) != ""
         
         {legislation, total_legislation} = if use_fuzzy do
-          trimmed_query = String.trim(search_query)
+          trimmed_query = String.trim(combined_search)
           limited_query = if String.length(trimmed_query) > 100 do
             String.slice(trimmed_query, 0, 100)
           else
@@ -210,19 +289,19 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
           
           {fuzzy_results, estimated_total}
         else
-          query_opts = build_query_options(filters, sort_by, sort_dir, page, page_size)
-          regular_results = Enforcement.list_legislation(query_opts)
+          query_opts = build_query_options(filters, combined_search, sort_by, sort_dir, page, page_size)
+          regular_results = Enforcement.list_legislation_with_filters!(query_opts)
           
-          count_opts = [filter: build_filter(filters)]
-          regular_total = case Ash.count(Enforcement.Legislation, count_opts) do
-            {:ok, count} -> count
-            {:error, _} -> 0
+          count_filters = build_filter(filters)
+          count_filters = if combined_search != "" do
+            Map.put(count_filters, :search, "%#{String.trim(combined_search)}%")
+          else
+            count_filters
           end
+          count_opts = [filter: count_filters]
+          regular_total = Enforcement.count_legislation!(count_opts)
           
-          case regular_results do
-            {:ok, results} -> {results, regular_total}
-            {:error, _} -> {[], 0}
-          end
+          {regular_results, regular_total}
         end
         
         socket
@@ -244,11 +323,18 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     end
   end
 
-  defp build_query_options(filters, sort_by, sort_dir, page, page_size) do
+  defp build_query_options(filters, search_query, sort_by, sort_dir, page, page_size) do
     offset = (page - 1) * page_size
     
+    filter = build_filter(filters)
+    filter = if search_query != "" && search_query != nil do
+      Map.put(filter, :search, "%#{String.trim(search_query)}%")
+    else
+      filter
+    end
+    
     [
-      filter: build_filter(filters),
+      filter: filter,
       sort: build_sort_options(sort_by, sort_dir),
       limit: page_size,
       offset: offset
@@ -361,4 +447,26 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     
     Enum.to_list(start_page..end_page)
   end
+
+  defp total_pages(total_count, page_size) do
+    ceil(total_count / page_size)
+  end
+
+  defp get_sort_icon(assigns, field) do
+    if assigns.sort_by == String.to_atom(field) do
+      if assigns.sort_dir == :desc do
+        "↓"
+      else
+        "↑"
+      end
+    else
+      ""
+    end
+  end
+
+  defp legislation_type_class(:act), do: "bg-blue-100 text-blue-800"
+  defp legislation_type_class(:regulation), do: "bg-green-100 text-green-800"
+  defp legislation_type_class(:order), do: "bg-yellow-100 text-yellow-800"
+  defp legislation_type_class(:acop), do: "bg-purple-100 text-purple-800"
+  defp legislation_type_class(_), do: "bg-gray-100 text-gray-800"
 end

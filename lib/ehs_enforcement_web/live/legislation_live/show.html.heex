@@ -268,9 +268,9 @@
                                   </p>
                                 <% end %>
                                 
-                                <%= if case.offence_breaches do %>
+                                <%= if case.computed_breaches_summary do %>
                                   <p class="mt-1 text-sm text-gray-500">
-                                    <%= truncate_text(case.offence_breaches, 150) %>
+                                    <%= truncate_text(case.computed_breaches_summary, 150) %>
                                   </p>
                                 <% end %>
                               </div>
@@ -350,9 +350,9 @@
                                   </p>
                                 <% end %>
                                 
-                                <%= if notice.offence_breaches do %>
+                                <%= if notice.notice_body do %>
                                   <p class="mt-1 text-sm text-gray-500">
-                                    <%= truncate_text(notice.offence_breaches, 150) %>
+                                    <%= truncate_text(notice.notice_body, 150) %>
                                   </p>
                                 <% end %>
                               </div>

@@ -1,331 +1,489 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="min-h-screen bg-gray-50">
   <!-- Header -->
-  <div class="sm:flex sm:items-center">
-    <div class="sm:flex-auto">
-      <h1 class="text-2xl font-semibold text-gray-900">Legislation</h1>
-      <p class="mt-2 text-sm text-gray-700">
-        Browse UK environmental, health and safety legislation referenced in enforcement actions.
-      </p>
-    </div>
-    <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-      <%= if @current_user do %>
-        <.link
-          patch={~p"/legislation/new"}
-          class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
-        >
-          Add legislation
-        </.link>
-      <% end %>
+  <div class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="py-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Legislation</h1>
+            <p class="mt-2 text-sm text-gray-700">
+              UK Legislation
+              <%= cond do %>
+                <% @total_legislation > 0 -> %>
+                  · <%= @total_legislation %> legislation loaded
+                <% @filters_applied && @total_legislation == 0 -> %>
+                  · No legislation found for current filters
+                <% (map_size(@filters) > 0 || @search_query != "") && !@filters_applied -> %>
+                  · <%= @filter_count %> legislation match current criteria
+                <% true -> %>
+                  · Apply filters to view legislation. Limited to 1000 records.
+              <% end %>
+            </p>
+          </div>
+          
+          <div class="flex space-x-3">
+            <!-- Back to Admin Button (Admin Users Only) -->
+            <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
+              <.link
+                navigate={~p"/admin"}
+                class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
+                <.icon name="hero-cog-6-tooth" class="h-4 w-4 mr-2" />
+                Admin
+              </.link>
+            <% end %>
+            
+            <!-- Back to Dashboard Button -->
+            <.link
+              navigate={~p"/"}
+              class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
+              <.icon name="hero-home" class="h-4 w-4 mr-2" />
+              Dashboard
+            </.link>
+            
+            <%= if @current_user do %>
+              <.link
+                patch={~p"/legislation/new"}
+                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <.icon name="hero-plus" class="h-4 w-4 mr-2" />
+                Add Legislation
+              </.link>
+            <% end %>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Search and Filters -->
-  <div class="mt-8">
-    <.form
-      for={%{}}
-      as={:filters}
-      phx-change="filter"
-      phx-submit="filter"
-      class="space-y-4"
-    >
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <!-- Search -->
-        <div>
-          <.input
-            name="search"
-            type="text"
-            placeholder="Search legislation..."
-            value={@filters[:search] || ""}
-            class="block w-full"
-          />
-        </div>
-        
-        <!-- Type Filter -->
-        <div>
-          <.input
-            name="legislation_type"
-            type="select"
-            options={[
-              {"All Types", ""},
-              {"Act", "act"},
-              {"Regulation", "regulation"},
-              {"Order", "order"},
-              {"ACOP", "acop"}
-            ]}
-            value={@filters[:legislation_type] || ""}
-            prompt="All Types"
-            class="block w-full"
-          />
-        </div>
-        
-        <!-- Year From -->
-        <div>
-          <.input
-            name="year_from"
-            type="number"
-            placeholder="Year from..."
-            value={@filters[:year_from] || ""}
-            min="1800"
-            max="2100"
-            class="block w-full"
-          />
-        </div>
-        
-        <!-- Year To -->
-        <div>
-          <.input
-            name="year_to"
-            type="number"
-            placeholder="Year to..."
-            value={@filters[:year_to] || ""}
-            min="1800"
-            max="2100"
-            class="block w-full"
-          />
-        </div>
-      </div>
-      
-      <div class="flex items-center space-x-4">
-        <button
-          type="button"
-          phx-click="clear_filters"
-          class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Clear filters
-        </button>
-        
-        <button
-          type="button"
-          phx-click="toggle_fuzzy_search"
-          class={[
-            "inline-flex items-center px-3 py-2 border shadow-sm text-sm leading-4 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500",
-            if(@fuzzy_search, do: "border-indigo-500 text-indigo-700 bg-indigo-50", else: "border-gray-300 text-gray-700 bg-white hover:bg-gray-50")
-          ]}
-        >
-          <%= if @fuzzy_search do %>
-            Fuzzy search: ON
-          <% else %>
-            Fuzzy search: OFF
-          <% end %>
-        </button>
-      </div>
-    </.form>
-  </div>
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Filters Section -->
+    <div class="bg-white shadow rounded-lg mb-6">
+      <div class="px-4 py-5 sm:p-6">
+        <form phx-change="filter" data-testid="legislation-filters" class="space-y-4">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <!-- Search -->
+            <div>
+              <label for="search" class="block text-sm font-medium text-gray-700">
+                Search
+              </label>
+              <input
+                type="text"
+                name="filters[search]"
+                id="search"
+                value={@filters[:search] || ""}
+                placeholder="Search legislation..."
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+            
+            <!-- Type Filter -->
+            <div>
+              <label for="legislation_type" class="block text-sm font-medium text-gray-700">
+                Type
+              </label>
+              <select
+                name="filters[legislation_type]"
+                id="legislation_type"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              >
+                <option value="">All Types</option>
+                <option value="act" selected={@filters[:legislation_type] == "act"}>Act</option>
+                <option value="regulation" selected={@filters[:legislation_type] == "regulation"}>Regulation</option>
+                <option value="order" selected={@filters[:legislation_type] == "order"}>Order</option>
+                <option value="acop" selected={@filters[:legislation_type] == "acop"}>ACOP</option>
+              </select>
+            </div>
+            
+            <!-- Year From -->
+            <div>
+              <label for="year_from" class="block text-sm font-medium text-gray-700">
+                Year From
+              </label>
+              <input
+                type="number"
+                name="filters[year_from]"
+                id="year_from"
+                value={@filters[:year_from]}
+                placeholder="e.g., 1990"
+                min="1800"
+                max="2100"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+            
+            <!-- Year To -->
+            <div>
+              <label for="year_to" class="block text-sm font-medium text-gray-700">
+                Year To
+              </label>
+              <input
+                type="number"
+                name="filters[year_to]"
+                id="year_to"
+                value={@filters[:year_to]}
+                placeholder="e.g., 2024"
+                min="1800"
+                max="2100"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+          </div>
 
-  <!-- Results -->
-  <div class="mt-8">
+          <div class="flex justify-between items-end">
+            <!-- Search Bar and Fuzzy Search -->
+            <div class="w-1/2 space-y-2">
+              <div class="relative">
+                <input
+                  type="text"
+                  name="search"
+                  value={@search_query || ""}
+                  placeholder="Search by title or content..."
+                  phx-change="search"
+                  phx-value-search={@search_query || ""}
+                  class="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                />
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <.icon name="hero-magnifying-glass" class="h-4 w-4 text-gray-400" />
+                </div>
+                <%= if @search_query != "" do %>
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <button
+                      type="button"
+                      phx-click="clear_search"
+                      class="text-gray-400 hover:text-gray-600"
+                    >
+                      <.icon name="hero-x-mark" class="h-4 w-4" />
+                    </button>
+                  </div>
+                <% end %>
+              </div>
+              
+              <!-- Fuzzy Search Toggle -->
+              <div class="flex items-center">
+                <input
+                  id="fuzzy-search-toggle"
+                  type="checkbox"
+                  checked={@fuzzy_search}
+                  phx-click="toggle_fuzzy_search"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label for="fuzzy-search-toggle" class="ml-2 text-sm text-gray-600">
+                  Fuzzy search (finds similar matches)
+                </label>
+                <%= if @fuzzy_search do %>
+                  <.icon name="hero-sparkles" class="h-4 w-4 ml-1 text-blue-500" />
+                <% end %>
+              </div>
+            </div>
+            
+            <!-- Filter Count and Action Buttons -->
+            <div class="flex items-center space-x-3">
+              <!-- Real-time Filter Count -->
+              <%= if @counting_filters do %>
+                <div class="flex items-center text-sm text-gray-600">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  Counting...
+                </div>
+              <% else %>
+                <%= if map_size(@filters) > 0 || @search_query != "" do %>
+                  <div class="flex items-center text-sm">
+                    <span class="text-gray-600">Found:</span>
+                    <span class={"ml-1 font-semibold #{if @filter_count > 1000, do: "text-red-600", else: "text-blue-600"}"}>
+                      <%= @filter_count %> legislation
+                    </span>
+                    <%= if @filter_count > 1000 do %>
+                      <span class="ml-2 text-xs text-red-600 font-medium">(Too many)</span>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% end %>
+              
+              <!-- Apply Filter Button -->
+              <%= if (map_size(@filters) > 0 || @search_query != "") && !@filters_applied do %>
+                <%= if @filter_count <= 1000 do %>
+                  <button
+                    type="button"
+                    phx-click="apply_filters"
+                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
+                    Apply Filters
+                  </button>
+                <% else %>
+                  <button
+                    type="button"
+                    disabled
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-75"
+                    title="Too many records found. Please refine your filters to 1,000 or fewer records."
+                  >
+                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
+                    Apply Filters
+                  </button>
+                <% end %>
+              <% end %>
+              
+              <!-- Clear Filters Button -->
+              <button
+                type="button"
+                phx-click="clear_filters"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Loading State -->
     <%= if @loading do %>
-      <div class="text-center py-8">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         <p class="mt-2 text-sm text-gray-500">Loading legislation...</p>
       </div>
     <% else %>
-      <%= if Enum.empty?(@legislation) do %>
-        <div class="text-center py-8">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No legislation found</h3>
-          <p class="mt-1 text-sm text-gray-500">
-            <%= if map_size(@filters) > 0 do %>
-              Try adjusting your search criteria or clearing filters.
-            <% else %>
-              Get started by adding some legislation.
-            <% end %>
-          </p>
-        </div>
-      <% else %>
-        <!-- Results Table -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-md">
-          <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg leading-6 font-medium text-gray-900">
-                Legislation (<%= @total_legislation %> results)
-              </h3>
-              
-              <!-- Sort Options -->
-              <div class="flex items-center space-x-2">
-                <select 
-                  phx-change="sort"
-                  class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                >
-                  <option value="legislation_year-desc" selected={@sort_by == :legislation_year && @sort_dir == :desc}>
-                    Year (newest first)
-                  </option>
-                  <option value="legislation_year-asc" selected={@sort_by == :legislation_year && @sort_dir == :asc}>
-                    Year (oldest first)
-                  </option>
-                  <option value="legislation_title-asc" selected={@sort_by == :legislation_title && @sort_dir == :asc}>
-                    Title (A-Z)
-                  </option>
-                  <option value="legislation_title-desc" selected={@sort_by == :legislation_title && @sort_dir == :desc}>
-                    Title (Z-A)
-                  </option>
-                  <option value="legislation_type-asc" selected={@sort_by == :legislation_type && @sort_dir == :asc}>
-                    Type (A-Z)
-                  </option>
-                </select>
+      <!-- Legislation Content -->
+      <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <div class="px-4 py-5 sm:p-6">
+          <%= if Enum.empty?(@legislation) do %>
+            <!-- Empty State -->
+            <div class="text-center py-12">
+              <%= if !@filters_applied && map_size(@filters) == 0 && @search_query == "" do %>
+                <.icon name="hero-funnel" class="mx-auto h-12 w-12 text-gray-400" />
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No filters applied</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  Apply filters or search criteria to view legislation.
+                </p>
+              <% else %>
+                <.icon name="hero-folder-open" class="mx-auto h-12 w-12 text-gray-400" />
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No legislation found</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                  Try adjusting your filters or search criteria.
+                </p>
+              <% end %>
+            </div>
+          <% else %>
+            <!-- Table Controls -->
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-4">
+                <span class="text-sm text-gray-700">
+                  <%= if @total_legislation > 0 do %>
+                    Showing <%= (@page - 1) * @page_size + 1 %>-<%= min(@page * @page_size, @total_legislation) %> of <%= @total_legislation %> legislation
+                  <% else %>
+                    No legislation to display
+                  <% end %>
+                </span>
+                
+                <!-- Page Size Selector -->
+                <div class="flex items-center space-x-2">
+                  <label for="page-size" class="text-sm text-gray-700">Show:</label>
+                  <select
+                    id="page-size"
+                    name="page_size"
+                    phx-change="change_page_size"
+                    class="border-gray-300 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="10" selected={@page_size == 10}>10</option>
+                    <option value="20" selected={@page_size == 20}>20</option>
+                    <option value="50" selected={@page_size == 50}>50</option>
+                    <option value="100" selected={@page_size == 100}>100</option>
+                  </select>
+                  <span class="text-sm text-gray-700">per page</span>
+                  <%= if @fuzzy_search && @search_query != "" do %>
+                    <div class="flex items-center ml-4 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs">
+                      <.icon name="hero-sparkles" class="h-3 w-3 mr-1" />
+                      Fuzzy search active
+                    </div>
+                  <% end %>
+                </div>
               </div>
             </div>
+            <!-- Table View -->
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200" data-testid="legislation-list">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      phx-click="sort"
+                      phx-value-field="legislation_title"
+                    >
+                      Title <%= get_sort_icon(assigns, "legislation_title") %>
+                    </th>
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      phx-click="sort"
+                      phx-value-field="legislation_type"
+                    >
+                      Type <%= get_sort_icon(assigns, "legislation_type") %>
+                    </th>
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      phx-click="sort"
+                      phx-value-field="legislation_year"
+                    >
+                      Year <%= get_sort_icon(assigns, "legislation_year") %>
+                    </th>
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Number
+                    </th>
+                    <th scope="col" class="relative px-6 py-3">
+                      <span class="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <%= for legislation <- @legislation do %>
+                    <tr data-legislation-type={legislation.legislation_type} class="hover:bg-gray-50">
+                      <td class="px-6 py-4">
+                        <.link
+                          navigate={~p"/legislation/#{legislation.id}"}
+                          class="text-sm font-medium text-blue-600 hover:text-blue-500"
+                        >
+                          <%= legislation.legislation_title %>
+                        </.link>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class={["inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", legislation_type_class(legislation.legislation_type)]}>
+                          <%= format_legislation_type(legislation.legislation_type) %>
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <%= legislation.legislation_year %>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <%= legislation.legislation_number %>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex items-center justify-end space-x-2">
+                          <.link
+                            navigate={~p"/legislation/#{legislation.id}"}
+                            class="text-blue-600 hover:text-blue-900"
+                            title="View details"
+                          >
+                            <.icon name="hero-eye" class="h-4 w-4" />
+                          </.link>
+                          
+                          <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
+                            <.link
+                              patch={~p"/legislation/#{legislation.id}/edit"}
+                              class="text-green-600 hover:text-green-900"
+                              title="Edit legislation"
+                            >
+                              <.icon name="hero-pencil" class="h-4 w-4" />
+                            </.link>
+                            <button
+                              type="button"
+                              phx-click="delete_legislation"
+                              phx-value-legislation_id={legislation.id}
+                              data-confirm="Are you sure you want to delete this legislation? This action cannot be undone."
+                              class="text-red-600 hover:text-red-900"
+                              title="Delete legislation"
+                            >
+                              <.icon name="hero-trash" class="h-4 w-4" />
+                            </button>
+                          <% end %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <%= if @total_legislation > @page_size do %>
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6 rounded-lg shadow" data-testid="pagination">
+          <div class="flex-1 flex justify-between sm:hidden">
+            <!-- Mobile Pagination -->
+            <%= if @page > 1 do %>
+              <button
+                phx-click="paginate"
+                phx-value-page={@page - 1}
+                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Previous
+              </button>
+            <% end %>
+            
+            <%= if @page < total_pages(@total_legislation, @page_size) do %>
+              <button
+                phx-click="paginate"
+                phx-value-page={@page + 1}
+                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Next
+              </button>
+            <% end %>
           </div>
           
-          <ul class="divide-y divide-gray-200">
-            <%= for legislation <- @legislation do %>
-              <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                <div class="flex items-center justify-between">
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center space-x-3">
-                      <span class={[
-                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-                        case legislation.legislation_type do
-                          :act -> "bg-blue-100 text-blue-800"
-                          :regulation -> "bg-green-100 text-green-800"
-                          :order -> "bg-yellow-100 text-yellow-800"
-                          :acop -> "bg-purple-100 text-purple-800"
-                          _ -> "bg-gray-100 text-gray-800"
-                        end
-                      ]}>
-                        <%= format_legislation_type(legislation.legislation_type) %>
-                      </span>
-                      
-                      <%= if legislation.legislation_year do %>
-                        <span class="text-sm text-gray-500">
-                          <%= legislation.legislation_year %>
-                        </span>
-                      <% end %>
-                      
-                      <%= if legislation.legislation_number do %>
-                        <span class="text-sm text-gray-500">
-                          No. <%= legislation.legislation_number %>
-                        </span>
-                      <% end %>
-                    </div>
-                    
-                    <.link 
-                      navigate={~p"/legislation/#{legislation.id}"}
-                      class="mt-2 block"
-                    >
-                      <h4 class="text-lg font-medium text-indigo-600 hover:text-indigo-500">
-                        <%= legislation.legislation_title %>
-                      </h4>
-                    </.link>
-                  </div>
-                  
-                  <div class="flex items-center space-x-2">
-                    <.link
-                      navigate={~p"/legislation/#{legislation.id}"}
-                      class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                      View
-                    </.link>
-                    
-                    <%= if @current_user do %>
-                      <.link
-                        patch={~p"/legislation/#{legislation.id}/edit"}
-                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                      >
-                        Edit
-                      </.link>
-                      
-                      <button
-                        phx-click="delete_legislation"
-                        phx-value-legislation_id={legislation.id}
-                        data-confirm="Are you sure you want to delete this legislation?"
-                        class="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                      >
-                        Delete
-                      </button>
-                    <% end %>
-                  </div>
-                </div>
-              </li>
-            <% end %>
-          </ul>
-        </div>
-
-        <!-- Pagination -->
-        <%= if @total_legislation > @page_size do %>
-          <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
-            <div class="flex-1 flex justify-between sm:hidden">
-              <%= if @page > 1 do %>
-                <button
-                  phx-click="paginate"
-                  phx-value-page={@page - 1}
-                  class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-              <% end %>
-              
-              <%= if @page < calculate_total_pages(@total_legislation, @page_size) do %>
-                <button
-                  phx-click="paginate"
-                  phx-value-page={@page + 1}
-                  class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  Next
-                </button>
-              <% end %>
+          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm text-gray-700">
+                Showing <span class="font-medium"><%= (@page - 1) * @page_size + 1 %></span>
+                to <span class="font-medium"><%= min(@page * @page_size, @total_legislation) %></span>
+                of <span class="font-medium"><%= @total_legislation %></span> results
+              </p>
             </div>
             
-            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p class="text-sm text-gray-700">
-                  Showing
-                  <span class="font-medium"><%= (@page - 1) * @page_size + 1 %></span>
-                  to
-                  <span class="font-medium"><%= min(@page * @page_size, @total_legislation) %></span>
-                  of
-                  <span class="font-medium"><%= @total_legislation %></span>
-                  results
-                </p>
-              </div>
-              
-              <div>
-                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <%= if @page > 1 do %>
-                    <button
-                      phx-click="paginate"
-                      phx-value-page={@page - 1}
-                      class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                    >
-                      <span class="sr-only">Previous</span>
-                      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                      </svg>
-                    </button>
-                  <% end %>
-                  
-                  <%= for page_num <- page_range(@page, calculate_total_pages(@total_legislation, @page_size)) do %>
-                    <button
-                      phx-click="paginate"
-                      phx-value-page={page_num}
-                      class={[
-                        "relative inline-flex items-center px-4 py-2 border text-sm font-medium",
-                        if(page_num == @page, do: "z-10 bg-indigo-50 border-indigo-500 text-indigo-600", else: "bg-white border-gray-300 text-gray-500 hover:bg-gray-50")
-                      ]}
-                    >
-                      <%= page_num %>
-                    </button>
-                  <% end %>
-                  
-                  <%= if @page < calculate_total_pages(@total_legislation, @page_size) do %>
-                    <button
-                      phx-click="paginate"
-                      phx-value-page={@page + 1}
-                      class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                    >
-                      <span class="sr-only">Next</span>
-                      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                      </svg>
-                    </button>
-                  <% end %>
-                </nav>
-              </div>
+            <div>
+              <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <!-- Previous Button -->
+                <%= if @page > 1 do %>
+                  <button
+                    phx-click="paginate"
+                    phx-value-page={@page - 1}
+                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
+                    <span class="sr-only">Previous</span>
+                    <.icon name="hero-chevron-left" class="h-5 w-5" />
+                  </button>
+                <% else %>
+                  <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
+                    <.icon name="hero-chevron-left" class="h-5 w-5" />
+                  </span>
+                <% end %>
+
+                <!-- Page Numbers -->
+                <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
+                  <%= @page %>
+                </span>
+
+                <!-- Next Button -->
+                <%= if @page < total_pages(@total_legislation, @page_size) do %>
+                  <button
+                    phx-click="paginate"
+                    phx-value-page={@page + 1}
+                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
+                    <span class="sr-only">Next</span>
+                    <.icon name="hero-chevron-right" class="h-5 w-5" />
+                  </button>
+                <% else %>
+                  <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
+                    <.icon name="hero-chevron-right" class="h-5 w-5" />
+                  </span>
+                <% end %>
+              </nav>
             </div>
           </div>
-        <% end %>
+        </div>
       <% end %>
     <% end %>
   </div>
