@@ -7,10 +7,7 @@
 # 
 # Usage: mix run scripts/cleanup_legislation_duplicates.exs
 
-Mix.install([
-  {:ecto_sql, "~> 3.0"},
-  {:postgrex, "~> 0.17"}
-])
+# Running within Mix project - dependencies already available
 
 defmodule LegislationCleanup do
   @moduledoc """
