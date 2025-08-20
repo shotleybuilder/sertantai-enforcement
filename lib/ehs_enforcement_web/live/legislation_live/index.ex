@@ -16,7 +16,6 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     {:ok,
      socket
      |> assign(:filters, %{})
-     |> assign(:search_query, "")
      |> assign(:sort_by, :legislation_year) 
      |> assign(:sort_dir, :desc)
      |> assign(:page, 1)
@@ -63,26 +62,20 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     {:noreply,
      socket_with_filters
      |> assign(:page, 1)
-     |> assign(:counting_filters, true)
-     |> count_filtered_legislation()}
-  end
-
-  @impl true
-  def handle_event("search", %{"search" => search_query}, socket) do
-    {:noreply,
-     socket
-     |> assign(:search_query, search_query)
-     |> assign(:page, 1)
+     |> assign(:filters_applied, false)
      |> assign(:counting_filters, true)
      |> count_filtered_legislation()}
   end
 
   @impl true
   def handle_event("clear_search", _params, socket) do
+    updated_filters = Map.delete(socket.assigns.filters, :search)
+    
     {:noreply,
      socket
-     |> assign(:search_query, "")
+     |> assign(:filters, updated_filters)
      |> assign(:page, 1)
+     |> assign(:filters_applied, false)
      |> assign(:counting_filters, true)
      |> count_filtered_legislation()}
   end
@@ -101,7 +94,6 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     {:noreply,
      socket
      |> assign(:filters, %{})
-     |> assign(:search_query, "")
      |> assign(:page, 1)
      |> assign(:sort_requested, false)
      |> assign(:filters_applied, false)
@@ -218,18 +210,12 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
   end
 
   defp count_filtered_legislation(socket) do
-    %{filters: filters, search_query: search_query} = socket.assigns
+    %{filters: filters} = socket.assigns
     
     try do
-      # Only count if there are filters or search query
-      if map_size(filters) > 0 || (search_query != "" && search_query != nil) do
+      # Only count if there are filters
+      if map_size(filters) > 0 do
         count_filters = build_filter(filters)
-        count_filters = if search_query != "" && search_query != nil do
-          Map.put(count_filters, :search, "%#{String.trim(search_query)}%")
-        else
-          count_filters
-        end
-        
         count_opts = [filter: count_filters]
         filter_count = Enforcement.count_legislation!(count_opts)
         
@@ -253,16 +239,16 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
   end
 
   defp load_legislation(socket) do
-    %{filters: filters, search_query: search_query, sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size, fuzzy_search: fuzzy_search, sort_requested: sort_requested, filters_applied: filters_applied} = socket.assigns
+    %{filters: filters, sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size, fuzzy_search: fuzzy_search, sort_requested: sort_requested, filters_applied: filters_applied} = socket.assigns
     
     try do
-      if !filters_applied && map_size(filters) == 0 && (search_query == "" || search_query == nil) && !sort_requested do
+      if !filters_applied && map_size(filters) == 0 && !sort_requested do
         socket
         |> assign(:legislation, [])
         |> assign(:total_legislation, 0)
         |> assign(:loading, false)
       else
-        combined_search = search_query || filters[:search] || ""
+        combined_search = filters[:search] || ""
         use_fuzzy = fuzzy_search && is_binary(combined_search) && String.trim(combined_search) != ""
         
         {legislation, total_legislation} = if use_fuzzy do
@@ -289,7 +275,7 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
           
           {fuzzy_results, estimated_total}
         else
-          query_opts = build_query_options(filters, combined_search, sort_by, sort_dir, page, page_size)
+          query_opts = build_query_options(filters, sort_by, sort_dir, page, page_size)
           regular_results = Enforcement.list_legislation_with_filters!(query_opts)
           
           count_filters = build_filter(filters)
@@ -323,15 +309,10 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     end
   end
 
-  defp build_query_options(filters, search_query, sort_by, sort_dir, page, page_size) do
+  defp build_query_options(filters, sort_by, sort_dir, page, page_size) do
     offset = (page - 1) * page_size
     
     filter = build_filter(filters)
-    filter = if search_query != "" && search_query != nil do
-      Map.put(filter, :search, "%#{String.trim(search_query)}%")
-    else
-      filter
-    end
     
     [
       filter: filter,
@@ -344,6 +325,7 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
   defp build_filter(filters) do
     %{}
     |> add_filter_if_present(filters, :legislation_type)
+    |> add_agency_filter(filters)
     |> add_year_range_filters(filters)
     |> add_search_filter(filters)
   end
@@ -353,6 +335,15 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
       value when is_binary(value) and value != "" -> 
         atom_value = if key == :legislation_type, do: String.to_atom(value), else: value
         Map.put(acc, key, atom_value)
+      _ -> acc
+    end
+  end
+  
+  defp add_agency_filter(acc, filters) do
+    case filters[:agency] do
+      agency when is_binary(agency) and agency != "" ->
+        agency_atom = String.to_atom(agency)
+        Map.put(acc, :agency, agency_atom)
       _ -> acc
     end
   end

@@ -593,6 +593,7 @@ defmodule EhsEnforcement.Enforcement do
     |> apply_legislation_type_filter(filters[:legislation_type])
     |> apply_legislation_year_range_filter(filters[:legislation_year])
     |> apply_legislation_search_filter(filters[:search])
+    |> apply_legislation_agency_filter(filters[:agency])
   end
 
   defp apply_legislation_type_filter(query, nil), do: query
@@ -615,6 +616,19 @@ defmodule EhsEnforcement.Enforcement do
   defp apply_legislation_search_filter(query, pattern) when is_binary(pattern) do
     # Search in legislation title using ILIKE for broad compatibility
     Ash.Query.filter(query, ilike(legislation_title, ^pattern))
+  end
+
+  defp apply_legislation_agency_filter(query, nil), do: query
+  defp apply_legislation_agency_filter(query, agency_code) when is_atom(agency_code) do
+    # Filter legislation used by specific agency through either:
+    # 1. Cases: offences → cases → agency
+    # 2. Notices: offences → notices → agency
+    Ash.Query.filter(query, 
+      exists(offences, 
+        exists(case, agency.code == ^agency_code) or
+        exists(notice, agency.code == ^agency_code)
+      )
+    )
   end
 
   # Fuzzy search functions using pg_trgm trigram similarity

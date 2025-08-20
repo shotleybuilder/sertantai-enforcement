@@ -64,6 +64,10 @@ defmodule EhsEnforcement.Enforcement.Legislation do
     update_timestamp :updated_at
   end
 
+  relationships do
+    has_many :offences, EhsEnforcement.Enforcement.Offence
+  end
+
   identities do
     # Prevent duplicates even with nil values  
     identity :unique_legislation, [:legislation_title, :legislation_year, :legislation_number] do
