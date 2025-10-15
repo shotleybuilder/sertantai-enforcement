@@ -171,9 +171,9 @@
                   <h3 class="text-lg font-medium text-gray-900 mb-4">Offence Details</h3>
                   
                   <%= cond do %>
-                    <% @case.offence_breaches || @case.offence_breaches_clean -> %>
+                    <% @case.computed_breaches_summary -> %>
                       <div class="prose max-w-none">
-                        <p class="text-sm text-gray-700 whitespace-pre-wrap"><%= @case.offence_breaches || @case.offence_breaches_clean %></p>
+                        <p class="text-sm text-gray-700 whitespace-pre-wrap"><%= @case.computed_breaches_summary %></p>
                       </div>
                     
                     <% @case.offence_result || @case.offence_action_type -> %>

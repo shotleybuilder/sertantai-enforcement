@@ -18,6 +18,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   alias EhsEnforcement.Scraping.ScrapeCoordinator
   alias EhsEnforcement.Scraping.ScrapeRequest
   alias EhsEnforcement.Scraping.ScrapeSession
+  alias EhsEnforcementWeb.Components.ProgressComponent
   alias AshPhoenix.Form
   alias Phoenix.PubSub
   
@@ -30,15 +31,14 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     # Check if manual scraping is enabled via feature flag
     manual_scraping_enabled = ScrapeCoordinator.scraping_enabled?(type: :manual, actor: socket.assigns[:current_user])
     
-    # Create AshPhoenix.Form for scraping parameters with agency and database defaults
+    # Create AshPhoenix.Form for scraping parameters with HSE defaults
     form = Form.for_create(ScrapeRequest, :create, as: "scrape_request", forms: [auto?: false]) 
     |> Form.validate(%{
       "agency" => "hse",
       "database" => "notices", 
       "country" => "All",
-      "date_from" => Date.add(Date.utc_today(), -30) |> Date.to_string(),
-      "date_to" => Date.utc_today() |> Date.to_string(),
-      "action_types" => ["enforcement_notice"]
+      "start_page" => "1",
+      "max_pages" => "10"
     })
     |> to_form()
     
@@ -56,16 +56,16 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
       scraping_task: nil,
       scraping_session_started_at: nil,  # Track when current scraping session began
       
-      # Progress tracking - notice-specific metrics
+      # Progress tracking - using standard field names for ProgressComponent compatibility
       progress: %{
         pages_processed: 0,
-        notices_found: 0,
-        notices_created: 0,
-        notices_created_current_page: 0,  # New: track created notices on current page
-        notices_updated: 0,               # New: track total updated notices
-        notices_updated_current_page: 0,  # New: track updated notices on current page
-        notices_exist_total: 0,
-        notices_exist_current_page: 0,
+        cases_found: 0,
+        cases_created: 0,
+        cases_created_current_page: 0,  # Track created notices on current page
+        cases_updated: 0,               # Track total updated notices
+        cases_updated_current_page: 0,  # Track updated notices on current page
+        cases_exist_total: 0,
+        cases_exist_current_page: 0,
         errors_count: 0,
         current_page: nil,
         status: :idle
@@ -129,27 +129,31 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   def handle_event("validate", %{"scrape_request" => params}, socket) do
     # Get selected agency and set appropriate defaults
     selected_agency = case params["agency"] do
-      "environment_agency" -> :environment_agency
+      "ea" -> :ea
       "hse" -> :hse
       _ -> :hse  # Default to HSE
     end
     
-    # Set agency-specific defaults
+    # Set agency-specific defaults - follow case scraping patterns exactly
     params_with_defaults = case selected_agency do
-      :environment_agency ->
+      :ea ->
         params
-        |> Map.put("agency", "environment_agency")
+        |> Map.put("agency", "ea")  # Keep as string like case scraping
         |> Map.put("action_types", ["enforcement_notice"])
         |> Map.put_new("date_from", Date.add(Date.utc_today(), -30) |> Date.to_string())
         |> Map.put_new("date_to", Date.utc_today() |> Date.to_string())
-        |> Map.delete("database")  # EA doesn't use database parameter
-        |> Map.delete("country")   # EA doesn't use country parameter
+        |> Map.delete("database")    # EA doesn't use database parameter
+        |> Map.delete("country")     # EA doesn't use country parameter
+        |> Map.delete("start_page")  # EA doesn't use page parameters
+        |> Map.delete("max_pages")   # EA doesn't use page parameters
         
       :hse ->
         params
         |> Map.put("agency", "hse")
         |> Map.put("database", "notices")
         |> Map.put_new("country", "All")
+        |> Map.put_new("start_page", "1")
+        |> Map.put_new("max_pages", "10")
         |> Map.delete("action_types")  # HSE doesn't use action_types for notices
         |> Map.delete("date_from")     # HSE doesn't use date range
         |> Map.delete("date_to")
@@ -178,8 +182,8 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
       case Form.submit(validated_form, params: params_with_notices) do
         {:ok, scrape_request} ->
           # Extract validated parameters from the created resource
-          # Note: max_pages field now represents "end page" instead of "number of pages"
-          end_page = scrape_request.max_pages
+          # Note: end_page field represents the last page number to scrape
+          end_page = scrape_request.end_page
           start_page = scrape_request.start_page
           pages_to_scrape = max(1, end_page - start_page + 1)
           
@@ -318,13 +322,13 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     socket = assign(socket, 
       progress: %{
         pages_processed: 0,
-        notices_found: 0,
-        notices_created: 0,
-        notices_created_current_page: 0,
-        notices_updated: 0,
-        notices_updated_current_page: 0,
-        notices_exist_total: 0,
-        notices_exist_current_page: 0,
+        cases_found: 0,
+        cases_created: 0,
+        cases_created_current_page: 0,
+        cases_updated: 0,
+        cases_updated_current_page: 0,
+        cases_exist_total: 0,
+        cases_exist_current_page: 0,
         errors_count: 0,
         current_page: nil,
         status: :idle
@@ -594,44 +598,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     config.real_time_progress_enabled
   end
   
-  defp progress_percentage(progress) do
-    case progress.status do
-      :idle -> 0
-      :running when progress.pages_processed == 0 -> 5
-      :running -> 
-        # Calculate based on pages processed vs max pages
-        total_pages = max(1, progress.max_pages || 1)
-        processed = progress.pages_processed
-        # Ensure we don't exceed 95% until completed
-        min(95, (processed / total_pages) * 100)
-      :completed -> 100
-      :stopped -> 
-        min(100, progress.pages_processed * 10)
-      _ -> 0
-    end
-  end
-  
-  defp status_color(status) do
-    case status do
-      :idle -> "bg-gray-200"
-      :running -> "bg-blue-500"
-      :processing_page -> "bg-yellow-500"
-      :completed -> "bg-green-500"
-      :stopped -> "bg-red-500"
-      _ -> "bg-gray-200"
-    end
-  end
-  
-  defp status_text(status) do
-    case status do
-      :idle -> "Ready to scrape notices"
-      :running -> "Scraping notices in progress..."
-      :processing_page -> "Processing notice page..."
-      :completed -> "Notice scraping completed"
-      :stopped -> "Notice scraping stopped"
-      _ -> "Unknown status"
-    end
-  end
+  # Custom progress functions removed - now using unified ProgressComponent
   
 
   # Pure Ash scraping function - updates ScrapeSession for progress tracking

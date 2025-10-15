@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-A508647F.js"></script>
+    <script defer src="dist/sidebar_items-0F1B8CFA.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -130,24 +130,6 @@ Stores authentication tokens and session management.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="EhsEnforcement.Agencies.Ea.CaseProcessor.html" translate="no">EhsEnforcement.Agencies.Ea.CaseProcessor</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>EA case processing pipeline - transforms scraped EA data for Ash resource creation.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="EhsEnforcement.Agencies.Ea.CaseProcessor.ProcessedEaCase.html" translate="no">EhsEnforcement.Agencies.Ea.CaseProcessor.ProcessedEaCase</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Struct representing an EA case ready for Ash resource creation</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="EhsEnforcement.Agencies.Ea.DataTransformer.html" translate="no">EhsEnforcement.Agencies.Ea.DataTransformer</a>
 
   </div>
@@ -197,12 +179,12 @@ Handles parsing and linking of HSE breach data to legislation records.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="EhsEnforcement.Agencies.Hse.NoticeScraper.html" translate="no">EhsEnforcement.Agencies.Hse.NoticeScraper</a>
+    <a href="EhsEnforcement.Agencies.Hse.DataTransformer.html" translate="no">EhsEnforcement.Agencies.Hse.DataTransformer</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>HSE notice scraper module.
-Handles scraping of HSE enforcement notice data from the HSE website with rate limiting.</p></div>
+    <div class="summary-synopsis"><p>Transforms raw HSE enforcement data into standardized format compatible 
+with Ash Case and Notice resource structures.</p></div>
 
 </div>
 <div class="summary-row">
@@ -211,8 +193,7 @@ Handles scraping of HSE enforcement notice data from the HSE website with rate l
 
   </div>
 
-    <div class="summary-synopsis"><p>HSE notices processing module.
-Handles fetching, processing, and storing HSE enforcement notice data.</p></div>
+    <div class="summary-synopsis"><p>DEPRECATED: Legacy HSE notices processing module.</p></div>
 
 </div>
 <div class="summary-row">
@@ -220,6 +201,16 @@ Handles fetching, processing, and storing HSE enforcement notice data.</p></div>
     <a href="EhsEnforcement.Agencies.Hse.Notices.HSENotice.html" translate="no">EhsEnforcement.Agencies.Hse.Notices.HSENotice</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Agencies.Hse.OffenderMatcher.html" translate="no">EhsEnforcement.Agencies.Hse.OffenderMatcher</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Matches HSE enforcement records to existing offenders or creates new ones.
+Handles company name variations, address normalization, and HSE-specific business logic.</p></div>
 
 </div>
 <div class="summary-row">
@@ -314,16 +305,6 @@ Handles fetching, processing, and storing HSE enforcement notice data.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="EhsEnforcement.Enforcement.Breach.html" translate="no">EhsEnforcement.Enforcement.Breach</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Represents a specific breach of legislation associated with a case.
-Normalized from the breaches text in cases.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="EhsEnforcement.Enforcement.Case.html" translate="no">EhsEnforcement.Enforcement.Case</a>
 
   </div>
@@ -393,6 +374,15 @@ Normalized from the breaches text in cases.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Legislation.html" translate="no">EhsEnforcement.Enforcement.Legislation</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents legislation that can be referenced in enforcement actions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="EhsEnforcement.Enforcement.Metrics.html" translate="no">EhsEnforcement.Enforcement.Metrics</a>
 
   </div>
@@ -425,6 +415,15 @@ Normalized from the breaches text in cases.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="EhsEnforcement.Enforcement.Offence.html" translate="no">EhsEnforcement.Enforcement.Offence</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Unified resource representing legislative breaches and violations in enforcement actions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="EhsEnforcement.Enforcement.Offender.html" translate="no">EhsEnforcement.Enforcement.Offender</a>
 
   </div>
@@ -450,15 +449,6 @@ Combines court cases and enforcement notices for Recent Activity table.</p></div
   </div>
 
     <div class="summary-synopsis"><p>Unified case processor that handles case creation/updates for all agencies.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="EhsEnforcement.Enforcement.Violation.html" translate="no">EhsEnforcement.Enforcement.Violation</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Represents an individual violation within an EA enforcement case.</p></div>
 
 </div>
 <div class="summary-row">
@@ -795,6 +785,24 @@ circuit breaker patterns, rate limiting, and performance monitoring.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Ea.CaseProcessor.html" translate="no">EhsEnforcement.Scraping.Ea.CaseProcessor</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>EA case processing pipeline - transforms scraped EA data for Ash resource creation.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Ea.CaseProcessor.ProcessedEaCase.html" translate="no">EhsEnforcement.Scraping.Ea.CaseProcessor.ProcessedEaCase</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Struct representing an EA case ready for Ash resource creation</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="EhsEnforcement.Scraping.Ea.CaseScraper.html" translate="no">EhsEnforcement.Scraping.Ea.CaseScraper</a>
 
   </div>
@@ -828,6 +836,33 @@ circuit breaker patterns, rate limiting, and performance monitoring.</p></div>
 
     <div class="summary-synopsis"><p>Handles systematic historical scraping of EA enforcement data.
 Manages date range chunking to handle 2000-record limits.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Ea.NoticeProcessor.html" translate="no">EhsEnforcement.Scraping.Ea.NoticeProcessor</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>EA Notice processing pipeline - transforms scraped enforcement notice data for Ash resource creation.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Ea.NoticeProcessor.ProcessedEaNotice.html" translate="no">EhsEnforcement.Scraping.Ea.NoticeProcessor.ProcessedEaNotice</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Struct representing an EA enforcement notice ready for Ash resource creation.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Ea.NoticeScraper.html" translate="no">EhsEnforcement.Scraping.Ea.NoticeScraper</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>EA Notice Scraper - Thin wrapper around EA CaseScraper for enforcement notices.</p></div>
 
 </div>
 <div class="summary-row">
@@ -882,6 +917,16 @@ Manages date range chunking to handle 2000-record limits.</p></div>
   </div>
 
     <div class="summary-synopsis"><p>Struct representing a notice ready for Ash resource creation</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcement.Scraping.Hse.NoticeScraper.html" translate="no">EhsEnforcement.Scraping.Hse.NoticeScraper</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>HSE notice scraper module.
+Handles scraping of HSE enforcement notice data from the HSE website with rate limiting.</p></div>
 
 </div>
 <div class="summary-row">
@@ -1183,6 +1228,15 @@ as controllers, components, channels, and so on.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="EhsEnforcementWeb.Components.LegislationActionCard.html" translate="no">EhsEnforcementWeb.Components.LegislationActionCard</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Legislation action card component for the dashboard.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="EhsEnforcementWeb.Components.NoticesActionCard.html" translate="no">EhsEnforcementWeb.Components.NoticesActionCard</a>
 
   </div>
@@ -1309,6 +1363,20 @@ as controllers, components, channels, and so on.</p></div>
   </div>
 
     <div class="summary-synopsis"><p>This module holds different layouts used by your application.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.LegislationLive.Index.html" translate="no">EhsEnforcementWeb.LegislationLive.Index</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="EhsEnforcementWeb.LegislationLive.Show.html" translate="no">EhsEnforcementWeb.LegislationLive.Show</a>
+
+  </div>
 
 </div>
 <div class="summary-row">

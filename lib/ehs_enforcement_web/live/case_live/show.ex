@@ -19,7 +19,7 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
   def handle_params(%{"id" => id}, _url, socket) do
     try do
       # Load case with all related data
-      case = Enforcement.get_case!(id, load: [:offender, :agency, :breaches])
+      case = Enforcement.get_case!(id, load: [:offender, :agency, :computed_breaches_summary])
       
       # Subscribe to updates for this specific case
       Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:#{id}")
@@ -136,7 +136,7 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
     if socket.assigns.case && socket.assigns.case.id == updated_case.id do
       # Reload the case with full associations
       try do
-        refreshed_case = Enforcement.get_case!(updated_case.id, load: [:offender, :agency])
+        refreshed_case = Enforcement.get_case!(updated_case.id, load: [:offender, :agency, :computed_breaches_summary])
         {:noreply, assign(socket, :case, refreshed_case)}
       rescue
         _ ->

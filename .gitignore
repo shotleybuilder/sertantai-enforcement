@@ -88,6 +88,9 @@ Thumbs.db
 *.bak
 *.orig
 
+# Archived files
+*.OLD
+
 # Development tools
 .elixir_ls/
 .lexical/
@@ -95,6 +98,11 @@ Thumbs.db
 # Docker
 .docker/
 docker-compose.override.yml
+docker-compose.dev.yml.local
+
+# Docker volumes (development)
+postgres_dev_data/
+redis_dev_data/
 
 # Temporary extraction files (for this project)
 temp_extraction/

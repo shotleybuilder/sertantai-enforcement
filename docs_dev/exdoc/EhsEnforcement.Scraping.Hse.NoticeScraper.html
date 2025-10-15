@@ -8,11 +8,11 @@
     <meta name="project" content="ehs_enforcement v0.1.0">
 
 
-    <title>EhsEnforcement.Agencies.Ea.CaseProcessor — ehs_enforcement v0.1.0</title>
+    <title>EhsEnforcement.Scraping.Hse.NoticeScraper — ehs_enforcement v0.1.0</title>
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-A508647F.js"></script>
+    <script defer src="dist/sidebar_items-0F1B8CFA.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -75,7 +75,7 @@ ehs_enforcement
 <div id="top-content">
   <div class="heading-with-actions top-heading">
     <h1>
-      <span translate="no">EhsEnforcement.Agencies.Ea.CaseProcessor</span> 
+      <span translate="no">EhsEnforcement.Scraping.Hse.NoticeScraper</span> 
       <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
 
     </h1>
@@ -84,7 +84,8 @@ ehs_enforcement
 
 
     <section id="moduledoc">
-<p>EA case processing pipeline - transforms scraped EA data for Ash resource creation.</p><p>Handles:</p><ul><li>EA data transformation from EaDetailRecord to Ash Case resource format</li><li>Multi-violation scenario detection and Violation resource creation</li><li>Integration with existing DataTransformer for field mapping</li><li>Offender matching/creation using company registration numbers</li><li>Environmental impact and legal framework processing</li></ul>
+<p>HSE notice scraper module.
+Handles scraping of HSE enforcement notice data from the HSE website with rate limiting.</p><p>The <code class="inline">get_hse_notices/2</code> function retrieves a list of HSE notices based on the specified page number and country.</p><p>The <a href="#get_notice_details/1"><code class="inline">get_notice_details/1</code></a> function retrieves the details of a specific HSE notice based on the notice number.</p><p>The <a href="#get_notice_breaches/1"><code class="inline">get_notice_breaches/1</code></a> function retrieves the breaches associated with a specific HSE notice based on the notice number.</p><p>All functions include ethical rate limiting to respect HSE website resources.</p>
     </section>
 
 </div>
@@ -103,61 +104,25 @@ ehs_enforcement
 
     <div class="summary-row">
       <div class="summary-signature">
-        <a href="#create_case_violations/3" data-no-tooltip="" translate="no">create_case_violations(case_record, violations_data, actor \\ nil)</a>
+        <a href="#get_hse_notices/1" data-no-tooltip="" translate="no">get_hse_notices(list)</a>
 
       </div>
-
-        <div class="summary-synopsis"><p>Create Violation resources for EA multi-violation cases.</p></div>
 
     </div>
 
     <div class="summary-row">
       <div class="summary-signature">
-        <a href="#create_ea_case/2" data-no-tooltip="" translate="no">create_ea_case(processed_case, actor \\ nil)</a>
+        <a href="#get_notice_breaches/1" data-no-tooltip="" translate="no">get_notice_breaches(notice_number)</a>
 
       </div>
-
-        <div class="summary-synopsis"><p>Create Ash Case resource from processed EA case data.</p></div>
 
     </div>
 
     <div class="summary-row">
       <div class="summary-signature">
-        <a href="#process_and_create_case/2" data-no-tooltip="" translate="no">process_and_create_case(ea_record_or_transformed, actor \\ nil)</a>
+        <a href="#get_notice_details/1" data-no-tooltip="" translate="no">get_notice_details(notice_number)</a>
 
       </div>
-
-        <div class="summary-synopsis"><p>Process a single EA record and create Ash Case resource immediately.</p></div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#process_and_create_case_with_status/2" data-no-tooltip="" translate="no">process_and_create_case_with_status(processed_case, actor \\ nil)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Behavior implementation: Process and create case with status for UI display.</p></div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#process_ea_case/1" data-no-tooltip="" translate="no">process_ea_case(ea_record)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Process a single EA detail record into format ready for Ash Case resource creation.</p></div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#process_ea_cases/1" data-no-tooltip="" translate="no">process_ea_cases(ea_records)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Process multiple EA detail records in batch.</p></div>
 
     </div>
 
@@ -174,16 +139,14 @@ ehs_enforcement
       <span class="text">Functions</span>
     </h1>
     <div class="functions-list">
-<section class="detail" id="create_case_violations/3">
-
-    <span id="create_case_violations/2"></span>
+<section class="detail" id="get_hse_notices/1">
 
   <div class="detail-header">
-    <a href="#create_case_violations/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+    <a href="#get_hse_notices/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
       <i class="ri-link-m" aria-hidden="true"></i>
     </a>
     <div class="heading-with-actions">
-      <h1 class="signature" translate="no">create_case_violations(case_record, violations_data, actor \\ nil)</h1>
+      <h1 class="signature" translate="no">get_hse_notices(list)</h1>
 
 
     </div>
@@ -191,19 +154,17 @@ ehs_enforcement
 
   <section class="docstring">
 
-<p>Create Violation resources for EA multi-violation cases.</p><p>Returns {:ok, violations} or {:error, reason}</p>
+
   </section>
 </section>
-<section class="detail" id="create_ea_case/2">
-
-    <span id="create_ea_case/1"></span>
+<section class="detail" id="get_notice_breaches/1">
 
   <div class="detail-header">
-    <a href="#create_ea_case/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+    <a href="#get_notice_breaches/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
       <i class="ri-link-m" aria-hidden="true"></i>
     </a>
     <div class="heading-with-actions">
-      <h1 class="signature" translate="no">create_ea_case(processed_case, actor \\ nil)</h1>
+      <h1 class="signature" translate="no">get_notice_breaches(notice_number)</h1>
 
 
     </div>
@@ -211,19 +172,17 @@ ehs_enforcement
 
   <section class="docstring">
 
-<p>Create Ash Case resource from processed EA case data.</p><p>Returns {:ok, case} or {:error, ash_error}</p>
+
   </section>
 </section>
-<section class="detail" id="process_and_create_case/2">
-
-    <span id="process_and_create_case/1"></span>
+<section class="detail" id="get_notice_details/1">
 
   <div class="detail-header">
-    <a href="#process_and_create_case/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+    <a href="#get_notice_details/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
       <i class="ri-link-m" aria-hidden="true"></i>
     </a>
     <div class="heading-with-actions">
-      <h1 class="signature" translate="no">process_and_create_case(ea_record_or_transformed, actor \\ nil)</h1>
+      <h1 class="signature" translate="no">get_notice_details(notice_number)</h1>
 
 
     </div>
@@ -231,64 +190,7 @@ ehs_enforcement
 
   <section class="docstring">
 
-<p>Process a single EA record and create Ash Case resource immediately.</p><p>Handles multi-violation scenarios by creating both Case and Violation resources.
-Returns {:ok, case} or {:error, reason}</p>
-  </section>
-</section>
-<section class="detail" id="process_and_create_case_with_status/2">
 
-    <span id="process_and_create_case_with_status/1"></span>
-
-  <div class="detail-header">
-    <a href="#process_and_create_case_with_status/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">process_and_create_case_with_status(processed_case, actor \\ nil)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Behavior implementation: Process and create case with status for UI display.</p>
-  </section>
-</section>
-<section class="detail" id="process_ea_case/1">
-
-  <div class="detail-header">
-    <a href="#process_ea_case/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">process_ea_case(ea_record)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Process a single EA detail record into format ready for Ash Case resource creation.</p><p>Returns {:ok, %ProcessedEaCase{}} or {:error, reason}</p>
-  </section>
-</section>
-<section class="detail" id="process_ea_cases/1">
-
-  <div class="detail-header">
-    <a href="#process_ea_cases/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">process_ea_cases(ea_records)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Process multiple EA detail records in batch.</p><p>Returns {:ok, [%ProcessedEaCase{}]} or {:error, reason}</p>
   </section>
 </section>
 

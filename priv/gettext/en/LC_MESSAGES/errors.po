@@ -110,3 +110,7 @@ msgstr ""
 
 msgid "must be equal to %{number}"
 msgstr ""
+
+## From Ecto.Changeset.validate_inclusion/3
+msgid "must be in %{list}"
+msgstr ""
