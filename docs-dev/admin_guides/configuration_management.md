@@ -10,9 +10,9 @@ The Configuration Management interface provides centralized control over system 
 
 ## Accessing Configuration Management
 
-1. **Login Requirements:** Must be logged in with admin privileges
+1. **Login Requirements:** Must be logged in with admin privileges - see [Authentication Guide](authentication.md)
 2. **Navigate to:** `/admin/config`
-3. **Prerequisites:** Admin user account with proper permissions
+3. **Prerequisites:** Admin user account with proper permissions (GitHub username in `GITHUB_ALLOWED_USERS`)
 
 ## Interface Layout
 

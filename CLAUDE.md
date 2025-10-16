@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## DEVELOPER DOCUMENTATION
+
+**📚 Comprehensive developer guides are available in `docs-dev/`:**
+
+- **[docs-dev/GETTING_STARTED.md](docs-dev/GETTING_STARTED.md)** - Initial setup and prerequisites
+- **[docs-dev/DEVELOPMENT_WORKFLOW.md](docs-dev/DEVELOPMENT_WORKFLOW.md)** - Day-to-day development process
+- **[docs-dev/TESTING_GUIDE.md](docs-dev/TESTING_GUIDE.md)** - Testing patterns and best practices
+- **[docs-dev/TROUBLESHOOTING.md](docs-dev/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[scripts/README.md](scripts/README.md)** - Complete reference for all helper scripts
+
+**For a complete overview, see [docs-dev/README.md](docs-dev/README.md)**
+
 ## BUILD SUMMARIES
 
 - **SAVE** Save build summaries to ~/Desktop/claude_build_summaries/[title of build summary].md

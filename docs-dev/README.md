@@ -2,11 +2,49 @@
 
 This directory contains all developer-focused documentation for the EHS Enforcement application.
 
+## Quick Start for Developers
+
+**New to the project?** Start here:
+
+1. **[GETTING_STARTED.md](GETTING_STARTED.md)** - Set up your development environment (5 minutes)
+2. **[DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md)** - Learn the day-to-day development process
+3. **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Testing patterns and best practices
+4. **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
+
+## Developer Guides
+
+### Core Workflow Documentation
+
+| Guide | Description | When to Use |
+|-------|-------------|-------------|
+| [GETTING_STARTED.md](GETTING_STARTED.md) | Initial setup and prerequisites | First time setup, new developers |
+| [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) | Day-to-day development process | Daily development, feature work |
+| [TESTING_GUIDE.md](TESTING_GUIDE.md) | Testing patterns and strategies | Writing tests, debugging tests |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and solutions | When things break, debugging |
+
+### Scripts and Automation
+
+| Resource | Description |
+|----------|-------------|
+| [../scripts/README.md](../scripts/README.md) | Complete reference for all helper scripts |
+| [../scripts/deployment/README.md](../scripts/deployment/README.md) | Deployment automation scripts |
+
+### Project-Level Documentation
+
+| File | Description |
+|------|-------------|
+| [../CLAUDE.md](../CLAUDE.md) | **Critical Ash Framework rules and conventions** |
+| [../README.md](../README.md) | Project overview and quick reference |
+
 ## Structure Overview
 
 ```
-docs_dev/
-├── README.md                          # This file - dev docs overview
+docs-dev/
+├── README.md                          # This file - documentation index
+├── GETTING_STARTED.md                # ⭐ New developer setup guide
+├── DEVELOPMENT_WORKFLOW.md           # ⭐ Day-to-day development guide
+├── TESTING_GUIDE.md                  # ⭐ Testing patterns and practices
+├── TROUBLESHOOTING.md                # ⭐ Common issues and solutions
 ├── DOCS_PLAN.md                      # Documentation automation plan
 ├── admin_guides/                      # Admin interface guides
 │   ├── configuration_management.md   # /admin/config guide
@@ -15,17 +53,24 @@ docs_dev/
 │   ├── scraping_overview.md          # /admin/scraping guide
 │   ├── cases.md                      # General case admin guide
 │   └── hse_cases.md                  # HSE-specific admin guide
-├── exdoc/                            # Generated API documentation
-│   ├── index.html                    # Main ExDoc entry point
-│   ├── api-reference.html            # Module reference
-│   ├── search.html                   # Documentation search
-│   └── [150+ module documentation files]
+├── dev/                              # Technical documentation
+│   ├── deployment/                   # Deployment guides
+│   ├── pubsub/                       # PubSub documentation
+│   └── [other technical docs]
 ├── plan/                             # Planning and architecture docs
 │   ├── IMPLEMENTATION_PLAN.md
 │   ├── PHASE_3_LIVEVIEW_UI_PLAN.md
-│   └── [5 other planning documents]
-└── [15 technical documentation files] # Architecture, deployment, schemas
+│   └── [other planning documents]
+└── research/                         # Research and analysis docs
 ```
+
+### Generated API Documentation
+
+Located in `docs_dev/exdoc/` (note: underscore, not hyphen):
+- **Main entry**: `docs_dev/exdoc/index.html`
+- **150+ modules** documented with ExDoc
+- **Searchable** API reference
+- **Regenerate**: `mix docs`
 
 ## Documentation Categories
 

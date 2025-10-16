@@ -6,6 +6,7 @@ This directory contains comprehensive administrative documentation for the EHS E
 
 | Guide | Purpose | Route | Key Features |
 |-------|---------|-------|-------------|
+| **[Authentication](authentication.md)** | **Admin access and login** | `/admin` | **GitHub OAuth, user allowlist, access control** |
 | [Import and Sync Operations](import_sync_guide.md) | Data import and synchronization from Airtable | `/admin/sync` | Real-time progress, batch processing, error recovery |
 | [General Cases Guide](cases.md) | Overview of HSE case administration | Various | System overview, troubleshooting |
 | [Scraping Overview](scraping_overview.md) | Central monitoring dashboard | `/admin/scraping` | Performance metrics, analytics |
@@ -46,16 +47,17 @@ The EHS Enforcement system automatically collects, processes, and manages enforc
 ## Getting Started
 
 ### Prerequisites
-- Admin user account with proper permissions
+- **Admin user account with proper permissions** - See [Authentication Guide](authentication.md) for setup
 - Valid scraping configuration (auto-created if missing)
 - Network access to HSE website
 - Environment variables configured (e.g., `AT_UK_E_API_KEY`)
 
 ### Initial Setup
-1. **Access Admin Interface**: Navigate to admin dashboard
-2. **Check Configuration**: Visit `/admin/config` to verify settings
-3. **Test Collection**: Use small manual scraping sessions
-4. **Monitor Results**: Review data quality and system performance
+1. **Set Up Admin Access**: Configure GitHub OAuth authentication - [See Authentication Guide](authentication.md)
+2. **Log In**: Sign in with authorized GitHub account
+3. **Check Configuration**: Visit `/admin/config` to verify settings
+4. **Test Collection**: Use small manual scraping sessions
+5. **Monitor Results**: Review data quality and system performance
 
 ### Daily Operations
 1. **Check Dashboard**: Review system status and recent activity
@@ -88,7 +90,8 @@ The EHS Enforcement system automatically collects, processes, and manages enforc
 - **Error Handling**: Graceful failure management
 
 ### Data Protection
-- **Access Control**: Admin-only interfaces with authentication
+- **Access Control**: Admin-only interfaces with GitHub OAuth authentication - [See Authentication Guide](authentication.md)
+- **User Allowlist**: Configurable list of authorized GitHub users
 - **Audit Trails**: Complete logging of administrative actions
 - **Secure Storage**: Encrypted data transmission and storage
 - **No Personal Data**: Focus on organizational enforcement data only
