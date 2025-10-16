@@ -31,8 +31,8 @@ IMAGE_NAME="ghcr.io/shotleybuilder/ehs-enforcement"
 IMAGE_TAG="${1:-latest}"
 FULL_IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
 
-# Navigate to project root (parent of scripts/)
-cd "$(dirname "$0")/.."
+# Navigate to project root (two levels up from scripts/deployment/)
+cd "$(dirname "$0")/../.."
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}  EHS Enforcement - Docker Build${NC}"
