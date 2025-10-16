@@ -32,8 +32,21 @@ defmodule EhsEnforcementWeb.AuthController do
   end
 
   def sign_out(conn, _params) do
+    # Clear session with error handling for token revocation failures
+    conn =
+      try do
+        clear_session(conn, :ehs_enforcement)
+      rescue
+        error ->
+          # Log the error but still allow logout to succeed
+          require Logger
+          Logger.error("Error during token revocation on logout: #{inspect(error)}")
+
+          # Fallback to basic session clearing
+          Plug.Conn.clear_session(conn)
+      end
+
     conn
-    |> clear_session(:ehs_enforcement)
     |> put_flash(:info, "Successfully signed out")
     |> redirect(to: "/")
   end
