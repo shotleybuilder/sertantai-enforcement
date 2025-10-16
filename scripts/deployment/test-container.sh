@@ -36,8 +36,8 @@ NC='\033[0m' # No Color
 COMPOSE_FILE="docker-compose.dev.yml"
 IMAGE_NAME="ghcr.io/shotleybuilder/ehs-enforcement:latest"
 
-# Navigate to project root
-cd "$(dirname "$0")/.."
+# Navigate to project root (two levels up from scripts/deployment/)
+cd "$(dirname "$0")/../.."
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}  EHS Enforcement - Local Container Test${NC}"
