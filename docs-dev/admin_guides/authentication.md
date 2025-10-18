@@ -327,6 +327,125 @@ config[:allowed_users]
 
 ---
 
+### Admin Dashboard Button Not Appearing (Production Only)
+
+**Symptom**: User logs in successfully but "ADMIN DASHBOARD" button doesn't appear in production, even though username is in `GITHUB_ALLOWED_USERS`
+
+**Root Cause**: Environment variable handling difference between dev and production
+
+#### Technical Background
+
+**In Development**:
+```bash
+# When GITHUB_ACCESS_TOKEN is not set in .env
+System.get_env("GITHUB_ACCESS_TOKEN")  # Returns: nil
+```
+
+**In Production (Docker Compose)**:
+```yaml
+# docker-compose.yml uses default value syntax
+environment:
+  - GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN:-}
+                                        # ^^^ Defaults to empty string if not in .env
+```
+
+When `GITHUB_ACCESS_TOKEN` is not in the server's `.env` file:
+```bash
+System.get_env("GITHUB_ACCESS_TOKEN")  # Returns: "" (empty string, NOT nil)
+```
+
+#### The Bug
+
+The admin check code had:
+```elixir
+# Old (broken) code
+cond do
+  not is_nil(access_token) and not is_nil(owner) and not is_nil(repo) ->
+    # Use repository-based check
+    check_user_repository_access(...)
+
+  is_list(allowed_users) and length(allowed_users) > 0 ->
+    # Use allow list
+    user.github_login in allowed_users
+end
+```
+
+**Problem**: Empty string `""` is **not nil**, so production chose repository-based check (which failed because owner/repo were also empty strings) instead of falling through to the allow list.
+
+**Result**:
+- ✅ Dev worked: `nil` → Falls through to allow list
+- ❌ Production broken: `""` (not nil) → Tries repository check with empty values → Returns false
+
+#### The Fix
+
+Changed to check for **non-empty strings**:
+```elixir
+# New (fixed) code
+cond do
+  is_binary(access_token) and access_token != "" and
+  is_binary(owner) and owner != "" and
+  is_binary(repo) and repo != "" ->
+    # Use repository-based check
+    check_user_repository_access(...)
+
+  is_list(allowed_users) and length(allowed_users) > 0 ->
+    # Use allow list
+    user.github_login in allowed_users
+end
+```
+
+Now empty strings are correctly treated as "not configured", matching dev behavior.
+
+**Fixed in**: Commit `ac064cc` (2025-10-16)
+
+#### Solutions
+
+**Option 1: Ensure Fix is Deployed** (Recommended)
+```bash
+# This fix is in the codebase as of 2025-10-16
+# Ensure production is running latest version
+ssh sertantai
+cd ~/infrastructure/docker
+docker compose pull ehs-enforcement
+docker compose up -d ehs-enforcement
+```
+
+**Option 2: Clean Up Docker Compose** (Optional)
+```yaml
+# Remove the :- defaults if you want explicit failures
+environment:
+  - GITHUB_ALLOWED_USERS=${GITHUB_ALLOWED_USERS}  # No default
+  # Only set these if using repository-based admin:
+  - GITHUB_ACCESS_TOKEN=${GITHUB_ACCESS_TOKEN}    # No default
+```
+
+**Option 3: Verify Admin Config**
+
+Use the debug task to see exactly what's configured:
+```bash
+# On production server
+docker compose exec ehs-enforcement /app/bin/ehs_enforcement eval "Mix.Tasks.DebugAdmin.run([\"your_username\"])"
+```
+
+Should show:
+```
+✓ Using allow list admin check
+  ✅ 'your_username' IS in the allow list
+🎯 Result: ✅ ADMIN
+```
+
+#### Key Takeaway
+
+**Docker Compose environment variable defaults** behave differently than unset variables:
+- `${VAR:-default}` → Sets to `default` if `VAR` not in `.env`
+- `${VAR}` → Sets to empty string if `VAR` not in `.env`
+- Unset in dev → Returns `nil` from `System.get_env()`
+- Empty string in prod → Returns `""` from `System.get_env()`
+
+Always check for **both nil AND empty string** when testing if environment variables are "set".
+
+---
+
 ### GitHub OAuth App Not Found
 
 **Symptom**: OAuth error, invalid client ID
