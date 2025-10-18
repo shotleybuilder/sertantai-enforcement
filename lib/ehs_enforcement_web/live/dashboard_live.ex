@@ -536,37 +536,46 @@ defmodule EhsEnforcementWeb.DashboardLive do
       "year" -> {365, "Last 365 Days"}
       _ -> {30, "Last 30 Days"}  # default fallback
     end
-    
+
     cutoff_date = Date.add(Date.utc_today(), -days_ago)
-    
+
     try do
-      # Use database-level filtering instead of loading all records
-      recent_date_filter = [offence_action_date: [gte: cutoff_date]]
-      
-      # Get recent cases with database filtering
-      recent_cases_list = EhsEnforcement.Enforcement.list_cases_with_filters!(
-        filter: recent_date_filter,
-        load: [:agency]
-      )
-      
-      # Get recent notices with database filtering
-      recent_notices_list = EhsEnforcement.Enforcement.list_notices_with_filters!(
-        filter: recent_date_filter,
-        load: [:agency]
-      )
-      
-      recent_cases_count = length(recent_cases_list)
-      recent_notices_count = length(recent_notices_list)
-      
-      # Calculate total fines from recent cases only
-      recent_total_fines = recent_cases_list
-      |> Enum.map(& &1.offence_fine || Decimal.new(0))
-      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
-      
-      # Get agency-specific stats for recent cases (based on selected period)
+      # OPTIMIZATION: Use efficient SQL queries instead of loading all records
+      # Get recent cases count and fines sum in single query
+      recent_cases_result = EhsEnforcement.Repo.query!("""
+        SELECT COUNT(*), COALESCE(SUM(offence_fine), 0)
+        FROM cases
+        WHERE offence_action_date >= $1
+      """, [cutoff_date])
+
+      [[recent_cases_count, recent_total_fines_float]] = recent_cases_result.rows
+      recent_total_fines = Decimal.from_float(recent_total_fines_float)
+
+      # Get recent notices count efficiently
+      recent_notices_result = EhsEnforcement.Repo.query!("""
+        SELECT COUNT(*)
+        FROM notices
+        WHERE offence_action_date >= $1
+      """, [cutoff_date])
+
+      [[recent_notices_count]] = recent_notices_result.rows
+
+      # Get agency-specific case counts efficiently with GROUP BY
+      agency_stats_result = EhsEnforcement.Repo.query!("""
+        SELECT agency_id, COUNT(*) as case_count
+        FROM cases
+        WHERE offence_action_date >= $1
+        GROUP BY agency_id
+      """, [cutoff_date])
+
+      # Map agency counts to agency info
+      agency_counts_map = Map.new(agency_stats_result.rows, fn [agency_id, count] ->
+        {agency_id, count}
+      end)
+
       agency_stats = Enum.map(agencies, fn agency ->
-        agency_recent_cases = Enum.count(recent_cases_list, & &1.agency_id == agency.id)
-        
+        agency_recent_cases = Map.get(agency_counts_map, agency.id, 0)
+
         %{
           agency_id: agency.id,
           agency_code: agency.code,
