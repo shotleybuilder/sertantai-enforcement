@@ -22,12 +22,28 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
-let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+// Safely get CSRF token with error handling
+let csrfToken = null
+const csrfMeta = document.querySelector("meta[name='csrf-token']")
+if (csrfMeta) {
+  csrfToken = csrfMeta.getAttribute("content")
+} else {
+  console.error("CSRF token meta tag not found - LiveView may not work correctly")
+}
+
+// Safely get timezone
+let timezone = "UTC"  // Default fallback
+try {
+  timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+} catch (error) {
+  console.warn("Could not detect timezone, using UTC:", error)
+}
+
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,  // Wait 2.5 seconds before falling back to longpoll
   params: {_csrf_token: csrfToken},
   metadata: {
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    timezone: timezone
   }
 })
 
