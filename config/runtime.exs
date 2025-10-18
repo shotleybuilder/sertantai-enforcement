@@ -107,6 +107,8 @@ if config_env() == :prod do
 
   config :ehs_enforcement, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  config :ehs_enforcement, :force_ssl, true
+
   config :ehs_enforcement, EhsEnforcementWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
@@ -125,7 +127,9 @@ if config_env() == :prod do
       "//www.legal.sertantai.com",
       "https://legal.sertantai.com",
       "https://www.legal.sertantai.com"
-    ]
+    ],
+    # Force SSL for secure session cookies
+    force_ssl: [hsts: true, rewrite_on: [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]]
   
   # GitHub OAuth configuration for production
   config :ehs_enforcement, :github_oauth,

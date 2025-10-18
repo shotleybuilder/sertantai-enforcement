@@ -8,7 +8,8 @@ defmodule EhsEnforcementWeb.Endpoint do
     store: :cookie,
     key: "_ehs_enforcement_key",
     signing_salt: "71P5v+1J",
-    same_site: "Lax"
+    same_site: "Lax",
+    secure: Application.compile_env(:ehs_enforcement, :force_ssl, false)
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
