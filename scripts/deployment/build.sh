@@ -83,8 +83,8 @@ if [ $? -eq 0 ]; then
     echo ""
 
     echo -e "${BLUE}Next steps:${NC}"
-    echo -e "  ${GREEN}→${NC} Test locally:  ${YELLOW}./scripts/test-container.sh${NC}"
-    echo -e "  ${GREEN}→${NC} Push to GHCR:  ${YELLOW}./scripts/push.sh${NC}"
+    echo -e "  ${GREEN}→${NC} Test locally:  ${YELLOW}./scripts/deployment/test-container.sh${NC}"
+    echo -e "  ${GREEN}→${NC} Push to GHCR:  ${YELLOW}./scripts/deployment/push.sh${NC}"
     echo ""
 else
     echo ""

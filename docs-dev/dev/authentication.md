@@ -579,9 +579,10 @@ Login URL (prod): https://legal.sertantai.com/admin
 
 ## Related Documentation
 
-- [Configuration Management Guide](configuration_management.md) - System configuration
-- [Scraping Overview](scraping_overview.md) - Admin dashboard overview
-- [Import & Sync Guide](import_sync_guide.md) - Data synchronization
+- [Configuration Management Guide](../../../docs/admin_guides/configuration_management.md) - System configuration
+- [Scraping Overview](../../../docs/admin_guides/scraping_overview.md) - Admin dashboard overview
+- [Import & Sync Guide](../../../docs/admin_guides/import_sync_guide.md) - Data synchronization
+- [Production Environment Setup](deployment/production_environment_setup.md) - Production deployment guide
 
 ---
 

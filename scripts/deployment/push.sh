@@ -82,7 +82,7 @@ if [ $? -eq 0 ]; then
     echo ""
 
     echo -e "${BLUE}Next steps:${NC}"
-    echo -e "  ${GREEN}→${NC} Deploy to production: ${YELLOW}./scripts/deploy-prod.sh${NC}"
+    echo -e "  ${GREEN}→${NC} Deploy to production: ${YELLOW}./scripts/deployment/deploy-prod.sh${NC}"
     echo -e "  ${GREEN}→${NC} Or SSH manually:      ${YELLOW}ssh sertantai${NC}"
     echo ""
 else

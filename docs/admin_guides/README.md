@@ -6,7 +6,7 @@ This directory contains comprehensive administrative documentation for the EHS E
 
 | Guide | Purpose | Route | Key Features |
 |-------|---------|-------|-------------|
-| **[Authentication](authentication.md)** | **Admin access and login** | `/admin` | **GitHub OAuth, user allowlist, access control** |
+| **[Authentication](../../docs-dev/dev/authentication.md)** | **Admin access and login** | `/admin` | **GitHub OAuth, user allowlist, access control** |
 | [Import and Sync Operations](import_sync_guide.md) | Data import and synchronization from Airtable | `/admin/sync` | Real-time progress, batch processing, error recovery |
 | [General Cases Guide](cases.md) | Overview of HSE case administration | Various | System overview, troubleshooting |
 | [Scraping Overview](scraping_overview.md) | Central monitoring dashboard | `/admin/scraping` | Performance metrics, analytics |
@@ -47,7 +47,7 @@ The EHS Enforcement system automatically collects, processes, and manages enforc
 ## Getting Started
 
 ### Prerequisites
-- **Admin user account with proper permissions** - See [Authentication Guide](authentication.md) for setup
+- **Admin user account with proper permissions** - See [Authentication Guide](../../docs-dev/dev/authentication.md) for setup
 - Valid scraping configuration (auto-created if missing)
 - Network access to HSE website
 - Environment variables configured (e.g., `AT_UK_E_API_KEY`)
