@@ -107,8 +107,6 @@ if config_env() == :prod do
 
   config :ehs_enforcement, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
-  config :ehs_enforcement, :force_ssl, true
-
   config :ehs_enforcement, EhsEnforcementWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
