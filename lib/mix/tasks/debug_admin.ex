@@ -45,7 +45,10 @@ defmodule Mix.Tasks.DebugAdmin do
 
       result =
         cond do
-          not is_nil(access_token) and not is_nil(owner) and not is_nil(repo) ->
+          # Repository-based: all three must be present AND non-empty
+          is_binary(access_token) and access_token != "" and
+          is_binary(owner) and owner != "" and
+          is_binary(repo) and repo != "" ->
             IO.puts("\n✓ Using repository-based admin check")
             IO.puts("  Checking if '#{github_login}' is a collaborator on #{owner}/#{repo}...")
             check_repo_access(github_login, owner, repo, access_token)
