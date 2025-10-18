@@ -22,16 +22,27 @@ config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: EhsEnforcement.F
 config :swoosh, local: false
 
 # Production logging configuration
-config :logger, 
-  level: :info,
+# TEMPORARY DEBUG MODE - Enable verbose logging to diagnose mount failure
+config :logger,
+  level: :debug,  # Changed from :info to :debug for detailed logging
   backends: [:console],
   compile_time_purge_matching: [
-    [level_lower_than: :info]
+    [level_lower_than: :debug]  # Changed from :info - log everything
   ]
 
+# Enable verbose Phoenix logging
+config :phoenix, :logger, true
+
+# Enable detailed LiveView logging (will show mount failures)
+config :phoenix_live_view, :debug_heex_annotations, true
+
 # Ash configuration for production
+# TEMPORARY DEBUG MODE - Enable Ash debugging to see auth failures
 config :ash, :disable_async?, false
-config :ash, :pub_sub, debug?: false
+config :ash, :pub_sub, debug?: true  # Changed to true for debugging
+
+# Enable AshAuthentication debugging
+config :ash_authentication, debug?: true
 
 # Production environment marker
 config :ehs_enforcement, :environment, :prod
