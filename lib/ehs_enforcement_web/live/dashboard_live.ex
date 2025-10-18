@@ -38,7 +38,22 @@ defmodule EhsEnforcementWeb.DashboardLive do
      |> assign(:total_recent_cases, 0)
      |> assign(:recent_activity_page, 1)
      |> assign(:recent_activity_page_size, @default_recent_activity_page_size)
-     |> assign(:stats, %{})
+     |> assign(:stats, %{
+       active_agencies: 0,
+       recent_cases: 0,
+       recent_notices: 0,
+       total_cases: 0,
+       total_notices: 0,
+       total_fines: Decimal.new(0),
+       agency_stats: [],
+       period: "30 days",
+       timeframe: "Last 30 Days",
+       total_legislation: 0,
+       acts_count: 0,
+       regulations_count: 0,
+       orders_count: 0,
+       acops_count: 0
+     })
      |> assign(:loading, false)
      |> assign(:sync_status, %{})
      |> assign(:filter_agency, nil)

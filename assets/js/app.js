@@ -24,8 +24,7 @@ import topbar from "../vendor/topbar"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
-  transport: "websocket",
-  longPollFallbackMs: 10000,  // Increase fallback delay to 10 seconds
+  longPollFallbackMs: 2500,  // Wait 2.5 seconds before falling back to longpoll
   params: {_csrf_token: csrfToken},
   metadata: {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
