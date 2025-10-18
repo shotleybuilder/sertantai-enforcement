@@ -127,9 +127,7 @@ if config_env() == :prod do
       "//www.legal.sertantai.com",
       "https://legal.sertantai.com",
       "https://www.legal.sertantai.com"
-    ],
-    # Force SSL for secure session cookies
-    force_ssl: [hsts: true, rewrite_on: [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]]
+    ]
   
   # GitHub OAuth configuration for production
   config :ehs_enforcement, :github_oauth,

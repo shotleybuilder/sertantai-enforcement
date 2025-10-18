@@ -7,8 +7,8 @@ import Config
 # before starting your production server.
 config :ehs_enforcement, EhsEnforcementWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json",
-  # Force SSL/HTTPS in production - disabled for nginx SSL termination
-  # force_ssl: [hsts: true],
+  # Force SSL for secure session cookies (nginx handles SSL termination, but we need this for secure cookies)
+  force_ssl: [hsts: true, rewrite_on: [:x_forwarded_host, :x_forwarded_port, :x_forwarded_proto]],
   # Use default Bandit configuration (no custom timeouts)
   http: []
 
