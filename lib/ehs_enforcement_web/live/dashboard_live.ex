@@ -548,8 +548,14 @@ defmodule EhsEnforcementWeb.DashboardLive do
         WHERE offence_action_date >= $1
       """, [cutoff_date])
 
-      [[recent_cases_count, recent_total_fines_float]] = recent_cases_result.rows
-      recent_total_fines = Decimal.from_float(recent_total_fines_float)
+      [[recent_cases_count, recent_total_fines_raw]] = recent_cases_result.rows
+
+      # Handle Decimal type from PostgreSQL NUMERIC column
+      recent_total_fines = case recent_total_fines_raw do
+        %Decimal{} = d -> d
+        n when is_number(n) -> Decimal.new(n)
+        _ -> Decimal.new(0)
+      end
 
       # Get recent notices count efficiently
       recent_notices_result = EhsEnforcement.Repo.query!("""
