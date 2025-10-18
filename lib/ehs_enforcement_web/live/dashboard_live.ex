@@ -19,17 +19,19 @@ defmodule EhsEnforcementWeb.DashboardLive do
   def mount(_params, _session, socket) do
     # Current user will be loaded by the browser pipeline and available in socket.assigns
     # This follows the same pattern as other LiveViews in the application
-    
+    # CRITICAL: Assign current_user to nil if not present to prevent undefined errors
+
     # Subscribe to real-time updates
     PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
     PubSub.subscribe(EhsEnforcement.PubSub, "agency:updates")
     PubSub.subscribe(EhsEnforcement.PubSub, "metrics:refreshed")
-    
+
     # Load initial data
     agencies = Enforcement.list_agencies!()
-    
+
     {:ok,
      socket
+     |> assign_new(:current_user, fn -> nil end)
      |> assign(:agencies, agencies)
      |> assign(:recent_cases, [])
      |> assign(:recent_activity, [])
