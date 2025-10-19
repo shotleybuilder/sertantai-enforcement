@@ -16,16 +16,22 @@ defmodule EhsEnforcementWeb.Components.NoticesActionCard do
 
   ## Examples
 
-      <.notices_action_card current_user={@current_user} />
+      <.notices_action_card current_user={@current_user} stats={@stats} />
 
   """
   attr :current_user, :map, default: nil, doc: "Current authenticated user"
+  attr :stats, :map, required: true, doc: "Pre-computed dashboard statistics from metrics table"
   attr :loading, :boolean, default: false, doc: "Show loading state"
   attr :class, :string, default: "", doc: "Additional CSS classes"
 
   def notices_action_card(assigns) do
-    # Calculate metrics
-    assigns = assign_metrics(assigns)
+    # Use pre-computed metrics from stats
+    # Note: compliance_required_count is not yet in metrics table, using 0 as placeholder
+    assigns =
+      assigns
+      |> assign(:total_notices, Map.get(assigns.stats, :total_notices, 0))
+      |> assign(:recent_notices_count, Map.get(assigns.stats, :recent_notices, 0))
+      |> assign(:compliance_required_count, 0)
     
     ~H"""
     <.dashboard_action_card 
@@ -75,48 +81,6 @@ defmodule EhsEnforcementWeb.Components.NoticesActionCard do
   end
 
   # Private helper functions
-
-  defp assign_metrics(assigns) do
-    try do
-      # Calculate date range (last 30 days)
-      thirty_days_ago = Date.add(Date.utc_today(), -30)
-      
-      # Get all notices for total count
-      all_notices = Enforcement.list_notices!()
-      total_notices = length(all_notices)
-      
-      # Filter for recent notices (last 30 days)
-      recent_notices = Enum.filter(all_notices, fn notice_record ->
-        notice_record.offence_action_date && 
-        Date.compare(notice_record.offence_action_date, thirty_days_ago) != :lt
-      end)
-      
-      recent_notices_count = length(recent_notices)
-      
-      # Calculate compliance required count (notices without compliance date or future compliance date)
-      today = Date.utc_today()
-      compliance_required_count = Enum.count(all_notices, fn notice ->
-        is_nil(notice.compliance_date) || 
-        (notice.compliance_date && Date.compare(notice.compliance_date, today) == :gt)
-      end)
-      
-      assigns
-      |> assign(:total_notices, total_notices)
-      |> assign(:recent_notices_count, recent_notices_count)
-      |> assign(:compliance_required_count, compliance_required_count)
-      
-    rescue
-      error ->
-        require Logger
-        Logger.error("Failed to calculate notices metrics: #{inspect(error)}")
-        
-        assigns
-        |> assign(:total_notices, 0)
-        |> assign(:recent_notices_count, 0)
-        |> assign(:compliance_required_count, 0)
-    end
-  end
-
 
   defp format_number(number) when is_integer(number) do
     number

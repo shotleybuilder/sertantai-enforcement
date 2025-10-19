@@ -170,13 +170,13 @@
     <!-- Dashboard Action Cards -->
     <.dashboard_card_grid>
       <!-- Cases Management Card -->
-      <.cases_action_card current_user={@current_user} />
+      <.cases_action_card current_user={@current_user} stats={@stats} />
 
       <!-- Notices Management Card -->
-      <.notices_action_card current_user={@current_user} />
+      <.notices_action_card current_user={@current_user} stats={@stats} />
 
       <!-- Offenders Database Card -->
-      <.offenders_action_card />
+      <.offenders_action_card stats={@stats} />
 
       <!-- Legislation Management Card -->
       <.legislation_action_card 

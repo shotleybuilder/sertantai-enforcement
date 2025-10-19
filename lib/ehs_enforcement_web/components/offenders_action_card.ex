@@ -17,15 +17,24 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCard do
 
   ## Examples
 
-      <.offenders_action_card />
+      <.offenders_action_card stats={@stats} />
 
   """
+  attr :stats, :map, required: true, doc: "Pre-computed dashboard statistics from metrics table"
   attr :loading, :boolean, default: false, doc: "Show loading state"
   attr :class, :string, default: "", doc: "Additional CSS classes"
 
   def offenders_action_card(assigns) do
-    # Calculate metrics
-    assigns = assign_metrics(assigns)
+    # Use pre-computed metrics from stats
+    # Note: Offender-specific metrics not yet in metrics table
+    # Using placeholder values until Phase 6 adds offender metrics
+    # TODO: Add total_offenders, repeat_offenders, average_fine to metrics table
+    assigns =
+      assigns
+      |> assign(:total_offenders, 0)
+      |> assign(:repeat_offenders_count, 0)
+      |> assign(:repeat_offenders_percentage, 0.0)
+      |> assign(:average_fine, Decimal.new(0))
     
     ~H"""
     <.dashboard_action_card 
@@ -74,60 +83,6 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCard do
   end
 
   # Private helper functions
-
-  defp assign_metrics(assigns) do
-    try do
-      # Get all offenders for statistics
-      all_offenders = Enforcement.list_offenders!()
-      total_offenders = length(all_offenders)
-      
-      # Calculate repeat offenders (those with more than 1 total enforcement action)
-      repeat_offenders = Enum.filter(all_offenders, fn offender ->
-        enforcement_count = (offender.total_cases || 0) + (offender.total_notices || 0)
-        enforcement_count > 1
-      end)
-      
-      repeat_offenders_count = length(repeat_offenders)
-      repeat_offenders_percentage = if total_offenders > 0 do
-        Float.round(repeat_offenders_count / total_offenders * 100, 1)
-      else
-        0.0
-      end
-      
-      # Calculate average fine amount from all offenders with fines
-      offenders_with_fines = Enum.filter(all_offenders, fn offender ->
-        total_fines = offender.total_fines || Decimal.new(0)
-        Decimal.compare(total_fines, Decimal.new(0)) == :gt
-      end)
-      
-      average_fine = if length(offenders_with_fines) > 0 do
-        total_fines_sum = offenders_with_fines
-        |> Enum.map(& &1.total_fines || Decimal.new(0))
-        |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
-        
-        Decimal.div(total_fines_sum, length(offenders_with_fines))
-      else
-        Decimal.new(0)
-      end
-      
-      assigns
-      |> assign(:total_offenders, total_offenders)
-      |> assign(:repeat_offenders_count, repeat_offenders_count)
-      |> assign(:repeat_offenders_percentage, repeat_offenders_percentage)
-      |> assign(:average_fine, average_fine)
-      
-    rescue
-      error ->
-        require Logger
-        Logger.error("Failed to calculate offenders metrics: #{inspect(error)}")
-        
-        assigns
-        |> assign(:total_offenders, 0)
-        |> assign(:repeat_offenders_count, 0)
-        |> assign(:repeat_offenders_percentage, 0.0)
-        |> assign(:average_fine, Decimal.new(0))
-    end
-  end
 
   defp format_number(number) when is_integer(number) do
     number

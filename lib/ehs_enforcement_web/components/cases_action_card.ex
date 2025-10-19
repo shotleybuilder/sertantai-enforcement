@@ -16,16 +16,21 @@ defmodule EhsEnforcementWeb.Components.CasesActionCard do
 
   ## Examples
 
-      <.cases_action_card current_user={@current_user} />
+      <.cases_action_card current_user={@current_user} stats={@stats} />
 
   """
   attr :current_user, :map, default: nil, doc: "Current authenticated user"
+  attr :stats, :map, required: true, doc: "Pre-computed dashboard statistics from metrics table"
   attr :loading, :boolean, default: false, doc: "Show loading state"
   attr :class, :string, default: "", doc: "Additional CSS classes"
 
   def cases_action_card(assigns) do
-    # Calculate metrics
-    assigns = assign_metrics(assigns)
+    # Use pre-computed metrics from stats
+    assigns =
+      assigns
+      |> assign(:total_cases, Map.get(assigns.stats, :total_cases, 0))
+      |> assign(:recent_cases_count, Map.get(assigns.stats, :recent_cases, 0))
+      |> assign(:total_recent_fines, Map.get(assigns.stats, :total_fines, Decimal.new(0)))
     
     ~H"""
     <.dashboard_action_card 
@@ -75,46 +80,6 @@ defmodule EhsEnforcementWeb.Components.CasesActionCard do
   end
 
   # Private helper functions
-
-  defp assign_metrics(assigns) do
-    try do
-      # Calculate date range (last 30 days)
-      thirty_days_ago = Date.add(Date.utc_today(), -30)
-      
-      # Get all cases for total count
-      all_cases = Enforcement.list_cases!()
-      total_cases = length(all_cases)
-      
-      # Filter for recent cases (last 30 days)
-      recent_cases = Enum.filter(all_cases, fn case_record ->
-        case_record.offence_action_date && 
-        Date.compare(case_record.offence_action_date, thirty_days_ago) != :lt
-      end)
-      
-      recent_cases_count = length(recent_cases)
-      
-      # Calculate total fines from recent cases only
-      total_recent_fines = recent_cases
-      |> Enum.map(& &1.offence_fine || Decimal.new(0))
-      |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
-      
-      assigns
-      |> assign(:total_cases, total_cases)
-      |> assign(:recent_cases_count, recent_cases_count)
-      |> assign(:total_recent_fines, total_recent_fines)
-      
-    rescue
-      error ->
-        require Logger
-        Logger.error("Failed to calculate cases metrics: #{inspect(error)}")
-        
-        assigns
-        |> assign(:total_cases, 0)
-        |> assign(:recent_cases_count, 0)
-        |> assign(:total_recent_fines, Decimal.new(0))
-    end
-  end
-
 
   defp format_number(number) when is_integer(number) do
     number
