@@ -112,6 +112,57 @@ Next steps:
 
 **Build time:** ~5-10 minutes (first time), ~2-5 minutes (cached)
 
+**⚠️ CRITICAL: Compile-Time Config Changes**
+
+When you change compile-time configuration files like `config/prod.exs`, Docker's layer cache may prevent your changes from being included in the build. This happens because Docker caches the `COPY config/config.exs config/prod.exs` layer.
+
+**Symptoms of cached config:**
+- ✅ Application starts successfully
+- ❌ Your configuration changes don't take effect
+- ❌ Production behaves as if old config is still active
+- ❌ No errors in logs (config just isn't updated)
+
+**When to use `--no-cache`:**
+- ✅ After changing `config/prod.exs` (compile-time config)
+- ✅ After changing session cookie settings
+- ✅ After changing SSL/force_ssl settings
+- ✅ After changing compile-time endpoint configuration
+- ✅ After changing any `Application.compile_env()` values
+
+**How to force rebuild:**
+```bash
+# Option 1: Use build-cacheless.sh script (RECOMMENDED)
+# First, clear Docker build cache
+docker builder prune -f
+
+# Then build without cache
+./scripts/deployment/build-cacheless.sh
+
+# Option 2: Manual build with --no-cache
+docker builder prune -f
+docker build --no-cache -t ghcr.io/shotleybuilder/ehs-enforcement:latest .
+```
+
+**⚠️ CRITICAL:** Always run `docker builder prune -f` BEFORE using `--no-cache` flag. Docker BuildKit can still use cached layers even with `--no-cache` if the build cache isn't cleared first.
+
+**Safe to use cache when:**
+- ✅ Only code changes (`.ex`, `.exs` files in `lib/`)
+- ✅ Only template changes (`.heex` files)
+- ✅ Only JavaScript/CSS changes (`assets/`)
+- ✅ Runtime config changes in `config/runtime.exs` (environment variables)
+
+**Example scenario:**
+```bash
+# 1. You change config/prod.exs to enable force_ssl
+# 2. You run ./scripts/deployment/build.sh
+# 3. Docker uses cached config layer (OLD config!)
+# 4. You deploy - app starts but SSL settings don't work
+# 5. Solution: Rebuild with --no-cache
+./scripts/deployment/build-cacheless.sh
+```
+
+**Key rule:** If using `Application.compile_env()` anywhere in your code, changes to those configs REQUIRE `--no-cache` rebuild.
+
 ---
 
 ### Step 2: Test Container (Optional but Recommended)

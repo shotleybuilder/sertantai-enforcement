@@ -11,13 +11,24 @@ config :ehs_enforcement, :environment, :test
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
+#
+# Pool sizing for test environment:
+# - max_cases: 4 (concurrent test files)
+# - avg connections per test file: 4-8 (heavy LiveView + DB operations)
+# - total needed: 4 * 8 = 32 connections
+# - formula: System.schedulers_online() * 4 = 8 cores * 4 = 32
 config :ehs_enforcement, EhsEnforcement.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
+  port: 5434,
   database: "ehs_enforcement_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
+  # Increased from * 2 to * 4 for concurrent test stability
+  pool_size: System.schedulers_online() * 4,
+  # Connection queue management for better reuse under load
+  queue_target: 5000,    # Log warning if checkout takes > 5s
+  queue_interval: 1000   # Check queue every 1s
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

@@ -489,6 +489,24 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
       scraping_task: nil,
       progress: Map.put(socket.assigns.progress, :status, :completed)
     )
+
+    # Trigger metrics refresh in background after scraping completes
+    Task.start(fn ->
+      Logger.info("Triggering metrics refresh after notice scraping completion")
+      EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:automation)
+
+      # Broadcast to all dashboards that metrics are refreshed
+      Phoenix.PubSub.broadcast(
+        EhsEnforcement.PubSub,
+        "metrics:refreshed",
+        %Phoenix.Socket.Broadcast{
+          topic: "metrics:refreshed",
+          event: "refresh",
+          payload: %{triggered_by: :scraping_notices}
+        }
+      )
+    end)
+
     {:noreply, socket}
   end
 

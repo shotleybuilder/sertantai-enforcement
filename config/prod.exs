@@ -21,25 +21,17 @@ config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: EhsEnforcement.F
 # Disable Swoosh Local Memory Storage
 config :swoosh, local: false
 
-# Production logging configuration - FULL DEBUG MODE
+# Production logging configuration - Normal production levels
 config :logger,
-  level: :debug,
-  backends: [:console],
-  compile_time_purge_matching: [
-    [level_lower_than: :debug]
-  ]
+  level: :info,
+  backends: [:console]
 
-# Enable all Phoenix debugging
+# Enable Phoenix logging (normal production level)
 config :phoenix, :logger, true
 config :phoenix, :plug_init_mode, :runtime
 
-# Enable detailed LiveView logging
-config :phoenix_live_view, :debug_heex_annotations, true
-
-# Ash configuration for production - FULL DEBUG
+# Ash configuration for production
 config :ash, :disable_async?, false
-config :ash, :pub_sub, debug?: true
-config :ash_authentication, debug?: true
 
 # Production environment marker
 config :ehs_enforcement, :environment, :prod

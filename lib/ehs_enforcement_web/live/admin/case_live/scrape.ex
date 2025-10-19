@@ -674,6 +674,24 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Scrape do
     )
     
     Logger.info("UI: Scraping completion handled - scraping_active: #{socket.assigns.scraping_active}, final_progress: #{inspect(final_progress)}")
+
+    # Trigger metrics refresh in background after scraping completes
+    Task.start(fn ->
+      Logger.info("Triggering metrics refresh after case scraping completion")
+      EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:automation)
+
+      # Broadcast to all dashboards that metrics are refreshed
+      Phoenix.PubSub.broadcast(
+        EhsEnforcement.PubSub,
+        "metrics:refreshed",
+        %Phoenix.Socket.Broadcast{
+          topic: "metrics:refreshed",
+          event: "refresh",
+          payload: %{triggered_by: :scraping_cases}
+        }
+      )
+    end)
+
     {:noreply, socket}
   end
 

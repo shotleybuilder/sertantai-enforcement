@@ -93,6 +93,7 @@ defmodule EhsEnforcement.Enforcement.Case do
     attribute(:related_cases, :string)
     attribute(:offence_action_type, :string)
     attribute(:url, :string)
+    attribute(:offence_breaches, :string, description: "Description of regulation breaches/violations")
     attribute(:last_synced_at, :utc_datetime)
 
     # EA-specific extensions for Environment Agency enforcement data
@@ -173,6 +174,7 @@ defmodule EhsEnforcement.Enforcement.Case do
         :related_cases,
         :offence_action_type,
         :url,
+        :offence_breaches,
         :last_synced_at,
         # EA-specific fields
         :ea_event_reference,

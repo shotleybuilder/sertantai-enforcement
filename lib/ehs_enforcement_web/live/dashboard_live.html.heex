@@ -70,6 +70,13 @@
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Active Agencies</dt>
                 <dd class="text-lg font-medium text-gray-900"><%= @stats.active_agencies %> Agencies</dd>
+                <%= if is_map(@stats.agency_stats) and map_size(@stats.agency_stats) > 0 do %>
+                  <dd class="mt-2 text-xs text-gray-600">
+                    <%= for {_id, agency} <- @stats.agency_stats do %>
+                      <div><%= agency.agency_name %></div>
+                    <% end %>
+                  </dd>
+                <% end %>
               </dl>
             </div>
           </div>
@@ -244,6 +251,7 @@
           <thead class="bg-gray-50">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Case ID</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
@@ -254,7 +262,7 @@
           <tbody class="bg-white divide-y divide-gray-200" data-testid="recent-activities">
             <%= if Enum.empty?(@recent_activity || []) do %>
               <tr>
-                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
                   No recent enforcement activity to display.
                 </td>
               </tr>
@@ -264,27 +272,30 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <span class={[
                       "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
-                      if(activity.is_case, do: "bg-red-100 text-red-800", else: "bg-yellow-100 text-yellow-800")
+                      if(activity["is_case"], do: "bg-red-100 text-red-800", else: "bg-yellow-100 text-yellow-800")
                     ]}>
-                      <%= activity.type %>
+                      <%= activity["type"] %>
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <%= if activity.date, do: Calendar.strftime(activity.date, "%d %b %Y"), else: "—" %>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-gray-900">
-                    <%= activity.organization || "—" %>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                    <%= activity.description || "—" %>
+                    <%= activity["regulator_id"] || "—" %>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <%= EhsEnforcement.Enforcement.RecentActivity.format_fine_amount(activity.fine_amount) %>
+                    <%= if activity["date"], do: Calendar.strftime(activity["date"], "%d %b %Y"), else: "—" %>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-900">
+                    <%= activity["organization"] || "—" %>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                    <%= activity["description"] || "—" %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <%= EhsEnforcement.Enforcement.RecentActivity.format_fine_amount(activity["fine_amount"]) %>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    <%= if activity.agency_link do %>
+                    <%= if activity["agency_link"] do %>
                       <a
-                        href={activity.agency_link}
+                        href={activity["agency_link"]}
                         target="_blank"
                         class="text-blue-600 hover:text-blue-800 underline"
                       >
@@ -384,7 +395,7 @@
           </div>
         </div>
       <% else %>
-        <%= if length(@recent_cases) > 0 do %>
+        <%= if length(@recent_activity) > 0 do %>
           <div class="bg-gray-50 px-4 py-3 text-center">
             <a href="/cases" class="text-sm text-indigo-600 hover:text-indigo-500">
               View all cases →

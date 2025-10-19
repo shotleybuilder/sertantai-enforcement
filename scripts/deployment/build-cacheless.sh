@@ -57,6 +57,12 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+# Clear Docker build cache first (critical for --no-cache to work properly)
+echo -e "${YELLOW}Clearing Docker build cache...${NC}"
+docker builder prune -f > /dev/null 2>&1
+echo -e "${GREEN}✓ Build cache cleared${NC}"
+echo ""
+
 # Display build information
 echo -e "${BLUE}Building Docker image...${NC}"
 echo ""

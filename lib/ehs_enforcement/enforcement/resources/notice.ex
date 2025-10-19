@@ -64,6 +64,7 @@ defmodule EhsEnforcement.Enforcement.Notice do
     attribute :offence_action_type, :string
     attribute :offence_action_date, :date
     attribute :url, :string
+    attribute :offence_breaches, :string, description: "Description of regulation breaches/violations"
     attribute :last_synced_at, :utc_datetime
     
     # EA-specific fields for environmental enforcement notices
@@ -121,7 +122,7 @@ defmodule EhsEnforcement.Enforcement.Notice do
       primary? true
       accept [:airtable_id, :regulator_id, :regulator_ref_number,
               :notice_date, :operative_date, :compliance_date, :notice_body,
-              :offence_action_type, :offence_action_date, :url,
+              :offence_action_type, :offence_action_date, :url, :offence_breaches,
               :last_synced_at, :regulator_event_reference, :environmental_impact,
               :environmental_receptor, :legal_act, :legal_section, :regulator_function]
       

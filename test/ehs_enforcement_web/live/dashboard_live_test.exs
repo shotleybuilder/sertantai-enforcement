@@ -6,6 +6,11 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
   alias EhsEnforcement.Enforcement
   alias EhsEnforcement.Repo
 
+  # Mark as heavy: Creates many DB records, refreshes metrics (9 queries), uses LiveView + PubSub
+  # Run separately with: mix test --include heavy
+  # See: .claude/sessions/2025-10-19-Test-Environment.md
+  @moduletag :heavy
+
   describe "DashboardLive mount" do
     setup do
       # Create test agencies
@@ -35,8 +40,9 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       })
 
       # Create test cases with different dates for timeline testing
-      base_date = ~D[2024-01-15]
-      
+      # Use dates relative to today to ensure they're within the "Last 30 Days" period
+      base_date = Date.add(Date.utc_today(), -10)  # 10 days ago
+
       {:ok, case1} = Enforcement.create_case(%{
         regulator_id: "HSE-001",
         agency_id: hse_agency.id,
@@ -48,7 +54,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       })
 
       {:ok, case2} = Enforcement.create_case(%{
-        regulator_id: "EA-001", 
+        regulator_id: "EA-001",
         agency_id: ea_agency.id,
         offender_id: offender2.id,
         offence_action_date: Date.add(base_date, 5),
@@ -56,6 +62,14 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
         offence_breaches: "Environmental violation",
         last_synced_at: Date.add(DateTime.utc_now(), -1)
       })
+
+      # Refresh metrics for the test data
+      {:ok, _metrics} = EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:automation)
+
+      # Ensure LiveView processes are cleaned up between tests
+      on_exit(fn ->
+        Process.sleep(100)  # Allow async cleanup to complete
+      end)
 
       %{
         agencies: [hse_agency, ea_agency],
@@ -88,9 +102,11 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
 
     test "handles mount with no data gracefully", %{conn: conn} do
       # Clear all test data
-      Repo.delete_all(EhsEnforcement.Enforcement.Case) 
+      Repo.delete_all(EhsEnforcement.Enforcement.Case)
+      Repo.delete_all(EhsEnforcement.Enforcement.Notice)
       Repo.delete_all(EhsEnforcement.Enforcement.Offender)
       Repo.delete_all(EhsEnforcement.Enforcement.Agency)
+      Repo.delete_all(EhsEnforcement.Enforcement.Metrics)
 
       {:ok, view, html} = live(conn, "/dashboard")
 
@@ -224,7 +240,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     setup do
       {:ok, agency} = Enforcement.create_agency(%{
         code: :hse,
-        name: "Health and Safety Executive", 
+        name: "Health and Safety Executive",
         enabled: true
       })
 
@@ -235,10 +251,10 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
 
       # Create cases spanning different dates for timeline testing
       dates = [
-        ~D[2024-01-20], # Most recent
-        ~D[2024-01-18],
-        ~D[2024-01-15], 
-        ~D[2024-01-10]  # Oldest
+        Date.add(Date.utc_today(), -5), # Most recent
+        Date.add(Date.utc_today(), -7),
+        Date.add(Date.utc_today(), -10),
+        Date.add(Date.utc_today(), -15)  # Oldest
       ]
 
       cases = Enum.with_index(dates, 1)
@@ -246,13 +262,21 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
         {:ok, case} = Enforcement.create_case(%{
           regulator_id: "HSE-00#{index}",
           agency_id: agency.id,
-          offender_id: offender.id, 
+          offender_id: offender.id,
           offence_action_date: date,
           offence_fine: Decimal.new("#{index}000.00"),
           offence_breaches: "Breach #{index}",
           last_synced_at: DateTime.utc_now()
         })
         case
+      end)
+
+      # Refresh metrics for the test data
+      {:ok, _metrics} = EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:automation)
+
+      # Ensure LiveView processes are cleaned up between tests
+      on_exit(fn ->
+        Process.sleep(100)  # Allow async cleanup to complete
       end)
 
       %{agency: agency, offender: offender, cases: cases}
@@ -293,7 +317,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
           regulator_id: "HSE-0#{i}",
           agency_id: agency.id,
           offender_id: offender.id,
-          offence_action_date: Date.add(~D[2024-01-20], -i),
+          offence_action_date: Date.add(Date.add(Date.utc_today(), -5), -i),
           offence_fine: Decimal.new("1000.00"),
           offence_breaches: "Breach #{i}",
           last_synced_at: DateTime.utc_now()
@@ -353,21 +377,29 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       # Create cases with known totals for easy testing
       {:ok, _} = Enforcement.create_case(%{
         regulator_id: "HSE-1", agency_id: hse.id, offender_id: offender1.id,
-        offence_action_date: ~D[2024-01-15], offence_fine: Decimal.new("1000.00"),
+        offence_action_date: Date.add(Date.utc_today(), -10), offence_fine: Decimal.new("1000.00"),
         offence_breaches: "Safety breach", last_synced_at: DateTime.utc_now()
       })
 
       {:ok, _} = Enforcement.create_case(%{
         regulator_id: "HSE-2", agency_id: hse.id, offender_id: offender2.id,
-        offence_action_date: ~D[2024-01-16], offence_fine: Decimal.new("2000.00"),
+        offence_action_date: Date.add(Date.utc_today(), -9), offence_fine: Decimal.new("2000.00"),
         offence_breaches: "Another safety breach", last_synced_at: DateTime.utc_now()
       })
 
       {:ok, _} = Enforcement.create_case(%{
         regulator_id: "EA-1", agency_id: ea.id, offender_id: offender1.id,
-        offence_action_date: ~D[2024-01-17], offence_fine: Decimal.new("5000.00"),
+        offence_action_date: Date.add(Date.utc_today(), -8), offence_fine: Decimal.new("5000.00"),
         offence_breaches: "Environmental breach", last_synced_at: DateTime.utc_now()
       })
+
+      # Refresh metrics for the test data
+      {:ok, _metrics} = EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:automation)
+
+      # Ensure LiveView processes are cleaned up between tests
+      on_exit(fn ->
+        Process.sleep(100)  # Allow async cleanup to complete
+      end)
 
       %{hse: hse, ea: ea}
     end
@@ -433,7 +465,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
         regulator_id: "HSE-NEW",
         agency_id: hse.id,
         offender_id: offender.id,
-        offence_action_date: ~D[2024-01-18],
+        offence_action_date: Date.add(Date.utc_today(), -7),
         offence_fine: Decimal.new("1500.00"),
         offence_breaches: "New breach",
         last_synced_at: DateTime.utc_now()
@@ -487,6 +519,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       refute log =~ "error" or log =~ "Error"
     end
 
+    @tag :skip  # Sync functionality removed in Phase 2 (replaced with materialized metrics)
     test "shows sync status updates", %{conn: conn, agency: agency} do
       {:ok, view, _html} = live(conn, "/dashboard")
 
@@ -683,12 +716,20 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
           regulator_id: "HSE-#{String.pad_leading(to_string(i), 3, "0")}",
           agency_id: agency.id,
           offender_id: offender.id,
-          offence_action_date: Date.add(~D[2024-01-01], i),
+          offence_action_date: Date.add(Date.add(Date.utc_today(), -20), i),
           offence_fine: Decimal.new("#{i * 100}.00"),
           offence_breaches: "Breach #{i}",
           last_synced_at: DateTime.utc_now()
         })
         case
+      end)
+
+      # Refresh metrics for the test data
+      {:ok, _metrics} = EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:automation)
+
+      # Ensure LiveView processes are cleaned up between tests
+      on_exit(fn ->
+        Process.sleep(100)  # Allow async cleanup to complete
       end)
 
       %{agency: agency, offender: offender, cases: cases}
@@ -834,10 +875,13 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       # Clear most cases, leaving only 5
       all_cases = Enforcement.list_cases!()
       cases_to_delete = Enum.drop(all_cases, 5)
-      
+
       Enum.each(cases_to_delete, fn case ->
         Enforcement.destroy_case!(case)
       end)
+
+      # Refresh metrics after deleting cases
+      {:ok, _metrics} = EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:automation)
 
       {:ok, view, html} = live(conn, "/dashboard")
 
@@ -869,7 +913,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
         regulator_id: "HSE-001",
         agency_id: agency.id,
         offender_id: offender1.id,
-        offence_action_date: ~D[2024-01-15],
+        offence_action_date: Date.add(Date.utc_today(), -10),
         offence_fine: Decimal.new("25000.00"),
         offence_breaches: "Health and safety violations leading to court proceedings",
         offence_action_type: "Court Case",
@@ -882,12 +926,20 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
         regulator_id: "HSE-002",
         agency_id: agency.id,
         offender_id: offender2.id,
-        offence_action_date: ~D[2024-01-20],
+        offence_action_date: Date.add(Date.utc_today(), -5),
         offence_breaches: "Workplace safety improvements required",
         offence_action_type: "Improvement Notice",
         url: "https://www.hse.gov.uk/notices/notice-456",
         last_synced_at: DateTime.utc_now()
       })
+
+      # Refresh metrics for the test data
+      {:ok, _metrics} = EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:automation)
+
+      # Ensure LiveView processes are cleaned up between tests
+      on_exit(fn ->
+        Process.sleep(100)  # Allow async cleanup to complete
+      end)
 
       %{agency: agency, case: case1, notice: notice1}
     end
@@ -1018,15 +1070,18 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
           regulator_id: "CASE-#{i}",
           agency_id: agency.id,
           offender_id: offender.id,
-          offence_action_date: Date.add(~D[2024-01-01], i),
+          offence_action_date: Date.add(Date.add(Date.utc_today(), -20), i),
           offence_fine: Decimal.new("#{rem(i, 10) + 1}000.00"),
           offence_breaches: "Breach #{i}",
           last_synced_at: DateTime.utc_now()
         })
       end)
 
+      # Refresh metrics for the test data
+      {:ok, _metrics} = EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:automation)
+
       start_time = System.monotonic_time(:millisecond)
-      
+
       {:ok, view, html} = live(conn, "/dashboard")
       
       end_time = System.monotonic_time(:millisecond)

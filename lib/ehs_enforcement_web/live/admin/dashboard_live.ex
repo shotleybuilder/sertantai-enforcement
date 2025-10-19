@@ -68,8 +68,19 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
     # Refresh metrics in the background
     Task.start(fn ->
       EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:admin)
+
+      # Broadcast to all dashboards that metrics are refreshed
+      Phoenix.PubSub.broadcast(
+        EhsEnforcement.PubSub,
+        "metrics:refreshed",
+        %Phoenix.Socket.Broadcast{
+          topic: "metrics:refreshed",
+          event: "refresh",
+          payload: %{triggered_by: :manual_admin}
+        }
+      )
     end)
-    
+
     {:noreply, put_flash(socket, :info, "Metrics refresh started. Dashboard will update automatically when complete.")}
   end
 
