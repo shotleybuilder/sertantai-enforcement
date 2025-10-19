@@ -17,14 +17,15 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
 
   ## Examples
 
-      <.reports_action_card />
+      <.reports_action_card stats={@stats} />
 
   """
+  attr :stats, :map, required: true, doc: "Pre-computed dashboard statistics from metrics table"
   attr :loading, :boolean, default: false, doc: "Show loading state"
   attr :class, :string, default: "", doc: "Additional CSS classes"
 
   def reports_action_card(assigns) do
-    # Calculate metrics
+    # Calculate metrics using pre-computed stats
     assigns = assign_metrics(assigns)
     
     ~H"""
@@ -73,18 +74,18 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
     """
   end
 
-  # Calculate metrics for the reports card
+  # Calculate metrics for the reports card using pre-computed stats
   defp assign_metrics(assigns) do
     try do
       # Calculate saved reports count (placeholder for now)
       saved_reports_count = calculate_saved_reports_count()
-      
+
       # Calculate last export timestamp
       last_export_display = calculate_last_export_display()
-      
-      # Calculate available data size
-      data_available_display = calculate_data_available()
-      
+
+      # Calculate available data size using pre-computed stats (no DB queries!)
+      data_available_display = calculate_data_available(assigns.stats)
+
       assigns
       |> assign(:saved_reports_count, saved_reports_count)
       |> assign(:last_export_display, last_export_display)
@@ -93,7 +94,7 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
       error ->
         require Logger
         Logger.error("Error calculating reports metrics: #{inspect(error)}")
-        
+
         assigns
         |> assign(:saved_reports_count, 0)
         |> assign(:last_export_display, "Never")
@@ -152,18 +153,19 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
     end
   end
 
-  # Calculate available data size
-  defp calculate_data_available do
+  # Calculate available data size using pre-computed stats from metrics table
+  defp calculate_data_available(stats) do
     try do
-      # Get total records from all data sources
-      total_cases = EhsEnforcement.Enforcement.list_cases!() |> length()
-      total_notices = EhsEnforcement.Enforcement.list_notices!() |> length()
-      total_offenders = EhsEnforcement.Enforcement.list_offenders!() |> length()
-      
+      # Get total records from pre-computed metrics (no database queries!)
+      total_cases = Map.get(stats, :total_cases, 0)
+      total_notices = Map.get(stats, :total_notices, 0)
+      # Note: Offenders count not yet in metrics, using placeholder
+      total_offenders = 0
+
       # Estimate data size (rough calculation)
       # Assume ~1KB per case, ~0.8KB per notice, ~0.5KB per offender
       estimated_size_kb = (total_cases * 1.0) + (total_notices * 0.8) + (total_offenders * 0.5)
-      
+
       format_data_size(estimated_size_kb)
     rescue
       error ->
