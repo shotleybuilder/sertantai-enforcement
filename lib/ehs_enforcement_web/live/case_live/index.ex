@@ -34,6 +34,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      |> assign(:counting_filters, false)
      |> assign(:filters_applied, false)
      |> assign(:search_task_ref, nil)
+     |> assign(:count_task_ref, nil)
      |> load_cases(), temporary_assigns: [cases: []]}
   end
 
@@ -312,6 +313,51 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
        |> assign(:loading, false)
        |> assign(:search_task_ref, nil)
        |> put_flash(:error, "Search failed. Please try again.")}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:count_complete, task_ref, count}, socket) do
+    # Only process if this is the current count task
+    if socket.assigns.count_task_ref == task_ref do
+      {:noreply,
+       socket
+       |> assign(:filter_count, count)
+       |> assign(:counting_filters, false)
+       |> assign(:count_task_ref, nil)}
+    else
+      # Ignore results from cancelled/old count tasks
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:count_timeout, task_ref}, socket) do
+    if socket.assigns.count_task_ref == task_ref do
+      require Logger
+      Logger.warning("Filter count query timed out after 5 seconds")
+      {:noreply,
+       socket
+       |> assign(:filter_count, 0)
+       |> assign(:counting_filters, false)
+       |> assign(:count_task_ref, nil)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:count_error, task_ref, error}, socket) do
+    if socket.assigns.count_task_ref == task_ref do
+      require Logger
+      Logger.error("Filter count query failed: #{inspect(error)}")
+      {:noreply,
+       socket
+       |> assign(:filter_count, 0)
+       |> assign(:counting_filters, false)
+       |> assign(:count_task_ref, nil)}
     else
       {:noreply, socket}
     end
@@ -729,39 +775,87 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
 
   defp count_filtered_cases(socket) do
     %{filters: filters, search_query: search_query} = socket.assigns
-    
-    try do
-      has_filters = map_size(filters) > 0
-      has_search = is_binary(search_query) && String.trim(search_query) != ""
-      
-      if !has_filters && !has_search do
-        socket
-        |> assign(:filter_count, 0)
-        |> assign(:counting_filters, false)
-      else
-        # Set counting state
-        socket = assign(socket, :counting_filters, true)
-        
-        # Count records using same filter logic as load_cases
-        # Build filter including search_query if present
-        search_aware_filters = if has_search do
-          Map.put(filters, :search, "%#{String.trim(search_query)}%")
-        else
-          filters
+
+    has_filters = map_size(filters) > 0
+    has_search = is_binary(search_query) && String.trim(search_query) != ""
+
+    if !has_filters && !has_search do
+      socket
+      |> assign(:filter_count, 0)
+      |> assign(:counting_filters, false)
+      |> assign(:count_task_ref, nil)
+    else
+      # Cancel any previous count task
+      socket = cancel_previous_count(socket)
+
+      # Generate unique reference for this count task
+      task_ref = make_ref()
+
+      # Capture filter parameters
+      count_params = %{
+        filters: filters,
+        search_query: search_query
+      }
+
+      # Get the parent LiveView PID
+      parent_pid = self()
+
+      # Spawn async task for count query
+      Task.start(fn ->
+        # Set timeout for the count query (5 seconds - shorter than search)
+        timeout_ref = Process.send_after(parent_pid, {:count_timeout, task_ref}, 5_000)
+
+        try do
+          # Execute the count query
+          count = execute_count_query(count_params)
+
+          # Cancel timeout if we completed successfully
+          Process.cancel_timer(timeout_ref)
+
+          # Send result back to LiveView
+          send(parent_pid, {:count_complete, task_ref, count})
+        rescue
+          error ->
+            # Cancel timeout and send error
+            Process.cancel_timer(timeout_ref)
+            send(parent_pid, {:count_error, task_ref, error})
         end
-        
-        filter = build_optimized_filter(search_aware_filters)
-        count = Enforcement.count_cases!([filter: filter])
-        
+      end)
+
+      # Return socket with counting state and task reference
+      socket
+      |> assign(:counting_filters, true)
+      |> assign(:count_task_ref, task_ref)
+    end
+  end
+
+  defp execute_count_query(count_params) do
+    %{filters: filters, search_query: search_query} = count_params
+
+    has_search = is_binary(search_query) && String.trim(search_query) != ""
+
+    # Build filter including search_query if present
+    search_aware_filters = if has_search do
+      Map.put(filters, :search, "%#{String.trim(search_query)}%")
+    else
+      filters
+    end
+
+    filter = build_optimized_filter(search_aware_filters)
+    Enforcement.count_cases!([filter: filter])
+  end
+
+  defp cancel_previous_count(socket) do
+    case socket.assigns.count_task_ref do
+      nil ->
         socket
-        |> assign(:filter_count, count)
-        |> assign(:counting_filters, false)
-      end
-    rescue
-      _error ->
+
+      _task_ref ->
+        # Note: We don't actually kill the task (it's not supervised)
+        # Instead, we just ignore its results in handle_info
+        # The task will complete and its message will be discarded
         socket
-        |> assign(:filter_count, 0)
-        |> assign(:counting_filters, false)
+        |> assign(:count_task_ref, nil)
     end
   end
 end

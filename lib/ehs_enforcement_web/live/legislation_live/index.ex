@@ -29,6 +29,7 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
      |> assign(:counting_filters, false)
      |> assign(:filters_applied, false)
      |> assign(:search_task_ref, nil)
+     |> assign(:count_task_ref, nil)
      |> load_legislation(), temporary_assigns: [legislation: []]}
   end
 
@@ -257,32 +258,114 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     end
   end
 
+  @impl true
+  def handle_info({:count_complete, task_ref, count}, socket) do
+    if socket.assigns.count_task_ref == task_ref do
+      {:noreply,
+       socket
+       |> assign(:filter_count, count)
+       |> assign(:counting_filters, false)
+       |> assign(:count_task_ref, nil)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:count_timeout, task_ref}, socket) do
+    if socket.assigns.count_task_ref == task_ref do
+      require Logger
+      Logger.warning("Legislation filter count query timed out after 5 seconds")
+      {:noreply,
+       socket
+       |> assign(:filter_count, 0)
+       |> assign(:counting_filters, false)
+       |> assign(:count_task_ref, nil)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:count_error, task_ref, error}, socket) do
+    if socket.assigns.count_task_ref == task_ref do
+      require Logger
+      Logger.error("Legislation filter count query failed: #{inspect(error)}")
+      {:noreply,
+       socket
+       |> assign(:filter_count, 0)
+       |> assign(:counting_filters, false)
+       |> assign(:count_task_ref, nil)}
+    else
+      {:noreply, socket}
+    end
+  end
+
   defp count_filtered_legislation(socket) do
     %{filters: filters} = socket.assigns
-    
-    try do
-      # Only count if there are filters
-      if map_size(filters) > 0 do
-        count_filters = build_filter(filters)
-        count_opts = [filter: count_filters]
-        filter_count = Enforcement.count_legislation!(count_opts)
-        
+
+    if map_size(filters) == 0 do
+      socket
+      |> assign(:filter_count, 0)
+      |> assign(:counting_filters, false)
+      |> assign(:count_task_ref, nil)
+    else
+      # Cancel any previous count task
+      socket = cancel_previous_count(socket)
+
+      # Generate unique reference for this count task
+      task_ref = make_ref()
+
+      # Capture filter parameters
+      count_params = %{filters: filters}
+
+      # Get the parent LiveView PID
+      parent_pid = self()
+
+      # Spawn async task for count query
+      Task.start(fn ->
+        # Set timeout for the count query (5 seconds)
+        timeout_ref = Process.send_after(parent_pid, {:count_timeout, task_ref}, 5_000)
+
+        try do
+          # Execute the count query
+          count = execute_legislation_count_query(count_params)
+
+          # Cancel timeout if we completed successfully
+          Process.cancel_timer(timeout_ref)
+
+          # Send result back to LiveView
+          send(parent_pid, {:count_complete, task_ref, count})
+        rescue
+          error ->
+            # Cancel timeout and send error
+            Process.cancel_timer(timeout_ref)
+            send(parent_pid, {:count_error, task_ref, error})
+        end
+      end)
+
+      # Return socket with counting state and task reference
+      socket
+      |> assign(:counting_filters, true)
+      |> assign(:count_task_ref, task_ref)
+    end
+  end
+
+  defp execute_legislation_count_query(count_params) do
+    %{filters: filters} = count_params
+    count_filters = build_filter(filters)
+    count_opts = [filter: count_filters]
+    Enforcement.count_legislation!(count_opts)
+  end
+
+  defp cancel_previous_count(socket) do
+    case socket.assigns.count_task_ref do
+      nil ->
         socket
-        |> assign(:filter_count, filter_count)
-        |> assign(:counting_filters, false)
-      else
+
+      _task_ref ->
         socket
-        |> assign(:filter_count, 0)
-        |> assign(:counting_filters, false)
-      end
-    rescue
-      error ->
-        require Logger
-        Logger.error("Failed to count filtered legislation: #{inspect(error)}")
-        
-        socket
-        |> assign(:filter_count, 0)
-        |> assign(:counting_filters, false)
+        |> assign(:count_task_ref, nil)
     end
   end
 

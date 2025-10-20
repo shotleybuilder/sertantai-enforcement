@@ -36,6 +36,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
       |> assign(:counting_filters, false)
       |> assign(:filters_applied, false)
       |> assign(:search_task_ref, nil)
+      |> assign(:count_task_ref, nil)
       |> load_offenders()
 
     {:ok, socket, temporary_assigns: [offenders: []]}
@@ -281,6 +282,49 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     end
   end
 
+  @impl true
+  def handle_info({:count_complete, task_ref, count}, socket) do
+    if socket.assigns.count_task_ref == task_ref do
+      {:noreply,
+       socket
+       |> assign(:filter_count, count)
+       |> assign(:counting_filters, false)
+       |> assign(:count_task_ref, nil)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:count_timeout, task_ref}, socket) do
+    if socket.assigns.count_task_ref == task_ref do
+      require Logger
+      Logger.warning("Offender filter count query timed out after 5 seconds")
+      {:noreply,
+       socket
+       |> assign(:filter_count, 0)
+       |> assign(:counting_filters, false)
+       |> assign(:count_task_ref, nil)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:count_error, task_ref, error}, socket) do
+    if socket.assigns.count_task_ref == task_ref do
+      require Logger
+      Logger.error("Offender filter count query failed: #{inspect(error)}")
+      {:noreply,
+       socket
+       |> assign(:filter_count, 0)
+       |> assign(:counting_filters, false)
+       |> assign(:count_task_ref, nil)}
+    else
+      {:noreply, socket}
+    end
+  end
+
   # Private functions
 
   defp apply_params(socket, params) do
@@ -518,31 +562,73 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   defp count_filtered_offenders(socket) do
     %{filters: filters, search_query: search_query} = socket.assigns
 
-    try do
-      has_filters = map_size(filters) > 0
-      has_search = is_binary(search_query) && String.trim(search_query) != ""
+    has_filters = map_size(filters) > 0
+    has_search = is_binary(search_query) && String.trim(search_query) != ""
 
-      if !has_filters && !has_search do
-        socket
-        |> assign(:filter_count, 0)
-        |> assign(:counting_filters, false)
-      else
-        # Set counting state
-        socket = assign(socket, :counting_filters, true)
+    if !has_filters && !has_search do
+      socket
+      |> assign(:filter_count, 0)
+      |> assign(:counting_filters, false)
+      |> assign(:count_task_ref, nil)
+    else
+      # Cancel any previous count task
+      socket = cancel_previous_count(socket)
 
-        # Count records using same filter logic as load_offenders
-        filter = build_optimized_filter(filters, search_query)
-        count = Enforcement.count_offenders_cached!([filter: filter])
+      # Generate unique reference for this count task
+      task_ref = make_ref()
 
+      # Capture filter parameters
+      count_params = %{
+        filters: filters,
+        search_query: search_query
+      }
+
+      # Get the parent LiveView PID
+      parent_pid = self()
+
+      # Spawn async task for count query
+      Task.start(fn ->
+        # Set timeout for the count query (5 seconds)
+        timeout_ref = Process.send_after(parent_pid, {:count_timeout, task_ref}, 5_000)
+
+        try do
+          # Execute the count query
+          count = execute_offender_count_query(count_params)
+
+          # Cancel timeout if we completed successfully
+          Process.cancel_timer(timeout_ref)
+
+          # Send result back to LiveView
+          send(parent_pid, {:count_complete, task_ref, count})
+        rescue
+          error ->
+            # Cancel timeout and send error
+            Process.cancel_timer(timeout_ref)
+            send(parent_pid, {:count_error, task_ref, error})
+        end
+      end)
+
+      # Return socket with counting state and task reference
+      socket
+      |> assign(:counting_filters, true)
+      |> assign(:count_task_ref, task_ref)
+    end
+  end
+
+  defp execute_offender_count_query(count_params) do
+    %{filters: filters, search_query: search_query} = count_params
+    filter = build_optimized_filter(filters, search_query)
+    Enforcement.count_offenders_cached!([filter: filter])
+  end
+
+  defp cancel_previous_count(socket) do
+    case socket.assigns.count_task_ref do
+      nil ->
         socket
-        |> assign(:filter_count, count)
-        |> assign(:counting_filters, false)
-      end
-    rescue
-      _error ->
+
+      _task_ref ->
         socket
-        |> assign(:filter_count, 0)
-        |> assign(:counting_filters, false)
+        |> assign(:count_task_ref, nil)
     end
   end
 
