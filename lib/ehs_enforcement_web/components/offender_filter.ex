@@ -14,7 +14,7 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
         <h3 class="text-lg font-medium text-gray-900">Filter Offenders</h3>
       </div>
       
-      <.form for={%{}} phx-change="filter_change" phx-target={@target} data-testid="offender-filters">
+      <.form for={%{}} phx-change="filter_change" phx-debounce="500" phx-target={@target} data-testid="offender-filters">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <!-- Agency Filter (Position 1) -->
           <div class="space-y-1">

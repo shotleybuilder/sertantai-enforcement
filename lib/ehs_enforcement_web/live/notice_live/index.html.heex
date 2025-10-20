@@ -163,6 +163,7 @@
                   value={@search_query}
                   placeholder="Search by regulator ID, notice body, or offender name..."
                   phx-change="search"
+                  phx-debounce="500"
                   phx-value-search={@search_query}
                   class="block w-full rounded-md border-gray-300 pl-10 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />

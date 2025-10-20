@@ -65,7 +65,7 @@
     <!-- Filters Section -->
     <div class="bg-white shadow rounded-lg mb-6">
       <div class="px-4 py-5 sm:p-6">
-        <form phx-change="filter" data-testid="legislation-filters" class="space-y-4">
+        <form phx-change="filter" phx-debounce="500" data-testid="legislation-filters" class="space-y-4">
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
             <!-- Search -->
             <div class="sm:col-span-2">
