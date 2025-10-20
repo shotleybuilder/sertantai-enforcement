@@ -251,18 +251,18 @@ defmodule EhsEnforcement.Scraping.Ea.CaseScraper do
   
   # URL building and HTTP handling
   
-  defp build_search_url(action_type, date_from, _date_to, opts) do
+  defp build_search_url(action_type, date_from, date_to, opts) do
     action_type_url = get_action_type_url(action_type)
-    
+
     # Build query parameters - match working EA URL format exactly
     # Note: EA website doesn't seem to support pagination parameters, so we'll ignore page for now
     params = %{
       "name-search" => "",  # Always include empty name-search as in working URL
       "actionType" => action_type_url,
       "offenceType" => "",  # Include empty offenceType
-      "agencyFunction" => "",  # Include empty agencyFunction  
+      "agencyFunction" => "",  # Include empty agencyFunction
       "after" => Date.to_string(date_from),
-      "before" => ""  # Leave before empty like working URL
+      "before" => Date.to_string(date_to)  # Use date_to parameter for proper filtering
     }
     
     # Override name search if specifically provided
