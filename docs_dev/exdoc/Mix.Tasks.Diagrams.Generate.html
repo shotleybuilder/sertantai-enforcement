@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>mix diagrams.generate — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-E0D48728.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-task" id="main" data-type="tasks">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">mix diagrams.generate</span> 
+      <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
+
+    </h1>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Generate Ash diagrams for the EHS Enforcement application.</p><h2 id="module-usage" class="section-heading"><a href="#module-usage" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Usage</span></h2><pre><code class="makeup elixir" translate="no"><span class="n">mix</span><span class="w"> </span><span class="n">diagrams</span><span class="o">.</span><span class="n">generate</span><span class="w">                        </span><span class="c1"># Generate all diagrams</span><span class="w">
+</span><span class="n">mix</span><span class="w"> </span><span class="n">diagrams</span><span class="o">.</span><span class="n">generate</span><span class="w"> </span><span class="o">--</span><span class="n">domain</span><span class="w"> </span><span class="n">enforcement</span><span class="w">   </span><span class="c1"># Single domain</span><span class="w">
+</span><span class="n">mix</span><span class="w"> </span><span class="n">diagrams</span><span class="o">.</span><span class="n">generate</span><span class="w"> </span><span class="o">--</span><span class="n">format</span><span class="w"> </span><span class="n">mermaid</span><span class="w">       </span><span class="c1"># Mermaid markdown only</span><span class="w">
+</span><span class="n">mix</span><span class="w"> </span><span class="n">diagrams</span><span class="o">.</span><span class="n">generate</span><span class="w"> </span><span class="o">--</span><span class="n">format</span><span class="w"> </span><span class="n">png</span><span class="w">           </span><span class="c1"># PNG images</span><span class="w">
+</span><span class="n">mix</span><span class="w"> </span><span class="n">diagrams</span><span class="o">.</span><span class="n">generate</span><span class="w"> </span><span class="o">--</span><span class="n">format</span><span class="w"> </span><span class="n">svg</span><span class="w">           </span><span class="c1"># SVG images</span></code></pre><h2 id="module-examples" class="section-heading"><a href="#module-examples" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Examples</span></h2><pre><code class="makeup elixir" translate="no"><span class="c1"># Generate all diagrams in Mermaid markdown format</span><span class="w">
+</span><span class="n">mix</span><span class="w"> </span><span class="n">diagrams</span><span class="o">.</span><span class="n">generate</span><span class="w">
+
+</span><span class="c1"># Generate diagrams for enforcement domain only</span><span class="w">
+</span><span class="n">mix</span><span class="w"> </span><span class="n">diagrams</span><span class="o">.</span><span class="n">generate</span><span class="w"> </span><span class="o">--</span><span class="n">domain</span><span class="w"> </span><span class="n">enforcement</span><span class="w">
+
+</span><span class="c1"># Generate PNG images (requires mmdc installed or uses Mermaid.ink)</span><span class="w">
+</span><span class="n">mix</span><span class="w"> </span><span class="n">diagrams</span><span class="o">.</span><span class="n">generate</span><span class="w"> </span><span class="o">--</span><span class="n">format</span><span class="w"> </span><span class="n">png</span></code></pre><h2 id="module-diagram-types" class="section-heading"><a href="#module-diagram-types" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Diagram Types</span></h2><p>This task generates the following diagram types:</p><ul><li><strong>Entity Relationship</strong>: Shows relationships between resources</li><li><strong>Class Diagrams</strong>: Shows resource structure with attributes and actions</li><li><strong>Architecture Diagrams</strong>: C4 architecture overview of the application</li></ul><h2 id="module-output-locations" class="section-heading"><a href="#module-output-locations" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Output Locations</span></h2><ul><li>Application-wide diagrams: <code class="inline">docs-dev/dev/docs/diagrams/</code></li><li>Domain-specific diagrams: <code class="inline">docs-dev/dev/{domain}/diagrams/</code></li></ul>
+    </section>
+
+</div>
+
+
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>
