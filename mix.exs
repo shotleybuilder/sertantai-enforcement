@@ -127,7 +127,9 @@ defmodule EhsEnforcement.MixProject do
       # Event tracking for Ash
       {:ash_events, "~> 0.1"},
       # Documentation generation
-      {:ex_doc, "~> 0.31", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
+      # Diagram generation for Ash resources (dev-only, brings in ex_cmd ~> 0.16.0)
+      {:ash_diagram, "~> 0.1.0", only: :dev, runtime: false}
     ]
   end
 

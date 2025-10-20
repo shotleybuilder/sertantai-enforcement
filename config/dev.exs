@@ -141,3 +141,8 @@ config :swoosh, :api_client, false
 
 # Enable Ash PubSub debug mode for development
 config :ash, :pub_sub, debug?: true
+
+# Configure ash_diagram renderer
+# Using Mermaid.ink online renderer (requires req dependency, already installed)
+# Alternative: AshDiagram.Renderer.CLI (requires mmdc CLI tool via npm)
+config :ash_diagram, :renderer, AshDiagram.Renderer.MermaidInk
