@@ -178,7 +178,8 @@ defmodule EhsEnforcement.Scraping.Ea.IntegrationTest do
     end
     
     test "EA Case creation now works with CaseProcessor fix", %{admin_user: admin_user} do
-      alias EhsEnforcement.Agencies.Ea.{DataTransformer, CaseProcessor}
+      alias EhsEnforcement.Agencies.Ea.DataTransformer
+      alias EhsEnforcement.Scraping.Ea.CaseProcessor
       
       # Test data that represents a real EA record that would be transformed
       ea_record = %{

@@ -31,7 +31,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
       :regulator_id,
       :agency_code,
       :offender_attrs,
-      
+
       # Enforcement details
       :offence_result,
       :offence_fine,
@@ -39,7 +39,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
       :offence_action_date,
       :offence_hearing_date,
       :offence_breaches,
-      :offence_breaches_clean,
+      :legal_reference,  # Renamed from offence_breaches_clean for clarity
       :regulator_function,
       :regulator_url,
       :related_cases,
@@ -81,8 +81,8 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
         offence_costs: Decimal.new(0),  # EA doesn't separate costs
         offence_action_date: ea_record.action_date,
         offence_hearing_date: nil,  # EA doesn't provide hearing dates
-        offence_breaches: ea_record.offence_description,
-        offence_breaches_clean: build_legal_reference(ea_record),
+        offence_breaches: build_combined_breaches_text(ea_record),
+        legal_reference: build_legal_reference(ea_record),
         regulator_function: normalize_ea_function(ea_record.agency_function),
         regulator_url: ea_record.detail_url,
         related_cases: nil,  # Could be enhanced later
@@ -225,12 +225,11 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
       offence_action_date: processed_case.offence_action_date,
       offence_hearing_date: processed_case.offence_hearing_date,
       offence_breaches: processed_case.offence_breaches,
-      offence_breaches_clean: processed_case.offence_breaches_clean,
       regulator_function: processed_case.regulator_function,
       regulator_url: processed_case.regulator_url,
       related_cases: processed_case.related_cases,
       offence_action_type: processed_case.offence_action_type,
-      
+
       # EA-specific fields
       ea_event_reference: processed_case.ea_event_reference,
       ea_total_violation_count: processed_case.ea_total_violation_count,
@@ -373,7 +372,23 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
       {act, section} when is_binary(act) and is_binary(section) ->
         "#{String.trim(act)} - #{String.trim(section)}"
       {act, _} when is_binary(act) -> String.trim(act)
-      _ -> ea_record.offence_description
+      _ -> nil
+    end
+  end
+
+  defp build_combined_breaches_text(%EaDetailRecord{} = ea_record) do
+    legal_ref = build_legal_reference(ea_record)
+    offence_desc = ea_record.offence_description
+
+    case {offence_desc, legal_ref} do
+      {desc, ref} when is_binary(desc) and is_binary(ref) ->
+        "#{String.trim(desc)}\n\nLegal Reference: #{ref}"
+      {desc, nil} when is_binary(desc) ->
+        String.trim(desc)
+      {nil, ref} when is_binary(ref) ->
+        "Legal Reference: #{ref}"
+      _ ->
+        nil
     end
   end
   
@@ -532,8 +547,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
       offence_costs: Decimal.new(0),
       offence_action_date: transformed_case[:action_date],
       offence_hearing_date: nil,
-      offence_breaches: transformed_case[:offence_description],
-      offence_breaches_clean: transformed_case[:legal_reference],
+      offence_breaches: build_combined_breaches_from_transformed(transformed_case),
       regulator_function: transformed_case[:agency_function] || "Environmental",
       regulator_url: transformed_case[:regulator_url],
       related_cases: nil,
@@ -614,6 +628,22 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
   defp build_industry_sectors_array(industry_sector) when is_binary(industry_sector) do
     [industry_sector]
   end
+
+  defp build_combined_breaches_from_transformed(transformed_case) do
+    legal_ref = transformed_case[:legal_reference]
+    offence_desc = transformed_case[:offence_description]
+
+    case {offence_desc, legal_ref} do
+      {desc, ref} when is_binary(desc) and is_binary(ref) ->
+        "#{String.trim(desc)}\n\nLegal Reference: #{ref}"
+      {desc, nil} when is_binary(desc) ->
+        String.trim(desc)
+      {nil, ref} when is_binary(ref) ->
+        "Legal Reference: #{ref}"
+      _ ->
+        nil
+    end
+  end
   
   # Helper functions for unified case processor
   
@@ -628,12 +658,11 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
       offence_action_date: processed_case.offence_action_date,
       offence_hearing_date: processed_case.offence_hearing_date,
       offence_breaches: processed_case.offence_breaches,
-      offence_breaches_clean: processed_case.offence_breaches_clean,
       regulator_function: processed_case.regulator_function,
       regulator_url: processed_case.regulator_url,
       related_cases: processed_case.related_cases,
       offence_action_type: processed_case.offence_action_type,
-      
+
       # EA-specific fields
       ea_event_reference: processed_case.ea_event_reference,
       ea_total_violation_count: processed_case.ea_total_violation_count,
@@ -653,8 +682,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
       offence_costs: Decimal.new(0),
       offence_action_date: transformed_case[:action_date],
       offence_hearing_date: nil,
-      offence_breaches: transformed_case[:offence_description],
-      offence_breaches_clean: transformed_case[:legal_reference],
+      offence_breaches: build_combined_breaches_from_transformed(transformed_case),
       regulator_function: transformed_case[:agency_function] || "Environmental",
       regulator_url: transformed_case[:regulator_url],
       related_cases: nil,
