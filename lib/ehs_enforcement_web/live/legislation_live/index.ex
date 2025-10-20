@@ -28,6 +28,7 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
      |> assign(:filter_count, 0)
      |> assign(:counting_filters, false)
      |> assign(:filters_applied, false)
+     |> assign(:search_task_ref, nil)
      |> load_legislation(), temporary_assigns: [legislation: []]}
   end
 
@@ -86,7 +87,7 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
      socket
      |> assign(:filters_applied, true)
      |> assign(:page, 1)
-     |> load_legislation()}
+     |> async_load_legislation()}
   end
 
   @impl true
@@ -121,14 +122,14 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     else
       :desc
     end
-    
+
     {:noreply,
      socket
      |> assign(:sort_by, sort_by)
      |> assign(:sort_dir, sort_dir)
      |> assign(:page, 1)
      |> assign(:sort_requested, true)
-     |> load_legislation()}
+     |> async_load_legislation()}
   end
 
   @impl true
@@ -137,13 +138,12 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
       {page, _} when page > 0 ->
         total_pages = calculate_total_pages(socket.assigns.total_legislation, socket.assigns.page_size)
         valid_page = min(page, total_pages)
-        
+
         {:noreply,
          socket
          |> assign(:page, valid_page)
-         |> push_patch(to: ~p"/legislation?page=#{valid_page}")
-         |> load_legislation()}
-      
+         |> async_load_legislation()}
+
       _ ->
         {:noreply, socket}
     end
@@ -207,6 +207,54 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
   @impl true
   def handle_info({:legislation_deleted, _legislation}, socket) do
     {:noreply, load_legislation(socket)}
+  end
+
+  @impl true
+  def handle_info({:search_complete, task_ref, {legislation, total_legislation}}, socket) do
+    # Only process if this is the current search task
+    if socket.assigns.search_task_ref == task_ref do
+      {:noreply,
+       socket
+       |> assign(:legislation, legislation)
+       |> assign(:total_legislation, total_legislation)
+       |> assign(:loading, false)
+       |> assign(:search_task_ref, nil)}
+    else
+      # Ignore results from cancelled/old searches
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:search_timeout, task_ref}, socket) do
+    if socket.assigns.search_task_ref == task_ref do
+      require Logger
+      Logger.warning("Legislation search query timed out after 10 seconds")
+      {:noreply,
+       socket
+       |> assign(:loading, false)
+       |> assign(:search_task_ref, nil)
+       |> put_flash(:error, "Search timed out. Please try refining your search criteria.")}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:search_error, task_ref, error}, socket) do
+    if socket.assigns.search_task_ref == task_ref do
+      require Logger
+      Logger.error("Legislation search query failed: #{inspect(error)}")
+      {:noreply,
+       socket
+       |> assign(:legislation, [])
+       |> assign(:total_legislation, 0)
+       |> assign(:loading, false)
+       |> assign(:search_task_ref, nil)
+       |> put_flash(:error, "Search failed. Please try again.")}
+    else
+      {:noreply, socket}
+    end
   end
 
   defp count_filtered_legislation(socket) do
@@ -460,4 +508,133 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
   defp legislation_type_class(:order), do: "bg-yellow-100 text-yellow-800"
   defp legislation_type_class(:acop), do: "bg-purple-100 text-purple-800"
   defp legislation_type_class(_), do: "bg-gray-100 text-gray-800"
+
+  defp async_load_legislation(socket) do
+    # Cancel any previous search task
+    socket = cancel_previous_search(socket)
+
+    # Generate unique reference for this search
+    task_ref = make_ref()
+
+    # Capture the current assigns needed for the search
+    search_params = %{
+      filters: socket.assigns.filters,
+      fuzzy_search: socket.assigns.fuzzy_search,
+      sort_by: socket.assigns.sort_by,
+      sort_dir: socket.assigns.sort_dir,
+      page: socket.assigns.page,
+      page_size: socket.assigns.page_size,
+      sort_requested: socket.assigns.sort_requested,
+      filters_applied: socket.assigns.filters_applied
+    }
+
+    # Get the parent LiveView PID
+    parent_pid = self()
+
+    # Spawn async task for database query
+    Task.start(fn ->
+      # Set timeout for the query (10 seconds)
+      timeout_ref = Process.send_after(parent_pid, {:search_timeout, task_ref}, 10_000)
+
+      try do
+        # Execute the search query
+        result = execute_search_query(search_params)
+
+        # Cancel timeout if we completed successfully
+        Process.cancel_timer(timeout_ref)
+
+        # Send results back to LiveView
+        send(parent_pid, {:search_complete, task_ref, result})
+      rescue
+        error ->
+          # Cancel timeout and send error
+          Process.cancel_timer(timeout_ref)
+          send(parent_pid, {:search_error, task_ref, error})
+      end
+    end)
+
+    # Return socket with loading state and task reference
+    socket
+    |> assign(:loading, true)
+    |> assign(:search_task_ref, task_ref)
+  end
+
+  defp execute_search_query(search_params) do
+    %{
+      filters: filters,
+      fuzzy_search: fuzzy_search,
+      sort_by: sort_by,
+      sort_dir: sort_dir,
+      page: page,
+      page_size: page_size,
+      sort_requested: sort_requested,
+      filters_applied: filters_applied
+    } = search_params
+
+    if !filters_applied && map_size(filters) == 0 && !sort_requested do
+      {[], 0}
+    else
+      combined_search = filters[:search] || ""
+      use_fuzzy = fuzzy_search && is_binary(combined_search) && String.trim(combined_search) != ""
+
+      if use_fuzzy do
+        trimmed_query = String.trim(combined_search)
+        limited_query = if String.length(trimmed_query) > 100 do
+          String.slice(trimmed_query, 0, 100)
+        else
+          trimmed_query
+        end
+
+        offset = (page - 1) * page_size
+        fuzzy_opts = [
+          limit: page_size,
+          offset: offset
+        ]
+
+        {:ok, fuzzy_results} = Enforcement.search_legislation_title(limited_query, fuzzy_opts)
+
+        estimated_total = if length(fuzzy_results) == page_size do
+          (page * page_size) + 1
+        else
+          offset + length(fuzzy_results)
+        end
+
+        {fuzzy_results, estimated_total}
+      else
+        query_opts = [
+          filter: build_filter(filters),
+          sort: build_sort_options(sort_by, sort_dir),
+          limit: page_size,
+          offset: (page - 1) * page_size
+        ]
+
+        regular_results = Enforcement.list_legislation_with_filters!(query_opts)
+
+        count_filters = build_filter(filters)
+        count_filters = if combined_search != "" do
+          Map.put(count_filters, :search, "%#{String.trim(combined_search)}%")
+        else
+          count_filters
+        end
+        count_opts = [filter: count_filters]
+        regular_total = Enforcement.count_legislation!(count_opts)
+
+        {regular_results, regular_total}
+      end
+    end
+  end
+
+  defp cancel_previous_search(socket) do
+    case socket.assigns.search_task_ref do
+      nil ->
+        socket
+
+      _task_ref ->
+        # Note: We don't actually kill the task (it's not supervised)
+        # Instead, we just ignore its results in handle_info
+        # The task will complete and its message will be discarded
+        socket
+        |> assign(:search_task_ref, nil)
+    end
+  end
 end

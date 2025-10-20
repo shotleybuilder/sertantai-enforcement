@@ -31,6 +31,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      |> assign(:filter_count, 0)
      |> assign(:counting_filters, false)
      |> assign(:filters_applied, false)
+     |> assign(:search_task_ref, nil)
      |> assign(:agencies, load_agencies())
      |> load_notices()}
   end
@@ -99,7 +100,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   @impl true
   def handle_event("sort", %{"field" => field}, socket) do
     field_atom = String.to_atom(field)
-    
+
     {sort_by, sort_order} =
       if socket.assigns.sort_by == field_atom do
         # Toggle order if same field
@@ -108,23 +109,23 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
         # Default to descending for new field
         {field_atom, :desc}
       end
-    
+
     {:noreply,
      socket
      |> assign(:sort_by, sort_by)
      |> assign(:sort_order, sort_order)
      |> assign(:sort_requested, true)  # Flag to indicate sorting was requested
-     |> load_notices()}
+     |> async_load_notices()}
   end
 
   @impl true
   def handle_event("paginate", %{"page" => page}, socket) do
     page_num = String.to_integer(page)
-    
+
     {:noreply,
      socket
      |> assign(:page, page_num)
-     |> load_notices()}
+     |> async_load_notices()}
   end
 
   @impl true
@@ -154,7 +155,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     {:noreply,
      socket
      |> assign(:filters_applied, true)
-     |> load_notices()}
+     |> async_load_notices()}
   end
 
   @impl true
@@ -195,6 +196,54 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   @impl true
   def handle_info({:notice_updated, _notice}, socket) do
     {:noreply, load_notices(socket)}
+  end
+
+  @impl true
+  def handle_info({:search_complete, task_ref, {notices, total_notices}}, socket) do
+    # Only process if this is the current search task
+    if socket.assigns.search_task_ref == task_ref do
+      {:noreply,
+       socket
+       |> assign(:notices, notices)
+       |> assign(:total_notices, total_notices)
+       |> assign(:loading, false)
+       |> assign(:search_task_ref, nil)}
+    else
+      # Ignore results from cancelled/old searches
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:search_timeout, task_ref}, socket) do
+    if socket.assigns.search_task_ref == task_ref do
+      require Logger
+      Logger.warning("Notice search query timed out after 10 seconds")
+      {:noreply,
+       socket
+       |> assign(:loading, false)
+       |> assign(:search_task_ref, nil)
+       |> put_flash(:error, "Search timed out. Please try refining your search criteria.")}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:search_error, task_ref, error}, socket) do
+    if socket.assigns.search_task_ref == task_ref do
+      require Logger
+      Logger.error("Notice search query failed: #{inspect(error)}")
+      {:noreply,
+       socket
+       |> assign(:notices, [])
+       |> assign(:total_notices, 0)
+       |> assign(:loading, false)
+       |> assign(:search_task_ref, nil)
+       |> put_flash(:error, "Search failed. Please try again.")}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
@@ -436,11 +485,11 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
 
   defp count_filtered_notices(socket) do
     %{filters: filters, search_query: search_query} = socket.assigns
-    
+
     try do
       has_filters = map_size(filters) > 0
       has_search = is_binary(search_query) && String.trim(search_query) != ""
-      
+
       if !has_filters && !has_search do
         socket
         |> assign(:filter_count, 0)
@@ -448,11 +497,11 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
       else
         # Set counting state
         socket = assign(socket, :counting_filters, true)
-        
+
         # Count records using same filter logic as load_notices
         filter = build_optimized_notice_filter(socket)
         count = Enforcement.count_notices!([filter: filter])
-        
+
         socket
         |> assign(:filter_count, count)
         |> assign(:counting_filters, false)
@@ -462,6 +511,153 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
         socket
         |> assign(:filter_count, 0)
         |> assign(:counting_filters, false)
+    end
+  end
+
+  defp async_load_notices(socket) do
+    # Cancel any previous search task
+    socket = cancel_previous_search(socket)
+
+    # Generate unique reference for this search
+    task_ref = make_ref()
+
+    # Capture the current assigns needed for the search
+    search_params = %{
+      filters: socket.assigns.filters,
+      search_query: socket.assigns.search_query,
+      fuzzy_search: socket.assigns.fuzzy_search,
+      sort_by: socket.assigns.sort_by,
+      sort_order: socket.assigns.sort_order,
+      page: socket.assigns.page,
+      page_size: socket.assigns.page_size,
+      sort_requested: socket.assigns.sort_requested,
+      filters_applied: socket.assigns.filters_applied
+    }
+
+    # Get the parent LiveView PID
+    parent_pid = self()
+
+    # Spawn async task for database query
+    Task.start(fn ->
+      # Set timeout for the query (10 seconds)
+      timeout_ref = Process.send_after(parent_pid, {:search_timeout, task_ref}, 10_000)
+
+      try do
+        # Execute the search query
+        result = execute_search_query(search_params)
+
+        # Cancel timeout if we completed successfully
+        Process.cancel_timer(timeout_ref)
+
+        # Send results back to LiveView
+        send(parent_pid, {:search_complete, task_ref, result})
+      rescue
+        error ->
+          # Cancel timeout and send error
+          Process.cancel_timer(timeout_ref)
+          send(parent_pid, {:search_error, task_ref, error})
+      end
+    end)
+
+    # Return socket with loading state and task reference
+    socket
+    |> assign(:loading, true)
+    |> assign(:search_task_ref, task_ref)
+  end
+
+  defp execute_search_query(search_params) do
+    %{
+      filters: filters,
+      search_query: search_query,
+      fuzzy_search: fuzzy_search,
+      sort_by: sort_by,
+      sort_order: sort_order,
+      page: page,
+      page_size: page_size,
+      sort_requested: sort_requested,
+      filters_applied: filters_applied
+    } = search_params
+
+    # Don't load any notices unless filters have been explicitly applied or sort was requested
+    has_filters = map_size(filters) > 0
+    has_search = is_binary(search_query) && String.trim(search_query) != ""
+
+    if (!has_filters && !has_search && !sort_requested) || (!filters_applied && !sort_requested) do
+      {[], 0}
+    else
+      # Check if fuzzy search is enabled and we have a search query
+      use_fuzzy = fuzzy_search && has_search
+
+      if use_fuzzy do
+        # Use fuzzy search with pg_trgm
+        trimmed_query = String.trim(search_query)
+        limited_query = if String.length(trimmed_query) > 100 do
+          String.slice(trimmed_query, 0, 100)
+        else
+          trimmed_query
+        end
+
+        offset = (page - 1) * page_size
+        fuzzy_opts = [
+          limit: page_size,
+          offset: offset,
+          load: [:agency, :offender]
+        ]
+
+        {:ok, fuzzy_results} = Enforcement.fuzzy_search_notices(limited_query, fuzzy_opts)
+
+        # For fuzzy search, we can't easily get total count, so we estimate
+        # by checking if we got a full page of results
+        estimated_total = if length(fuzzy_results) == page_size do
+          (page * page_size) + 1  # Estimate there's at least one more page
+        else
+          offset + length(fuzzy_results)  # We've reached the end
+        end
+
+        {fuzzy_results, estimated_total}
+      else
+        # Use regular filtering with optimized indexes
+        filter_map = build_notice_filter_from_params(search_params)
+        query_opts = [
+          filter: filter_map,
+          sort: [{sort_by, sort_order}],
+          limit: page_size,
+          offset: (page - 1) * page_size,
+          load: [:agency, :offender]
+        ]
+
+        regular_results = Enforcement.list_notices_with_filters!(query_opts)
+
+        # Get total count using same optimized filter
+        regular_total = Enforcement.count_notices!([filter: filter_map])
+
+        {regular_results, regular_total}
+      end
+    end
+  end
+
+  defp build_notice_filter_from_params(search_params) do
+    filters = search_params.filters
+    search_query = search_params.search_query
+
+    %{}
+    |> add_notice_filter_if_present(filters, :agency_id)
+    |> add_notice_filter_if_present(filters, :offence_action_type)
+    |> add_notice_date_filters(filters)
+    |> add_notice_search_filter(search_query)
+  end
+
+  defp cancel_previous_search(socket) do
+    case socket.assigns.search_task_ref do
+      nil ->
+        socket
+
+      _task_ref ->
+        # Note: We don't actually kill the task (it's not supervised)
+        # Instead, we just ignore its results in handle_info
+        # The task will complete and its message will be discarded
+        socket
+        |> assign(:search_task_ref, nil)
     end
   end
 end
