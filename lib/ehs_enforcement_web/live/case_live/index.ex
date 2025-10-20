@@ -21,7 +21,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      |> assign(:agencies, Enforcement.list_agencies!())
      |> assign(:filters, %{})
      |> assign(:search_query, "")
-     |> assign(:sort_by, :offence_action_date) 
+     |> assign(:sort_by, :offence_action_date)
      |> assign(:sort_dir, :desc)
      |> assign(:page, 1)
      |> assign(:page_size, @default_page_size)
@@ -33,6 +33,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      |> assign(:filter_count, 0)
      |> assign(:counting_filters, false)
      |> assign(:filters_applied, false)
+     |> assign(:search_task_ref, nil)
      |> load_cases(), temporary_assigns: [cases: []]}
   end
 
@@ -131,7 +132,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     {:noreply,
      socket
      |> assign(:filters_applied, true)
-     |> load_cases()}
+     |> async_load_cases()}
   end
 
   @impl true
@@ -149,14 +150,14 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   def handle_event("sort", %{"field" => field, "direction" => direction}, socket) do
     sort_by = String.to_atom(field)
     sort_dir = String.to_atom(direction)
-    
+
     {:noreply,
      socket
      |> assign(:sort_by, sort_by)
      |> assign(:sort_dir, sort_dir)
      |> assign(:page, 1)  # Reset to first page when sorting
      |> assign(:sort_requested, true)  # Flag to indicate sorting was requested
-     |> load_cases()}
+     |> async_load_cases()}
   end
 
   @impl true
@@ -165,13 +166,13 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
       {page, _} when page > 0 ->
         total_pages = calculate_total_pages(socket.assigns.total_cases, socket.assigns.page_size)
         valid_page = min(page, total_pages)
-        
+
         {:noreply,
          socket
          |> assign(:page, valid_page)
          |> push_patch(to: ~p"/cases?page=#{valid_page}")
-         |> load_cases()}
-      
+         |> async_load_cases()}
+
       _ ->
         # Invalid page number, stay on current page
         {:noreply, socket}
@@ -263,6 +264,59 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     {:noreply, load_cases(socket)}
   end
 
+  # Handle async search completion
+  @impl true
+  def handle_info({:search_complete, task_ref, {cases, total_cases}}, socket) do
+    # Only process if this is the current search task
+    if socket.assigns.search_task_ref == task_ref do
+      {:noreply,
+       socket
+       |> assign(:cases, cases)
+       |> assign(:total_cases, total_cases)
+       |> assign(:loading, false)
+       |> assign(:search_task_ref, nil)}
+    else
+      # Ignore results from cancelled/old searches
+      {:noreply, socket}
+    end
+  end
+
+  # Handle async search timeout
+  @impl true
+  def handle_info({:search_timeout, task_ref}, socket) do
+    if socket.assigns.search_task_ref == task_ref do
+      require Logger
+      Logger.warning("Search query timed out after 10 seconds")
+
+      {:noreply,
+       socket
+       |> assign(:loading, false)
+       |> assign(:search_task_ref, nil)
+       |> put_flash(:error, "Search timed out. Please try refining your search criteria.")}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  # Handle async search error
+  @impl true
+  def handle_info({:search_error, task_ref, error}, socket) do
+    if socket.assigns.search_task_ref == task_ref do
+      require Logger
+      Logger.error("Search query failed: #{inspect(error)}")
+
+      {:noreply,
+       socket
+       |> assign(:cases, [])
+       |> assign(:total_cases, 0)
+       |> assign(:loading, false)
+       |> assign(:search_task_ref, nil)
+       |> put_flash(:error, "Search failed. Please try again.")}
+    else
+      {:noreply, socket}
+    end
+  end
+
   # Private functions
 
   defp load_cases(socket) do
@@ -337,11 +391,135 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
         # Log error and show empty state
         require Logger
         Logger.error("Failed to load cases: #{inspect(error)}")
-        
+
         socket
         |> assign(:cases, [])
         |> assign(:total_cases, 0)
         |> assign(:loading, false)
+    end
+  end
+
+  # Async version of load_cases for non-blocking database queries
+  defp async_load_cases(socket) do
+    # Cancel any previous search task
+    socket = cancel_previous_search(socket)
+
+    # Generate unique reference for this search
+    task_ref = make_ref()
+
+    # Capture the current assigns needed for the search
+    search_params = %{
+      filters: socket.assigns.filters,
+      search_query: socket.assigns.search_query,
+      fuzzy_search: socket.assigns.fuzzy_search,
+      sort_by: socket.assigns.sort_by,
+      sort_dir: socket.assigns.sort_dir,
+      page: socket.assigns.page,
+      page_size: socket.assigns.page_size,
+      sort_requested: socket.assigns.sort_requested,
+      filters_applied: socket.assigns.filters_applied
+    }
+
+    # Get the parent LiveView PID
+    parent_pid = self()
+
+    # Spawn async task for database query
+    Task.start(fn ->
+      # Set timeout for the query (10 seconds)
+      timeout_ref = Process.send_after(parent_pid, {:search_timeout, task_ref}, 10_000)
+
+      try do
+        # Execute the search query
+        result = execute_search_query(search_params)
+
+        # Cancel timeout if we completed successfully
+        Process.cancel_timer(timeout_ref)
+
+        # Send results back to LiveView
+        send(parent_pid, {:search_complete, task_ref, result})
+      rescue
+        error ->
+          # Cancel timeout and send error
+          Process.cancel_timer(timeout_ref)
+          send(parent_pid, {:search_error, task_ref, error})
+      end
+    end)
+
+    # Return socket with loading state and task reference
+    socket
+    |> assign(:loading, true)
+    |> assign(:search_task_ref, task_ref)
+  end
+
+  # Execute the actual search query (extracted from load_cases for reuse)
+  defp execute_search_query(params) do
+    %{filters: filters, search_query: search_query, fuzzy_search: fuzzy_search,
+      sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size,
+      sort_requested: sort_requested, filters_applied: filters_applied} = params
+
+    # Don't load any cases unless filters have been explicitly applied or sort was requested
+    has_filters = map_size(filters) > 0
+    has_search = is_binary(search_query) && String.trim(search_query) != ""
+
+    if (!has_filters && !has_search && !sort_requested) || (!filters_applied && !sort_requested) do
+      {[], 0}
+    else
+      # Check if fuzzy search is enabled and we have a search query
+      actual_search = if has_search, do: search_query, else: filters[:search]
+      use_fuzzy = fuzzy_search && is_binary(actual_search) && String.trim(actual_search) != ""
+
+      if use_fuzzy do
+        # Use fuzzy search with pg_trgm
+        trimmed_query = String.trim(actual_search)
+        limited_query = if String.length(trimmed_query) > 100 do
+          String.slice(trimmed_query, 0, 100)
+        else
+          trimmed_query
+        end
+
+        offset = (page - 1) * page_size
+        fuzzy_opts = [
+          limit: page_size,
+          offset: offset,
+          load: [:offender, :agency, :computed_breaches_summary]
+        ]
+
+        {:ok, fuzzy_results} = Enforcement.fuzzy_search_cases(limited_query, fuzzy_opts)
+
+        # For fuzzy search, estimate total count
+        estimated_total = if length(fuzzy_results) == page_size do
+          (page * page_size) + 1
+        else
+          offset + length(fuzzy_results)
+        end
+
+        {fuzzy_results, estimated_total}
+      else
+        # Use regular filtering with optimized indexes
+        query_opts = build_optimized_query_options(filters, sort_by, sort_dir, page, page_size)
+        regular_results = Enforcement.list_cases_with_filters!(query_opts)
+
+        # Get total count using same optimized filter
+        count_opts = [filter: build_optimized_filter(filters)]
+        regular_total = Enforcement.count_cases!(count_opts)
+
+        {regular_results, regular_total}
+      end
+    end
+  end
+
+  # Cancel any previous search task to prevent race conditions
+  defp cancel_previous_search(socket) do
+    case socket.assigns.search_task_ref do
+      nil ->
+        socket
+
+      _task_ref ->
+        # Note: We don't actually kill the task (it's not supervised)
+        # Instead, we just ignore its results in handle_info
+        # The task will complete and its message will be discarded
+        socket
+        |> assign(:search_task_ref, nil)
     end
   end
 
