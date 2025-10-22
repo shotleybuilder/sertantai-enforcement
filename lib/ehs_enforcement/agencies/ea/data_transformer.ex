@@ -25,7 +25,6 @@ defmodule EhsEnforcement.Agencies.Ea.DataTransformer do
     %{
       # Core identifiers
       ea_record_id: ea_record.ea_record_id,
-      case_reference: ea_record.case_reference,
       event_reference: ea_record.event_reference,
       
       # Company information
@@ -60,7 +59,8 @@ defmodule EhsEnforcement.Agencies.Ea.DataTransformer do
       
       # Integration mapping (use existing HSE schema fields)
       agency_code: :ea,
-      regulator_id: ea_record.case_reference || generate_regulator_id_from_detail(ea_record),
+      regulator_id: ea_record.ea_record_id,  # Use EA record ID from URL as unique identifier
+      case_reference: ea_record.case_reference,  # Store EA case reference separately (not unique)
       regulator_url: ea_record.detail_url, # Maps to existing regulator_url column
       offence_action_type: map_to_hse_action_type(ea_record.action_type)
     }
@@ -78,7 +78,6 @@ defmodule EhsEnforcement.Agencies.Ea.DataTransformer do
     %{
       # Core identifiers
       ea_record_id: generate_ea_record_id(raw_ea_data),
-      case_reference: raw_ea_data.case_reference,
       event_reference: raw_ea_data.event_reference,
       
       # Company information
@@ -114,7 +113,8 @@ defmodule EhsEnforcement.Agencies.Ea.DataTransformer do
       
       # Integration mapping (use existing HSE schema fields)
       agency_code: :ea,
-      regulator_id: raw_ea_data.case_reference || generate_regulator_id(raw_ea_data),
+      regulator_id: generate_ea_record_id(raw_ea_data),  # Use EA record ID from URL as unique identifier
+      case_reference: raw_ea_data.case_reference,  # Store EA case reference separately (not unique)
       regulator_url: build_record_url(raw_ea_data), # Maps to existing regulator_url column
       offence_action_type: map_to_hse_action_type(raw_ea_data.action_type)
     }

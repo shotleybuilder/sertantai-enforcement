@@ -14,7 +14,7 @@ defmodule EhsEnforcement.Enforcement.Case do
     repo(EhsEnforcement.Repo)
 
     identity_wheres_to_sql(
-      unique_airtable_id: "airtable_id IS NOT NULL"
+      unique_case_reference: "case_reference IS NOT NULL"
     )
 
     custom_indexes do
@@ -81,8 +81,8 @@ defmodule EhsEnforcement.Enforcement.Case do
   attributes do
     uuid_primary_key(:id)
 
-    attribute(:airtable_id, :string)
-    attribute(:regulator_id, :string)
+    attribute(:case_reference, :string, description: "Agency's case reference number (e.g., EA 'Case Reference' field)")
+    attribute(:regulator_id, :string, description: "Unique ID from agency system (EA: ea_record_id, HSE: regulator case ID)")
     attribute(:offence_result, :string)
     attribute(:offence_fine, :decimal)
     attribute(:offence_costs, :decimal)
@@ -140,8 +140,8 @@ defmodule EhsEnforcement.Enforcement.Case do
   end
 
   identities do
-    identity(:unique_airtable_id, [:airtable_id], where: expr(not is_nil(airtable_id)))
-    identity(:unique_regulator_id, [:regulator_id])
+    identity(:unique_case_reference, [:case_reference], where: expr(not is_nil(case_reference)))
+    identity(:unique_case_per_agency, [:agency_id, :regulator_id])
   end
 
   events do
@@ -162,7 +162,7 @@ defmodule EhsEnforcement.Enforcement.Case do
       primary?(true)
 
       accept([
-        :airtable_id,
+        :case_reference,
         :regulator_id,
         :offence_result,
         :offence_fine,

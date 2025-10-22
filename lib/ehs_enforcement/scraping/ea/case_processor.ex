@@ -250,11 +250,14 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
         # Handle duplicate by updating existing case with new EA data
         if is_duplicate_error?(ash_error) do
           Logger.debug("EA case already exists, checking if update needed: #{processed_case.regulator_id}")
-          
+
+          # Get agency_id from agency_code for the query
+          {:ok, agency} = Enforcement.get_agency_by_code(processed_case.agency_code)
+
           # Find the existing case and check if update is needed
           query_opts = if actor, do: [actor: actor], else: []
-          case Enforcement.Case 
-               |> Ash.Query.filter(regulator_id == ^processed_case.regulator_id)
+          case Enforcement.Case
+               |> Ash.Query.filter(agency_id == ^agency.id and regulator_id == ^processed_case.regulator_id)
                |> Ash.read_one(query_opts) do
             {:ok, existing_case} when not is_nil(existing_case) ->
               # Check if any fields actually need updating
