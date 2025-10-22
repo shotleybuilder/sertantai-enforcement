@@ -138,6 +138,7 @@ defmodule EhsEnforcementWeb.Router do
       live "/admin/cases/scrape", Admin.CaseLive.Scrape, :scrape
       live "/admin/notices/scrape", Admin.NoticeLive.Scrape, :scrape
       live "/admin/scrape-sessions", Admin.ScrapeSessionsLive, :index
+      live "/admin/scrape-sessions-design", Admin.ScrapeSessionsDesignLive, :index
       live "/admin/scrape-sessions/monitor", Admin.ScrapingLive.Index, :index
     end
   end
