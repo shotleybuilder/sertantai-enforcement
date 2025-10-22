@@ -28,6 +28,14 @@ defmodule EhsEnforcement.Scraping.ScrapeSession do
       allow_nil? false
     end
 
+    # Agency identifier - determines which scraping pattern is used
+    attribute :agency, :atom do
+      allow_nil? false
+      default :hse
+      constraints one_of: [:hse, :environment_agency]
+    end
+
+    # HSE-specific parameters (page-based scraping)
     attribute :start_page, :integer do
       allow_nil? false
       default 1
@@ -48,6 +56,21 @@ defmodule EhsEnforcement.Scraping.ScrapeSession do
       constraints [allow_empty?: false]
     end
 
+    # EA-specific parameters (date-range scraping)
+    attribute :date_from, :date do
+      allow_nil? true
+    end
+
+    attribute :date_to, :date do
+      allow_nil? true
+    end
+
+    attribute :action_types, {:array, :atom} do
+      allow_nil? true
+      constraints items: [one_of: [:court_case, :caution, :enforcement_notice]]
+    end
+
+    # Common status field
     attribute :status, :atom do
       allow_nil? false
       default :pending
@@ -75,7 +98,8 @@ defmodule EhsEnforcement.Scraping.ScrapeSession do
     create :create do
       primary? true
       accept [
-        :session_id, :start_page, :max_pages, :end_page, :database, :status,
+        :session_id, :agency, :start_page, :max_pages, :end_page, :database,
+        :date_from, :date_to, :action_types, :status,
         :current_page, :pages_processed, :cases_found, :cases_processed, :cases_created,
         :cases_created_current_page, :cases_updated, :cases_updated_current_page,
         :cases_exist_total, :errors_count

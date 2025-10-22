@@ -84,6 +84,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
     
     ash_session_params = %{
       session_id: session_id,
+      agency: :hse,
       start_page: validated_params.start_page,
       max_pages: validated_params.max_pages,
       database: validated_params.database,

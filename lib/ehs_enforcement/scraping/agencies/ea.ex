@@ -88,9 +88,13 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
     
     ash_session_params = %{
       session_id: session_id,
+      agency: :environment_agency,
       start_page: validated_params.start_page,
       max_pages: validated_params.max_pages,
       database: "ea_enforcement",  # EA-specific database identifier
+      date_from: validated_params.date_from,
+      date_to: validated_params.date_to,
+      action_types: validated_params.action_types,
       status: :running,
       current_page: validated_params.start_page,
       pages_processed: 0,

@@ -6,9 +6,10 @@ defmodule EhsEnforcement.Scraping.ScrapeSessionTest do
   require Ash.Query
 
   describe "scrape session lifecycle" do
-    test "creates session with running status" do
+    test "creates HSE session with running status" do
       {:ok, session} = Ash.create(ScrapeSession, %{
         session_id: "test-session-#{System.unique_integer([:positive])}",
+        agency: :hse,
         start_page: 1,
         max_pages: 10,
         database: "convictions",
@@ -16,8 +17,28 @@ defmodule EhsEnforcement.Scraping.ScrapeSessionTest do
       })
 
       assert session.status == :running
+      assert session.agency == :hse
       assert session.start_page == 1
       assert session.max_pages == 10
+    end
+
+    test "creates EA session with date parameters" do
+      {:ok, session} = Ash.create(ScrapeSession, %{
+        session_id: "ea-test-#{System.unique_integer([:positive])}",
+        agency: :environment_agency,
+        start_page: 1,
+        max_pages: 1,
+        database: "ea_enforcement",
+        date_from: ~D[2024-01-01],
+        date_to: ~D[2024-12-31],
+        action_types: [:court_case, :caution],
+        status: :running
+      })
+
+      assert session.agency == :environment_agency
+      assert session.date_from == ~D[2024-01-01]
+      assert session.date_to == ~D[2024-12-31]
+      assert session.action_types == [:court_case, :caution]
     end
 
     test "mark_stopped action sets status to stopped" do
