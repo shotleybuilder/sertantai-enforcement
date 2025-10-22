@@ -342,21 +342,45 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
   end
   
   defp finalize_session(session) do
-    # Update session to completed status using Ash.update
-    final_status = if session.status == :running, do: :completed, else: session.status
-    
+    # Determine final status based on how the session ended
+    final_status = determine_final_status(session)
+
     case Ash.update(session, %{status: final_status}) do
       {:ok, final_session} ->
-        Logger.info("HSE: Scraping session finalized", 
+        Logger.info("HSE: Scraping session finalized",
                     session_id: final_session.session_id,
                     status: final_session.status,
                     pages_processed: final_session.pages_processed,
                     cases_created: final_session.cases_created)
         {:ok, final_session}
-        
+
       {:error, reason} ->
         Logger.error("HSE: Failed to finalize session: #{inspect(reason)}")
         {:error, reason}
+    end
+  end
+
+  defp determine_final_status(session) do
+    validated_params = Map.get(session, :validated_params, %{})
+    max_consecutive_errors = Map.get(validated_params, :max_consecutive_errors, 3)
+
+    cond do
+      # If already failed or stopped, preserve that status
+      session.status == :failed -> :failed
+      session.status == :stopped -> :stopped
+
+      # If stopped due to too many errors, mark as failed
+      session.errors_count >= max_consecutive_errors ->
+        Logger.warning("HSE: Session stopped due to #{session.errors_count} errors (threshold: #{max_consecutive_errors})")
+        :failed
+
+      # If stopped before completing all pages and not due to "all exist" logic, mark as stopped
+      session.pages_processed < session.max_pages && session.status == :running ->
+        Logger.info("HSE: Session stopped early at page #{session.current_page} (max: #{session.max_pages})")
+        :stopped
+
+      # Otherwise, session completed successfully
+      true -> :completed
     end
   end
   

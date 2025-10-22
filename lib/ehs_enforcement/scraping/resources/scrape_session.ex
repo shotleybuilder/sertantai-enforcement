@@ -91,10 +91,23 @@ defmodule EhsEnforcement.Scraping.ScrapeSession do
         :cases_exist_total, :cases_exist_current_page, :errors_count
       ]
     end
-    
+
+    update :mark_stopped do
+      description "Mark a session as stopped (for manual intervention or cleanup)"
+      require_atomic? false
+      accept [:status]
+
+      change set_attribute(:status, :stopped)
+    end
+
     read :active do
       description "Get currently active/running sessions"
       filter expr(status in [:pending, :running])
+    end
+
+    read :stale do
+      description "Get stale sessions (running for more than 24 hours)"
+      filter expr(status in [:pending, :running] and updated_at < ago(24, :hour))
     end
   end
 

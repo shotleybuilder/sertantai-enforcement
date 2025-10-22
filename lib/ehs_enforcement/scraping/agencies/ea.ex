@@ -506,21 +506,47 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
   
   
   defp finalize_session(session) do
-    # Update session to completed status using Ash.update
-    final_status = if session.status == :running, do: :completed, else: session.status
-    
+    # Determine final status based on how the session ended
+    final_status = determine_final_status(session)
+
     case Ash.update(session, %{status: final_status}) do
       {:ok, final_session} ->
-        Logger.info("EA: Scraping session finalized", 
+        Logger.info("EA: Scraping session finalized",
                     session_id: final_session.session_id,
                     status: final_session.status,
                     pages_processed: final_session.pages_processed,
                     cases_created: final_session.cases_created)
         {:ok, final_session}
-        
+
       {:error, reason} ->
         Logger.error("EA: Failed to finalize session: #{inspect(reason)}")
         {:error, reason}
+    end
+  end
+
+  defp determine_final_status(session) do
+    cond do
+      # If already failed or stopped, preserve that status
+      session.status == :failed -> :failed
+      session.status == :stopped -> :stopped
+
+      # If stopped due to errors, mark as failed
+      session.errors_count > 0 ->
+        Logger.warning("EA: Session stopped with #{session.errors_count} errors")
+        :failed
+
+      # If no cases were processed and we expected some, might be stopped early
+      session.cases_found > 0 && session.cases_processed == 0 ->
+        Logger.info("EA: Session stopped before processing any cases (found: #{session.cases_found})")
+        :stopped
+
+      # If only partial processing occurred
+      session.cases_found > 0 && session.cases_processed < session.cases_found ->
+        Logger.info("EA: Session stopped after processing #{session.cases_processed}/#{session.cases_found} cases")
+        :stopped
+
+      # Otherwise, session completed successfully
+      true -> :completed
     end
   end
   

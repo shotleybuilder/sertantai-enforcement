@@ -14,9 +14,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **For a complete overview, see [docs-dev/README.md](docs-dev/README.md)**
 
-## BUILD SUMMARIES
+## SESSION DOCUMENTATION
 
-- **SAVE** Save build summaries to ~/Desktop/claude_build_summaries/[title of build summary].md
+When working within an active development session:
+- **CHECK** for active session: `.claude/sessions/.current-session`
+- **UPDATE** the active session document with progress, findings, and key decisions
+- **DOCUMENT** important discoveries, bugs found, and solutions implemented in the session file
+
+When completing major builds or milestones without an active session:
+- **SAVE** build summaries to `~/Desktop/claude_build_summaries/[title].md`
 
 ## ⚠️ CRITICAL ASH FRAMEWORK RULES
 
