@@ -8,7 +8,7 @@
     <meta name="project" content="ehs_enforcement v0.1.0">
 
 
-    <title>EhsEnforcement.Scraping.Hse.CaseProcessor — ehs_enforcement v0.1.0</title>
+    <title>EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive — ehs_enforcement v0.1.0</title>
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
@@ -75,7 +75,7 @@ ehs_enforcement
 <div id="top-content">
   <div class="heading-with-actions top-heading">
     <h1>
-      <span translate="no">EhsEnforcement.Scraping.Hse.CaseProcessor</span> 
+      <span translate="no">EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive</span> 
       <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
 
     </h1>
@@ -84,7 +84,8 @@ ehs_enforcement
 
 
     <section id="moduledoc">
-<p>HSE case processing pipeline - transforms scraped data for Ash resource creation.</p><p>Handles:</p><ul><li>Data transformation from HSE format to Ash resource format</li><li>Integration with existing Breaches module for legislation linking  </li><li>Offender matching/creation using existing OffenderMatcher</li><li>Validation and error handling following Ash patterns</li></ul>
+<p>LiveView for displaying scraping session DESIGN parameters (WHAT was scraped).</p><p>This view focuses on session configuration and parameters, complementing
+the execution-focused scrape_sessions_live.ex view.</p><p>Features:</p><ul><li>Display session design parameters (dates, action types, page ranges, etc.)</li><li>Agency-specific parameter rendering (HSE vs EA)</li><li>Real-time updates via Phoenix PubSub</li><li>Session filtering by agency and status</li></ul>
     </section>
 
 </div>
@@ -103,51 +104,11 @@ ehs_enforcement
 
     <div class="summary-row">
       <div class="summary-signature">
-        <a href="#create_case/2" data-no-tooltip="" translate="no">create_case(processed_case, actor \\ nil)</a>
+        <a href="#render/1" data-no-tooltip="" translate="no">render(assigns)</a>
 
       </div>
 
-        <div class="summary-synopsis"><p>Create Ash case resource from processed case data.</p></div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#create_cases/2" data-no-tooltip="" translate="no">create_cases(processed_cases, actor \\ nil)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Create multiple Ash case resources from processed cases using bulk operations.</p></div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#process_and_create_case/2" data-no-tooltip="" translate="no">process_and_create_case(scraped_case, actor \\ nil)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Process a single scraped case and create Ash resource immediately.</p></div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#process_case/1" data-no-tooltip="" translate="no">process_case(scraped_case)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Process a single scraped case into format ready for Ash resource creation.</p></div>
-
-    </div>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#process_cases/1" data-no-tooltip="" translate="no">process_cases(scraped_cases)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Process multiple scraped cases in batch.</p></div>
+        <div class="summary-synopsis"><p>Callback implementation for <a><code class="inline">Phoenix.LiveView.render/1</code></a>.</p></div>
 
     </div>
 
@@ -164,16 +125,14 @@ ehs_enforcement
       <span class="text">Functions</span>
     </h1>
     <div class="functions-list">
-<section class="detail" id="create_case/2">
-
-    <span id="create_case/1"></span>
+<section class="detail" id="render/1">
 
   <div class="detail-header">
-    <a href="#create_case/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+    <a href="#render/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
       <i class="ri-link-m" aria-hidden="true"></i>
     </a>
     <div class="heading-with-actions">
-      <h1 class="signature" translate="no">create_case(processed_case, actor \\ nil)</h1>
+      <h1 class="signature" translate="no">render(assigns)</h1>
 
 
     </div>
@@ -181,84 +140,7 @@ ehs_enforcement
 
   <section class="docstring">
 
-<p>Create Ash case resource from processed case data.</p><p>Returns {:ok, case} or {:error, ash_error}</p>
-  </section>
-</section>
-<section class="detail" id="create_cases/2">
-
-    <span id="create_cases/1"></span>
-
-  <div class="detail-header">
-    <a href="#create_cases/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">create_cases(processed_cases, actor \\ nil)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Create multiple Ash case resources from processed cases using bulk operations.</p><p>Returns {:ok, result} with summary stats or {:error, reason}</p>
-  </section>
-</section>
-<section class="detail" id="process_and_create_case/2">
-
-    <span id="process_and_create_case/1"></span>
-
-  <div class="detail-header">
-    <a href="#process_and_create_case/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">process_and_create_case(scraped_case, actor \\ nil)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Process a single scraped case and create Ash resource immediately.</p><p>Optimized for real-time scraping where each case should be saved individually.
-Returns {:ok, case} or {:error, reason}</p>
-  </section>
-</section>
-<section class="detail" id="process_case/1">
-
-  <div class="detail-header">
-    <a href="#process_case/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">process_case(scraped_case)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Process a single scraped case into format ready for Ash resource creation.</p><p>Returns {:ok, %ProcessedCase{}} or {:error, reason}</p>
-  </section>
-</section>
-<section class="detail" id="process_cases/1">
-
-  <div class="detail-header">
-    <a href="#process_cases/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">process_cases(scraped_cases)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Process multiple scraped cases in batch.</p><p>Returns {:ok, [%ProcessedCase{}]} or {:error, reason}</p>
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/1.1.3/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p>
   </section>
 </section>
 
