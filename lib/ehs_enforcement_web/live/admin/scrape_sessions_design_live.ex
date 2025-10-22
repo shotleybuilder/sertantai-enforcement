@@ -124,6 +124,15 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
     Ash.read!(final_query, actor: actor)
   end
 
+  # Detect agency - handles legacy EA sessions that have :hse agency but "ea_enforcement" database
+  defp detect_agency(session) do
+    cond do
+      session.agency == :environment_agency -> :environment_agency
+      session.database == "ea_enforcement" -> :environment_agency
+      true -> :hse
+    end
+  end
+
   defp agency_badge_class(agency) do
     case agency do
       :hse -> "bg-blue-100 text-blue-800"
