@@ -138,14 +138,27 @@
                       />
                       
                       <div class="flex-1 min-w-0">
-                        <div class="flex items-center space-x-2 mb-2">
-                          <h4 class="text-lg font-medium text-gray-900">
-                            Record #<%= index + 1 %>
-                          </h4>
-                          <%= if record.id do %>
-                            <span class="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                              ID: <%= String.slice(record.id, 0, 8) %>...
-                            </span>
+                        <div class="flex items-center justify-between mb-2">
+                          <div class="flex items-center space-x-2">
+                            <h4 class="text-lg font-medium text-gray-900">
+                              Record #<%= index + 1 %>
+                            </h4>
+                            <%= if record.id do %>
+                              <span class="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                ID: <%= String.slice(record.id, 0, 8) %>...
+                              </span>
+                            <% end %>
+                          </div>
+                          <%= if record.url do %>
+                            <a
+                              href={record.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            >
+                              <.icon name="hero-arrow-top-right-on-square" class="h-3 w-3 mr-1" />
+                              View on Agency Site
+                            </a>
                           <% end %>
                         </div>
                         
@@ -174,6 +187,25 @@
                                     <%= record.offender.name %>
                                   <% else %>
                                     Unknown
+                                  <% end %>
+                                </dd>
+                              </div>
+                              <div>
+                                <dt class="text-sm font-medium text-gray-500">Agency</dt>
+                                <dd class="text-sm text-gray-900">
+                                  <%= if record.agency do %>
+                                    <span class={[
+                                      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+                                      case record.agency.code do
+                                        "hse" -> "bg-blue-100 text-blue-800"
+                                        "ea" -> "bg-green-100 text-green-800"
+                                        _ -> "bg-gray-100 text-gray-800"
+                                      end
+                                    ]}>
+                                      <%= record.agency.name %>
+                                    </span>
+                                  <% else %>
+                                    —
                                   <% end %>
                                 </dd>
                               </div>
@@ -219,6 +251,25 @@
                                     <%= record.offender.name %>
                                   <% else %>
                                     Unknown
+                                  <% end %>
+                                </dd>
+                              </div>
+                              <div>
+                                <dt class="text-sm font-medium text-gray-500">Agency</dt>
+                                <dd class="text-sm text-gray-900">
+                                  <%= if record.agency do %>
+                                    <span class={[
+                                      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+                                      case record.agency.code do
+                                        "hse" -> "bg-blue-100 text-blue-800"
+                                        "ea" -> "bg-green-100 text-green-800"
+                                        _ -> "bg-gray-100 text-gray-800"
+                                      end
+                                    ]}>
+                                      <%= record.agency.name %>
+                                    </span>
+                                  <% else %>
+                                    —
                                   <% end %>
                                 </dd>
                               </div>

@@ -50,15 +50,15 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
 
   @impl true
   def handle_event("navigate_group", %{"direction" => direction}, socket) do
-    current_groups = get_current_duplicates(socket)
+    current_groups = get_current_duplicates(socket.assigns)
     current_index = socket.assigns.current_group_index
     total_groups = length(current_groups)
-    
+
     new_index = case direction do
       "prev" -> max(0, current_index - 1)
       "next" -> min(total_groups - 1, current_index + 1)
     end
-    
+
     {:noreply,
      socket
      |> assign(:current_group_index, new_index)

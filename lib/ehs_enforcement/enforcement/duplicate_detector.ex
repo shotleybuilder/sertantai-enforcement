@@ -11,44 +11,47 @@ defmodule EhsEnforcement.Enforcement.DuplicateDetector do
   """
   def find_duplicate_cases(current_user) do
     try do
+      # Load cases with offender and agency relationships for display in UI
+      query = Case |> Ash.Query.load([:offender, :agency])
+
       # Strategy 1: Find cases with exact regulator_id matches
-      regulator_id_duplicates = case Ash.read(Case, actor: current_user) do
+      regulator_id_duplicates = case Ash.read(query, actor: current_user) do
         {:ok, cases} ->
           cases
           |> Enum.filter(fn case -> case.regulator_id && String.trim(case.regulator_id) != "" end)
           |> Enum.group_by(fn case -> String.trim(case.regulator_id) end)
           |> Enum.filter(fn {_regulator_id, cases} -> length(cases) > 1 end)
           |> Enum.map(fn {_regulator_id, cases} -> cases end)
-        
+
         {:error, _error} ->
           []
       end
-      
+
       # Strategy 2: Find cases with same offender + action date
-      offender_date_duplicates = case Ash.read(Case, actor: current_user) do
+      offender_date_duplicates = case Ash.read(query, actor: current_user) do
         {:ok, cases} ->
           cases
           |> Enum.filter(fn case -> case.offender_id && case.offence_action_date end)
           |> Enum.group_by(fn case -> {case.offender_id, case.offence_action_date} end)
           |> Enum.filter(fn {_key, cases} -> length(cases) > 1 end)
           |> Enum.map(fn {_key, cases} -> cases end)
-        
+
         {:error, _error} ->
           []
       end
-      
+
       # Strategy 3: Find cases with same offender + exact fine + costs amounts
-      financial_duplicates = case Ash.read(Case, actor: current_user) do
+      financial_duplicates = case Ash.read(query, actor: current_user) do
         {:ok, cases} ->
           cases
-          |> Enum.filter(fn case -> 
+          |> Enum.filter(fn case ->
             case.offender_id && case.offence_fine && case.offence_costs &&
             Decimal.compare(case.offence_fine, Decimal.new(0)) == :gt
           end)
           |> Enum.group_by(fn case -> {case.offender_id, case.offence_fine, case.offence_costs} end)
           |> Enum.filter(fn {_key, cases} -> length(cases) > 1 end)
           |> Enum.map(fn {_key, cases} -> cases end)
-        
+
         {:error, _error} ->
           []
       end
@@ -70,43 +73,46 @@ defmodule EhsEnforcement.Enforcement.DuplicateDetector do
   """
   def find_duplicate_notices(current_user) do
     try do
+      # Load notices with offender and agency relationships for display in UI
+      query = Notice |> Ash.Query.load([:offender, :agency])
+
       # Strategy 1: Find notices with exact regulator_id matches
-      regulator_id_duplicates = case Ash.read(Notice, actor: current_user) do
+      regulator_id_duplicates = case Ash.read(query, actor: current_user) do
         {:ok, notices} ->
           notices
           |> Enum.filter(fn notice -> notice.regulator_id && String.trim(notice.regulator_id) != "" end)
           |> Enum.group_by(fn notice -> String.trim(notice.regulator_id) end)
           |> Enum.filter(fn {_regulator_id, notices} -> length(notices) > 1 end)
           |> Enum.map(fn {_regulator_id, notices} -> notices end)
-        
+
         {:error, _error} ->
           []
       end
-      
+
       # Strategy 2: Find notices with same offender + action date
-      offender_date_duplicates = case Ash.read(Notice, actor: current_user) do
+      offender_date_duplicates = case Ash.read(query, actor: current_user) do
         {:ok, notices} ->
           notices
           |> Enum.filter(fn notice -> notice.offender_id && notice.offence_action_date end)
           |> Enum.group_by(fn notice -> {notice.offender_id, notice.offence_action_date} end)
           |> Enum.filter(fn {_key, notices} -> length(notices) > 1 end)
           |> Enum.map(fn {_key, notices} -> notices end)
-        
+
         {:error, _error} ->
           []
       end
-      
+
       # Strategy 3: Find notices with same regulator_ref_number (if available)
-      ref_number_duplicates = case Ash.read(Notice, actor: current_user) do
+      ref_number_duplicates = case Ash.read(query, actor: current_user) do
         {:ok, notices} ->
           notices
-          |> Enum.filter(fn notice -> 
+          |> Enum.filter(fn notice ->
             notice.regulator_ref_number && String.trim(notice.regulator_ref_number) != ""
           end)
           |> Enum.group_by(fn notice -> String.trim(notice.regulator_ref_number) end)
           |> Enum.filter(fn {_ref, notices} -> length(notices) > 1 end)
           |> Enum.map(fn {_ref, notices} -> notices end)
-        
+
         {:error, _error} ->
           []
       end
