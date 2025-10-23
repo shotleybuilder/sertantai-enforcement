@@ -5,12 +5,14 @@ EhsEnforcement.Accounts.UserIdentity.html
 EhsEnforcement.Accounts.html
 EhsEnforcement.Agencies.Ea.DataTransformer.html
 EhsEnforcement.Agencies.Ea.IndustryClassifier.html
+EhsEnforcement.Agencies.Ea.OffenderBuilder.html
 EhsEnforcement.Agencies.Ea.OffenderMatcher.html
 EhsEnforcement.Agencies.Hse.Breaches.html
 EhsEnforcement.Agencies.Hse.Common.html
 EhsEnforcement.Agencies.Hse.DataTransformer.html
 EhsEnforcement.Agencies.Hse.Notices.HSENotice.html
 EhsEnforcement.Agencies.Hse.Notices.html
+EhsEnforcement.Agencies.Hse.OffenderBuilder.html
 EhsEnforcement.Agencies.Hse.OffenderMatcher.html
 EhsEnforcement.Config.ConfigManager.html
 EhsEnforcement.Config.Environment.html
@@ -102,6 +104,10 @@ EhsEnforcement.Scraping.ScrapeCoordinator.html
 EhsEnforcement.Scraping.ScrapeRequest.html
 EhsEnforcement.Scraping.ScrapeSession.html
 EhsEnforcement.Scraping.ScrapedCase.html
+EhsEnforcement.Scraping.Shared.BusinessTypeDetector.html
+EhsEnforcement.Scraping.Shared.DateParser.html
+EhsEnforcement.Scraping.Shared.EnvironmentalHelpers.html
+EhsEnforcement.Scraping.Shared.MonetaryParser.html
 EhsEnforcement.Scraping.html
 EhsEnforcement.Sync.AirtableImporter.html
 EhsEnforcement.Telemetry.html
@@ -188,8 +194,8 @@ dist/lato-latin-700-normal-2XVSBPG4.woff2
 dist/lato-latin-ext-400-normal-N27NCBWW.woff2
 dist/lato-latin-ext-700-normal-Q2L5DVMW.woff2
 dist/remixicon-QPNJX265.woff2
-dist/search_data-9607FC2A.js
-dist/sidebar_items-ADD5CCE7.js
+dist/search_data-3CD122E0.js
+dist/sidebar_items-9CD84F28.js
 index.html
 readme.html
 search.html

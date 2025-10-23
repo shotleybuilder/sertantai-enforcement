@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="ehs_enforcement v0.1.0">
+
+
+    <title>EhsEnforcement.Scraping.Shared.BusinessTypeDetector — ehs_enforcement v0.1.0</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-9CD84F28.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+      <div>
+        <a href="EhsEnforcement.html" class="sidebar-projectName" translate="no">
+ehs_enforcement
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras=""></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-module" id="main" data-type="modules">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of ehs_enforcement</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>
+      <span translate="no">EhsEnforcement.Scraping.Shared.BusinessTypeDetector</span> 
+      <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
+
+    </h1>
+
+  </div>
+
+
+    <section id="moduledoc">
+<p>Shared utility for detecting and normalizing business types from company names.</p><p>This module consolidates business type detection logic that was previously
+duplicated across HSE and EA processors (4 files total).</p><h2 id="module-usage" class="section-heading"><a href="#module-usage" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Usage</span></h2><pre><code class="makeup elixir" translate="no"><span class="gp unselectable">iex&gt; </span><span class="nc">BusinessTypeDetector</span><span class="o">.</span><span class="n">determine_business_type</span><span class="p" data-group-id="5251084229-1">(</span><span class="s">&quot;Acme Corporation Ltd&quot;</span><span class="p" data-group-id="5251084229-1">)</span><span class="w">
+</span><span class="s">&quot;LTD&quot;</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BusinessTypeDetector</span><span class="o">.</span><span class="n">determine_business_type</span><span class="p" data-group-id="5251084229-2">(</span><span class="s">&quot;Smith &amp; Sons LLC&quot;</span><span class="p" data-group-id="5251084229-2">)</span><span class="w">
+</span><span class="s">&quot;LLC&quot;</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="nc">BusinessTypeDetector</span><span class="o">.</span><span class="n">determine_business_type</span><span class="p" data-group-id="5251084229-3">(</span><span class="s">&quot;John Smith&quot;</span><span class="p" data-group-id="5251084229-3">)</span><span class="w">
+</span><span class="s">&quot;SOLE&quot;</span></code></pre>
+    </section>
+
+</div>
+
+  <section id="summary" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#summary">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Summary</span>
+    </h1>
+<div class="summary-functions summary">
+  <h2>
+    <a href="#functions">Functions</a>
+  </h2>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#determine_business_type/1" data-no-tooltip="" translate="no">determine_business_type(offender_name)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Determines the business type based on company name patterns.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#normalize_business_type/1" data-no-tooltip="" translate="no">normalize_business_type(business_type_string)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Normalizes a business type string to a standard Ash enum value.</p></div>
+
+    </div>
+
+</div>
+
+  </section>
+
+
+  <section id="functions" class="details-list">
+    <h1 class="section-heading">
+      <a class="hover-link" href="#functions">
+        <i class="ri-link-m" aria-hidden="true"></i>
+      </a>
+      <span class="text">Functions</span>
+    </h1>
+    <div class="functions-list">
+<section class="detail" id="determine_business_type/1">
+
+  <div class="detail-header">
+    <a href="#determine_business_type/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">determine_business_type(offender_name)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Determines the business type based on company name patterns.</p><p>Checks for common business entity suffixes and returns a standardized type code.</p><h2 id="determine_business_type/1-supported-types" class="section-heading"><a href="#determine_business_type/1-supported-types" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Supported Types</span></h2><ul><li>LLC: Limited Liability Company</li><li>INC: Incorporated</li><li>CORP: Corporation</li><li>PLC: Public Limited Company</li><li>LTD: Limited (most common in UK)</li><li>LLP: Limited Liability Partnership</li><li>SOLE: Sole proprietor/trader (default)</li></ul><h2 id="determine_business_type/1-parameters" class="section-heading"><a href="#determine_business_type/1-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">offender_name</code> - Company or individual name (string or nil)</li></ul><h2 id="determine_business_type/1-returns" class="section-heading"><a href="#determine_business_type/1-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li>String representing business type code</li></ul>
+  </section>
+</section>
+<section class="detail" id="normalize_business_type/1">
+
+  <div class="detail-header">
+    <a href="#normalize_business_type/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">normalize_business_type(business_type_string)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+<p>Normalizes a business type string to a standard Ash enum value.</p><p>Converts various business type representations into the enum values
+used by the Offender resource: <code class="inline">:limited_company</code>, <code class="inline">:individual</code>, <code class="inline">:partnership</code>, <code class="inline">:plc</code>, <code class="inline">:other</code>.</p><h2 id="normalize_business_type/1-parameters" class="section-heading"><a href="#normalize_business_type/1-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">business_type_string</code> - Business type code or description</li></ul><h2 id="normalize_business_type/1-returns" class="section-heading"><a href="#normalize_business_type/1-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li>Atom representing the normalized business type for Ash resources</li></ul>
+  </section>
+</section>
+
+    </div>
+  </section>
+
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="ehs_enforcement.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>
