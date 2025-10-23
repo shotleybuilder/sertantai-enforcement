@@ -1,11 +1,15 @@
 defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   @moduledoc """
-  Admin interface for manual HSE notice scraping with real-time progress display.
-  
+  Admin interface for manual notice scraping from UK regulatory agencies with real-time progress display.
+
+  Supports:
+  - HSE (Health & Safety Executive) - page-based notice scraping
+  - EA (Environment Agency) - date-range based notice scraping
+
   Features:
-  - Manual notice scraping trigger with configurable parameters
+  - Manual notice scraping trigger with agency-specific configurable parameters
   - Real-time progress updates via Phoenix PubSub
-  - Notice scraping session management and results display  
+  - Notice scraping session management and results display
   - Error reporting and recovery options
   - Proper Ash integration with actor context
   """
@@ -31,11 +35,11 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     # Check if manual scraping is enabled via feature flag
     manual_scraping_enabled = ScrapeCoordinator.scraping_enabled?(type: :manual, actor: socket.assigns[:current_user])
     
-    # Create AshPhoenix.Form for scraping parameters with HSE defaults
-    form = Form.for_create(ScrapeRequest, :create, as: "scrape_request", forms: [auto?: false]) 
+    # Create AshPhoenix.Form for scraping parameters with default values (HSE agency)
+    form = Form.for_create(ScrapeRequest, :create, as: "scrape_request", forms: [auto?: false])
     |> Form.validate(%{
       "agency" => "hse",
-      "database" => "notices", 
+      "database" => "notices",
       "country" => "All",
       "start_page" => "1",
       "max_pages" => "10"
@@ -59,13 +63,14 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
       # Progress tracking - using standard field names for ProgressComponent compatibility
       progress: %{
         pages_processed: 0,
-        cases_found: 0,
-        cases_created: 0,
-        cases_created_current_page: 0,  # Track created notices on current page
-        cases_updated: 0,               # Track total updated notices
-        cases_updated_current_page: 0,  # Track updated notices on current page
-        cases_exist_total: 0,
-        cases_exist_current_page: 0,
+        # Use notices_* keys to match handle_scrape_session_update mapping
+        notices_found: 0,
+        notices_created: 0,
+        notices_created_current_page: 0,  # Track created notices on current page
+        notices_updated: 0,               # Track total updated notices
+        notices_updated_current_page: 0,  # Track updated notices on current page
+        notices_exist_total: 0,
+        notices_exist_current_page: 0,
         errors_count: 0,
         current_page: nil,
         status: :idle
@@ -166,21 +171,28 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   @impl true
   def handle_event("submit", %{"scrape_request" => params}, socket) do
     Logger.info("Admin triggered manual notice scraping with params: #{inspect(params)}")
-    
+
     # Check if manual scraping is enabled via feature flag
     unless socket.assigns.manual_scraping_enabled do
       socket = put_flash(socket, :error, "Manual scraping is currently disabled. Please contact an administrator.")
       {:noreply, socket}
     else
-      # Force database to "notices" for this interface
-      params_with_notices = params
-      |> Map.put("database", "notices")
-      |> Map.put_new("country", "All")  # Default to All if not provided
-      
-      # First validate the form with the new params, then submit
-      validated_form = Form.validate(socket.assigns.form, params_with_notices)
-      case Form.submit(validated_form, params: params_with_notices) do
-        {:ok, scrape_request} ->
+      # Get agency - both HSE and EA are now supported
+      agency = params["agency"] || "hse"
+
+      if agency in ["ea", :ea] do
+        # EA notice scraping - date-range based
+        scrape_ea_notices(socket, params)
+      else
+        # Force database to "notices" for this interface
+        params_with_notices = params
+        |> Map.put("database", "notices")
+        |> Map.put_new("country", "All")  # Default to All if not provided
+
+        # First validate the form with the new params, then submit
+        validated_form = Form.validate(socket.assigns.form, params_with_notices)
+        case Form.submit(validated_form, params: params_with_notices) do
+          {:ok, scrape_request} ->
           # Extract validated parameters from the created resource
           # Note: end_page field represents the last page number to scrape
           end_page = scrape_request.end_page
@@ -252,11 +264,12 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
           scraping_task: task
         )
         
-        {:noreply, socket}
-        
-        {:error, form} ->
-          # Form validation failed - assign the form with errors
-          {:noreply, assign(socket, form: form |> to_form())}
+          {:noreply, socket}
+
+          {:error, form} ->
+            # Form validation failed - assign the form with errors
+            {:noreply, assign(socket, form: form |> to_form())}
+        end
       end
     end
   end
@@ -617,7 +630,78 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   end
   
   # Custom progress functions removed - now using unified ProgressComponent
-  
+
+  # EA Notice Scraping Handler
+  defp scrape_ea_notices(socket, params) do
+    # Parse and validate EA-specific parameters
+    date_from = parse_date(params["date_from"]) || Date.add(Date.utc_today(), -30)
+    date_to = parse_date(params["date_to"]) || Date.utc_today()
+
+    # Validate date range
+    if Date.compare(date_from, date_to) == :gt do
+      socket = put_flash(socket, :error, "Start date must be before end date")
+      {:noreply, socket}
+    else
+      scraping_opts = %{
+        date_from: date_from,
+        date_to: date_to,
+        action_types: [:enforcement_notice],  # EA notices use enforcement_notice action type
+        actor: socket.assigns.current_user
+      }
+
+      # Set session start time
+      session_start_time = DateTime.add(DateTime.utc_now(), -5, :second)
+
+      # Update socket before starting background task
+      socket = assign(socket,
+        scraping_active: true,
+        scraping_session_started_at: session_start_time,
+        scraped_notices: [],
+        progress: Map.merge(socket.assigns.progress, %{
+          status: :running,
+          notices_found: 0,
+          notices_created: 0,
+          notices_updated: 0,
+          cases_exist_total: 0,
+          errors_count: 0
+        })
+      )
+
+      # Create ScrapeSession using Ash (for EA, no pages - track by date range)
+      session = EhsEnforcement.Scraping.ScrapeSession
+      |> Ash.Changeset.for_create(:create, %{
+        session_id: :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower),
+        database: "ea_notices",  # Distinguish from HSE
+        status: :running,
+        # For EA, use dummy page values (resource requires start_page > 0)
+        start_page: 1,
+        max_pages: 1,  # EA is single-request
+        end_page: 1,
+        current_page: 1
+      })
+      |> Ash.create!(actor: socket.assigns.current_user)
+
+      Logger.info("Starting EA notice scraping: #{date_from} to #{date_to}")
+
+      task = Task.async(fn ->
+        case scrape_ea_notices_with_session(session, scraping_opts) do
+          {:ok, results} ->
+            Logger.info("EA notice scraping completed: #{results.created_count} notices created")
+
+          {:error, reason} ->
+            Logger.error("EA notice scraping failed: #{inspect(reason)}")
+        end
+      end)
+
+      # Final socket update with session and task info
+      socket = assign(socket,
+        current_session: session,
+        scraping_task: task
+      )
+
+      {:noreply, socket}
+    end
+  end
 
   # Pure Ash scraping function - updates ScrapeSession for progress tracking
   defp scrape_notices_with_session(session, opts) do
@@ -823,6 +907,147 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   
   defp duplicate_error?(_), do: false
 
+  # EA Notice Scraping with Session Tracking
+  defp scrape_ea_notices_with_session(session, opts) do
+    alias EhsEnforcement.Scraping.Ea.NoticeScraper
+    alias EhsEnforcement.Scraping.Ea.NoticeProcessor
+
+    date_from = opts.date_from
+    date_to = opts.date_to
+    actor = opts.actor
+
+    results = %{created_count: 0, error_count: 0, existing_count: 0, updated_count: 0}
+
+    try do
+      # Stage 1: Collect summary records (single request, no pagination)
+      Logger.info("Stage 1: Collecting EA notice summaries for #{date_from} to #{date_to}")
+
+      case NoticeScraper.collect_summary_records(date_from, date_to, []) do
+        {:ok, summary_records} ->
+          Logger.info("Found #{length(summary_records)} EA notice summaries")
+
+          # Update session with total found
+          session
+          |> Ash.Changeset.for_update(:update, %{
+            cases_found: length(summary_records)
+          })
+          |> Ash.update!(actor: actor)
+
+          # Stage 2: Process each notice (fetch details + create Notice resource)
+          Logger.info("Stage 2: Processing #{length(summary_records)} EA notices")
+
+          # Reload session to get fresh data before processing loop
+          session = Ash.get!(ScrapeSession, session.id, actor: actor)
+
+          # Process notices with accumulator that includes both results AND updated session
+          {final_results, final_session} = Enum.reduce(summary_records, {results, session}, fn summary_record, {acc, current_session} ->
+            # Fetch detail record
+            case NoticeScraper.fetch_detail_record(summary_record, []) do
+              {:ok, detail_record} ->
+                # Process and create notice, updating session in real-time
+                process_ea_notice_and_update_session(detail_record, current_session, actor, acc)
+
+              {:error, reason} ->
+                Logger.warning("Failed to fetch detail for EA notice #{summary_record.ea_record_id}: #{inspect(reason)}")
+                {%{acc | error_count: acc.error_count + 1}, current_session}
+            end
+          end)
+
+          # Mark session as completed - use final_session to preserve all accumulated values
+          final_session
+          |> Ash.Changeset.for_update(:update, %{
+            status: :completed
+          })
+          |> Ash.update!(actor: actor)
+
+          {:ok, final_results}
+
+        {:error, reason} ->
+          Logger.error("Failed to collect EA notice summaries: #{inspect(reason)}")
+
+          # Mark session as failed
+          session
+          |> Ash.Changeset.for_update(:update, %{status: :failed})
+          |> Ash.update!(actor: actor)
+
+          {:error, reason}
+      end
+    rescue
+      error ->
+        Logger.error("EA notice scraping failed with error: #{inspect(error)}")
+
+        # Mark session as failed
+        session
+        |> Ash.Changeset.for_update(:update, %{status: :failed})
+        |> Ash.update!(actor: actor)
+
+        {:error, error}
+    end
+  end
+
+  defp process_ea_notice_and_update_session(detail_record, session, actor, results) do
+    # Process and create notice using EA NoticeProcessor
+    case EhsEnforcement.Scraping.Ea.NoticeProcessor.process_and_create_notice(detail_record, actor) do
+      {:ok, _notice_record, :created} ->
+        Logger.info("✅ Created EA notice: #{detail_record.ea_record_id}")
+        updated_results = %{results | created_count: results.created_count + 1}
+
+        # Update session with accumulated values (like HSE does)
+        updated_session = session
+        |> Ash.Changeset.for_update(:update, %{
+          cases_created: session.cases_created + 1
+        })
+        |> Ash.update!(actor: actor)
+
+        {updated_results, updated_session}
+
+      {:ok, _notice_record, :existing} ->
+        Logger.info("⏭️ EA notice already exists: #{detail_record.ea_record_id}")
+        updated_results = %{results | existing_count: results.existing_count + 1}
+
+        updated_session = session
+        |> Ash.Changeset.for_update(:update, %{
+          cases_exist_total: session.cases_exist_total + 1
+        })
+        |> Ash.update!(actor: actor)
+
+        {updated_results, updated_session}
+
+      {:ok, _notice_record, :updated} ->
+        Logger.info("✅ Updated EA notice: #{detail_record.ea_record_id}")
+        updated_results = %{results | updated_count: results.updated_count + 1}
+
+        updated_session = session
+        |> Ash.Changeset.for_update(:update, %{
+          cases_updated: session.cases_updated + 1
+        })
+        |> Ash.update!(actor: actor)
+
+        {updated_results, updated_session}
+
+      {:error, reason} ->
+        Logger.warning("❌ Error processing EA notice #{detail_record.ea_record_id}: #{inspect(reason)}")
+        updated_results = %{results | error_count: results.error_count + 1}
+
+        updated_session = session
+        |> Ash.Changeset.for_update(:update, %{
+          errors_count: session.errors_count + 1
+        })
+        |> Ash.update!(actor: actor)
+
+        {updated_results, updated_session}
+    end
+  end
+
+  defp parse_date(nil), do: nil
+  defp parse_date(date_string) when is_binary(date_string) do
+    case Date.from_iso8601(date_string) do
+      {:ok, date} -> date
+      {:error, _} -> nil
+    end
+  end
+  defp parse_date(_), do: nil
+
   defp handle_scrape_session_update(session_data, socket) do
     # Log session update for debugging progress issues
     Logger.debug("Scrape session update: status=#{session_data.status}, current_page=#{session_data.current_page}, pages_processed=#{session_data.pages_processed}, cases_found=#{session_data.cases_found}")
@@ -832,20 +1057,20 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
     current_progress = socket.assigns.progress
     
     updated_progress = if session_data.status == :completed do
-      # For completed status, preserve the highest values we've seen
+      # For completed status, use session data directly (it has all accumulated values)
       %{
         status: :completed,
-        current_page: max(current_progress.current_page || 0, session_data.current_page || 0),
-        pages_processed: max(current_progress.pages_processed || 0, session_data.pages_processed || 0),
-        notices_found: max(current_progress.notices_found || 0, session_data.cases_found || 0),
-        notices_created: max(current_progress.notices_created || 0, session_data.cases_created || 0),
-        notices_created_current_page: max(current_progress.notices_created_current_page || 0, session_data.cases_created_current_page || 0),
-        notices_updated: max(current_progress.notices_updated || 0, session_data.cases_updated || 0),
-        notices_updated_current_page: max(current_progress.notices_updated_current_page || 0, session_data.cases_updated_current_page || 0),
-        notices_exist_total: max(current_progress.notices_exist_total || 0, session_data.cases_exist_total || 0),
-        notices_exist_current_page: max(current_progress.notices_exist_current_page || 0, session_data.cases_exist_current_page || 0),
-        errors_count: max(current_progress.errors_count || 0, session_data.errors_count || 0),
-        max_pages: current_progress.max_pages || session_data.max_pages  # Keep max_pages for percentage
+        current_page: session_data.current_page,
+        pages_processed: session_data.pages_processed,
+        notices_found: session_data.cases_found || 0,
+        notices_created: session_data.cases_created || 0,
+        notices_created_current_page: session_data.cases_created_current_page || 0,
+        notices_updated: session_data.cases_updated || 0,
+        notices_updated_current_page: session_data.cases_updated_current_page || 0,
+        notices_exist_total: session_data.cases_exist_total || 0,
+        notices_exist_current_page: session_data.cases_exist_current_page || 0,
+        errors_count: session_data.errors_count || 0,
+        max_pages: session_data.max_pages
       }
     else
       # For non-completed status, use session data as before

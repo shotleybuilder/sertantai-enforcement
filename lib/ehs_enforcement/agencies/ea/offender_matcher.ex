@@ -42,12 +42,13 @@ defmodule EhsEnforcement.Agencies.Ea.OffenderMatcher do
   defp create_ea_offender(ea_case_data) do
     offender_attrs = %{
       name: ea_case_data.offender_name,
-      normalized_name: normalize_company_name(ea_case_data.offender_name),
       address: ea_case_data.offender_address,
       postcode: extract_postcode(ea_case_data.offender_address),
-      business_type: :company,  # EA only tracks companies
-      agencies: [:environment_agency],
+      business_type: :limited_company,  # EA tracks companies (use :limited_company enum value)
+      agencies: ["Environment Agency"],  # Use agency name strings
       # EA-specific fields
+      company_registration_number: Map.get(ea_case_data, :company_registration_number),
+      industry: Map.get(ea_case_data, :industry_sector),
       main_activity: infer_business_activity(ea_case_data),
       local_authority: extract_local_authority(ea_case_data.offender_address)
     }

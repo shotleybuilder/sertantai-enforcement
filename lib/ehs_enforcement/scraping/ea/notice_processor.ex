@@ -23,7 +23,7 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
   alias EhsEnforcement.Agencies.Ea.DataTransformer
   alias EhsEnforcement.Agencies.Ea.OffenderMatcher
   
-  @ea_agency_code :environment_agency
+  @ea_agency_code :ea
   
   defmodule ProcessedEaNotice do
     @moduledoc """
@@ -94,22 +94,25 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
         # Extract EA-specific environmental data
         environmental_data = extract_environmental_data(ea_detail_record)
         
+        # Build offender attributes from EA detail record
+        offender_attrs = build_offender_attrs(ea_detail_record)
+
         # Build processed notice struct
         processed = %ProcessedEaNotice{
           # Core notice fields (from transformed data)
           regulator_id: transformed_data[:regulator_id],
           agency_code: @ea_agency_code,
-          offender_attrs: transformed_data[:offender_attrs],
-          notice_date: transformed_data[:offence_action_date],  # EA uses action_date as notice_date
+          offender_attrs: offender_attrs,
+          notice_date: transformed_data[:action_date],  # EA uses action_date as notice_date
           operative_date: parse_operative_date(ea_detail_record),
           compliance_date: parse_compliance_date(ea_detail_record),
           notice_body: transformed_data[:offence_description],
           offence_action_type: "Enforcement Notice",  # Normalize to standard notice type
-          offence_action_date: transformed_data[:offence_action_date],
+          offence_action_date: transformed_data[:action_date],
           offence_breaches: transformed_data[:offence_description],
           regulator_url: build_ea_notice_url(ea_detail_record.ea_record_id),
           source_metadata: build_source_metadata(ea_detail_record),
-          
+
           # EA-specific environmental fields
           regulator_event_reference: environmental_data[:event_reference],
           environmental_impact: environmental_data[:impact],
@@ -244,22 +247,49 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
   # Private Functions
   
   defp enforcement_notice?(ea_detail_record) do
-    action_type = Map.get(ea_detail_record, :offence_action_type, "")
-    
-    action_type
-    |> String.downcase()
-    |> String.contains?("enforcement")
+    # EaDetailRecord uses :action_type (atom), not :offence_action_type (string)
+    action_type = Map.get(ea_detail_record, :action_type, :unknown)
+
+    # Check if action type is :enforcement_notice atom
+    action_type == :enforcement_notice
   end
   
   defp extract_environmental_data(ea_detail_record) do
+    # EaDetailRecord field names from CaseScraper
     %{
-      event_reference: Map.get(ea_detail_record, :ea_event_reference),
-      impact: normalize_environmental_impact(Map.get(ea_detail_record, :environmental_impact)),
-      receptor: normalize_environmental_receptor(Map.get(ea_detail_record, :environmental_receptor)),
-      legal_act: extract_legal_act(ea_detail_record),
-      legal_section: extract_legal_section(ea_detail_record),
+      event_reference: Map.get(ea_detail_record, :event_reference),  # Not :ea_event_reference
+      impact: build_environmental_impact(ea_detail_record),
+      receptor: detect_environmental_receptor(ea_detail_record),
+      legal_act: Map.get(ea_detail_record, :act),  # Direct field from EA detail page
+      legal_section: Map.get(ea_detail_record, :section),  # Direct field from EA detail page
       agency_function: Map.get(ea_detail_record, :agency_function)
     }
+  end
+
+  # Build environmental impact from water/land/air impact fields
+  defp build_environmental_impact(ea_detail_record) do
+    impacts = [
+      Map.get(ea_detail_record, :water_impact),
+      Map.get(ea_detail_record, :land_impact),
+      Map.get(ea_detail_record, :air_impact)
+    ]
+    |> Enum.filter(&(&1 != nil && &1 != ""))
+    |> Enum.join("; ")
+
+    case impacts do
+      "" -> nil
+      impact_str -> impact_str
+    end
+  end
+
+  # Detect primary environmental receptor from impact fields
+  defp detect_environmental_receptor(ea_detail_record) do
+    cond do
+      Map.get(ea_detail_record, :water_impact) not in [nil, ""] -> "water"
+      Map.get(ea_detail_record, :land_impact) not in [nil, ""] -> "land"
+      Map.get(ea_detail_record, :air_impact) not in [nil, ""] -> "air"
+      true -> nil
+    end
   end
   
   defp normalize_environmental_impact(nil), do: "none"
@@ -543,6 +573,42 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
       ea_source: "environment.data.gov.uk",
       raw_data_keys: Map.keys(ea_detail_record),
       action_type: "enforcement_notice"
+    }
+  end
+
+  defp build_offender_attrs(ea_detail_record) do
+    # Build offender attributes map from EA detail record
+    # Clean up company registration number (remove "(opens in new tab)" text)
+    company_reg = case Map.get(ea_detail_record, :company_registration_number) do
+      nil -> nil
+      reg when is_binary(reg) ->
+        reg
+        |> String.replace(~r/\s*\(opens in new tab\)/, "")
+        |> String.trim()
+        |> case do
+          "" -> nil
+          cleaned -> cleaned
+        end
+      _ -> nil
+    end
+
+    # Build address string from components
+    address_parts = [
+      Map.get(ea_detail_record, :address),
+      Map.get(ea_detail_record, :town),
+      Map.get(ea_detail_record, :county),
+      Map.get(ea_detail_record, :postcode)
+    ]
+    |> Enum.filter(&(&1 != nil && &1 != ""))
+    |> Enum.join(", ")
+
+    offender_address = if address_parts == "", do: nil, else: address_parts
+
+    %{
+      offender_name: Map.get(ea_detail_record, :offender_name),
+      offender_address: offender_address,
+      company_registration_number: company_reg,
+      industry_sector: Map.get(ea_detail_record, :industry_sector)
     }
   end
   

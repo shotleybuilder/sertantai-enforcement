@@ -2,7 +2,7 @@
   <!-- Page Header -->
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900">UK Enforcement Notice Scraping</h1>
-    <p class="mt-2 text-gray-600">Manually trigger enforcement notice scraping from UK agencies with real-time progress monitoring</p>
+    <p class="mt-2 text-gray-600">Manually trigger enforcement notice scraping from UK regulatory agencies with real-time progress monitoring</p>
     
     <!-- Navigation Links -->
     <div class="mt-4 flex space-x-4">
@@ -56,76 +56,76 @@
             />
           </div>
           
-          <!-- HSE-specific fields -->
-          <%= if @selected_agency == :hse do %>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div>
-              <.input 
-                field={@form[:start_page]} 
-                type="number" 
+          <!-- All Fields (enabled/disabled based on agency) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <%
+              selected_agency = Phoenix.HTML.Form.input_value(@form, :agency)
+              page_disabled = @scraping_active || selected_agency in [:ea, "ea"]
+              date_disabled = @scraping_active || selected_agency in [:hse, "hse"]
+            %>
+
+            <div class={if page_disabled, do: "opacity-50", else: ""}>
+              <.input
+                field={@form[:start_page]}
+                type="number"
                 label="Start Page"
                 min="1"
                 max="1000"
-                disabled={@scraping_active}
+                disabled={page_disabled}
               />
             </div>
-            
-            <div>
-              <.input 
-                field={@form[:max_pages]} 
-                type="number" 
+
+            <div class={if page_disabled, do: "opacity-50", else: ""}>
+              <.input
+                field={@form[:max_pages]}
+                type="number"
                 label="End Page"
                 min="1"
                 max="1000"
-                disabled={@scraping_active}
+                disabled={page_disabled}
               />
             </div>
-            </div>
-            
-            <div class="mb-6">
-              <.input 
-                field={@form[:country]} 
-                type="select" 
-                label="Country"
-                options={[
-                  {"All Countries", "All"},
-                  {"England", "England"},
-                  {"Scotland", "Scotland"}, 
-                  {"Wales", "Wales"}
-                ]}
-                disabled={@scraping_active}
+
+            <div class={if date_disabled, do: "opacity-50", else: ""}>
+              <.input
+                field={@form[:date_from]}
+                type="date"
+                label="From Date"
+                disabled={date_disabled}
               />
             </div>
-            
-            <!-- Database field hidden for HSE notices -->
-            <input type="hidden" name="scrape_request[database]" value="notices" />
-          <% end %>
-          
-          <!-- EA-specific fields -->
-          <%= if @selected_agency == :ea do %>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div>
-                <.input 
-                  field={@form[:date_from]} 
-                  type="date" 
-                  label="Start Date"
-                  disabled={@scraping_active}
-                />
-              </div>
-              
-              <div>
-                <.input 
-                  field={@form[:date_to]} 
-                  type="date" 
-                  label="End Date"
-                  disabled={@scraping_active}
-                />
-              </div>
+
+            <div class={if date_disabled, do: "opacity-50", else: ""}>
+              <.input
+                field={@form[:date_to]}
+                type="date"
+                label="To Date"
+                disabled={date_disabled}
+              />
             </div>
-            
-            <!-- Action types hidden for EA notices (enforcement notices only) -->
-            <input type="hidden" name="scrape_request[action_types][]" value="enforcement_notice" />
-          <% end %>
+          </div>
+
+          <!-- Country selection for HSE -->
+          <%
+            country_disabled = @scraping_active || selected_agency in [:ea, "ea"]
+          %>
+          <div class={"mb-6 #{if country_disabled, do: "opacity-50", else: ""}"}>
+            <.input
+              field={@form[:country]}
+              type="select"
+              label="Country"
+              options={[
+                {"All Countries", "All"},
+                {"England", "England"},
+                {"Scotland", "Scotland"},
+                {"Wales", "Wales"}
+              ]}
+              disabled={country_disabled}
+            />
+          </div>
+
+          <!-- Database field hidden for notices -->
+          <input type="hidden" name="scrape_request[database]" value="notices" />
           
           <!-- Agency-specific information -->
           <%= if @selected_agency == :hse do %>
@@ -137,9 +137,9 @@
                   </svg>
                 </div>
                 <div class="ml-3 flex-1">
-                  <h3 class="text-sm font-medium text-blue-800">HSE Notice Scraping</h3>
+                  <h3 class="text-sm font-medium text-blue-800">Health & Safety Executive Notices</h3>
                   <div class="mt-2 text-sm text-blue-700">
-                    <p>HSE notices include enforcement actions, improvement notices, and prohibition notices. Data contains compliance dates, operative dates, and regulatory requirements.</p>
+                    <p>Scrapes enforcement actions, improvement notices, and prohibition notices from HSE website. Data includes compliance dates, operative dates, and regulatory requirements.</p>
                   </div>
                 </div>
               </div>
@@ -178,6 +178,16 @@
                   Stop Scraping
                 </button>
               <% else %>
+                <%
+                  selected_agency_value = Phoenix.HTML.Form.input_value(@form, :agency) || "hse"
+                  button_text = case selected_agency_value do
+                    "hse" -> "Start HSE Notice Scraping"
+                    :hse -> "Start HSE Notice Scraping"
+                    "ea" -> "Start EA Notice Scraping"
+                    :ea -> "Start EA Notice Scraping"
+                    _ -> "Start Notice Scraping"
+                  end
+                %>
                 <.button
                   type="submit"
                   class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -185,7 +195,7 @@
                   <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Start <%= if @selected_agency == :ea, do: "EA", else: "HSE" %> Notice Scraping
+                  <%= button_text %>
                 </.button>
               <% end %>
               
