@@ -12,11 +12,13 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
   
   require Logger
   require Ash.Query
-  
+
   alias EhsEnforcement.Scraping.Ea.CaseScraper.EaDetailRecord
   alias EhsEnforcement.Agencies.Ea.DataTransformer
+  alias EhsEnforcement.Agencies.Ea.OffenderBuilder
   alias EhsEnforcement.Enforcement
   alias EhsEnforcement.Enforcement.UnifiedCaseProcessor
+  alias EhsEnforcement.Scraping.Shared.EnvironmentalHelpers
   
   @behaviour EhsEnforcement.Enforcement.CaseProcessorBehaviour
   
@@ -340,34 +342,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
   # Private helper functions
   
   defp build_ea_offender_attrs(%EaDetailRecord{} = ea_record) do
-    base_attrs = %{
-      name: ea_record.offender_name,
-      address: build_full_address(ea_record),
-      local_authority: ea_record.county,  # Use county as local authority
-      postcode: ea_record.postcode,
-      main_activity: ea_record.industry_sector,
-      industry: map_ea_industry_to_hse_category(ea_record.industry_sector),
-      
-      # EA-specific fields
-      company_registration_number: ea_record.company_registration_number,
-      town: ea_record.town,
-      county: ea_record.county
-    }
-    
-    # Add business type detection
-    enhanced_attrs = base_attrs
-    |> Map.put(:business_type, normalize_business_type(determine_business_type(ea_record.offender_name)))
-    
-    # Remove nil values to keep attrs clean
-    enhanced_attrs
-    |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
-    |> Map.new()
-  end
-  
-  defp build_full_address(%EaDetailRecord{} = ea_record) do
-    [ea_record.address, ea_record.town, ea_record.county, ea_record.postcode]
-    |> Enum.filter(&(&1 != nil and &1 != ""))
-    |> Enum.join(", ")
+    OffenderBuilder.build_offender_attrs(ea_record, :case)
   end
   
   defp build_legal_reference(%EaDetailRecord{} = ea_record) do
@@ -431,25 +406,19 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
   defp normalize_ea_function(_), do: "Environmental"
   
   defp assess_environmental_impact(%EaDetailRecord{} = ea_record) do
-    impacts = [ea_record.water_impact, ea_record.land_impact, ea_record.air_impact]
-    
-    cond do
-      Enum.any?(impacts, &(&1 == "major")) -> "major"
-      Enum.any?(impacts, &(&1 == "minor")) -> "minor"
-      true -> "none"
-    end
+    EnvironmentalHelpers.assess_environmental_impact(
+      ea_record.water_impact,
+      ea_record.land_impact,
+      ea_record.air_impact
+    )
   end
   
   defp detect_primary_receptor(%EaDetailRecord{} = ea_record) do
-    case {ea_record.water_impact, ea_record.land_impact, ea_record.air_impact} do
-      {"major", _, _} -> "water"
-      {_, "major", _} -> "land"
-      {_, _, "major"} -> "air"
-      {"minor", _, _} -> "water"
-      {_, "minor", _} -> "land"
-      {_, _, "minor"} -> "air"
-      _ -> "land"  # Default to land for general environmental cases
-    end
+    EnvironmentalHelpers.detect_primary_receptor(
+      ea_record.water_impact,
+      ea_record.land_impact,
+      ea_record.air_impact
+    )
   end
   
   defp detect_violation_count(%EaDetailRecord{} = ea_record) do
@@ -483,47 +452,6 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
   end
   
   # Industry classification mapping
-  
-  defp map_ea_industry_to_hse_category(nil), do: "Unknown"
-  defp map_ea_industry_to_hse_category(ea_industry) when is_binary(ea_industry) do
-    ea_lower = String.downcase(ea_industry)
-    
-    cond do
-      String.contains?(ea_lower, "manufacturing") -> "Manufacturing"
-      String.contains?(ea_lower, "construction") -> "Construction"
-      String.contains?(ea_lower, ["water", "supply", "utility"]) -> "Extractive and utility supply industries"
-      String.contains?(ea_lower, ["agriculture", "farming", "forestry", "fishing"]) -> "Agriculture hunting forestry and fishing"
-      String.contains?(ea_lower, ["service", "management", "transport", "retail"]) -> "Total service industries"
-      true -> "Unknown"
-    end
-  end
-  
-  # Business type detection (reused from HSE patterns)
-  
-  defp determine_business_type(offender_name) do
-    cond do
-      Regex.match?(~r/LLC|llc/, offender_name) -> "LLC"
-      Regex.match?(~r/[Ii]nc$/, offender_name) -> "INC"
-      Regex.match?(~r/[ ][Cc]orp[. ]/, offender_name) -> "CORP"
-      Regex.match?(~r/PLC|[Pp]lc/, offender_name) -> "PLC"
-      Regex.match?(~r/[Ll]imited|LIMITED|Ltd|LTD|Lld/, offender_name) -> "LTD"
-      Regex.match?(~r/LLP|[Ll]lp/, offender_name) -> "LLP"
-      true -> "SOLE"
-    end
-  end
-  
-  defp normalize_business_type(business_type_string) do
-    case business_type_string do
-      "LTD" -> :limited_company
-      "PLC" -> :plc
-      "LLP" -> :partnership  
-      "LLC" -> :limited_company
-      "INC" -> :limited_company
-      "CORP" -> :limited_company
-      "SOLE" -> :individual
-      _ -> :other
-    end
-  end
   
   # Error handling helpers
   

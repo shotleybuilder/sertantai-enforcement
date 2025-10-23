@@ -11,8 +11,9 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
   
   require Logger
   require Ash.Query
-  
+
   alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
+  alias EhsEnforcement.Agencies.Hse.OffenderBuilder
   alias EhsEnforcement.Enforcement
   
   @hse_agency_code :hse
@@ -277,21 +278,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
   # Private functions
   
   defp build_offender_attrs(%ScrapedCase{} = scraped_case) do
-    base_attrs = %{
-      name: scraped_case.offender_name,
-      local_authority: scraped_case.offender_local_authority,
-      main_activity: scraped_case.offender_main_activity,
-      industry: scraped_case.offender_industry
-    }
-    
-    # Add business type using existing Common module logic
-    enhanced_attrs = base_attrs
-    |> Map.put(:business_type, normalize_business_type(determine_business_type(scraped_case.offender_name)))
-    
-    # Remove nil values to keep attrs clean
-    enhanced_attrs
-    |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
-    |> Map.new()
+    OffenderBuilder.build_offender_attrs(scraped_case, :case)
   end
   
   defp build_regulator_url(regulator_id) do
@@ -375,19 +362,6 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
     end
   end
   
-  defp normalize_business_type(business_type_string) do
-    case business_type_string do
-      "LTD" -> :limited_company
-      "PLC" -> :plc
-      "LLP" -> :partnership  
-      "LLC" -> :limited_company
-      "INC" -> :limited_company
-      "CORP" -> :limited_company
-      "SOLE" -> :individual
-      _ -> :other
-    end
-  end
-  
   defp create_cases_individual(processed_cases, actor) do
     Logger.info("Using individual case creation for #{length(processed_cases)} cases")
     
@@ -420,17 +394,6 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
 
   # Local implementations to replace legacy Common/Breaches modules
 
-  defp determine_business_type(offender_name) do
-    cond do
-      Regex.match?(~r/LLC|llc/, offender_name) -> "LLC"
-      Regex.match?(~r/[Ii]nc$/, offender_name) -> "INC"
-      Regex.match?(~r/[ ][Cc]orp[. ]/, offender_name) -> "CORP"
-      Regex.match?(~r/PLC|[Pp]lc/, offender_name) -> "PLC"
-      Regex.match?(~r/[Ll]imited|LIMITED|Ltd|LTD|Lld/, offender_name) -> "LTD"
-      Regex.match?(~r/LLP|[Ll]lp/, offender_name) -> "LLP"
-      true -> "SOLE"
-    end
-  end
 
   defp process_breaches_locally(breaches) when is_list(breaches) do
     # Simplified breach processing - just concatenate and clean

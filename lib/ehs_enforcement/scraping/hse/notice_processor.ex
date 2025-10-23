@@ -11,8 +11,10 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
   
   require Logger
   require Ash.Query
-  
+
   alias EhsEnforcement.Scraping.Hse.NoticeScraper
+  alias EhsEnforcement.Scraping.Shared.DateParser
+  alias EhsEnforcement.Agencies.Hse.OffenderBuilder
   
   @hse_agency_code :hse
   
@@ -187,24 +189,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
   # Private Functions
   
   defp build_offender_attrs(notice_data) do
-    base_attrs = %{
-      name: notice_data.offender_name || "Unknown",
-      local_authority: notice_data[:offender_local_authority],
-      sic_code: notice_data[:offender_sic],
-      main_activity: notice_data[:offender_main_activity],
-      industry: notice_data[:offender_industry],
-      address: notice_data[:offender_address],
-      country: notice_data[:offender_country]
-    }
-    
-    # Add business type using same logic as case processor
-    enhanced_attrs = base_attrs
-    |> Map.put(:business_type, normalize_business_type(determine_business_type(notice_data.offender_name || "")))
-    
-    # Remove nil values to keep attrs clean
-    enhanced_attrs
-    |> Enum.reject(fn {_k, v} -> is_nil(v) or v == "" end)
-    |> Map.new()
+    OffenderBuilder.build_offender_attrs(notice_data, :notice)
   end
   
   defp build_regulator_url(regulator_id) when is_binary(regulator_id) do
@@ -221,59 +206,8 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
     }
   end
   
-  defp parse_date(nil), do: nil
-  defp parse_date(""), do: nil
-  defp parse_date(date) when is_binary(date) do
-    case Date.from_iso8601(date) do
-      {:ok, parsed_date} -> parsed_date
-      {:error, _} -> 
-        # Try parsing other common formats
-        try_parse_date_formats(date)
-    end
-  end
-  defp parse_date(%Date{} = date), do: date
-  defp parse_date(_), do: nil
-  
-  defp try_parse_date_formats(date_string) do
-    # DD/MM/YYYY format
-    case Regex.run(~r/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, String.trim(date_string)) do
-      [_, day, month, year] ->
-        case Date.new(String.to_integer(year), String.to_integer(month), String.to_integer(day)) do
-          {:ok, date} -> date
-          {:error, _} -> try_parse_dash_format(date_string)
-        end
-      
-      _ ->
-        try_parse_dash_format(date_string)
-    end
-  end
-  
-  defp try_parse_dash_format(date_string) do
-    # DD-MM-YYYY format
-    case Regex.run(~r/^(\d{1,2})-(\d{1,2})-(\d{4})$/, String.trim(date_string)) do
-      [_, day, month, year] ->
-        case Date.new(String.to_integer(year), String.to_integer(month), String.to_integer(day)) do
-          {:ok, date} -> date
-          {:error, _} -> try_parse_iso_format(date_string)
-        end
-      
-      _ ->
-        try_parse_iso_format(date_string)
-    end
-  end
-  
-  defp try_parse_iso_format(date_string) do
-    # YYYY-MM-DD format
-    case Regex.run(~r/^(\d{4})-(\d{1,2})-(\d{1,2})$/, String.trim(date_string)) do
-      [_, year, month, day] ->
-        case Date.new(String.to_integer(year), String.to_integer(month), String.to_integer(day)) do
-          {:ok, date} -> date
-          {:error, _} -> nil
-        end
-      
-      _ ->
-        nil
-    end
+  defp parse_date(date) do
+    DateParser.parse_date(date)
   end
   
   defp format_breaches(nil), do: nil
@@ -294,29 +228,4 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
     end
   end
   
-  defp normalize_business_type(business_type_string) do
-    case business_type_string do
-      "LTD" -> :limited_company
-      "PLC" -> :plc
-      "LLP" -> :partnership  
-      "LLC" -> :limited_company
-      "INC" -> :limited_company
-      "CORP" -> :limited_company
-      "SOLE" -> :individual
-      _ -> :other
-    end
-  end
-  
-  defp determine_business_type(offender_name) when is_binary(offender_name) do
-    cond do
-      Regex.match?(~r/LLC|llc/, offender_name) -> "LLC"
-      Regex.match?(~r/[Ii]nc$/, offender_name) -> "INC"
-      Regex.match?(~r/[ ][Cc]orp[. ]/, offender_name) -> "CORP"
-      Regex.match?(~r/PLC|[Pp]lc/, offender_name) -> "PLC"
-      Regex.match?(~r/[Ll]imited|LIMITED|Ltd|LTD|Lld/, offender_name) -> "LTD"
-      Regex.match?(~r/LLP|[Ll]lp/, offender_name) -> "LLP"
-      true -> "SOLE"
-    end
-  end
-  defp determine_business_type(_), do: "SOLE"
 end

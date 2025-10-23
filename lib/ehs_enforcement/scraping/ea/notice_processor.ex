@@ -21,7 +21,9 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
   
   require Logger
   alias EhsEnforcement.Agencies.Ea.DataTransformer
+  alias EhsEnforcement.Agencies.Ea.OffenderBuilder
   alias EhsEnforcement.Agencies.Ea.OffenderMatcher
+  alias EhsEnforcement.Scraping.Shared.EnvironmentalHelpers
   
   @ea_agency_code :ea
   
@@ -268,28 +270,20 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
 
   # Build environmental impact from water/land/air impact fields
   defp build_environmental_impact(ea_detail_record) do
-    impacts = [
+    EnvironmentalHelpers.build_environmental_impact_string(
       Map.get(ea_detail_record, :water_impact),
       Map.get(ea_detail_record, :land_impact),
       Map.get(ea_detail_record, :air_impact)
-    ]
-    |> Enum.filter(&(&1 != nil && &1 != ""))
-    |> Enum.join("; ")
-
-    case impacts do
-      "" -> nil
-      impact_str -> impact_str
-    end
+    )
   end
 
   # Detect primary environmental receptor from impact fields
   defp detect_environmental_receptor(ea_detail_record) do
-    cond do
-      Map.get(ea_detail_record, :water_impact) not in [nil, ""] -> "water"
-      Map.get(ea_detail_record, :land_impact) not in [nil, ""] -> "land"
-      Map.get(ea_detail_record, :air_impact) not in [nil, ""] -> "air"
-      true -> nil
-    end
+    EnvironmentalHelpers.detect_environmental_receptor(
+      Map.get(ea_detail_record, :water_impact),
+      Map.get(ea_detail_record, :land_impact),
+      Map.get(ea_detail_record, :air_impact)
+    )
   end
   
   defp normalize_environmental_impact(nil), do: "none"
@@ -577,39 +571,7 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
   end
 
   defp build_offender_attrs(ea_detail_record) do
-    # Build offender attributes map from EA detail record
-    # Clean up company registration number (remove "(opens in new tab)" text)
-    company_reg = case Map.get(ea_detail_record, :company_registration_number) do
-      nil -> nil
-      reg when is_binary(reg) ->
-        reg
-        |> String.replace(~r/\s*\(opens in new tab\)/, "")
-        |> String.trim()
-        |> case do
-          "" -> nil
-          cleaned -> cleaned
-        end
-      _ -> nil
-    end
-
-    # Build address string from components
-    address_parts = [
-      Map.get(ea_detail_record, :address),
-      Map.get(ea_detail_record, :town),
-      Map.get(ea_detail_record, :county),
-      Map.get(ea_detail_record, :postcode)
-    ]
-    |> Enum.filter(&(&1 != nil && &1 != ""))
-    |> Enum.join(", ")
-
-    offender_address = if address_parts == "", do: nil, else: address_parts
-
-    %{
-      offender_name: Map.get(ea_detail_record, :offender_name),
-      offender_address: offender_address,
-      company_registration_number: company_reg,
-      industry_sector: Map.get(ea_detail_record, :industry_sector)
-    }
+    OffenderBuilder.build_offender_attrs(ea_detail_record, :notice)
   end
   
   defp check_for_existing_notice(regulator_id, agency_id) do
