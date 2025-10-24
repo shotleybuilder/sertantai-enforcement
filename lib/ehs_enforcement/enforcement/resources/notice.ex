@@ -11,23 +11,34 @@ defmodule EhsEnforcement.Enforcement.Notice do
   postgres do
     table "notices"
     repo EhsEnforcement.Repo
-    
+
     identity_wheres_to_sql(unique_airtable_id: "airtable_id IS NOT NULL")
+
+    # R4.1: Data validation constraints
+    check_constraints do
+      check_constraint :dates_logical_order,
+        "compliance_date IS NULL OR notice_date IS NULL OR compliance_date >= notice_date",
+        message: "Compliance date must be on or after notice date"
+
+      check_constraint :operative_date_after_notice,
+        "operative_date IS NULL OR notice_date IS NULL OR operative_date >= notice_date",
+        message: "Operative date must be on or after notice date"
+    end
 
     custom_indexes do
       # Performance indexes for dashboard metrics calculations
       index [:offence_action_date], name: "notices_offence_action_date_index"
       index [:agency_id], name: "notices_agency_id_index"
-      
+
       # Composite index for common query patterns (agency + date filtering)
       index [:agency_id, :offence_action_date], name: "notices_agency_date_index"
-      
+
       # Text search indexes for regulator_id
       index [:regulator_id], name: "notices_regulator_id_index"
-      
+
       # Action type filtering index
       index [:offence_action_type], name: "notices_offence_action_type_index"
-      
+
       # pg_trgm GIN indexes for fuzzy text search
       index [:regulator_id], name: "notices_regulator_id_gin_trgm", using: "GIN"
       index [:notice_body], name: "notices_notice_body_gin_trgm", using: "GIN"

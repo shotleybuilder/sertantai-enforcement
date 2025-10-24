@@ -17,24 +17,37 @@ defmodule EhsEnforcement.Enforcement.Case do
       unique_case_reference: "case_reference IS NOT NULL"
     )
 
+    # R4.1: Data validation constraints
+    check_constraints do
+      check_constraint :offence_fine_non_negative, "offence_fine IS NULL OR offence_fine >= 0",
+        message: "Fine amount must be non-negative"
+
+      check_constraint :offence_costs_non_negative, "offence_costs IS NULL OR offence_costs >= 0",
+        message: "Costs amount must be non-negative"
+
+      check_constraint :dates_logical_order,
+        "offence_hearing_date IS NULL OR offence_action_date IS NULL OR offence_hearing_date >= offence_action_date",
+        message: "Hearing date must be on or after action date"
+    end
+
     custom_indexes do
       # Performance indexes for dashboard metrics calculations
       index [:offence_action_date], name: "cases_offence_action_date_index"
       index [:agency_id], name: "cases_agency_id_index"
-      
+
       # Composite index for common query patterns (agency + date filtering)
       index [:agency_id, :offence_action_date], name: "cases_agency_date_index"
-      
+
       # Fine amount filtering index for range queries
       index [:offence_fine], name: "cases_offence_fine_index"
-      
+
       # Text search indexes for regulator_id
       index [:regulator_id], name: "cases_regulator_id_index"
-      
+
       # pg_trgm GIN indexes for fuzzy text search
       index [:regulator_id], name: "cases_regulator_id_gin_trgm", using: "GIN"
     end
-    
+
     custom_statements do
       # Enable pg_trgm extension for fuzzy text search
       statement :enable_pg_trgm do

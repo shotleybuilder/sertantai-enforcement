@@ -15,6 +15,15 @@ defmodule EhsEnforcement.Enforcement.Metrics do
   postgres do
     table("metrics")
     repo(EhsEnforcement.Repo)
+
+    custom_indexes do
+      # R2.1: Missing foreign key indexes for JOIN performance
+      # These indexes dramatically improve query performance when joining metrics
+      # with agencies, offenders, and legislation tables
+      index [:agency_id], name: "metrics_agency_id_idx"
+      index [:offender_id], name: "metrics_offender_id_idx"
+      index [:legislation_id], name: "metrics_legislation_id_idx"
+    end
   end
 
   pub_sub do
