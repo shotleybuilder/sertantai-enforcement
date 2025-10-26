@@ -151,13 +151,14 @@ defmodule EhsEnforcement.Scraping.AgencyBehavior do
   """
   def get_agency_module(:hse), do: EhsEnforcement.Scraping.Agencies.Hse
   def get_agency_module(:ea), do: EhsEnforcement.Scraping.Agencies.Ea
+  def get_agency_module(:environment_agency), do: EhsEnforcement.Scraping.Agencies.Ea  # Alias for backward compatibility
   def get_agency_module(agency) do
     raise ArgumentError, """
     Unsupported agency: #{inspect(agency)}
-    
-    Supported agencies: :hse, :ea
-    
-    To add support for a new agency, create a module implementing the 
+
+    Supported agencies: :hse, :ea, :environment_agency (alias for :ea)
+
+    To add support for a new agency, create a module implementing the
     EhsEnforcement.Scraping.AgencyBehavior and add it to get_agency_module/1.
     """
   end
