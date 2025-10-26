@@ -8,7 +8,7 @@
     <meta name="project" content="ehs_enforcement v0.1.0">
 
 
-    <title>EhsEnforcementWeb.Admin.DashboardLive — ehs_enforcement v0.1.0</title>
+    <title>EhsEnforcementWeb.Admin.ScrapeLive — ehs_enforcement v0.1.0</title>
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
@@ -75,7 +75,7 @@ ehs_enforcement
 <div id="top-content">
   <div class="heading-with-actions top-heading">
     <h1>
-      <span translate="no">EhsEnforcementWeb.Admin.DashboardLive</span> 
+      <span translate="no">EhsEnforcementWeb.Admin.ScrapeLive</span> 
       <small class="app-vsn" translate="no">(ehs_enforcement v0.1.0)</small>
 
     </h1>
@@ -83,64 +83,13 @@ ehs_enforcement
   </div>
 
 
-</div>
-
-  <section id="summary" class="details-list">
-    <h1 class="section-heading">
-      <a class="hover-link" href="#summary">
-        <i class="ri-link-m" aria-hidden="true"></i>
-      </a>
-      <span class="text">Summary</span>
-    </h1>
-<div class="summary-functions summary">
-  <h2>
-    <a href="#functions">Functions</a>
-  </h2>
-
-    <div class="summary-row">
-      <div class="summary-signature">
-        <a href="#render/1" data-no-tooltip="" translate="no">render(assigns)</a>
-
-      </div>
-
-        <div class="summary-synopsis"><p>Callback implementation for <a><code class="inline">Phoenix.LiveView.render/1</code></a>.</p></div>
-
-    </div>
+    <section id="moduledoc">
+<p>Unified admin interface for scraping all agencies and enforcement types.</p><p>This LiveView uses the Strategy Pattern to provide a single interface for:</p><ul><li>HSE case scraping</li><li>HSE notice scraping</li><li>Environment Agency case scraping</li><li>Environment Agency notice scraping</li></ul><p>The strategy is selected based on URL parameters (:agency and :type),
+and all agency-specific logic is delegated to the appropriate strategy module.</p><h2 id="module-routes" class="section-heading"><a href="#module-routes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Routes</span></h2><ul><li><code class="inline">/admin/scrape/hse/case</code> - HSE case scraping</li><li><code class="inline">/admin/scrape/hse/notice</code> - HSE notice scraping</li><li><code class="inline">/admin/scrape/environment_agency/case</code> - EA case scraping</li><li><code class="inline">/admin/scrape/environment_agency/notice</code> - EA notice scraping</li></ul><h2 id="module-features" class="section-heading"><a href="#module-features" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Features</span></h2><ul><li>Strategy-based scraping (pluggable agency/type implementations)</li><li>Real-time progress updates via Phoenix PubSub</li><li>Strategy-specific parameter forms</li><li>Unified progress display</li><li>Error handling and recovery</li></ul>
+    </section>
 
 </div>
 
-  </section>
-
-
-  <section id="functions" class="details-list">
-    <h1 class="section-heading">
-      <a class="hover-link" href="#functions">
-        <i class="ri-link-m" aria-hidden="true"></i>
-      </a>
-      <span class="text">Functions</span>
-    </h1>
-    <div class="functions-list">
-<section class="detail" id="render/1">
-
-  <div class="detail-header">
-    <a href="#render/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
-      <i class="ri-link-m" aria-hidden="true"></i>
-    </a>
-    <div class="heading-with-actions">
-      <h1 class="signature" translate="no">render(assigns)</h1>
-
-
-    </div>
-  </div>
-
-  <section class="docstring">
-
-<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/1.1.3/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p>
-  </section>
-</section>
-
-    </div>
-  </section>
 
     <footer class="footer">
       <p>
