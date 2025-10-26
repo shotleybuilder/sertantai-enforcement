@@ -28,6 +28,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   use EhsEnforcementWeb, :live_view
 
   require Logger
+  require Ash.Query
 
   alias EhsEnforcement.Scraping.StrategyRegistry
   alias EhsEnforcement.Scraping.ScrapeCoordinator
@@ -42,11 +43,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     with {:ok, agency_atom} <- parse_agency(agency_str),
          {:ok, type_atom} <- parse_type(type_str),
          {:ok, strategy} <- StrategyRegistry.get_strategy(agency_atom, type_atom) do
-      # Subscribe to PubSub events for progress tracking
-      if connected?(socket) do
-        PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:created")
-        PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
-      end
 
       socket =
         socket
@@ -59,10 +55,35 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
         |> assign(:progress, initial_progress())
         |> assign(:form_params, default_form_params(strategy, agency_atom))
         |> assign(:validation_errors, %{})
-        |> assign(:recent_records, [])
         |> assign(:loading, false)
 
-      {:ok, socket}
+      # Add reactive data loading when connected
+      if connected?(socket) do
+        # Subscribe to PubSub events for progress tracking
+        PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:created")
+        PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
+
+        # Subscribe to record creation events based on enforcement type
+        case type_atom do
+          :notice ->
+            PubSub.subscribe(EhsEnforcement.PubSub, "notice:created")
+            PubSub.subscribe(EhsEnforcement.PubSub, "notice:updated")
+          :case ->
+            PubSub.subscribe(EhsEnforcement.PubSub, "case:created")
+            PubSub.subscribe(EhsEnforcement.PubSub, "case:updated")
+        end
+
+        # Add reactive data loading with keep_live
+        socket = add_reactive_data_loading(socket, type_atom)
+        {:ok, socket}
+      else
+        # Initialize empty assigns for disconnected state
+        socket =
+          socket
+          |> assign(:recent_records, [])
+          |> assign(:session_results, [])
+        {:ok, socket}
+      end
     else
       {:error, :invalid_agency} ->
         socket =
@@ -338,7 +359,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
 
       <!-- Progress Display -->
       <%= if @current_session do %>
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8">
           <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 class="text-lg font-medium text-gray-900 dark:text-white">
               Scraping Progress
@@ -349,11 +370,96 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
           </div>
         </div>
       <% end %>
+
+      <!-- Recent Records Display -->
+      <%= if length(@recent_records) > 0 do %>
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">
+              Recently Scraped {String.capitalize(to_string(@enforcement_type))}s
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Showing latest {length(@recent_records)} {type_display_name(@enforcement_type)}s
+            </p>
+          </div>
+          <div class="px-6 py-4">
+            <%= render_recent_records(assigns) %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Session Results Display -->
+      <%= if length(@session_results) > 0 do %>
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white">
+              Recent Scraping Sessions
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Latest {length(@session_results)} sessions for {agency_display_name(@agency)}
+            </p>
+          </div>
+          <div class="px-6 py-4">
+            <%= render_session_results(assigns) %>
+          </div>
+        </div>
+      <% end %>
     </div>
     """
   end
 
   # Private Helper Functions
+
+  defp add_reactive_data_loading(socket, enforcement_type) do
+    # Add keep_live for recent records based on enforcement type
+    socket =
+      case enforcement_type do
+        :notice ->
+          AshPhoenix.LiveView.keep_live(socket, :recent_records, fn socket ->
+            EhsEnforcement.Enforcement.Notice
+            |> Ash.Query.sort(inserted_at: :desc)
+            |> Ash.Query.limit(50)
+            |> Ash.Query.load([:agency, :offender])
+            |> Ash.read!(actor: socket.assigns.current_user)
+          end,
+            subscribe: ["notice:created", "notice:updated"],
+            results: :keep,
+            load_until_connected?: false,
+            refetch_window: :timer.seconds(30)
+          )
+
+        :case ->
+          AshPhoenix.LiveView.keep_live(socket, :recent_records, fn socket ->
+            EhsEnforcement.Enforcement.Case
+            |> Ash.Query.sort(inserted_at: :desc)
+            |> Ash.Query.limit(50)
+            |> Ash.Query.load([:agency, :offender, :offences])
+            |> Ash.read!(actor: socket.assigns.current_user)
+          end,
+            subscribe: ["case:created", "case:updated"],
+            results: :keep,
+            load_until_connected?: false,
+            refetch_window: :timer.seconds(30)
+          )
+      end
+
+    # Add keep_live for session results (filter by agency only)
+    socket =
+      AshPhoenix.LiveView.keep_live(socket, :session_results, fn socket ->
+        ScrapeSession
+        |> Ash.Query.filter(agency == ^socket.assigns.agency)
+        |> Ash.Query.sort(inserted_at: :desc)
+        |> Ash.Query.limit(10)
+        |> Ash.read!(actor: socket.assigns.current_user)
+      end,
+        subscribe: ["scrape_session:created", "scrape_session:updated"],
+        results: :keep,
+        load_until_connected?: false,
+        refetch_window: :timer.seconds(10)
+      )
+
+    socket
+  end
 
   defp parse_agency("hse"), do: {:ok, :hse}
   defp parse_agency("ea"), do: {:ok, :ea}
@@ -420,6 +526,157 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   defp type_display_name(:case), do: "Cases"
   defp type_display_name(:notice), do: "Notices"
   defp type_display_name(type), do: to_string(type)
+
+  # Recent Records Rendering
+
+  defp render_recent_records(%{enforcement_type: :notice} = assigns) do
+    ~H"""
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-700/50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Offender
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Agency
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Notice Type
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Date
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <%= for notice <- @recent_records do %>
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                {notice.offender.name}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {notice.agency.name}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {notice.notice_type || "N/A"}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {Calendar.strftime(notice.inserted_at, "%Y-%m-%d")}
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
+
+  defp render_recent_records(%{enforcement_type: :case} = assigns) do
+    ~H"""
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-700/50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Offender
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Agency
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Offences
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Date
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <%= for case <- @recent_records do %>
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                {case.offender.name}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {case.agency.name}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {length(case.offences)} offences
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {Calendar.strftime(case.inserted_at, "%Y-%m-%d")}
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
+
+  defp render_session_results(assigns) do
+    ~H"""
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-700/50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Started
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Status
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Records
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Duration
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <%= for session <- @session_results do %>
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                {Calendar.strftime(session.inserted_at, "%Y-%m-%d %H:%M")}
+              </td>
+              <td class="px-4 py-3 text-sm">
+                {render_status_badge(session.status)}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                <%= if session.cases_created do %>
+                  {session.cases_created} cases
+                <% else %>
+                  {session.notices_created || 0} notices
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                <%= if session.updated_at && session.status == :completed do %>
+                  {format_duration(session.inserted_at, session.updated_at)}
+                <% else %>
+                  In progress...
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
+
+  defp format_duration(started_at, completed_at) do
+    duration_seconds = DateTime.diff(completed_at, started_at)
+    minutes = div(duration_seconds, 60)
+    seconds = rem(duration_seconds, 60)
+
+    if minutes > 0 do
+      "#{minutes}m #{seconds}s"
+    else
+      "#{seconds}s"
+    end
+  end
 
   # Form Rendering
 
