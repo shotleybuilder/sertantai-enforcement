@@ -140,6 +140,9 @@ defmodule EhsEnforcementWeb.Router do
       live "/admin/scrape-sessions", Admin.ScrapeSessionsLive, :index
       live "/admin/scrape-sessions-design", Admin.ScrapeSessionsDesignLive, :index
       live "/admin/scrape-sessions/monitor", Admin.ScrapingLive.Index, :index
+
+      # Unified Scraping Interface (Strategy Pattern)
+      live "/admin/scrape/:agency/:type", Admin.ScrapeLive, :index
     end
   end
 
