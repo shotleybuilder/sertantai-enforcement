@@ -559,7 +559,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
                 {notice.agency.name}
               </td>
               <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {notice.notice_type || "N/A"}
+                {notice.offence_action_type || "N/A"}
               </td>
               <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                 {Calendar.strftime(notice.inserted_at, "%Y-%m-%d")}
