@@ -28,6 +28,10 @@ defmodule EhsEnforcementWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import EhsEnforcementWeb.ConnCase
+
+      # Helper to call live/3 with on_error: :warn to suppress duplicate ID warnings
+      # from Phoenix's flash components in the root layout
+      defp live_no_warn(conn, path), do: Phoenix.LiveViewTest.live(conn, path, on_error: :warn)
     end
   end
 

@@ -4,13 +4,12 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
   import Phoenix.LiveViewTest
 
   alias EhsEnforcement.Scraping.StrategyRegistry
-  alias EhsEnforcement.Accounts
 
   describe "mount/3" do
     setup [:create_admin_user]
 
     test "mounts successfully with HSE case strategy", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/admin/scrape/hse/case")
+      {:ok, view, html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
 
       assert html =~ "Health &amp; Safety Executive (HSE) Cases"
       assert html =~ "HSE Case Scraping"
@@ -20,7 +19,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "mounts successfully with HSE notice strategy", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/admin/scrape/hse/notice")
+      {:ok, view, html} = live(conn, ~p"/admin/scrape/hse/notice", on_error: :warn)
 
       assert html =~ "Health &amp; Safety Executive (HSE) Notices"
       assert html =~ "HSE Notice Scraping"
@@ -30,7 +29,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "mounts successfully with EA case strategy", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/admin/scrape/environment_agency/case")
+      {:ok, view, html} = live(conn, ~p"/admin/scrape/environment_agency/case", on_error: :warn)
 
       assert html =~ "Environment Agency (EA) Cases"
       assert html =~ "Environment Agency Case Scraping"
@@ -41,7 +40,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "mounts successfully with EA notice strategy", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/admin/scrape/environment_agency/notice")
+      {:ok, view, html} = live(conn, ~p"/admin/scrape/environment_agency/notice", on_error: :warn)
 
       assert html =~ "Environment Agency (EA) Notices"
       assert html =~ "Environment Agency Notice Scraping"
@@ -51,16 +50,16 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "redirects with error for invalid agency", %{conn: conn} do
-      {:error, {:live_redirect, %{to: to, flash: flash}}} =
-        live(conn, ~p"/admin/scrape/invalid_agency/case")
+      {:error, {:redirect, %{to: to, flash: flash}}} =
+        live(conn, ~p"/admin/scrape/invalid_agency/case", on_error: :warn)
 
       assert to == ~p"/admin"
       assert flash["error"] =~ "Invalid agency"
     end
 
     test "redirects with error for invalid enforcement type", %{conn: conn} do
-      {:error, {:live_redirect, %{to: to, flash: flash}}} =
-        live(conn, ~p"/admin/scrape/hse/invalid_type")
+      {:error, {:redirect, %{to: to, flash: flash}}} =
+        live(conn, ~p"/admin/scrape/hse/invalid_type", on_error: :warn)
 
       assert to == ~p"/admin"
       assert flash["error"] =~ "Invalid enforcement type"
@@ -69,7 +68,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     test "redirects with error for unsupported agency/type combination", %{conn: conn} do
       # Note: All valid combinations are supported, but testing the pattern
       {:error, {:redirect, %{to: to, flash: flash}}} =
-        live(conn, ~p"/admin/scrape/sepa/case")
+        live(conn, ~p"/admin/scrape/sepa/case", on_error: :warn)
 
       assert to == ~p"/admin"
       assert flash["error"]
@@ -80,7 +79,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     setup [:create_admin_user]
 
     test "displays HSE-specific form fields", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
 
       # Check HSE-specific fields
       assert has_element?(view, "input[name='start_page']")
@@ -93,7 +92,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "displays default values for HSE form", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/admin/scrape/hse/case")
+      {:ok, _view, html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
 
       assert html =~ "value=\"1\""
       assert html =~ "value=\"10\""
@@ -101,7 +100,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "database dropdown shows all HSE databases", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
 
       assert has_element?(view, "option[value='convictions']")
       assert has_element?(view, "option[value='notices']")
@@ -113,7 +112,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     setup [:create_admin_user]
 
     test "displays EA-specific form fields for cases", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/case")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/case", on_error: :warn)
 
       # Check EA-specific fields
       assert has_element?(view, "input[name='date_from']")
@@ -128,7 +127,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "displays EA-specific form fields for notices", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/notice")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/notice", on_error: :warn)
 
       # Check EA notice fields
       assert has_element?(view, "input[name='date_from']")
@@ -140,7 +139,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "displays default date range for EA form", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/admin/scrape/environment_agency/case")
+      {:ok, _view, html} = live(conn, ~p"/admin/scrape/environment_agency/case", on_error: :warn)
 
       # Should have date values (30 days ago to today)
       date_from = Date.add(Date.utc_today(), -30) |> Date.to_string()
@@ -155,7 +154,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     setup [:create_admin_user]
 
     test "selects correct strategy for HSE case", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
 
       strategy = :sys.get_state(view.pid).socket.assigns.strategy
 
@@ -165,7 +164,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "selects correct strategy for EA notice", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/notice")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/notice", on_error: :warn)
 
       strategy = :sys.get_state(view.pid).socket.assigns.strategy
 
@@ -179,7 +178,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     setup [:create_admin_user]
 
     test "sets correct initial state", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
 
       state = :sys.get_state(view.pid).socket.assigns
 
@@ -196,26 +195,26 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     setup [:create_admin_user]
 
     test "shows Start Scraping button when idle", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
 
       assert has_element?(view, "button[type='submit']", "Start Scraping")
       refute has_element?(view, "button", "Stop Scraping")
     end
 
     test "shows Back to Admin link", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
 
       assert has_element?(view, "a[href='/admin']", "Back to Admin")
     end
 
     test "shows strategy name in header", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/admin/scrape/hse/case")
+      {:ok, _view, html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
 
       assert html =~ "HSE Case Scraping"
     end
 
     test "shows agency and type display names", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/admin/scrape/environment_agency/notice")
+      {:ok, _view, html} = live(conn, ~p"/admin/scrape/environment_agency/notice", on_error: :warn)
 
       assert html =~ "Environment Agency (EA) Notices"
     end
@@ -225,7 +224,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     setup [:create_admin_user]
 
     test "displays validation errors for invalid HSE params", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
 
       # Submit invalid params (negative page numbers)
       view
@@ -242,7 +241,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "displays validation errors for invalid EA params", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/case")
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/case", on_error: :warn)
 
       # Submit invalid date range (date_to before date_from)
       view
@@ -266,46 +265,45 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       assert redirected_to(conn) =~ "/sign-in"
     end
 
-    test "requires admin privileges", %{conn: conn} do
-      # Create non-admin user
-      {:ok, user} =
-        Accounts.register_with_password(%{
-          email: "user@example.com",
-          password: "Test123!@#Test123!@#",
-          role: :user
-        })
+    test "requires admin privileges" do
+      # Create non-admin user using proper GitHub OAuth registration action
+      user_info = %{
+        "email" => "user@example.com",
+        "name" => "Regular User",
+        "login" => "regularuser",
+        "id" => 99999,
+        "avatar_url" => "https://github.com/images/avatars/regularuser",
+        "html_url" => "https://github.com/regularuser"
+      }
 
-      conn = log_in_user(conn, user)
+      oauth_tokens = %{
+        "access_token" => "test_access_token_regular",
+        "token_type" => "Bearer"
+      }
+
+      {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, %{
+        user_info: user_info,
+        oauth_tokens: oauth_tokens
+      }, action: :register_with_github)
+
+      # User is NOT an admin (is_admin defaults to false)
+      conn =
+        build_conn()
+        |> init_test_session(%{})
+        |> AshAuthentication.Plug.Helpers.store_in_session(user)
 
       # Attempt to access admin route
       conn = get(conn, ~p"/admin/scrape/hse/case")
 
-      # Should redirect (access denied)
-      assert redirected_to(conn)
+      # Should return 403 Forbidden (access denied for non-admin)
+      assert conn.status == 403
     end
   end
 
   # Test Helpers
 
-  defp create_admin_user(_context) do
-    {:ok, admin} =
-      Accounts.register_with_password(%{
-        email: "admin@example.com",
-        password: "Test123!@#Test123!@#",
-        role: :admin
-      })
-
-    %{admin: admin, conn: build_conn() |> log_in_user(admin)}
-  end
-
-  defp log_in_user(conn, user) do
-    token =
-      EhsEnforcement.Accounts.Token
-      |> Ash.Changeset.for_create(:build_token, %{user_id: user.id}, actor: user)
-      |> Ash.create!()
-
-    conn
-    |> init_test_session(%{})
-    |> put_session(:user_token, token.token)
+  defp create_admin_user(context) do
+    # Use the proper helper from ConnCase
+    register_and_log_in_admin(context)
   end
 end
