@@ -33,7 +33,10 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   alias EhsEnforcement.Scraping.StrategyRegistry
   alias EhsEnforcement.Scraping.ScrapeCoordinator
   alias EhsEnforcement.Scraping.ScrapeSession
+  alias EhsEnforcement.Enforcement.Notice
+  alias EhsEnforcement.Enforcement.Case
   alias Phoenix.PubSub
+  alias EhsEnforcementWeb.Components.ProgressComponent
 
   # LiveView Callbacks
 
@@ -52,10 +55,12 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
         |> assign(:strategy_name, strategy.strategy_name())
         |> assign(:current_session, nil)
         |> assign(:scraping_active, false)
+        |> assign(:scraping_session_started_at, nil)
         |> assign(:progress, initial_progress())
         |> assign(:form_params, default_form_params(strategy, agency_atom))
         |> assign(:validation_errors, %{})
         |> assign(:loading, false)
+        |> assign(:scraped_records, [])
 
       # Add reactive data loading when connected
       if connected?(socket) do
@@ -135,6 +140,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
             socket =
               socket
               |> assign(:scraping_active, true)
+              |> assign(:scraping_session_started_at, DateTime.utc_now())
+              |> assign(:scraped_records, [])
               |> assign(:validation_errors, %{})
               |> put_flash(:info, "Scraping started successfully")
 
@@ -188,6 +195,17 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
       |> assign(:progress, initial_progress())
       |> assign(:validation_errors, %{})
       |> put_flash(:info, "Session cleared")
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("clear_scraped_records", _params, socket) do
+    socket =
+      socket
+      |> assign(:scraped_records, [])
+      |> assign(:scraping_session_started_at, nil)
+      |> put_flash(:info, "Scraped records cleared")
 
     {:noreply, socket}
   end
@@ -274,6 +292,93 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   end
 
   # Template Rendering
+
+  # Handle scrape session updates from PubSub
+  @impl true
+  def handle_info(%Phoenix.Socket.Broadcast{topic: "scrape_session:updated", payload: %Ash.Notifier.Notification{} = notification}, socket) do
+    session_data = notification.data
+
+    # Only update if this is our active session
+    if socket.assigns.scraping_active do
+      Logger.debug("Scrape session update: status=#{session_data.status}, pages_processed=#{session_data.pages_processed}, cases_found=#{session_data.cases_found}")
+
+      updated_progress = %{
+        status: session_data.status,
+        current_page: session_data.current_page,
+        pages_processed: session_data.pages_processed,
+        cases_found: session_data.cases_found || 0,
+        cases_processed: session_data.cases_processed || 0,
+        cases_created: session_data.cases_created || 0,
+        cases_created_current_page: session_data.cases_created_current_page || 0,
+        cases_updated: session_data.cases_updated || 0,
+        cases_updated_current_page: session_data.cases_updated_current_page || 0,
+        cases_exist_total: session_data.cases_exist_total || 0,
+        cases_exist_current_page: session_data.cases_exist_current_page || 0,
+        errors_count: session_data.errors_count || 0,
+        max_pages: session_data.max_pages
+      }
+
+      # When session becomes completed, update scraping_active
+      socket = if session_data.status == :completed do
+        assign(socket,
+          progress: updated_progress,
+          scraping_active: false,
+          current_session: nil,
+          scraping_session_started_at: nil
+        )
+      else
+        assign(socket, progress: updated_progress)
+      end
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  # Handle record creation during active scraping - notices
+  @impl true
+  def handle_info(%Phoenix.Socket.Broadcast{topic: "notice:created", event: "create", payload: %Ash.Notifier.Notification{} = notification}, socket) do
+    # Only add to scraped_records if we have an active session
+    socket = if socket.assigns.scraping_session_started_at do
+      # Load full notice data with associations
+      notice = Notice
+      |> Ash.get!(notification.data.id, load: [:agency, :offender], actor: socket.assigns.current_user)
+
+      # Add to the beginning of the list (most recent first)
+      updated_scraped_records = [notice | socket.assigns.scraped_records]
+
+      assign(socket, scraped_records: updated_scraped_records)
+    else
+      socket
+    end
+
+    {:noreply, socket}
+  end
+
+  # Handle record creation during active scraping - cases
+  @impl true
+  def handle_info(%Phoenix.Socket.Broadcast{topic: "case:created", event: "create", payload: %Ash.Notifier.Notification{} = notification}, socket) do
+    # Only add to scraped_records if we have an active session
+    socket = if socket.assigns.scraping_session_started_at do
+      # Load full case data with associations
+      case_record = Case
+      |> Ash.get!(notification.data.id, load: [:agency, :offender], actor: socket.assigns.current_user)
+
+      # Add to the beginning of the list (most recent first)
+      updated_scraped_records = [case_record | socket.assigns.scraped_records]
+
+      assign(socket, scraped_records: updated_scraped_records)
+    else
+      socket
+    end
+
+    {:noreply, socket}
+  end
+
+  # Ignore other PubSub events
+  @impl true
+  def handle_info(_, socket), do: {:noreply, socket}
 
   @impl true
   def render(assigns) do
@@ -367,6 +472,34 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
           </div>
           <div class="px-6 py-4">
             <%= render_progress(assigns) %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Live Scraped Records (During Active Session) -->
+      <%= if @scraping_session_started_at && length(@scraped_records) > 0 do %>
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white">
+                  Scraped {String.capitalize(to_string(@enforcement_type))}s (This Session)
+                </h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {length(@scraped_records)} {type_display_name(@enforcement_type)}s scraped in current session
+                </p>
+              </div>
+              <button
+                type="button"
+                phx-click="clear_scraped_records"
+                class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <%= render_scraped_records(assigns) %>
           </div>
         </div>
       <% end %>
@@ -472,12 +605,19 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
 
   defp initial_progress do
     %{
-      percentage: 0.0,
       status: :idle,
-      records_found: 0,
-      records_processed: 0,
-      records_created: 0,
-      records_exist: 0
+      current_page: nil,
+      pages_processed: 0,
+      cases_found: 0,
+      cases_processed: 0,
+      cases_created: 0,
+      cases_created_current_page: 0,
+      cases_updated: 0,
+      cases_updated_current_page: 0,
+      cases_exist_total: 0,
+      cases_exist_current_page: 0,
+      errors_count: 0,
+      max_pages: nil
     }
   end
 
@@ -603,6 +743,78 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
               </td>
               <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                 {length(case.offences)} offences
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {Calendar.strftime(case.inserted_at, "%Y-%m-%d")}
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
+
+  # Scraped Records Rendering (Live session updates)
+
+  defp render_scraped_records(%{enforcement_type: :notice, scraped_records: records} = assigns) do
+    assigns = assign(assigns, :records, records)
+
+    ~H"""
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-700/50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Offender</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Agency</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <%= for notice <- @records do %>
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                {notice.offender.name}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {notice.agency.name}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {notice.offence_action_type || "N/A"}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {Calendar.strftime(notice.inserted_at, "%Y-%m-%d")}
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
+
+  defp render_scraped_records(%{enforcement_type: :case, scraped_records: records} = assigns) do
+    assigns = assign(assigns, :records, records)
+
+    ~H"""
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-700/50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Offender</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Agency</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          <%= for case <- @records do %>
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                {case.offender.name}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {case.agency.name}
               </td>
               <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                 {Calendar.strftime(case.inserted_at, "%Y-%m-%d")}
@@ -815,54 +1027,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
 
   defp render_progress(assigns) do
     ~H"""
-    <div class="space-y-6">
-      <!-- Progress Bar -->
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Progress</span>
-          <span class="text-sm text-gray-600 dark:text-gray-400">
-            {Float.round(@progress[:percentage] || 0.0, 1)}%
-          </span>
-        </div>
-        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-          <div
-            class="bg-blue-600 h-2 rounded-full transition-all duration-500"
-            style={"width: #{@progress[:percentage] || 0.0}%"}
-          >
-          </div>
-        </div>
-      </div>
-
-      <!-- Progress Stats -->
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <%= render_stat_card(
-          "Found",
-          @progress[:cases_found] || @progress[:notices_found] || 0,
-          "hero-document-text"
-        ) %>
-        <%= render_stat_card(
-          "Processed",
-          @progress[:cases_processed] || @progress[:notices_processed] || 0,
-          "hero-cog"
-        ) %>
-        <%= render_stat_card(
-          "Created",
-          @progress[:cases_created] || @progress[:notices_created] || 0,
-          "hero-plus-circle"
-        ) %>
-        <%= render_stat_card(
-          "Existing",
-          @progress[:cases_exist_total] || @progress[:notices_exist_total] || 0,
-          "hero-check-circle"
-        ) %>
-      </div>
-
-      <!-- Status Badge -->
-      <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
-        {render_status_badge(@progress[:status] || @current_session.status)}
-      </div>
-    </div>
+    <ProgressComponent.unified_progress_component agency={@agency} progress={@progress} />
     """
   end
 
