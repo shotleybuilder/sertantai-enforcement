@@ -356,7 +356,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   # Private Helper Functions
 
   defp parse_agency("hse"), do: {:ok, :hse}
-  defp parse_agency("environment_agency"), do: {:ok, :environment_agency}
+  defp parse_agency("ea"), do: {:ok, :environment_agency}
+  defp parse_agency("environment_agency"), do: {:ok, :environment_agency}  # Backward compatibility
   defp parse_agency(_), do: {:error, :invalid_agency}
 
   defp parse_type("case"), do: {:ok, :case}

@@ -29,7 +29,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "mounts successfully with EA case strategy", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/admin/scrape/environment_agency/case", on_error: :warn)
+      {:ok, view, html} = live(conn, ~p"/admin/scrape/ea/case", on_error: :warn)
 
       assert html =~ "Environment Agency (EA) Cases"
       assert html =~ "Environment Agency Case Scraping"
@@ -40,7 +40,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "mounts successfully with EA notice strategy", %{conn: conn} do
-      {:ok, view, html} = live(conn, ~p"/admin/scrape/environment_agency/notice", on_error: :warn)
+      {:ok, view, html} = live(conn, ~p"/admin/scrape/ea/notice", on_error: :warn)
 
       assert html =~ "Environment Agency (EA) Notices"
       assert html =~ "Environment Agency Notice Scraping"
@@ -112,7 +112,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     setup [:create_admin_user]
 
     test "displays EA-specific form fields for cases", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/case", on_error: :warn)
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/ea/case", on_error: :warn)
 
       # Check EA-specific fields
       assert has_element?(view, "input[name='date_from']")
@@ -127,7 +127,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "displays EA-specific form fields for notices", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/notice", on_error: :warn)
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/ea/notice", on_error: :warn)
 
       # Check EA notice fields
       assert has_element?(view, "input[name='date_from']")
@@ -139,7 +139,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "displays default date range for EA form", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/admin/scrape/environment_agency/case", on_error: :warn)
+      {:ok, _view, html} = live(conn, ~p"/admin/scrape/ea/case", on_error: :warn)
 
       # Should have date values (30 days ago to today)
       date_from = Date.add(Date.utc_today(), -30) |> Date.to_string()
@@ -164,7 +164,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "selects correct strategy for EA notice", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/notice", on_error: :warn)
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/ea/notice", on_error: :warn)
 
       strategy = :sys.get_state(view.pid).socket.assigns.strategy
 
@@ -214,7 +214,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "shows agency and type display names", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/admin/scrape/environment_agency/notice", on_error: :warn)
+      {:ok, _view, html} = live(conn, ~p"/admin/scrape/ea/notice", on_error: :warn)
 
       assert html =~ "Environment Agency (EA) Notices"
     end
@@ -241,7 +241,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
 
     test "displays validation errors for invalid EA params", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/admin/scrape/environment_agency/case", on_error: :warn)
+      {:ok, view, _html} = live(conn, ~p"/admin/scrape/ea/case", on_error: :warn)
 
       # Submit invalid date range (date_to before date_from)
       view
