@@ -101,25 +101,17 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         |> Ash.Query.load([:agency, :offender])
         |> Ash.read!(actor: socket.assigns.current_user)
       end,
-        subscribe: ["notice:created:*", "notice:updated:*", "notice:bulk_created"],
+        subscribe: ["notice:created", "notice:updated", "notice:bulk_created"],
         results: :keep,
-        load_until_connected?: true,
-        refetch_window: :timer.seconds(5)
+        load_until_connected?: false,  # Prevent eager loading
+        refetch_window: :timer.seconds(30)  # Increased from 5s to 30s to reduce load
       )
-      
-      # Use AshPhoenix.LiveView.keep_live for reactive scraping session updates
-      socket = AshPhoenix.LiveView.keep_live(socket, :active_sessions, fn _socket ->
-        ScrapeSession
-        |> Ash.Query.for_read(:active)
-        |> Ash.Query.sort(inserted_at: :desc)
-        |> Ash.read!()
-      end,
-        subscribe: ["scrape_session:created", "scrape_session:updated"],
-        results: :keep,
-        load_until_connected?: true,
-        refetch_window: :timer.seconds(1)
-      )
-      
+
+      # Use event-driven updates for scraping sessions instead of keep_live polling
+      # Manual PubSub subscriptions to avoid conflicts with handle_info handlers
+      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:created")
+      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
+
       # Manual PubSub subscription for scraped notices - use direct state management
       Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "notice:scraped:updated")
       Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "notice:created")
@@ -475,11 +467,6 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
   end
 
   # Handle keep_live refetch messages
-  @impl true
-  def handle_info({:refetch, :active_sessions, _opts}, socket) do
-    {:noreply, socket}
-  end
-
   @impl true
   def handle_info({:refetch, :recent_notices, _opts}, socket) do
     {:noreply, socket}
@@ -1063,6 +1050,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         current_page: session_data.current_page,
         pages_processed: session_data.pages_processed,
         notices_found: session_data.cases_found || 0,
+        notices_processed: session_data.cases_processed || 0,  # Required for EA progress percentage
         notices_created: session_data.cases_created || 0,
         notices_created_current_page: session_data.cases_created_current_page || 0,
         notices_updated: session_data.cases_updated || 0,
@@ -1079,6 +1067,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         current_page: session_data.current_page,
         pages_processed: session_data.pages_processed,
         notices_found: session_data.cases_found || 0,  # Notice: session uses "cases_found" field
+        notices_processed: session_data.cases_processed || 0,  # Required for EA progress percentage calculation
         notices_created: session_data.cases_created || 0,  # Notice: session uses "cases_created" field
         notices_created_current_page: session_data.cases_created_current_page || 0,
         notices_updated: session_data.cases_updated || 0,
@@ -1117,8 +1106,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Scrape do
         last_update: System.monotonic_time(:millisecond)
       )
     end
-    
-    # Also trigger keep_live refresh for active_sessions (matching Cases pattern)
-    {:noreply, AshPhoenix.LiveView.handle_live(socket, "scrape_session:updated", [:active_sessions])}
+
+    {:noreply, socket}
   end
 end

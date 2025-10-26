@@ -127,8 +127,12 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
   # Detect agency - handles legacy EA sessions that have :hse agency but "ea_enforcement" database
   defp detect_agency(session) do
     cond do
+      # Check agency field first (most reliable)
       session.agency == :environment_agency -> :environment_agency
-      session.database == "ea_enforcement" -> :environment_agency
+      session.agency == :ea -> :ea
+      # Check database field for legacy sessions or when agency not set properly
+      session.database in ["ea_enforcement", "Ea_notices", "ea_notices"] -> :environment_agency
+      # Default to HSE for all other cases (convictions, notices, appeals)
       true -> :hse
     end
   end
@@ -137,6 +141,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
     case agency do
       :hse -> "bg-blue-100 text-blue-800"
       :environment_agency -> "bg-green-100 text-green-800"
+      :ea -> "bg-green-100 text-green-800"
       _ -> "bg-gray-100 text-gray-800"
     end
   end
@@ -145,6 +150,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
     case agency do
       :hse -> "HSE"
       :environment_agency -> "EA"
+      :ea -> "EA"
       _ -> "Unknown"
     end
   end

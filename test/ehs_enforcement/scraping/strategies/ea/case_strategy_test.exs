@@ -196,8 +196,8 @@ defmodule EhsEnforcement.Scraping.Strategies.Ea.CaseStrategyTest do
       assert CaseStrategy.strategy_name() == "Environment Agency Case Scraping"
     end
 
-    test "agency_identifier/0 returns :environment_agency" do
-      assert CaseStrategy.agency_identifier() == :environment_agency
+    test "agency_identifier/0 returns :ea" do
+      assert CaseStrategy.agency_identifier() == :ea
     end
 
     test "enforcement_type/0 returns :case" do

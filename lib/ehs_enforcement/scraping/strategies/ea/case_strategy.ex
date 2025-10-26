@@ -131,7 +131,7 @@ defmodule EhsEnforcement.Scraping.Strategies.EA.CaseStrategy do
   def strategy_name, do: "Environment Agency Case Scraping"
 
   @impl true
-  def agency_identifier, do: :environment_agency
+  def agency_identifier, do: :ea
 
   @impl true
   def enforcement_type, do: :case

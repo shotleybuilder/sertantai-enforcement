@@ -16,7 +16,7 @@ defmodule EhsEnforcement.Scraping.StrategyRegistry do
 
       # List all available strategies
       strategies = StrategyRegistry.list_strategies()
-      # => [{:hse, :case}, {:hse, :notice}, {:environment_agency, :case}, ...]
+      # => [{:hse, :case}, {:hse, :notice}, {:ea, :case}, ...]
 
       # Handle missing strategy
       case StrategyRegistry.get_strategy(:unknown_agency, :case) do
@@ -45,7 +45,7 @@ defmodule EhsEnforcement.Scraping.StrategyRegistry do
 
   Currently supported agencies:
   - `:hse` - Health and Safety Executive
-  - `:environment_agency` - Environment Agency
+  - `:ea` - Environment Agency
 
   Future agencies:
   - `:sepa` - Scottish Environment Protection Agency
@@ -73,8 +73,8 @@ defmodule EhsEnforcement.Scraping.StrategyRegistry do
   @strategies %{
     {:hse, :case} => EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy,
     {:hse, :notice} => EhsEnforcement.Scraping.Strategies.HSE.NoticeStrategy,
-    {:environment_agency, :case} => EhsEnforcement.Scraping.Strategies.EA.CaseStrategy,
-    {:environment_agency, :notice} => EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy
+    {:ea, :case} => EhsEnforcement.Scraping.Strategies.EA.CaseStrategy,
+    {:ea, :notice} => EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy
   }
 
   @doc """
@@ -85,7 +85,7 @@ defmodule EhsEnforcement.Scraping.StrategyRegistry do
 
   ## Parameters
 
-    * `agency` - Agency identifier atom (e.g., `:hse`, `:environment_agency`)
+    * `agency` - Agency identifier atom (e.g., `:hse`, `:ea`)
     * `enforcement_type` - Enforcement type atom (`:case` or `:notice`)
 
   ## Returns
@@ -98,7 +98,7 @@ defmodule EhsEnforcement.Scraping.StrategyRegistry do
       iex> StrategyRegistry.get_strategy(:hse, :case)
       {:ok, EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy}
 
-      iex> StrategyRegistry.get_strategy(:environment_agency, :notice)
+      iex> StrategyRegistry.get_strategy(:ea, :notice)
       {:ok, EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy}
 
       iex> StrategyRegistry.get_strategy(:unknown_agency, :case)
@@ -132,8 +132,8 @@ defmodule EhsEnforcement.Scraping.StrategyRegistry do
       [
         {:hse, :case},
         {:hse, :notice},
-        {:environment_agency, :case},
-        {:environment_agency, :notice}
+        {:ea, :case},
+        {:ea, :notice}
       ]
   """
   @spec list_strategies() :: list({agency(), enforcement_type()})

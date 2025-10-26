@@ -168,8 +168,8 @@ defmodule EhsEnforcement.Scraping.Strategies.Ea.NoticeStrategyTest do
       assert NoticeStrategy.strategy_name() == "Environment Agency Notice Scraping"
     end
 
-    test "agency_identifier/0 returns :environment_agency" do
-      assert NoticeStrategy.agency_identifier() == :environment_agency
+    test "agency_identifier/0 returns :ea" do
+      assert NoticeStrategy.agency_identifier() == :ea
     end
 
     test "enforcement_type/0 returns :notice" do

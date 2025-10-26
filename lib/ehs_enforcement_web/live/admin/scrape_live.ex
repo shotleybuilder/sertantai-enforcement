@@ -356,8 +356,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   # Private Helper Functions
 
   defp parse_agency("hse"), do: {:ok, :hse}
-  defp parse_agency("ea"), do: {:ok, :environment_agency}
-  defp parse_agency("environment_agency"), do: {:ok, :environment_agency}  # Backward compatibility
+  defp parse_agency("ea"), do: {:ok, :ea}
+  defp parse_agency("environment_agency"), do: {:ok, :ea}  # Support long form URL
   defp parse_agency(_), do: {:error, :invalid_agency}
 
   defp parse_type("case"), do: {:ok, :case}
@@ -384,7 +384,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
           "database" => "convictions"
         }
 
-      :environment_agency ->
+      :ea ->
         %{
           "date_from" => Date.add(Date.utc_today(), -30) |> Date.to_string(),
           "date_to" => Date.utc_today() |> Date.to_string(),
@@ -414,7 +414,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   end
 
   defp agency_display_name(:hse), do: "Health & Safety Executive (HSE)"
-  defp agency_display_name(:environment_agency), do: "Environment Agency (EA)"
+  defp agency_display_name(:ea), do: "Environment Agency (EA)"
   defp agency_display_name(agency), do: to_string(agency)
 
   defp type_display_name(:case), do: "Cases"
@@ -478,7 +478,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     """
   end
 
-  defp render_form_fields(%{agency: :environment_agency} = assigns) do
+  defp render_form_fields(%{agency: :ea} = assigns) do
     ~H"""
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
       <div>

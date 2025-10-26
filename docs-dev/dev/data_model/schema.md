@@ -7,8 +7,9 @@ This document provides comprehensive schema documentation for the EHS Enforcemen
 The EHS Enforcement application uses PostgreSQL as its primary database with Ash Framework resources that manage schema and data operations. The schema is organized into several domains:
 
 - **Accounts** - User authentication and session management
-- **Enforcement** - Core enforcement data (cases, notices, agencies, offenders)
+- **Enforcement** - Core enforcement data (cases, notices, agencies, offenders, metrics)
 - **Configuration** - Application configuration and scraping settings
+- **Scraping** - Web scraping session tracking and temporary data storage
 - **Sync** - Data synchronization tracking
 - **Events** - Event sourcing and audit trails
 
@@ -25,7 +26,11 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 | `notices` | `id` (uuid) | Enforcement notices | Enforcement |
 | `legislation` | `id` (uuid) | Legislation lookup | Enforcement |
 | `offences` | `id` (uuid) | Unified offences (HSE + EA) | Enforcement |
+| `metrics` | `id` (uuid) | Dashboard metrics | Enforcement |
 | `scraping_configs` | `id` (uuid) | Scraping configuration | Configuration |
+| `scrape_sessions` | `id` (uuid) | Scraping session tracking | Scraping |
+| `processing_logs` | `id` (uuid) | Processing logs | Scraping |
+| `scraped_cases` | `id` (uuid) | Temporary scraped data | Scraping |
 | `sync_logs` | `id` (uuid) | Sync operation logs | Sync |
 | `events` | `id` (bigserial) | Event sourcing | Events |
 
@@ -179,13 +184,13 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 
 ### `cases` Table
 
-**Purpose**: Court enforcement cases against offenders.
+**Purpose**: Court enforcement cases against offenders. Supports both HSE and EA (Environment Agency) enforcement data with agency-specific extensions.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | `id` | `uuid` | PRIMARY KEY, NOT NULL | Case unique identifier |
-| `airtable_id` | `text` | NULLABLE, UNIQUE (if not null) | Airtable record ID |
-| `regulator_id` | `text` | NULLABLE | HSE/agency internal case ID |
+| `case_reference` | `text` | NULLABLE, UNIQUE (if not null) | Agency's case reference number (EA 'Case Reference' field, formerly `airtable_id`) |
+| `regulator_id` | `text` | NULLABLE | Unique ID from agency system (EA: ea_record_id, HSE: regulator case ID) |
 | `agency_id` | `uuid` | NOT NULL, FK → agencies.id | Issuing agency |
 | `offender_id` | `uuid` | NOT NULL, FK → offenders.id | Subject offender |
 | `offence_result` | `text` | NULLABLE | Court outcome description |
@@ -198,14 +203,35 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 | `related_cases` | `text` | NULLABLE | Related case references |
 | `offence_action_type` | `text` | NULLABLE | Type of enforcement action |
 | `url` | `text` | NULLABLE | Public case URL |
+| `offence_breaches` | `text` | NULLABLE | Description of regulation breaches/violations (re-added Oct 2025) |
 | `last_synced_at` | `timestamp` | NULLABLE | Last synchronization time |
+| `ea_event_reference` | `text` | NULLABLE | EA event ID (e.g., '205107') |
+| `ea_total_violation_count` | `integer` | NULLABLE | Total EA violation count for multi-violation cases |
+| `environmental_impact` | `text` | NULLABLE | EA environmental impact description |
+| `environmental_receptor` | `text` | NULLABLE | EA environmental receptor affected |
+| `is_ea_multi_violation` | `boolean` | DEFAULT false | Whether case has multiple EA violations |
 | `inserted_at` | `timestamp` | NOT NULL | Record creation time |
 | `updated_at` | `timestamp` | NOT NULL | Record update time |
 
 **Indexes**:
-- `cases_unique_airtable_id_index` (UNIQUE on `airtable_id` WHERE `airtable_id IS NOT NULL`)
+- `cases_unique_case_reference_index` (UNIQUE on `case_reference` WHERE `case_reference IS NOT NULL`)
+- `cases_unique_case_per_agency_index` (UNIQUE COMPOSITE on `[agency_id, regulator_id]`)
+- `cases_offence_action_date_index` on `offence_action_date` (dashboard metrics)
+- `cases_agency_id_index` on `agency_id` (filtering performance)
+- `cases_agency_date_index` (COMPOSITE on `[:agency_id, :offence_action_date]`)
+- `cases_offence_fine_index` on `offence_fine` (range queries)
+- `cases_regulator_id_index` on `regulator_id` (standard B-tree)
+- `cases_regulator_id_gin_trgm` on `regulator_id` (trigram similarity search)
 
-**Ash Identity**: `unique_airtable_id` on `[:airtable_id]` WHERE `not is_nil(airtable_id)`
+**Ash Identities**:
+- `unique_case_reference` on `[:case_reference]` WHERE `not is_nil(case_reference)`
+- `unique_case_per_agency` on `[:agency_id, :regulator_id]`
+
+**Schema Changes (Oct 2025)**:
+- Renamed `airtable_id` → `case_reference` to better reflect multi-agency usage
+- Added composite unique constraint on `[agency_id, regulator_id]` for cross-agency uniqueness
+- Added EA-specific fields for Environment Agency enforcement data
+- Re-added `offence_breaches` field for backward compatibility with processing
 
 **Foreign Keys**:
 - `cases_agency_id_fkey`: `agency_id` → `agencies.id`
@@ -225,7 +251,7 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 
 ### `notices` Table
 
-**Purpose**: Enforcement notices issued to offenders (improvement notices, prohibition notices, etc.). Supports fuzzy text search across notice content using PostgreSQL pg_trgm extension.
+**Purpose**: Enforcement notices issued to offenders (improvement notices, prohibition notices, etc.). Supports both HSE and EA (Environment Agency) enforcement notices with fuzzy text search using PostgreSQL pg_trgm extension.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
@@ -242,7 +268,14 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 | `offence_action_type` | `text` | NULLABLE | Type of enforcement action |
 | `offence_action_date` | `date` | NULLABLE | Date of original offence |
 | `url` | `text` | NULLABLE | Public notice URL |
+| `offence_breaches` | `text` | NULLABLE | Description of regulation breaches/violations (re-added Oct 2025) |
 | `last_synced_at` | `timestamp` | NULLABLE | Last synchronization time |
+| `regulator_event_reference` | `text` | NULLABLE | EA event reference ID |
+| `environmental_impact` | `text` | NULLABLE | EA environmental impact description |
+| `environmental_receptor` | `text` | NULLABLE | EA environmental receptor affected |
+| `legal_act` | `text` | NULLABLE | EA legal act citation |
+| `legal_section` | `text` | NULLABLE | EA legal section reference |
+| `regulator_function` | `text` | NULLABLE | EA regulator function |
 | `inserted_at` | `timestamp` | NOT NULL | Record creation time |
 | `updated_at` | `timestamp` | NOT NULL | Record update time |
 
@@ -257,6 +290,10 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 **Fuzzy Search Indexes (pg_trgm GIN)**:
 - `notices_regulator_id_gin_trgm` on `regulator_id` (trigram similarity search)
 - `notices_notice_body_gin_trgm` on `notice_body` (trigram similarity search)
+
+**Schema Changes (Aug-Oct 2025)**:
+- Added EA-specific fields for Environment Agency enforcement notices
+- Re-added `offence_breaches` field for backward compatibility with processing
 
 **Ash Identity**: `unique_airtable_id` on `[:airtable_id]` WHERE `not is_nil(airtable_id)`
 
@@ -297,11 +334,17 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 
 **Indexes**:
 - `legislation_title_year_number_unique` (UNIQUE on `[:legislation_title, :legislation_year, :legislation_number]`)
+- `legislation_unique_legislation_index` (UNIQUE on `[:legislation_title, :legislation_year, :legislation_number]` NULLS NOT DISTINCT)
+- `legislation_unique_title_year_index` (UNIQUE on `[:legislation_title, :legislation_year]` NULLS NOT DISTINCT)
 - `legislation_type_index` on `legislation_type`
 - `legislation_year_index` on `legislation_year`
 - `legislation_title_gin_trgm` (GIN trigram index for fuzzy search)
 
 **Ash Identity**: `unique_legislation` on `[:legislation_title, :legislation_year, :legislation_number]`
+
+**Schema Changes (Oct 2025)**:
+- Added `NULLS NOT DISTINCT` option to unique indexes for proper NULL handling
+- Added partial unique index on title+year for legislation without numbers
 
 **Ash Constraints**: `legislation_type` must be one of `[:act, :regulation, :order, :acop]`
 
@@ -398,6 +441,58 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 
 ---
 
+### `metrics` Table (NEW - Oct 2025)
+
+**Purpose**: Pre-calculated dashboard metrics with multi-dimensional filtering support for performance optimization. Enables fast dashboard rendering by storing computed aggregations.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | `uuid` | PRIMARY KEY, NOT NULL | Metrics record unique identifier |
+| `period` | `text` | NOT NULL | Time period identifier (e.g., "7_days", "30_days", "90_days", "all_time") |
+| `period_label` | `text` | NOT NULL | Human-readable period label |
+| `days_ago` | `integer` | NOT NULL | Days in the lookback period |
+| `cutoff_date` | `date` | NOT NULL | Calculated cutoff date for the period |
+| `calculated_at` | `timestamp` | NOT NULL | When metrics were calculated |
+| `calculated_by` | `text` | NOT NULL | Who/what triggered calculation |
+| `agency_id` | `uuid` | NULLABLE | Filter: specific agency (NULL = all agencies) |
+| `record_type` | `text` | NULLABLE | Filter: "case" or "notice" (NULL = both) |
+| `offender_id` | `uuid` | NULLABLE | Filter: specific offender (NULL = all offenders) |
+| `legislation_id` | `uuid` | NULLABLE | Filter: specific legislation (NULL = all legislation) |
+| `recent_cases_count` | `integer` | NOT NULL, DEFAULT 0 | Cases within period |
+| `recent_notices_count` | `integer` | NOT NULL, DEFAULT 0 | Notices within period |
+| `total_cases_count` | `integer` | NOT NULL, DEFAULT 0 | All-time cases count |
+| `total_notices_count` | `integer` | NOT NULL, DEFAULT 0 | All-time notices count |
+| `total_offences_count` | `integer` | NOT NULL, DEFAULT 0 | Total offences/violations |
+| `total_fines_amount` | `decimal` | NOT NULL, DEFAULT 0 | Sum of all fines |
+| `total_costs_amount` | `decimal` | NOT NULL, DEFAULT 0 | Sum of all costs |
+| `active_agencies_count` | `integer` | NOT NULL, DEFAULT 0 | Number of active agencies |
+| `agency_stats` | `jsonb` | NOT NULL, DEFAULT {} | Per-agency breakdown |
+| `offender_breakdown` | `jsonb` | NOT NULL, DEFAULT {} | Top offenders statistics |
+| `legislation_breakdown` | `jsonb` | NOT NULL, DEFAULT {} | Top legislation statistics |
+| `recent_activity` | `jsonb[]` | NOT NULL, DEFAULT [] | Recent enforcement actions |
+| `inserted_at` | `timestamp` | NOT NULL | Record creation time |
+| `updated_at` | `timestamp` | NOT NULL | Record update time |
+
+**Indexes**:
+- `metrics_unique_filter_combination_index` (UNIQUE on `[:period, :agency_id, :record_type, :offender_id, :legislation_id]`)
+
+**Purpose**: Supports fast dashboard queries with various filter combinations without expensive on-the-fly aggregations.
+
+**Filter Dimensions**:
+- **Period**: Time-based filtering (7 days, 30 days, 90 days, all time)
+- **Agency**: Agency-specific metrics (HSE, EA, etc.)
+- **Record Type**: Cases vs notices breakdown
+- **Offender**: Individual offender statistics
+- **Legislation**: Legislation-specific enforcement patterns
+
+**Usage Pattern**:
+- Metrics are pre-calculated on a schedule or on-demand
+- Dashboard queries retrieve pre-computed values for instant rendering
+- Unique constraint ensures one metrics record per filter combination per period
+- NULL values in filter dimensions represent "all" (e.g., NULL agency_id = all agencies)
+
+---
+
 ## Configuration Domain
 
 ### `scraping_configs` Table
@@ -441,6 +536,101 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 - `batch_size` >= 10
 - `hse_base_url` matches HTTP/HTTPS URL pattern
 - `hse_database` must be one of `["convictions", "enforcement", "notices"]`
+
+---
+
+## Scraping Domain
+
+### `scrape_sessions` Table (NEW - Aug 2025)
+
+**Purpose**: Tracks web scraping sessions for both HSE and EA agencies with real-time progress monitoring via PubSub.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | `uuid` | PRIMARY KEY, NOT NULL | Session unique identifier |
+| `session_id` | `text` | NOT NULL, UNIQUE | External session identifier |
+| `agency` | `text` | NOT NULL, DEFAULT 'hse' | Agency being scraped (:hse or :environment_agency) |
+| `status` | `text` | NOT NULL, DEFAULT 'pending' | Session status (:pending, :running, :completed, :failed, :stopped) |
+| `database` | `text` | NOT NULL, DEFAULT 'convictions' | HSE database ("convictions", "notices", "appeals") |
+| `start_page` | `integer` | NOT NULL, DEFAULT 1 | HSE: Starting page number |
+| `max_pages` | `integer` | NOT NULL, DEFAULT 10 | HSE: Maximum pages to scrape |
+| `end_page` | `integer` | NULLABLE | HSE: Actual ending page |
+| `current_page` | `integer` | NULLABLE | Current page being processed |
+| `pages_processed` | `integer` | DEFAULT 0 | Total pages completed |
+| `date_from` | `date` | NULLABLE | EA: Start date for date range scraping |
+| `date_to` | `date` | NULLABLE | EA: End date for date range scraping |
+| `action_types` | `text[]` | NULLABLE | EA: Action types to scrape |
+| `cases_found` | `integer` | DEFAULT 0 | Total cases discovered |
+| `cases_processed` | `integer` | DEFAULT 0 | Cases processed |
+| `cases_created` | `integer` | DEFAULT 0 | New cases created |
+| `cases_created_current_page` | `integer` | DEFAULT 0 | Cases created on current page |
+| `cases_updated` | `integer` | DEFAULT 0 | Cases updated |
+| `cases_updated_current_page` | `integer` | DEFAULT 0 | Cases updated on current page |
+| `cases_exist_total` | `integer` | DEFAULT 0 | Cases that already existed |
+| `cases_exist_current_page` | `integer` | DEFAULT 0 | Existing cases on current page |
+| `errors_count` | `integer` | DEFAULT 0 | Error count |
+| `inserted_at` | `timestamp` | NOT NULL | Session creation time |
+| `updated_at` | `timestamp` | NOT NULL | Last update time |
+
+**Indexes**:
+- `scrape_sessions_unique_session_id_index` (UNIQUE on `session_id`)
+
+**Ash Identity**: `unique_session_id` on `[:session_id]`
+
+**Purpose**: Unified session tracking for both HSE page-based scraping and EA date-range scraping patterns.
+
+**PubSub Integration**: Real-time progress updates broadcast via Phoenix PubSub on topic `scrape_session:updated`.
+
+---
+
+### `processing_logs` Table (NEW - Aug 2025)
+
+**Purpose**: Detailed processing logs for scraping sessions, recording batch/page-level results and errors.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | `uuid` | PRIMARY KEY, NOT NULL | Log record unique identifier |
+| `session_id` | `text` | NOT NULL | Associated scrape session |
+| `agency` | `text` | NOT NULL | Agency identifier |
+| `batch_or_page` | `integer` | DEFAULT 1 | Batch number or page number |
+| `items_found` | `integer` | DEFAULT 0 | Items discovered in this batch/page |
+| `items_created` | `integer` | DEFAULT 0 | New items created |
+| `items_existing` | `integer` | DEFAULT 0 | Items that already existed |
+| `items_failed` | `integer` | DEFAULT 0 | Items that failed processing |
+| `creation_errors` | `text[]` | DEFAULT [] | Array of error messages |
+| `scraped_items` | `jsonb[]` | DEFAULT [] | Raw scraped data for debugging |
+| `inserted_at` | `timestamp` | NOT NULL | Log creation time |
+| `updated_at` | `timestamp` | NOT NULL | Log update time |
+
+**Purpose**: Provides granular logging for troubleshooting scraping issues and tracking batch processing results.
+
+---
+
+### `scraped_cases` Table (NEW - Aug 2025)
+
+**Purpose**: Temporary staging table for scraped case data before processing into main `cases` table. Used for HSE scraping workflow.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | `uuid` | PRIMARY KEY, NOT NULL | Scraped case record ID |
+| `session_id` | `text` | NOT NULL | Associated scrape session |
+| `regulator_id` | `text` | NOT NULL | HSE case identifier |
+| `page` | `integer` | NOT NULL | Page number where found |
+| `offender_name` | `text` | NULLABLE | Scraped offender name |
+| `offence_action_date` | `date` | NULLABLE | Scraped action date |
+| `offence_fine` | `decimal` | NULLABLE | Scraped fine amount |
+| `offence_result` | `text` | NULLABLE | Scraped case result |
+| `processing_status` | `text` | DEFAULT 'scraping' | Processing stage status |
+| `database_status` | `text` | DEFAULT 'pending' | Database operation status |
+| `inserted_at` | `timestamp` | NOT NULL | Record creation time |
+| `updated_at` | `timestamp` | NOT NULL | Record update time |
+
+**Indexes**:
+- `scraped_cases_unique_case_per_session_index` (UNIQUE on `[:session_id, :regulator_id, :page]`)
+
+**Purpose**: Staging table allows scraping to be decoupled from database processing, enabling better error handling and retry logic.
+
+**Lifecycle**: Records are typically processed into `cases` table and then can be archived or deleted after successful processing.
 
 ---
 
@@ -633,12 +823,17 @@ This ensures backward compatibility for any code expecting the original text for
 - `users.email` (case-insensitive)
 - `agencies.code`
 - `offenders.normalized_name + postcode`
-- `cases.airtable_id` (conditional)
+- `cases.case_reference` (conditional, formerly airtable_id)
+- `cases.agency_id + regulator_id` (composite, cross-agency uniqueness)
 - `notices.airtable_id` (conditional)
 - `scraping_configs.name`
+- `scrape_sessions.session_id`
+- `scraped_cases.session_id + regulator_id + page`
+- `metrics.period + agency_id + record_type + offender_id + legislation_id`
 - `user_identities.strategy + uid + user_id`
 - `tokens.jti`
-- `legislation.title + year + number` (unified schema)
+- `legislation.title + year + number` (with NULLS NOT DISTINCT)
+- `legislation.title + year` (with NULLS NOT DISTINCT, partial match)
 - `offences.offence_reference` (conditional, unified schema)
 - `offences.case_id + sequence_number` (conditional, unified schema)
 

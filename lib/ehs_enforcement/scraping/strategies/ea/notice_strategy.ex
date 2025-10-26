@@ -130,7 +130,7 @@ defmodule EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy do
   def strategy_name, do: "Environment Agency Notice Scraping"
 
   @impl true
-  def agency_identifier, do: :environment_agency
+  def agency_identifier, do: :ea
 
   @impl true
   def enforcement_type, do: :notice

@@ -14,6 +14,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
   alias EhsEnforcement.Enforcement
   alias EhsEnforcement.Utility
   alias EhsEnforcement.Scraping.RateLimiter
+  alias EhsEnforcement.Scraping.Shared.MonetaryParser
   
   @default_database "convictions"
   @base_url_template "https://resources.hse.gov.uk/%{database}/case/"
@@ -441,18 +442,9 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
     end)
   end
   
-  defp parse_monetary_amount(amount_str) when is_binary(amount_str) do
-    case Regex.run(~r/[\d,]+\.?\d*/, amount_str) do
-      [number_str] ->
-        number_str
-        |> String.replace(",", "")
-        |> Decimal.new()
-      
-      _ -> Decimal.new("0")
-    end
+  defp parse_monetary_amount(amount_str) do
+    MonetaryParser.parse_monetary_amount(amount_str)
   end
-  
-  defp parse_monetary_amount(_), do: Decimal.new("0")
   
   # New functions for breach and related cases scraping
   

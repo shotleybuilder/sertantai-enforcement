@@ -169,7 +169,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       strategy = :sys.get_state(view.pid).socket.assigns.strategy
 
       assert strategy == EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy
-      assert strategy.agency_identifier() == :environment_agency
+      assert strategy.agency_identifier() == :ea
       assert strategy.enforcement_type() == :notice
     end
   end
