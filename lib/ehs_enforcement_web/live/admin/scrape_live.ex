@@ -462,19 +462,12 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
         </div>
       </div>
 
-      <!-- Progress Display -->
-      <%= if @current_session do %>
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8">
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-medium text-gray-900 dark:text-white">
-              Scraping Progress
-            </h2>
-          </div>
-          <div class="px-6 py-4">
-            <%= render_progress(assigns) %>
-          </div>
+      <!-- Progress Display - Always visible -->
+      <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8">
+        <div class="px-6 py-4">
+          <%= render_progress(assigns) %>
         </div>
-      <% end %>
+      </div>
 
       <!-- Live Scraped Records (During Active Session) -->
       <%= if @scraping_session_started_at && length(@scraped_records) > 0 do %>
@@ -504,93 +497,14 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
         </div>
       <% end %>
 
-      <!-- Recent Records Display -->
-      <%= if length(@recent_records) > 0 do %>
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8">
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-medium text-gray-900 dark:text-white">
-              Recently Scraped {String.capitalize(to_string(@enforcement_type))}s
-            </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Showing latest {length(@recent_records)} {type_display_name(@enforcement_type)}s
-            </p>
-          </div>
-          <div class="px-6 py-4">
-            <%= render_recent_records(assigns) %>
-          </div>
-        </div>
-      <% end %>
-
-      <!-- Session Results Display -->
-      <%= if length(@session_results) > 0 do %>
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-medium text-gray-900 dark:text-white">
-              Recent Scraping Sessions
-            </h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Latest {length(@session_results)} sessions for {agency_display_name(@agency)}
-            </p>
-          </div>
-          <div class="px-6 py-4">
-            <%= render_session_results(assigns) %>
-          </div>
-        </div>
-      <% end %>
     </div>
     """
   end
 
   # Private Helper Functions
 
-  defp add_reactive_data_loading(socket, enforcement_type) do
-    # Add keep_live for recent records based on enforcement type
-    socket =
-      case enforcement_type do
-        :notice ->
-          AshPhoenix.LiveView.keep_live(socket, :recent_records, fn socket ->
-            EhsEnforcement.Enforcement.Notice
-            |> Ash.Query.sort(inserted_at: :desc)
-            |> Ash.Query.limit(50)
-            |> Ash.Query.load([:agency, :offender])
-            |> Ash.read!(actor: socket.assigns.current_user)
-          end,
-            subscribe: ["notice:created", "notice:updated"],
-            results: :keep,
-            load_until_connected?: false,
-            refetch_window: :timer.seconds(30)
-          )
-
-        :case ->
-          AshPhoenix.LiveView.keep_live(socket, :recent_records, fn socket ->
-            EhsEnforcement.Enforcement.Case
-            |> Ash.Query.sort(inserted_at: :desc)
-            |> Ash.Query.limit(50)
-            |> Ash.Query.load([:agency, :offender, :offences])
-            |> Ash.read!(actor: socket.assigns.current_user)
-          end,
-            subscribe: ["case:created", "case:updated"],
-            results: :keep,
-            load_until_connected?: false,
-            refetch_window: :timer.seconds(30)
-          )
-      end
-
-    # Add keep_live for session results (filter by agency only)
-    socket =
-      AshPhoenix.LiveView.keep_live(socket, :session_results, fn socket ->
-        ScrapeSession
-        |> Ash.Query.filter(agency == ^socket.assigns.agency)
-        |> Ash.Query.sort(inserted_at: :desc)
-        |> Ash.Query.limit(10)
-        |> Ash.read!(actor: socket.assigns.current_user)
-      end,
-        subscribe: ["scrape_session:created", "scrape_session:updated"],
-        results: :keep,
-        load_until_connected?: false,
-        refetch_window: :timer.seconds(10)
-      )
-
+  defp add_reactive_data_loading(socket, _enforcement_type) do
+    # No reactive data loading needed - we only show current session data
     socket
   end
 

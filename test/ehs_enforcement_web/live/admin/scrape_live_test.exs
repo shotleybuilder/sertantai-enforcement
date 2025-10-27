@@ -220,6 +220,56 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     end
   end
 
+  describe "progress tracker" do
+    setup [:create_admin_user]
+
+    test "displays progress component for HSE", %{conn: conn} do
+      {:ok, view, html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
+
+      # Progress component should be visible
+      assert html =~ "HSE Progress"
+      # Should show ready status initially (idle state)
+      assert html =~ "Ready"
+    end
+
+    test "displays progress component for EA", %{conn: conn} do
+      {:ok, view, html} = live(conn, ~p"/admin/scrape/ea/notice", on_error: :warn)
+
+      # Progress component should be visible
+      assert html =~ "EA Progress"
+      # Should show ready status initially (idle state)
+      assert html =~ "Ready"
+    end
+  end
+
+  describe "scraped records display" do
+    setup [:create_admin_user]
+
+    test "does not show scraped records section at page load", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
+
+      # Should NOT show scraped records section when no active session
+      refute html =~ "Scraped Cases (This Session)"
+      refute html =~ "cases scraped in current session"
+    end
+
+    test "does not show scraped records section for EA notices at page load", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/admin/scrape/ea/notice", on_error: :warn)
+
+      # Should NOT show scraped records section when no active session
+      refute html =~ "Scraped Notices (This Session)"
+      refute html =~ "notices scraped in current session"
+    end
+
+    test "does not show Recently Scraped section (saves screen space)", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/admin/scrape/hse/case", on_error: :warn)
+
+      # Should NOT show the "Recently Scraped" section (takes up valuable window space)
+      refute html =~ "Recently Scraped Cases"
+      refute html =~ "Recently Scraped Notices"
+    end
+  end
+
   describe "validation" do
     setup [:create_admin_user]
 
