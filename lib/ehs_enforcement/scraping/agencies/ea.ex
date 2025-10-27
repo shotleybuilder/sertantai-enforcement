@@ -363,7 +363,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
   
   defp process_ea_notice_record(detail_record, actor) do
     Logger.debug("EA: Processing enforcement notice: #{detail_record.ea_record_id}")
-    
+
     case NoticeProcessor.process_and_create_notice_with_status(detail_record, actor) do
       {:ok, notice_record, status} ->
         case status do
@@ -374,14 +374,17 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
           :existing ->
             Logger.info("EA: Notice already exists: #{notice_record.regulator_id}")
         end
-        
+
+        # Broadcast real-time update for this individual notice
+        broadcast_record_scraped(notice_record, :notice, status)
+
         %{
           status: status,
           record: notice_record,
           record_type: :notice,
           transformed_data: %{regulator_id: notice_record.regulator_id}
         }
-        
+
       {:error, reason} ->
         Logger.warning("EA: Error creating notice: #{inspect(reason)}")
         %{
@@ -396,10 +399,10 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
   
   defp process_ea_case_record(detail_record, actor) do
     Logger.debug("EA: Processing case: #{detail_record.ea_record_id}")
-    
+
     # Transform EA case to Case resource format using EA DataTransformer
     transformed_case = DataTransformer.transform_ea_record(detail_record)
-    
+
     # Create Case resource using unified processor for consistent UI status
     case CaseProcessor.process_and_create_case_with_status(transformed_case, actor) do
       {:ok, case_record, status} ->
@@ -411,7 +414,10 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
           :existing ->
             Logger.info("EA: Case already exists: #{case_record.regulator_id}")
         end
-        
+
+        # Broadcast real-time update for this individual case
+        broadcast_record_scraped(case_record, :case, status)
+
         %{
           status: status,
           record: case_record,
@@ -587,6 +593,24 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
         Logger.debug("EA: Created unified processing log for #{action_type} in session #{session.session_id}")
       {:error, reason} ->
         Logger.warning("EA: Failed to create unified processing log for #{action_type}: #{inspect(reason)}")
+    end
+  end
+
+  # Broadcast individual record scraping events for real-time UI updates
+  defp broadcast_record_scraped(record, record_type, status) do
+    topic = case record_type do
+      :notice -> "notice:scraped"
+      :case -> "case:scraped"
+      _ -> nil
+    end
+
+    if topic do
+      Phoenix.PubSub.broadcast(
+        EhsEnforcement.PubSub,
+        topic,
+        {:record_scraped, %{record: record, status: status, type: record_type}}
+      )
+      Logger.debug("Broadcast #{topic}: #{record.regulator_id} (status: #{status})")
     end
   end
 end
