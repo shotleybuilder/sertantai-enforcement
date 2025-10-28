@@ -6,7 +6,7 @@
         <h1 class="text-3xl font-bold text-gray-900">Case Activity Monitor</h1>
         <p class="mt-2 text-gray-600">Monitor recent case activity and scraping performance</p>
       </div>
-      
+
       <div class="flex space-x-3">
         <button
           type="button"
@@ -14,34 +14,54 @@
           class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           disabled={@loading}
         >
-          <svg class={"h-4 w-4 mr-2 #{if @loading, do: "animate-spin", else: ""}"} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          <svg
+            class={"h-4 w-4 mr-2 #{if @loading, do: "animate-spin", else: ""}"}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
           Refresh
         </button>
-        
+
         <button
           type="button"
           phx-click="navigate_to_scraping"
           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
           </svg>
           Start Scraping
         </button>
       </div>
     </div>
   </div>
-
-  <!-- Case Statistics -->
+  
+<!-- Case Statistics -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div class="flex items-center">
         <div class="flex-shrink-0">
           <div class="flex items-center justify-center h-8 w-8 rounded-md bg-blue-500 text-white">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
           </div>
         </div>
@@ -52,7 +72,7 @@
               <%= if @loading do %>
                 <div class="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
               <% else %>
-                <%= @case_stats.total_cases %>
+                {@case_stats.total_cases}
               <% end %>
             </dd>
           </dl>
@@ -65,7 +85,12 @@
         <div class="flex-shrink-0">
           <div class="flex items-center justify-center h-8 w-8 rounded-md bg-green-500 text-white">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
         </div>
@@ -76,7 +101,7 @@
               <%= if @loading do %>
                 <div class="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
               <% else %>
-                <%= @case_stats.recent_cases_count %>
+                {@case_stats.recent_cases_count}
               <% end %>
             </dd>
           </dl>
@@ -89,7 +114,12 @@
         <div class="flex-shrink-0">
           <div class="flex items-center justify-center h-8 w-8 rounded-md bg-yellow-500 text-white">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+              />
             </svg>
           </div>
         </div>
@@ -100,7 +130,7 @@
               <%= if @loading do %>
                 <div class="animate-pulse bg-gray-200 h-6 w-8 rounded"></div>
               <% else %>
-                <%= @case_stats.hse_cases_count %>
+                {@case_stats.hse_cases_count}
               <% end %>
             </dd>
           </dl>
@@ -113,7 +143,12 @@
         <div class="flex-shrink-0">
           <div class="flex items-center justify-center h-8 w-8 rounded-md bg-purple-500 text-white">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
             </svg>
           </div>
         </div>
@@ -124,7 +159,7 @@
               <%= if @loading do %>
                 <div class="animate-pulse bg-gray-200 h-6 w-12 rounded"></div>
               <% else %>
-                <%= @case_stats.avg_cases_per_day %>
+                {@case_stats.avg_cases_per_day}
               <% end %>
             </dd>
           </dl>
@@ -132,14 +167,16 @@
       </div>
     </div>
   </div>
-
-  <!-- Filters -->
+  
+<!-- Filters -->
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
     <div class="flex flex-wrap items-center gap-4">
       <div>
-        <label for="agency_filter" class="block text-sm font-medium text-gray-700 mb-1">Agency</label>
+        <label for="agency_filter" class="block text-sm font-medium text-gray-700 mb-1">
+          Agency
+        </label>
         <select
-          id="agency_filter" 
+          id="agency_filter"
           phx-change="filter_by_agency"
           name="agency"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -153,28 +190,34 @@
       </div>
 
       <div>
-        <label for="date_filter" class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+        <label for="date_filter" class="block text-sm font-medium text-gray-700 mb-1">
+          Date Range
+        </label>
         <select
           id="date_filter"
           phx-change="filter_by_date"
-          name="range" 
+          name="range"
           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
         >
-          <option value="last_24_hours" selected={@date_range == :last_24_hours}>Last 24 hours</option>
+          <option value="last_24_hours" selected={@date_range == :last_24_hours}>
+            Last 24 hours
+          </option>
           <option value="last_7_days" selected={@date_range == :last_7_days}>Last 7 days</option>
-          <option value="last_30_days" selected={@date_range == :last_30_days}>Last 30 days</option>
+          <option value="last_30_days" selected={@date_range == :last_30_days}>
+            Last 30 days
+          </option>
           <option value="all_time" selected={@date_range == :all_time}>All time</option>
         </select>
       </div>
     </div>
   </div>
-
-  <!-- Recent Cases Table -->
+  
+<!-- Recent Cases Table -->
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
     <div class="px-6 py-4 border-b border-gray-200">
       <h2 class="text-lg font-medium text-gray-900">Recent Cases</h2>
     </div>
-    
+
     <%= if @loading do %>
       <div class="p-6">
         <div class="animate-pulse space-y-4">
@@ -193,11 +236,23 @@
     <% else %>
       <%= if @recent_cases == [] do %>
         <div class="p-6 text-center">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <svg
+            class="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
           <h3 class="mt-2 text-sm font-medium text-gray-900">No cases found</h3>
-          <p class="mt-1 text-sm text-gray-500">Try adjusting your filters or start a new scraping session.</p>
+          <p class="mt-1 text-sm text-gray-500">
+            Try adjusting your filters or start a new scraping session.
+          </p>
           <div class="mt-6">
             <button
               type="button"
@@ -205,7 +260,12 @@
               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
               </svg>
               Start Scraping
             </button>
@@ -216,12 +276,24 @@
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Case ID</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agency</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offender</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Case ID
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Agency
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Offender
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Result
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -229,32 +301,32 @@
                 <tr class="hover:bg-gray-50">
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm font-medium text-gray-900 font-mono">
-                      <%= case.regulator_id %>
+                      {case.regulator_id}
                     </div>
                   </td>
-                  
+
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <%= agency_name(case.agency_code) %>
+                    {agency_name(case.agency_code)}
                   </td>
-                  
+
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">
                       <%= if case.offender do %>
-                        <%= case.offender.name %>
+                        {case.offender.name}
                       <% else %>
                         N/A
                       <% end %>
                     </div>
                   </td>
-                  
+
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <%= case.offence_result || "N/A" %>
+                    {case.offence_result || "N/A"}
                   </td>
-                  
+
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <%= format_datetime(case.inserted_at) %>
+                    {format_datetime(case.inserted_at)}
                   </td>
-                  
+
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
                       type="button"
@@ -273,8 +345,8 @@
       <% end %>
     <% end %>
   </div>
-
-  <!-- Case Details Modal -->
+  
+<!-- Case Details Modal -->
   <%= if @show_case_details and @selected_case do %>
     <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
@@ -286,40 +358,47 @@
             class="text-gray-400 hover:text-gray-600"
           >
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
-        
+
         <div class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <dt class="text-sm font-medium text-gray-500">Case ID</dt>
-              <dd class="text-sm text-gray-900 font-mono"><%= @selected_case.regulator_id %></dd>
+              <dd class="text-sm text-gray-900 font-mono">{@selected_case.regulator_id}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Agency</dt>
-              <dd class="text-sm text-gray-900"><%= agency_name(@selected_case.agency_code) %></dd>
+              <dd class="text-sm text-gray-900">{agency_name(@selected_case.agency_code)}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Offender</dt>
               <dd class="text-sm text-gray-900">
-                <%= if @selected_case.offender, do: @selected_case.offender.name, else: "N/A" %>
+                {if @selected_case.offender, do: @selected_case.offender.name, else: "N/A"}
               </dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Result</dt>
-              <dd class="text-sm text-gray-900"><%= @selected_case.offence_result || "N/A" %></dd>
+              <dd class="text-sm text-gray-900">{@selected_case.offence_result || "N/A"}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Fine</dt>
               <dd class="text-sm text-gray-900">
-                <%= if @selected_case.offence_fine, do: "£#{Decimal.to_string(@selected_case.offence_fine)}", else: "N/A" %>
+                {if @selected_case.offence_fine,
+                  do: "£#{Decimal.to_string(@selected_case.offence_fine)}",
+                  else: "N/A"}
               </dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Date Added</dt>
-              <dd class="text-sm text-gray-900"><%= format_datetime(@selected_case.inserted_at) %></dd>
+              <dd class="text-sm text-gray-900">{format_datetime(@selected_case.inserted_at)}</dd>
             </div>
           </div>
         </div>

@@ -98,8 +98,12 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
     }
 
     # Add business type using shared BusinessTypeDetector
-    enhanced_attrs = base_attrs
-    |> Map.put(:business_type, determine_and_normalize_business_type(scraped_case.offender_name))
+    enhanced_attrs =
+      base_attrs
+      |> Map.put(
+        :business_type,
+        determine_and_normalize_business_type(scraped_case.offender_name)
+      )
 
     # Remove nil values to keep attrs clean
     enhanced_attrs
@@ -120,8 +124,10 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
 
     # Add business type using shared BusinessTypeDetector
     offender_name = notice_data[:offender_name] || notice_data.offender_name || ""
-    enhanced_attrs = base_attrs
-    |> Map.put(:business_type, determine_and_normalize_business_type(offender_name))
+
+    enhanced_attrs =
+      base_attrs
+      |> Map.put(:business_type, determine_and_normalize_business_type(offender_name))
 
     # Remove nil values to keep attrs clean
     enhanced_attrs

@@ -25,14 +25,15 @@ defmodule EhsEnforcement.Enforcement.AgencyTest do
       attrs = %{}
 
       assert {:error, %Ash.Error.Invalid{} = error} = Enforcement.create_agency(attrs)
-      
+
       # Check that required field errors are present
-      assert Enum.any?(error.errors, fn err -> 
-        err.field == :code and err.__struct__ == Ash.Error.Changes.Required
-      end)
-      assert Enum.any?(error.errors, fn err -> 
-        err.field == :name and err.__struct__ == Ash.Error.Changes.Required
-      end)
+      assert Enum.any?(error.errors, fn err ->
+               err.field == :code and err.__struct__ == Ash.Error.Changes.Required
+             end)
+
+      assert Enum.any?(error.errors, fn err ->
+               err.field == :name and err.__struct__ == Ash.Error.Changes.Required
+             end)
     end
 
     test "validates code format" do
@@ -51,7 +52,7 @@ defmodule EhsEnforcement.Enforcement.AgencyTest do
       }
 
       assert {:ok, _agency1} = Enforcement.create_agency(attrs)
-      
+
       attrs2 = %{
         code: :hse,
         name: "Another HSE"
@@ -85,7 +86,7 @@ defmodule EhsEnforcement.Enforcement.AgencyTest do
 
       update_attrs = %{name: "Updated HSE Name", enabled: false}
       assert {:ok, updated_agency} = Enforcement.update_agency(agency, update_attrs)
-      
+
       assert updated_agency.name == "Updated HSE Name"
       assert updated_agency.enabled == false
     end

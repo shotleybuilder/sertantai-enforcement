@@ -8,13 +8,20 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
   def filter_form(assigns) do
     assigns = assign_new(assigns, :fuzzy_search, fn -> false end)
     assigns = assign_new(assigns, :agencies, fn -> [] end)
+
     ~H"""
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
       <div class="mb-4">
         <h3 class="text-lg font-medium text-gray-900">Filter Offenders</h3>
       </div>
-      
-      <.form for={%{}} phx-change="filter_change" phx-debounce="500" phx-target={@target} data-testid="offender-filters">
+
+      <.form
+        for={%{}}
+        phx-change="filter_change"
+        phx-debounce="500"
+        phx-target={@target}
+        data-testid="offender-filters"
+      >
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <!-- Agency Filter (Position 1) -->
           <div class="space-y-1">
@@ -30,13 +37,13 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
               <option value="">All Agencies</option>
               <%= for agency <- @agencies do %>
                 <option value={agency.name} selected={@filters[:agency] == agency.name}>
-                  <%= agency.name %>
+                  {agency.name}
                 </option>
               <% end %>
             </select>
           </div>
-
-          <!-- Industry Filter (Position 2) -->
+          
+    <!-- Industry Filter (Position 2) -->
           <div class="space-y-1">
             <label for="industry-filter" class="block text-sm font-medium text-gray-700">
               Industry
@@ -48,19 +55,28 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             >
               <option value="">All Industries</option>
-              <option value="Agriculture hunting forestry and fishing" selected={@filters[:industry] == "Agriculture hunting forestry and fishing"}>
+              <option
+                value="Agriculture hunting forestry and fishing"
+                selected={@filters[:industry] == "Agriculture hunting forestry and fishing"}
+              >
                 Agriculture, Hunting, Forestry & Fishing
               </option>
               <option value="Construction" selected={@filters[:industry] == "Construction"}>
                 Construction
               </option>
-              <option value="Extractive and utility supply industries" selected={@filters[:industry] == "Extractive and utility supply industries"}>
+              <option
+                value="Extractive and utility supply industries"
+                selected={@filters[:industry] == "Extractive and utility supply industries"}
+              >
                 Extractive & Utility Supply
               </option>
               <option value="Manufacturing" selected={@filters[:industry] == "Manufacturing"}>
                 Manufacturing
               </option>
-              <option value="Total service industries" selected={@filters[:industry] == "Total service industries"}>
+              <option
+                value="Total service industries"
+                selected={@filters[:industry] == "Total service industries"}
+              >
                 Service Industries
               </option>
               <option value="Unknown" selected={@filters[:industry] == "Unknown"}>
@@ -68,8 +84,8 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
               </option>
             </select>
           </div>
-
-          <!-- Search Input -->
+          
+    <!-- Search Input -->
           <div class="space-y-1">
             <label for="search-filter" class="block text-sm font-medium text-gray-700">
               Search Offenders
@@ -88,7 +104,7 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
               </div>
             </div>
             
-            <!-- Fuzzy Search Toggle -->
+    <!-- Fuzzy Search Toggle -->
             <div class="mt-2 flex items-center">
               <input
                 id="fuzzy-search-toggle"
@@ -106,8 +122,8 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
               <% end %>
             </div>
           </div>
-
-          <!-- Local Authority -->
+          
+    <!-- Local Authority -->
           <div class="space-y-1">
             <label for="authority-filter" class="block text-sm font-medium text-gray-700">
               Local Authority
@@ -121,8 +137,8 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
-
-          <!-- Business Type -->
+          
+    <!-- Business Type -->
           <div class="space-y-1">
             <label for="business-type-filter" class="block text-sm font-medium text-gray-700">
               Business Type
@@ -152,8 +168,8 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
             </select>
           </div>
         </div>
-
-        <!-- Second Row - Additional Filters -->
+        
+    <!-- Second Row - Additional Filters -->
         <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Repeat Offenders Only -->
           <div class="space-y-1">
@@ -171,8 +187,8 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
             </div>
             <p class="text-xs text-gray-500">More than 2 enforcement actions</p>
           </div>
-
-          <!-- Sort By -->
+          
+    <!-- Sort By -->
           <div class="space-y-1">
             <label for="sort-by" class="block text-sm font-medium text-gray-700">
               Sort By
@@ -187,13 +203,19 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
               <option value="total_fines" selected={@sort_by == "total_fines"}>Total Fines</option>
               <option value="name" selected={@sort_by == "name"}>Name</option>
               <option value="total_cases" selected={@sort_by == "total_cases"}>Total Cases</option>
-              <option value="total_notices" selected={@sort_by == "total_notices"}>Total Notices</option>
-              <option value="first_seen_date" selected={@sort_by == "first_seen_date"}>First Seen</option>
-              <option value="last_seen_date" selected={@sort_by == "last_seen_date"}>Last Seen</option>
+              <option value="total_notices" selected={@sort_by == "total_notices"}>
+                Total Notices
+              </option>
+              <option value="first_seen_date" selected={@sort_by == "first_seen_date"}>
+                First Seen
+              </option>
+              <option value="last_seen_date" selected={@sort_by == "last_seen_date"}>
+                Last Seen
+              </option>
             </select>
           </div>
-
-          <!-- Sort Order -->
+          
+    <!-- Sort Order -->
           <div class="space-y-1">
             <label for="sort-order" class="block text-sm font-medium text-gray-700">
               Order
@@ -211,7 +233,7 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
           </div>
         </div>
         
-        <!-- Filter Count and Action Buttons -->
+    <!-- Filter Count and Action Buttons -->
         <div class="mt-4 flex items-center justify-between">
           <div class="flex items-center space-x-3">
             <!-- Real-time Filter Count -->
@@ -225,7 +247,7 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
                 <div class="flex items-center text-sm">
                   <span class="text-gray-600">Found:</span>
                   <span class={"ml-1 font-semibold #{if assigns[:filter_count] && @filter_count > 1000, do: "text-red-600", else: "text-blue-600"}"}>
-                    <%= assigns[:filter_count] || 0 %> offenders
+                    {assigns[:filter_count] || 0} offenders
                   </span>
                   <%= if assigns[:filter_count] && @filter_count > 1000 do %>
                     <span class="ml-2 text-xs text-red-600 font-medium">(Too many)</span>
@@ -234,7 +256,7 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
               <% end %>
             <% end %>
           </div>
-          
+
           <div class="flex items-center space-x-3">
             <!-- Apply Filter Button -->
             <%= if ((assigns[:filters] && map_size(@filters) > 0) || (assigns[:search_query] && @search_query != "")) && !(assigns[:filters_applied] && @filters_applied) do %>
@@ -245,8 +267,7 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
                   phx-target={@target}
                   class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
-                  Apply Filters
+                  <.icon name="hero-funnel" class="h-4 w-4 mr-2" /> Apply Filters
                 </button>
               <% else %>
                 <button
@@ -255,13 +276,12 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
                   class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-75"
                   title="Too many records found. Please refine your filters to 1,000 or fewer records."
                 >
-                  <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
-                  Apply Filters
+                  <.icon name="hero-funnel" class="h-4 w-4 mr-2" /> Apply Filters
                 </button>
               <% end %>
             <% end %>
             
-            <!-- Clear Filters Button -->
+    <!-- Clear Filters Button -->
             <%= if (assigns[:filters] && map_size(@filters) > 0) || (assigns[:search_query] && @search_query != "") do %>
               <button
                 type="button"
@@ -269,8 +289,7 @@ defmodule EhsEnforcementWeb.Components.OffenderFilter do
                 phx-target={@target}
                 class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                <.icon name="hero-x-mark" class="h-4 w-4 mr-2" />
-                Clear Filters
+                <.icon name="hero-x-mark" class="h-4 w-4 mr-2" /> Clear Filters
               </button>
             <% end %>
           </div>

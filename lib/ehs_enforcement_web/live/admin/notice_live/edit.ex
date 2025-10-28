@@ -1,21 +1,22 @@
 defmodule EhsEnforcementWeb.Admin.NoticeLive.Edit do
   use EhsEnforcementWeb, :live_view
-  
+
   alias EhsEnforcement.Enforcement.Notice
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     case Ash.get(Notice, id, actor: socket.assigns.current_user, load: [:agency, :offender]) do
       {:ok, notice_record} ->
-        form = AshPhoenix.Form.for_update(notice_record, :update, forms: [auto?: false]) |> to_form()
-        
+        form =
+          AshPhoenix.Form.for_update(notice_record, :update, forms: [auto?: false]) |> to_form()
+
         {:ok,
          socket
          |> assign(:notice, notice_record)
          |> assign(:form, form)
          |> assign(:page_title, "Edit Notice")
          |> assign(:loading, false)}
-      
+
       {:error, _} ->
         {:ok,
          socket
@@ -43,7 +44,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Edit do
          socket
          |> put_flash(:info, "Notice #{notice_record.regulator_id} updated successfully")
          |> push_navigate(to: ~p"/notices")}
-      
+
       {:error, form} ->
         {:noreply, assign(socket, :form, form)}
     end
@@ -59,36 +60,74 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Edit do
   defp format_datetime(datetime) when is_struct(datetime, NaiveDateTime) do
     Calendar.strftime(datetime, "%Y-%m-%d %H:%M:%S")
   end
+
   defp format_datetime(datetime) when is_struct(datetime, DateTime) do
     Calendar.strftime(datetime, "%Y-%m-%d %H:%M:%S")
   end
+
   defp format_datetime(_), do: "—"
 
   defp format_date(date) when is_struct(date, Date) do
     Calendar.strftime(date, "%Y-%m-%d")
   end
+
   defp format_date(_), do: ""
 
   defp field_description(field) do
     case field do
-      :id -> "Unique identifier for this notice (system generated)"
-      :regulator_id -> "Notice reference from the regulatory agency"
-      :regulator_ref_number -> "Additional reference number from regulator"
-      :notice_date -> "Date when the notice was issued"
-      :operative_date -> "Date when the notice becomes operative"
-      :compliance_date -> "Date by which compliance must be achieved"
-      :notice_body -> "Full text content of the notice"
-      :offence_action_type -> "Type of enforcement action (e.g., improvement notice, prohibition notice)"
-      :offence_action_date -> "Date when the enforcement action was taken"
-      :offence_breaches -> "Description of the regulatory breaches"
-      :url -> "Direct URL to notice details on agency website"
-      :airtable_id -> "Legacy Airtable record ID (system managed)"
-      :agency_id -> "Associated enforcement agency (cannot be changed)"
-      :offender_id -> "Associated offender (cannot be changed)"
-      :inserted_at -> "When this notice record was created (system managed)"
-      :updated_at -> "When this notice record was last modified (system managed)"
-      :last_synced_at -> "Last sync with external systems (system managed)"
-      _ -> ""
+      :id ->
+        "Unique identifier for this notice (system generated)"
+
+      :regulator_id ->
+        "Notice reference from the regulatory agency"
+
+      :regulator_ref_number ->
+        "Additional reference number from regulator"
+
+      :notice_date ->
+        "Date when the notice was issued"
+
+      :operative_date ->
+        "Date when the notice becomes operative"
+
+      :compliance_date ->
+        "Date by which compliance must be achieved"
+
+      :notice_body ->
+        "Full text content of the notice"
+
+      :offence_action_type ->
+        "Type of enforcement action (e.g., improvement notice, prohibition notice)"
+
+      :offence_action_date ->
+        "Date when the enforcement action was taken"
+
+      :offence_breaches ->
+        "Description of the regulatory breaches"
+
+      :url ->
+        "Direct URL to notice details on agency website"
+
+      :airtable_id ->
+        "Legacy Airtable record ID (system managed)"
+
+      :agency_id ->
+        "Associated enforcement agency (cannot be changed)"
+
+      :offender_id ->
+        "Associated offender (cannot be changed)"
+
+      :inserted_at ->
+        "When this notice record was created (system managed)"
+
+      :updated_at ->
+        "When this notice record was last modified (system managed)"
+
+      :last_synced_at ->
+        "Last sync with external systems (system managed)"
+
+      _ ->
+        ""
     end
   end
 
@@ -141,16 +180,19 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.Edit do
 
   defp select_options(field) do
     case field do
-      :offence_action_type -> [
-        {"Improvement Notice", "Improvement Notice"},
-        {"Prohibition Notice", "Prohibition Notice"},
-        {"Enforcement Notice", "Enforcement Notice"},
-        {"Formal Caution", "Formal Caution"},
-        {"Simple Caution", "Simple Caution"},
-        {"Court Case", "Court Case"},
-        {"Caution", "Caution"}
-      ]
-      _ -> []
+      :offence_action_type ->
+        [
+          {"Improvement Notice", "Improvement Notice"},
+          {"Prohibition Notice", "Prohibition Notice"},
+          {"Enforcement Notice", "Enforcement Notice"},
+          {"Formal Caution", "Formal Caution"},
+          {"Simple Caution", "Simple Caution"},
+          {"Court Case", "Court Case"},
+          {"Caution", "Caution"}
+        ]
+
+      _ ->
+        []
     end
   end
 end

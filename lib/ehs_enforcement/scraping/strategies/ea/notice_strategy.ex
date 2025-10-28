@@ -79,7 +79,7 @@ defmodule EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy do
     # Progress = (notices_processed / notices_found) * 100
     # Note: Session uses "cases_*" fields for both cases and notices (legacy naming)
     if session.cases_found > 0 do
-      (session.cases_processed / session.cases_found) * 100.0
+      session.cases_processed / session.cases_found * 100.0
     else
       0.0
     end
@@ -88,7 +88,7 @@ defmodule EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy do
   @impl true
   def calculate_progress(%{cases_processed: processed, cases_found: found}) when found > 0 do
     # Map generic "cases_*" fields to notices for progress calculation
-    (processed / found) * 100.0
+    processed / found * 100.0
   end
 
   @impl true

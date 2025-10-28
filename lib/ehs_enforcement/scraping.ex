@@ -7,9 +7,9 @@ defmodule EhsEnforcement.Scraping do
     extensions: [AshPhoenix]
 
   resources do
-    resource EhsEnforcement.Scraping.ScrapeRequest
-    resource EhsEnforcement.Scraping.ScrapeSession
-    resource EhsEnforcement.Scraping.ProcessingLog
-    resource EhsEnforcement.Scraping.ScrapedCase
+    resource(EhsEnforcement.Scraping.ScrapeRequest)
+    resource(EhsEnforcement.Scraping.ScrapeSession)
+    resource(EhsEnforcement.Scraping.ProcessingLog)
+    resource(EhsEnforcement.Scraping.ScrapedCase)
   end
 end

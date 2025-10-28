@@ -1,7 +1,7 @@
 defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
   @moduledoc """
   Modern Req-based Airtable API client with rate limiting and error handling.
-  
+
   This client provides a unified interface for all Airtable operations with:
   - Consistent error handling
   - Rate limiting (5 requests/second)
@@ -9,21 +9,22 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
   - Request/response logging
   - Standardized response format
   """
-  
+
   require Logger
   alias EhsEnforcement.Integrations.Airtable.{Endpoint, Headers}
-  
+
   @rate_limit_per_second 5
   @timeout 30_000
   @retry_attempts 3
-  @retry_base_delay 1000  # 1 second
-  
+  # 1 second
+  @retry_base_delay 1000
+
   @type response :: {:ok, map()} | {:error, map()}
   @type http_method :: :get | :post | :patch | :delete
-  
+
   @doc """
   Performs a GET request to the Airtable API.
-  
+
   ## Examples
       iex> ReqClient.get("/appId/tableId", %{view: "Grid view"})
       {:ok, %{records: [...], offset: "..."}}
@@ -38,7 +39,7 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
 
   @doc """
   Performs a POST request to the Airtable API.
-  
+
   ## Examples
       iex> ReqClient.post("/appId/tableId", %{records: [...]})
       {:ok, %{records: [...]}}
@@ -50,7 +51,7 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
 
   @doc """
   Performs a PATCH request to the Airtable API.
-  
+
   ## Examples
       iex> ReqClient.patch("/appId/tableId", %{records: [...]})
       {:ok, %{records: [...]}}
@@ -62,7 +63,7 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
 
   @doc """
   Performs a DELETE request to the Airtable API.
-  
+
   ## Examples
       iex> ReqClient.delete("/appId/tableId/recordId")
       {:ok, %{deleted: true, id: "recordId"}}
@@ -74,7 +75,7 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
 
   @doc """
   Gets records with automatic pagination handling.
-  
+
   Returns all records by following offset pagination automatically.
   """
   @spec get_all_records(String.t(), map(), keyword()) :: response()
@@ -87,27 +88,34 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
   @spec make_request(http_method(), String.t(), map() | nil, keyword()) :: response()
   defp make_request(method, path, data, opts, attempt \\ 1) do
     rate_limit_delay()
-    
+
     req_opts = build_request_opts(method, path, data, opts)
-    
+
     Logger.debug("Airtable API #{String.upcase(to_string(method))}: #{path}")
-    
+
     case Req.request(req_opts) do
       {:ok, response} ->
         handle_response(response)
-        
+
       {:error, error} when attempt < @retry_attempts ->
         if should_retry?(error, attempt) do
           delay = calculate_retry_delay(attempt)
-          Logger.warning("Airtable request failed (attempt #{attempt}/#{@retry_attempts}), retrying in #{delay}ms: #{inspect(error)}")
+
+          Logger.warning(
+            "Airtable request failed (attempt #{attempt}/#{@retry_attempts}), retrying in #{delay}ms: #{inspect(error)}"
+          )
+
           Process.sleep(delay)
           make_request(method, path, data, opts, attempt + 1)
         else
           handle_error(error)
         end
-        
+
       {:error, error} ->
-        Logger.error("Airtable request failed after #{@retry_attempts} attempts: #{inspect(error)}")
+        Logger.error(
+          "Airtable request failed after #{@retry_attempts} attempts: #{inspect(error)}"
+        )
+
         handle_error(error)
     end
   end
@@ -120,25 +128,30 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
       url: path,
       headers: Headers.headers(),
       receive_timeout: @timeout,
-      retry: false  # We handle retries manually
+      # We handle retries manually
+      retry: false
     ]
-    
+
     # Add JSON body for POST/PATCH requests
-    body_opts = case {method, data} do
-      {method, data} when method in [:post, :patch] and not is_nil(data) ->
-        [json: data]
-      _ ->
-        []
-    end
-    
+    body_opts =
+      case {method, data} do
+        {method, data} when method in [:post, :patch] and not is_nil(data) ->
+          [json: data]
+
+        _ ->
+          []
+      end
+
     # Add query parameters for GET requests
-    param_opts = case Keyword.get(opts, :params) do
-      params when is_map(params) and map_size(params) > 0 ->
-        [params: params]
-      _ ->
-        []
-    end
-    
+    param_opts =
+      case Keyword.get(opts, :params) do
+        params when is_map(params) and map_size(params) > 0 ->
+          [params: params]
+
+        _ ->
+          []
+      end
+
     base_opts ++ body_opts ++ param_opts ++ Keyword.drop(opts, [:params])
   end
 
@@ -148,112 +161,124 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
   end
 
   defp handle_response(%{status: 400, body: body}) do
-    {:error, %{
-      type: :bad_request,
-      code: "BAD_REQUEST", 
-      message: extract_error_message(body),
-      details: body
-    }}
+    {:error,
+     %{
+       type: :bad_request,
+       code: "BAD_REQUEST",
+       message: extract_error_message(body),
+       details: body
+     }}
   end
 
   defp handle_response(%{status: 401, body: body}) do
-    {:error, %{
-      type: :unauthorized,
-      code: "UNAUTHORIZED",
-      message: "Invalid API key or insufficient permissions",
-      details: body
-    }}
+    {:error,
+     %{
+       type: :unauthorized,
+       code: "UNAUTHORIZED",
+       message: "Invalid API key or insufficient permissions",
+       details: body
+     }}
   end
 
   defp handle_response(%{status: 403, body: body}) do
-    {:error, %{
-      type: :forbidden,
-      code: "FORBIDDEN",
-      message: "Access forbidden to this resource", 
-      details: body
-    }}
+    {:error,
+     %{
+       type: :forbidden,
+       code: "FORBIDDEN",
+       message: "Access forbidden to this resource",
+       details: body
+     }}
   end
 
   defp handle_response(%{status: 404, body: body}) do
-    {:error, %{
-      type: :not_found,
-      code: "NOT_FOUND",
-      message: "Resource not found",
-      details: body
-    }}
+    {:error,
+     %{
+       type: :not_found,
+       code: "NOT_FOUND",
+       message: "Resource not found",
+       details: body
+     }}
   end
 
   defp handle_response(%{status: 422, body: body}) do
-    {:error, %{
-      type: :validation_error,
-      code: "UNPROCESSABLE_ENTITY",
-      message: extract_error_message(body),
-      details: body
-    }}
+    {:error,
+     %{
+       type: :validation_error,
+       code: "UNPROCESSABLE_ENTITY",
+       message: extract_error_message(body),
+       details: body
+     }}
   end
 
   defp handle_response(%{status: 429, body: body}) do
-    {:error, %{
-      type: :rate_limit,
-      code: "RATE_LIMITED", 
-      message: "Rate limit exceeded, please slow down",
-      details: body
-    }}
+    {:error,
+     %{
+       type: :rate_limit,
+       code: "RATE_LIMITED",
+       message: "Rate limit exceeded, please slow down",
+       details: body
+     }}
   end
 
   defp handle_response(%{status: status, body: body}) when status >= 500 do
-    {:error, %{
-      type: :server_error,
-      code: "SERVER_ERROR",
-      message: "Airtable server error (#{status})",
-      details: body
-    }}
+    {:error,
+     %{
+       type: :server_error,
+       code: "SERVER_ERROR",
+       message: "Airtable server error (#{status})",
+       details: body
+     }}
   end
 
   defp handle_response(%{status: status, body: body}) do
-    {:error, %{
-      type: :unknown_error,
-      code: "UNKNOWN_ERROR",
-      message: "Unexpected response status: #{status}",
-      details: body
-    }}
+    {:error,
+     %{
+       type: :unknown_error,
+       code: "UNKNOWN_ERROR",
+       message: "Unexpected response status: #{status}",
+       details: body
+     }}
   end
 
   @spec handle_error(term()) :: response()
   defp handle_error(%{reason: :timeout}) do
-    {:error, %{
-      type: :timeout,
-      code: "TIMEOUT",
-      message: "Request timed out. Please try again.",
-      details: %{timeout: @timeout}
-    }}
+    {:error,
+     %{
+       type: :timeout,
+       code: "TIMEOUT",
+       message: "Request timed out. Please try again.",
+       details: %{timeout: @timeout}
+     }}
   end
 
   defp handle_error(%{reason: :nxdomain}) do
-    {:error, %{
-      type: :network_error,
-      code: "DNS_ERROR", 
-      message: "Could not resolve Airtable API hostname",
-      details: %{}
-    }}
+    {:error,
+     %{
+       type: :network_error,
+       code: "DNS_ERROR",
+       message: "Could not resolve Airtable API hostname",
+       details: %{}
+     }}
   end
 
   defp handle_error(%{reason: :econnrefused}) do
-    {:error, %{
-      type: :network_error,
-      code: "CONNECTION_REFUSED",
-      message: "Connection to Airtable API was refused",
-      details: %{}
-    }}
+    {:error,
+     %{
+       type: :network_error,
+       code: "CONNECTION_REFUSED",
+       message: "Connection to Airtable API was refused",
+       details: %{}
+     }}
   end
 
   defp handle_error(error) do
-    {:error, %{
-      type: :network_error,
-      code: "NETWORK_ERROR",
-      message: "Network error occurred: #{inspect(error)}",
-      details: %{original_error: error}
-    }}
+    {:error,
+     %{
+       type: :network_error,
+       code: "NETWORK_ERROR",
+       message: "Network error occurred: #{inspect(error)}",
+       details: %{original_error: error}
+     }}
   end
 
   @spec should_retry?(term(), integer()) :: boolean()
@@ -265,7 +290,7 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
   @spec calculate_retry_delay(integer()) :: integer()
   defp calculate_retry_delay(attempt) do
     # Exponential backoff: 1s, 2s, 4s, 8s...
-    @retry_base_delay * :math.pow(2, attempt - 1) |> round()
+    (@retry_base_delay * :math.pow(2, attempt - 1)) |> round()
   end
 
   @spec rate_limit_delay() :: :ok
@@ -282,30 +307,32 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
   defp extract_error_message(body) when is_binary(body), do: body
   defp extract_error_message(_), do: "Unknown error occurred"
 
-  @spec get_all_records_recursive(String.t(), map(), keyword(), list(), String.t() | nil) :: response()
+  @spec get_all_records_recursive(String.t(), map(), keyword(), list(), String.t() | nil) ::
+          response()
   defp get_all_records_recursive(path, params, opts, accumulated_records, offset) do
     # Add offset to params if we have one
-    current_params = case offset do
-      nil -> params
-      offset -> Map.put(params, :offset, offset)
-    end
-    
+    current_params =
+      case offset do
+        nil -> params
+        offset -> Map.put(params, :offset, offset)
+      end
+
     case get(path, current_params, opts) do
       {:ok, %{"records" => records, "offset" => next_offset}} ->
         new_accumulated = accumulated_records ++ records
         get_all_records_recursive(path, params, opts, new_accumulated, next_offset)
-        
+
       {:ok, %{"records" => records}} ->
         # No more pages
         {:ok, %{"records" => accumulated_records ++ records}}
-        
+
       {:error, error} ->
         {:error, error}
     end
   end
-  
+
   # Development helpers
-  
+
   @doc false
   def debug_url do
     fn request ->
@@ -314,12 +341,13 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
     end
   end
 
-  @doc false  
+  @doc false
   def debug_body do
     fn request ->
       if request.body do
         Logger.debug("Airtable Body: #{inspect(request.body)}")
       end
+
       request
     end
   end

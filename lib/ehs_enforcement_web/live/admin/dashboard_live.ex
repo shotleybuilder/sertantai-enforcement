@@ -3,15 +3,14 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
 
   alias EhsEnforcement.Enforcement
   alias Phoenix.PubSub
-  
+
   require Ash.Query
-  
 
   @impl true
   def mount(_params, _session, socket) do
     # Ensure user is admin (additional check beyond router)
     current_user = socket.assigns[:current_user]
-    
+
     unless current_user && current_user.is_admin do
       {:ok, socket |> put_flash(:error, "Admin access required") |> redirect(to: "/")}
     else
@@ -19,10 +18,10 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
       PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
       PubSub.subscribe(EhsEnforcement.PubSub, "metrics:refreshed")
       PubSub.subscribe(EhsEnforcement.PubSub, "admin:updates")
-      
+
       # Load initial admin data
       agencies = Enforcement.list_agencies!()
-      
+
       {:ok,
        socket
        |> assign(:agencies, agencies)
@@ -39,7 +38,7 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
     # Load admin-specific metrics and data
     stats = load_admin_stats(socket.assigns.time_period)
     sync_status = get_sync_status()
-    
+
     {:noreply,
      socket
      |> assign(:stats, stats)
@@ -49,7 +48,7 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
   @impl true
   def handle_event("change_time_period", %{"period" => period}, socket) do
     stats = load_admin_stats(period)
-    
+
     {:noreply,
      socket
      |> assign(:time_period, period)
@@ -81,17 +80,23 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
       )
     end)
 
-    {:noreply, put_flash(socket, :info, "Metrics refresh started. Dashboard will update automatically when complete.")}
+    {:noreply,
+     put_flash(
+       socket,
+       :info,
+       "Metrics refresh started. Dashboard will update automatically when complete."
+     )}
   end
 
   @impl true
   def handle_event("navigate_to_scraping", %{"type" => type}, socket) do
-    path = case type do
-      "cases" -> "/admin/cases/scrape"
-      "notices" -> "/admin/notices/scrape"
-      _ -> "/admin/scrape-sessions/monitor"
-    end
-    
+    path =
+      case type do
+        "cases" -> "/admin/cases/scrape"
+        "notices" -> "/admin/notices/scrape"
+        _ -> "/admin/scrape-sessions/monitor"
+      end
+
     {:noreply, push_navigate(socket, to: path)}
   end
 
@@ -102,22 +107,27 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
 
   @impl true
   def handle_event("check_duplicates", _params, socket) do
-    case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_cases(socket.assigns.current_user) do
+    case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_cases(
+           socket.assigns.current_user
+         ) do
       {:ok, duplicate_groups} ->
-        total_duplicates = Enum.reduce(duplicate_groups, 0, fn group, acc ->
-          acc + length(group) - 1  # Count all but one from each group as duplicates
-        end)
-        
-        result_text = if total_duplicates == 0 do
-          "No duplicate cases found"
-        else
-          "Found #{length(duplicate_groups)} duplicate groups (#{total_duplicates} duplicate records)"
-        end
-        
+        total_duplicates =
+          Enum.reduce(duplicate_groups, 0, fn group, acc ->
+            # Count all but one from each group as duplicates
+            acc + length(group) - 1
+          end)
+
+        result_text =
+          if total_duplicates == 0 do
+            "No duplicate cases found"
+          else
+            "Found #{length(duplicate_groups)} duplicate groups (#{total_duplicates} duplicate records)"
+          end
+
         {:noreply, assign(socket, :duplicate_results, result_text)}
-      
+
       {:error, error} ->
-        {:noreply, 
+        {:noreply,
          socket
          |> assign(:duplicate_results, "Error checking duplicates: #{inspect(error)}")
          |> put_flash(:error, "Failed to check for duplicates")}
@@ -126,22 +136,27 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
 
   @impl true
   def handle_event("check_notice_duplicates", _params, socket) do
-    case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_notices(socket.assigns.current_user) do
+    case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_notices(
+           socket.assigns.current_user
+         ) do
       {:ok, duplicate_groups} ->
-        total_duplicates = Enum.reduce(duplicate_groups, 0, fn group, acc ->
-          acc + length(group) - 1  # Count all but one from each group as duplicates
-        end)
-        
-        result_text = if total_duplicates == 0 do
-          "No duplicate notices found"
-        else
-          "Found #{length(duplicate_groups)} duplicate groups (#{total_duplicates} duplicate records)"
-        end
-        
+        total_duplicates =
+          Enum.reduce(duplicate_groups, 0, fn group, acc ->
+            # Count all but one from each group as duplicates
+            acc + length(group) - 1
+          end)
+
+        result_text =
+          if total_duplicates == 0 do
+            "No duplicate notices found"
+          else
+            "Found #{length(duplicate_groups)} duplicate groups (#{total_duplicates} duplicate records)"
+          end
+
         {:noreply, assign(socket, :notice_duplicate_results, result_text)}
-      
+
       {:error, error} ->
-        {:noreply, 
+        {:noreply,
          socket
          |> assign(:notice_duplicate_results, "Error checking duplicates: #{inspect(error)}")
          |> put_flash(:error, "Failed to check for notice duplicates")}
@@ -150,22 +165,27 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
 
   @impl true
   def handle_event("check_offender_duplicates", _params, socket) do
-    case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_offenders(socket.assigns.current_user) do
+    case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_offenders(
+           socket.assigns.current_user
+         ) do
       {:ok, duplicate_groups} ->
-        total_duplicates = Enum.reduce(duplicate_groups, 0, fn group, acc ->
-          acc + length(group) - 1  # Count all but one from each group as duplicates
-        end)
-        
-        result_text = if total_duplicates == 0 do
-          "No duplicate offenders found"
-        else
-          "Found #{length(duplicate_groups)} duplicate groups (#{total_duplicates} duplicate records)"
-        end
-        
+        total_duplicates =
+          Enum.reduce(duplicate_groups, 0, fn group, acc ->
+            # Count all but one from each group as duplicates
+            acc + length(group) - 1
+          end)
+
+        result_text =
+          if total_duplicates == 0 do
+            "No duplicate offenders found"
+          else
+            "Found #{length(duplicate_groups)} duplicate groups (#{total_duplicates} duplicate records)"
+          end
+
         {:noreply, assign(socket, :offender_duplicate_results, result_text)}
-      
+
       {:error, error} ->
-        {:noreply, 
+        {:noreply,
          socket
          |> assign(:offender_duplicate_results, "Error checking duplicates: #{inspect(error)}")
          |> put_flash(:error, "Failed to check for offender duplicates")}
@@ -174,13 +194,14 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
 
   @impl true
   def handle_info({:sync_progress, agency_code, progress}, socket) do
-    sync_status = Map.update(
-      socket.assigns.sync_status,
-      agency_code,
-      %{status: "syncing", progress: progress},
-      fn status -> %{status | progress: progress} end
-    )
-    
+    sync_status =
+      Map.update(
+        socket.assigns.sync_status,
+        agency_code,
+        %{status: "syncing", progress: progress},
+        fn status -> %{status | progress: progress} end
+      )
+
     {:noreply, assign(socket, :sync_status, sync_status)}
   end
 
@@ -189,9 +210,10 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
     # Reload data after sync
     agencies = Enforcement.list_agencies!()
     stats = load_admin_stats(socket.assigns.time_period)
-    
-    sync_status = Map.put(socket.assigns.sync_status, agency_code, %{status: "completed", progress: 100})
-    
+
+    sync_status =
+      Map.put(socket.assigns.sync_status, agency_code, %{status: "completed", progress: 100})
+
     {:noreply,
      socket
      |> assign(:agencies, agencies)
@@ -201,8 +223,9 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
 
   @impl true
   def handle_info({:sync_error, agency_code, error_message}, socket) do
-    sync_status = Map.put(socket.assigns.sync_status, agency_code, %{status: "error", error: error_message})
-    
+    sync_status =
+      Map.put(socket.assigns.sync_status, agency_code, %{status: "error", error: error_message})
+
     {:noreply, assign(socket, :sync_status, sync_status)}
   end
 
@@ -211,7 +234,7 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
     # Reload data after metrics are refreshed
     agencies = Enforcement.list_agencies!()
     stats = load_admin_stats(socket.assigns.time_period)
-    
+
     {:noreply,
      socket
      |> assign(:agencies, agencies)
@@ -231,12 +254,13 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
 
   defp load_admin_stats(time_period) do
     # Convert string time period to atom for matching
-    period_atom = case time_period do
-      "week" -> :week
-      "month" -> :month
-      "year" -> :year
-      _ -> :month
-    end
+    period_atom =
+      case time_period do
+        "week" -> :week
+        "month" -> :month
+        "year" -> :year
+        _ -> :month
+      end
 
     try do
       # Load cached metrics for the admin dashboard
@@ -258,9 +282,11 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
                 sync_errors: get_recent_sync_errors(period_atom),
                 data_quality_score: calculate_data_quality_score()
               }
+
             nil ->
               fallback_calculate_admin_stats(time_period)
           end
+
         {:error, _error} ->
           fallback_calculate_admin_stats(time_period)
       end
@@ -277,11 +303,12 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
     |> Map.values()
     |> Enum.sort_by(& &1["case_count"], :desc)
   end
+
   defp convert_agency_stats_to_list(_), do: []
 
   defp fallback_calculate_admin_stats(_time_period) do
     agencies = Enforcement.list_agencies!()
-    
+
     %{
       recent_cases: 0,
       recent_notices: 0,
@@ -312,5 +339,4 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
     # In a real implementation, calculate data quality metrics
     85.0
   end
-
 end

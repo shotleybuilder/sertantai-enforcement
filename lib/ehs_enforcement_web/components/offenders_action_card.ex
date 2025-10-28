@@ -1,14 +1,14 @@
 defmodule EhsEnforcementWeb.Components.OffendersActionCard do
   @moduledoc """
   Offenders Database action card component for the dashboard.
-  
+
   Displays offender database statistics, provides filtered navigation for top offenders,
   and advanced search functionality. No create functionality - offenders are system-managed.
   Implements the offenders card specification from the dashboard action cards design document.
   """
-  
+
   use Phoenix.Component
-  
+
   import EhsEnforcementWeb.Components.DashboardActionCard
   alias EhsEnforcement.Enforcement
 
@@ -35,45 +35,50 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCard do
       |> assign(:repeat_offenders_count, 0)
       |> assign(:repeat_offenders_percentage, 0.0)
       |> assign(:average_fine, Decimal.new(0))
-    
+
     ~H"""
-    <.dashboard_action_card 
-      title="OFFENDER DATABASE" 
-      icon="👥" 
-      theme="purple" 
+    <.dashboard_action_card
+      title="OFFENDER DATABASE"
+      icon="👥"
+      theme="purple"
       loading={@loading}
       class={@class}
     >
       <:metrics>
-        <.metric_item 
-          label="Total Organizations" 
-          value={format_number(@total_offenders)} 
+        <.metric_item
+          label="Total Organizations"
+          value={format_number(@total_offenders)}
         />
-        <.metric_item 
-          label="Repeat Offenders" 
-          value={"#{format_number(@repeat_offenders_count)} (#{@repeat_offenders_percentage}%)"} 
+        <.metric_item
+          label="Repeat Offenders"
+          value={"#{format_number(@repeat_offenders_count)} (#{@repeat_offenders_percentage}%)"}
         />
-        <.metric_item 
-          label="Average Fine" 
-          value={format_currency(@average_fine)} 
+        <.metric_item
+          label="Average Fine"
+          value={format_currency(@average_fine)}
         />
       </:metrics>
-      
+
       <:actions>
         <.card_action_button phx-click="browse_top_offenders">
           <div class="flex items-center justify-between w-full">
             <span>Browse Top 50</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </.card_action_button>
-        
+
         <.card_secondary_button phx-click="search_offenders">
           <div class="flex items-center justify-between w-full">
             <span>Search Offenders</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
         </.card_secondary_button>

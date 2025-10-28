@@ -1,18 +1,18 @@
 defmodule EhsEnforcement.Telemetry do
   @moduledoc """
   Telemetry event handling and monitoring for the EHS Enforcement application.
-  
+
   Provides comprehensive monitoring, metrics collection, and performance tracking
   for all application operations including sync, database, and user interactions.
   """
 
   require Logger
   alias EhsEnforcement.Logger, as: EhsLogger
-  
+
   # List of telemetry events this module handles
   @events [
     [:sync, :start],
-    [:sync, :stop], 
+    [:sync, :stop],
     [:sync, :exception],
     [:repo, :query],
     [:phoenix, :live_view, :mount, :start],
@@ -65,7 +65,7 @@ defmodule EhsEnforcement.Telemetry do
 
   def handle_event([:sync, :stop], measurements, metadata, _config) do
     duration = System.convert_time_unit(measurements.duration, :native, :millisecond)
-    
+
     EhsLogger.info("Sync completed for #{metadata.agency} in #{duration}ms", %{
       operation: metadata[:operation],
       agency: metadata.agency,
@@ -76,16 +76,21 @@ defmodule EhsEnforcement.Telemetry do
 
   def handle_event([:sync, :exception], _measurements, metadata, _config) do
     _error_info = inspect(metadata.error)
-    
-    EhsLogger.error("Sync failed for #{metadata.agency}", metadata.error, metadata[:stacktrace] || [], %{
-      operation: metadata[:operation],
-      agency: metadata.agency
-    })
+
+    EhsLogger.error(
+      "Sync failed for #{metadata.agency}",
+      metadata.error,
+      metadata[:stacktrace] || [],
+      %{
+        operation: metadata[:operation],
+        agency: metadata.agency
+      }
+    )
   end
 
   def handle_event([:repo, :query], measurements, metadata, _config) do
     duration = System.convert_time_unit(measurements.duration, :native, :millisecond)
-    
+
     if duration > 1000 do
       EhsLogger.warn("Slow database query detected", %{
         duration_ms: duration,
@@ -93,7 +98,7 @@ defmodule EhsEnforcement.Telemetry do
         params: length(metadata[:params] || [])
       })
     end
-    
+
     # Always log query completion
     EhsLogger.info("Database query completed", %{
       duration_ms: duration,
@@ -102,8 +107,9 @@ defmodule EhsEnforcement.Telemetry do
   end
 
   def handle_event([:phoenix, :live_view, :mount, :start], measurements, metadata, _config) do
-    view_name = metadata.socket.view |> to_string() |> String.split(".") |> Enum.take(-2) |> Enum.join(".")
-    
+    view_name =
+      metadata.socket.view |> to_string() |> String.split(".") |> Enum.take(-2) |> Enum.join(".")
+
     EhsLogger.info("LiveView mount started", %{
       view: view_name,
       user_id: metadata.session[:user_id],
@@ -112,8 +118,9 @@ defmodule EhsEnforcement.Telemetry do
   end
 
   def handle_event([:phoenix, :live_view, :mount, :exception], _measurements, metadata, _config) do
-    view_name = metadata.socket.view |> to_string() |> String.split(".") |> Enum.take(-2) |> Enum.join(".")
-    
+    view_name =
+      metadata.socket.view |> to_string() |> String.split(".") |> Enum.take(-2) |> Enum.join(".")
+
     EhsLogger.error("LiveView mount failed", metadata.reason, metadata[:stacktrace] || [], %{
       view: view_name,
       kind: metadata.kind
@@ -122,7 +129,7 @@ defmodule EhsEnforcement.Telemetry do
 
   def handle_event([:phoenix, :endpoint, :stop], measurements, metadata, _config) do
     duration = System.convert_time_unit(measurements.duration, :native, :millisecond)
-    
+
     log_metadata = %{
       method: metadata.method,
       path: metadata.path,
@@ -130,7 +137,7 @@ defmodule EhsEnforcement.Telemetry do
       duration_ms: duration,
       user_agent: metadata[:user_agent]
     }
-    
+
     if metadata.status >= 500 do
       EhsLogger.warn("HTTP request failed", log_metadata)
     else
@@ -156,7 +163,7 @@ defmodule EhsEnforcement.Telemetry do
     error_type = categorize_error(error)
     error_reason = extract_error_reason(error)
     error_id = generate_error_id()
-    
+
     %{
       error_type: error_type,
       error_reason: error_reason,
@@ -235,14 +242,14 @@ defmodule EhsEnforcement.Telemetry do
     ensure_tables_exist()
     operation_id = generate_operation_id()
     start_time = System.monotonic_time(:millisecond)
-    
+
     operation_data = %{
       id: operation_id,
       operation: operation_name,
       metadata: metadata,
       start_time: start_time
     }
-    
+
     :ets.insert(@operations_table, {operation_id, operation_data})
     operation_id
   end
@@ -255,17 +262,21 @@ defmodule EhsEnforcement.Telemetry do
       [{^operation_id, operation_data}] ->
         end_time = System.monotonic_time(:millisecond)
         duration_ms = end_time - operation_data.start_time
-        
-        result = Map.merge(%{
-          operation: operation_data.operation,
-          duration_ms: duration_ms,
-          start_metadata: operation_data.metadata,
-          completion_metadata: completion_metadata
-        }, completion_metadata)
-        
+
+        result =
+          Map.merge(
+            %{
+              operation: operation_data.operation,
+              duration_ms: duration_ms,
+              start_metadata: operation_data.metadata,
+              completion_metadata: completion_metadata
+            },
+            completion_metadata
+          )
+
         :ets.delete(@operations_table, operation_id)
         result
-        
+
       [] ->
         %{error: :operation_not_found}
     end
@@ -276,7 +287,7 @@ defmodule EhsEnforcement.Telemetry do
   """
   def get_memory_usage do
     memory_info = :erlang.memory()
-    
+
     %{
       total: memory_info[:total],
       processes: memory_info[:processes],
@@ -292,12 +303,12 @@ defmodule EhsEnforcement.Telemetry do
   """
   def generate_performance_report do
     ensure_tables_exist()
-    
+
     # Get metrics from ETS table
     sync_metrics = get_metrics_by_type(:sync)
     database_metrics = get_metrics_by_type(:database)
     slow_operations = get_slow_operations()
-    
+
     %{
       sync_metrics: sync_metrics,
       database_metrics: database_metrics,
@@ -312,7 +323,10 @@ defmodule EhsEnforcement.Telemetry do
 
   defp extract_error_reason(%Req.TransportError{reason: reason}), do: reason
   defp extract_error_reason(%Postgrex.Error{message: message}), do: message
-  defp extract_error_reason(%Ash.Error.Invalid{errors: errors}), do: {:validation_errors, length(errors)}
+
+  defp extract_error_reason(%Ash.Error.Invalid{errors: errors}),
+    do: {:validation_errors, length(errors)}
+
   defp extract_error_reason(%RuntimeError{message: message}), do: message
   defp extract_error_reason(_), do: :unknown
 
@@ -328,7 +342,7 @@ defmodule EhsEnforcement.Telemetry do
     unless :ets.whereis(@operations_table) != :undefined do
       :ets.new(@operations_table, [:named_table, :public, :set])
     end
-    
+
     unless :ets.whereis(@metrics_table) != :undefined do
       :ets.new(@metrics_table, [:named_table, :public, :bag])
     end
@@ -336,25 +350,32 @@ defmodule EhsEnforcement.Telemetry do
 
   defp get_metrics_by_type(type) do
     case :ets.whereis(@metrics_table) do
-      :undefined -> %{}
+      :undefined ->
+        %{}
+
       _tid ->
         @metrics_table
         |> :ets.tab2list()
-        |> Enum.filter(fn {key, _value} -> String.starts_with?(to_string(key), to_string(type)) end)
+        |> Enum.filter(fn {key, _value} ->
+          String.starts_with?(to_string(key), to_string(type))
+        end)
         |> Map.new()
     end
   end
 
   defp get_slow_operations do
     case :ets.whereis(@operations_table) do
-      :undefined -> []
+      :undefined ->
+        []
+
       _tid ->
         @operations_table
         |> :ets.tab2list()
         |> Enum.map(fn {_id, data} -> data end)
         |> Enum.filter(fn data ->
           current_time = System.monotonic_time(:millisecond)
-          current_time - data.start_time > 5000  # Operations running > 5 seconds
+          # Operations running > 5 seconds
+          current_time - data.start_time > 5000
         end)
     end
   end

@@ -24,7 +24,7 @@ defmodule EhsEnforcement.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import EhsEnforcement.DataCase
-      
+
       # Ash imports for testing
       import Ash.Query
     end

@@ -7,23 +7,26 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
 
   describe "CaseFilter component rendering" do
     setup do
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
-      {:ok, ea_agency} = Enforcement.create_agency(%{
-        code: :ea,
-        name: "Environment Agency",
-        enabled: true
-      })
+      {:ok, ea_agency} =
+        Enforcement.create_agency(%{
+          code: :ea,
+          name: "Environment Agency",
+          enabled: true
+        })
 
-      {:ok, onr_agency} = Enforcement.create_agency(%{
-        code: :onr,
-        name: "Office for Nuclear Regulation",
-        enabled: false
-      })
+      {:ok, onr_agency} =
+        Enforcement.create_agency(%{
+          code: :onr,
+          name: "Office for Nuclear Regulation",
+          enabled: false
+        })
 
       %{agencies: [hse_agency, ea_agency, onr_agency]}
     end
@@ -213,17 +216,19 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
 
   describe "CaseFilter component interactivity" do
     setup do
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive", 
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
-      {:ok, ea_agency} = Enforcement.create_agency(%{
-        code: :ea,
-        name: "Environment Agency",
-        enabled: true
-      })
+      {:ok, ea_agency} =
+        Enforcement.create_agency(%{
+          code: :ea,
+          name: "Environment Agency",
+          enabled: true
+        })
 
       %{agencies: [hse_agency, ea_agency]}
     end
@@ -283,7 +288,8 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
 
       # Inputs should have reasonable maxlength where appropriate
       if html =~ "type=\"text\"" do
-        assert html =~ "maxlength=" or true # Not required but good practice
+        # Not required but good practice
+        assert html =~ "maxlength=" or true
       end
     end
 
@@ -303,7 +309,8 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
       assert html =~ "for=" or html =~ "aria-labelledby"
 
       # Complex elements should have ARIA descriptions
-      assert html =~ "aria-describedby" or true # Optional but recommended
+      # Optional but recommended
+      assert html =~ "aria-describedby" or true
     end
 
     test "handles loading states during filtering", %{agencies: agencies} do
@@ -316,7 +323,7 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
 
       # Component should handle loading state if passed
       html = render_component(&CaseFilter.filter_form/1, assigns)
-      
+
       # Component doesn't currently support loading state, so we skip this check
       assert html =~ "<form"
     end
@@ -357,11 +364,13 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
     end
 
     test "handles very long agency names" do
-      {:ok, long_name_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Very Long Agency Name That Might Cause Display Issues in Select Dropdown Elements",
-        enabled: true
-      })
+      {:ok, long_name_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name:
+            "Very Long Agency Name That Might Cause Display Issues in Select Dropdown Elements",
+          enabled: true
+        })
 
       assigns = %{
         agencies: [long_name_agency],
@@ -396,11 +405,12 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
 
   describe "CaseFilter component styling" do
     setup do
-      {:ok, agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Test Agency",
-        enabled: true
-      })
+      {:ok, agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Test Agency",
+          enabled: true
+        })
 
       %{agencies: [agency]}
     end
@@ -415,9 +425,9 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
       html = render_component(&CaseFilter.filter_form/1, assigns)
 
       # Should include responsive CSS classes
-      assert html =~ "grid" or html =~ "flex" or 
-             html =~ "sm:" or html =~ "md:" or html =~ "lg:" or
-             html =~ "col-" or html =~ "w-"
+      assert html =~ "grid" or html =~ "flex" or
+               html =~ "sm:" or html =~ "md:" or html =~ "lg:" or
+               html =~ "col-" or html =~ "w-"
     end
 
     test "includes proper form styling classes", %{agencies: agencies} do
@@ -430,11 +440,12 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
       html = render_component(&CaseFilter.filter_form/1, assigns)
 
       # Should include form styling classes (specific to your CSS framework)
-      assert html =~ "class=" # Should have CSS classes
-      
+      # Should have CSS classes
+      assert html =~ "class="
+
       # Common form classes
-      assert html =~ "form-" or html =~ "input-" or html =~ "btn-" or 
-             html =~ "border" or html =~ "rounded" or html =~ "px-" or html =~ "py-"
+      assert html =~ "form-" or html =~ "input-" or html =~ "btn-" or
+               html =~ "border" or html =~ "rounded" or html =~ "px-" or html =~ "py-"
     end
 
     test "includes filter state indicators", %{agencies: agencies} do
@@ -452,8 +463,8 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
       html = render_component(&CaseFilter.filter_form/1, assigns)
 
       # Should indicate when filters are active
-      assert html =~ "active" or html =~ "applied" or 
-             html =~ "badge" or html =~ "indicator"
+      assert html =~ "active" or html =~ "applied" or
+               html =~ "badge" or html =~ "indicator"
     end
 
     test "includes hover and focus states", %{agencies: agencies} do
@@ -466,9 +477,9 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
       html = render_component(&CaseFilter.filter_form/1, assigns)
 
       # Should include interactive state classes
-      assert html =~ "hover:" or html =~ "focus:" or 
-             html =~ ":hover" or html =~ ":focus" or
-             html =~ "transition"
+      assert html =~ "hover:" or html =~ "focus:" or
+               html =~ ":hover" or html =~ ":focus" or
+               html =~ "transition"
     end
   end
 
@@ -506,9 +517,10 @@ defmodule EhsEnforcementWeb.CaseFilterComponentTest do
       html = render_component(&CaseFilter.filter_form/1, assigns)
 
       # Should show filter count or summary
-      active_count = active_filters 
-      |> Map.values() 
-      |> Enum.count(&(&1 != "" and not is_nil(&1)))
+      active_count =
+        active_filters
+        |> Map.values()
+        |> Enum.count(&(&1 != "" and not is_nil(&1)))
 
       if active_count > 0 do
         assert html =~ "#{active_count}" or html =~ "filter" or html =~ "applied"

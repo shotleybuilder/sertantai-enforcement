@@ -2,9 +2,9 @@ defmodule EhsEnforcementWeb.Components.LegislationActionCard do
   @moduledoc """
   Legislation action card component for the dashboard.
   """
-  
+
   use Phoenix.Component
-  
+
   import EhsEnforcementWeb.Components.DashboardActionCard
 
   @doc """
@@ -20,49 +20,53 @@ defmodule EhsEnforcementWeb.Components.LegislationActionCard do
 
   def legislation_action_card(assigns) do
     ~H"""
-    <.dashboard_action_card 
-      title="LEGISLATION DATABASE" 
-      icon="🪶" 
-      theme="purple" 
+    <.dashboard_action_card
+      title="LEGISLATION DATABASE"
+      icon="🪶"
+      theme="purple"
       loading={@loading}
       class={@class}
     >
       <:metrics>
-        <.metric_item 
-          label="Total Legislation" 
+        <.metric_item
+          label="Total Legislation"
           value={format_number(@total_legislation)}
         />
-        <.metric_item 
-          label="Recent (Last 30 Days)" 
+        <.metric_item
+          label="Recent (Last 30 Days)"
           value="0"
           sublabel="(0.0%)"
         />
-        <.metric_item 
-          label="Average Fine" 
+        <.metric_item
+          label="Average Fine"
           value="£0.00"
         />
       </:metrics>
-      
+
       <:actions>
         <.card_action_button phx-click="browse_legislation">
           <div class="flex items-center justify-between w-full">
             <span>Browse Recent</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </.card_action_button>
-        
+
         <.card_secondary_button phx-click="search_legislation">
           <div class="flex items-center justify-between w-full">
             <span>Search</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
         </.card_secondary_button>
       </:actions>
-      
     </.dashboard_action_card>
     """
   end

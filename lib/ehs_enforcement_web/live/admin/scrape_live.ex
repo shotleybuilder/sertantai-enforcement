@@ -81,6 +81,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
           PubSub.subscribe(EhsEnforcement.PubSub, "notice:scraped")
           PubSub.subscribe(EhsEnforcement.PubSub, "notice:created")
           PubSub.subscribe(EhsEnforcement.PubSub, "notice:updated")
+
         :case ->
           PubSub.subscribe(EhsEnforcement.PubSub, "case:scraped")
           PubSub.subscribe(EhsEnforcement.PubSub, "case:created")
@@ -96,6 +97,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
         socket
         |> assign(:recent_records, [])
         |> assign(:session_results, [])
+
       {:ok, socket}
     end
   end
@@ -108,15 +110,17 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     case strategy.validate_params(params) do
       {:ok, validated_params} ->
         # Start scraping session in background task
-        opts = [
-          agency: socket.assigns.agency,
-          enforcement_type: socket.assigns.enforcement_type
-        ] ++ Map.to_list(validated_params)
+        opts =
+          [
+            agency: socket.assigns.agency,
+            enforcement_type: socket.assigns.enforcement_type
+          ] ++ Map.to_list(validated_params)
 
         # Run scraping in background Task so LiveView can process PubSub messages
-        task = Task.async(fn ->
-          ScrapeCoordinator.start_scraping_session(opts)
-        end)
+        task =
+          Task.async(fn ->
+            ScrapeCoordinator.start_scraping_session(opts)
+          end)
 
         Logger.info("Starting scraping task",
           agency: socket.assigns.agency,
@@ -202,13 +206,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     {:noreply, socket}
   end
 
-  # Test-only handler to simulate starting a scraping session
-  @impl true
-  def handle_info({:set_session_started, datetime}, socket) do
-    Logger.info("🧪 TEST: Setting scraping_session_started_at to #{inspect(datetime)}")
-    {:noreply, assign(socket, :scraping_session_started_at, datetime)}
-  end
-
   @impl true
   def handle_event("validate_params", params, socket) do
     strategy = socket.assigns.strategy
@@ -263,8 +260,11 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
 
     # CRITICAL: Unsubscribe from old enforcement type topics
     old_enforcement_type = socket.assigns.enforcement_type
+
     if old_enforcement_type != enforcement_type do
-      Logger.info("🔄 Enforcement type changed from #{old_enforcement_type} to #{enforcement_type}, updating PubSub subscriptions")
+      Logger.info(
+        "🔄 Enforcement type changed from #{old_enforcement_type} to #{enforcement_type}, updating PubSub subscriptions"
+      )
 
       # Unsubscribe from old topics
       case old_enforcement_type do
@@ -272,6 +272,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
           PubSub.unsubscribe(EhsEnforcement.PubSub, "notice:scraped")
           PubSub.unsubscribe(EhsEnforcement.PubSub, "notice:created")
           PubSub.unsubscribe(EhsEnforcement.PubSub, "notice:updated")
+
         :case ->
           PubSub.unsubscribe(EhsEnforcement.PubSub, "case:scraped")
           PubSub.unsubscribe(EhsEnforcement.PubSub, "case:created")
@@ -284,6 +285,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
           PubSub.subscribe(EhsEnforcement.PubSub, "notice:scraped")
           PubSub.subscribe(EhsEnforcement.PubSub, "notice:created")
           PubSub.subscribe(EhsEnforcement.PubSub, "notice:updated")
+
         :case ->
           PubSub.subscribe(EhsEnforcement.PubSub, "case:scraped")
           PubSub.subscribe(EhsEnforcement.PubSub, "case:created")
@@ -381,34 +383,51 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   # Handle real-time individual notice scraping events
   @impl true
   def handle_info({:record_scraped, %{record: notice, status: status, type: :notice}}, socket) do
-    Logger.info("🔔 Received real-time notice:scraped event - regulator_id: #{notice.regulator_id}, status: #{status}")
-    Logger.debug("📊 LiveView state - scraping_session_started_at: #{inspect(socket.assigns.scraping_session_started_at)}")
-    Logger.debug("📊 LiveView state - current scraped_records count: #{length(socket.assigns.scraped_records)}")
-    Logger.debug("📊 LiveView state - enforcement_type: #{socket.assigns.enforcement_type}, agency: #{socket.assigns.agency}")
+    Logger.info(
+      "🔔 Received real-time notice:scraped event - regulator_id: #{notice.regulator_id}, status: #{status}"
+    )
 
-    socket = if socket.assigns.scraping_session_started_at do
-      # Load full notice with associations
-      notice_with_assoc = Notice
-      |> Ash.get!(notice.id, load: [:agency, :offender], actor: socket.assigns.current_user)
-      |> Map.put(:processing_status, status)
+    Logger.debug(
+      "📊 LiveView state - scraping_session_started_at: #{inspect(socket.assigns.scraping_session_started_at)}"
+    )
 
-      # Remove any existing entry for this notice (deduplicate by regulator_id)
-      existing_records = Enum.reject(socket.assigns.scraped_records, fn existing ->
+    Logger.debug(
+      "📊 LiveView state - current scraped_records count: #{length(socket.assigns.scraped_records)}"
+    )
+
+    Logger.debug(
+      "📊 LiveView state - enforcement_type: #{socket.assigns.enforcement_type}, agency: #{socket.assigns.agency}"
+    )
+
+    # Load full notice with associations
+    notice_with_assoc =
+      try do
+        Notice
+        |> Ash.get!(notice.id, load: [:agency, :offender], actor: socket.assigns.current_user)
+        |> Map.put(:processing_status, status)
+      rescue
+        e ->
+          Logger.warning("Failed to reload notice with associations: #{inspect(e)}")
+          Map.put(notice, :processing_status, status)
+      end
+
+    # Remove any existing entry for this notice (deduplicate by regulator_id)
+    existing_records =
+      Enum.reject(socket.assigns.scraped_records, fn existing ->
         existing.regulator_id == notice.regulator_id
       end)
 
-      # Add to the beginning of the list (most recent first)
-      updated_scraped_records = [notice_with_assoc | existing_records]
+    # Add to the beginning of the list (most recent first)
+    updated_scraped_records = [notice_with_assoc | existing_records]
 
-      # Keep only the most recent 100 records
-      updated_scraped_records = Enum.take(updated_scraped_records, 100)
+    # Keep only the most recent 100 records
+    updated_scraped_records = Enum.take(updated_scraped_records, 100)
 
-      Logger.debug("✅ Added notice to scraped_records in real-time: #{notice.regulator_id}, new count: #{length(updated_scraped_records)}")
-      assign(socket, scraped_records: updated_scraped_records)
-    else
-      Logger.warn("❌ Ignoring notice:scraped event - no active scraping session (scraping_session_started_at is nil)")
-      socket
-    end
+    Logger.debug(
+      "✅ Added notice to scraped_records in real-time: #{notice.regulator_id}, new count: #{length(updated_scraped_records)}"
+    )
+
+    socket = assign(socket, scraped_records: updated_scraped_records)
 
     {:noreply, socket}
   end
@@ -416,147 +435,221 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   # Handle real-time individual case scraping events
   @impl true
   def handle_info({:record_scraped, %{record: case_record, status: status, type: :case}}, socket) do
-    Logger.info("🔔 Received real-time case:scraped event - regulator_id: #{case_record.regulator_id}, status: #{status}")
-    Logger.debug("📊 LiveView state - scraping_session_started_at: #{inspect(socket.assigns.scraping_session_started_at)}")
-    Logger.debug("📊 LiveView state - current scraped_records count: #{length(socket.assigns.scraped_records)}")
-    Logger.debug("📊 LiveView state - enforcement_type: #{socket.assigns.enforcement_type}, agency: #{socket.assigns.agency}")
+    Logger.info(
+      "🔔 Received real-time case:scraped event - regulator_id: #{case_record.regulator_id}, status: #{status}"
+    )
 
-    socket = if socket.assigns.scraping_session_started_at do
-      # Load full case with associations
-      case_with_assoc = Case
-      |> Ash.get!(case_record.id, load: [:agency, :offender], actor: socket.assigns.current_user)
-      |> Map.put(:processing_status, status)
+    Logger.debug(
+      "📊 LiveView state - scraping_session_started_at: #{inspect(socket.assigns.scraping_session_started_at)}"
+    )
 
-      # Remove any existing entry for this case (deduplicate by regulator_id)
-      existing_records = Enum.reject(socket.assigns.scraped_records, fn existing ->
+    Logger.debug(
+      "📊 LiveView state - current scraped_records count: #{length(socket.assigns.scraped_records)}"
+    )
+
+    Logger.debug(
+      "📊 LiveView state - enforcement_type: #{socket.assigns.enforcement_type}, agency: #{socket.assigns.agency}"
+    )
+
+    # Load full case with associations
+    case_with_assoc =
+      try do
+        Case
+        |> Ash.get!(case_record.id,
+          load: [:agency, :offender],
+          actor: socket.assigns.current_user
+        )
+        |> Map.put(:processing_status, status)
+      rescue
+        e ->
+          Logger.warning("Failed to reload case with associations: #{inspect(e)}")
+          Map.put(case_record, :processing_status, status)
+      end
+
+    # Remove any existing entry for this case (deduplicate by regulator_id)
+    existing_records =
+      Enum.reject(socket.assigns.scraped_records, fn existing ->
         existing.regulator_id == case_record.regulator_id
       end)
 
-      # Add to the beginning of the list (most recent first)
-      updated_scraped_records = [case_with_assoc | existing_records]
+    # Add to the beginning of the list (most recent first)
+    updated_scraped_records = [case_with_assoc | existing_records]
 
-      # Keep only the most recent 100 records
-      updated_scraped_records = Enum.take(updated_scraped_records, 100)
+    # Keep only the most recent 100 records
+    updated_scraped_records = Enum.take(updated_scraped_records, 100)
 
-      Logger.debug("✅ Added case to scraped_records in real-time: #{case_record.regulator_id}, new count: #{length(updated_scraped_records)}")
-      assign(socket, scraped_records: updated_scraped_records)
-    else
-      Logger.warn("❌ Ignoring case:scraped event - no active scraping session (scraping_session_started_at is nil)")
-      socket
-    end
+    Logger.debug(
+      "✅ Added case to scraped_records in real-time: #{case_record.regulator_id}, new count: #{length(updated_scraped_records)}"
+    )
+
+    socket = assign(socket, scraped_records: updated_scraped_records)
 
     {:noreply, socket}
   end
 
   # Handle ProcessingLog creation - this fires for ALL scraped records (created, updated, existing)
   @impl true
-  def handle_info(%Phoenix.Socket.Broadcast{topic: "processing_log:created", payload: %Ash.Notifier.Notification{} = notification}, socket) do
+  def handle_info(
+        %Phoenix.Socket.Broadcast{
+          topic: "processing_log:created",
+          payload: %Ash.Notifier.Notification{} = notification
+        },
+        socket
+      ) do
     Logger.info("🔔 Received processing_log:created broadcast")
-    Logger.info("🔔 ProcessingLog data: items_found=#{notification.data.items_found}, items_created=#{notification.data.items_created}, items_existing=#{notification.data.items_existing}")
 
-    socket = if socket.assigns.scraping_session_started_at do
-      # ProcessingLog contains scraped_items array with regulator_ids
-      # Load full records for each scraped item
-      scraped_items = notification.data.scraped_items || []
+    Logger.info(
+      "🔔 ProcessingLog data: items_found=#{notification.data.items_found}, items_created=#{notification.data.items_created}, items_existing=#{notification.data.items_existing}"
+    )
 
-      Logger.info("🔔 Processing #{length(scraped_items)} scraped items")
+    socket =
+      if socket.assigns.scraping_session_started_at do
+        # ProcessingLog contains scraped_items array with regulator_ids
+        # Load full records for each scraped item
+        scraped_items = notification.data.scraped_items || []
 
-      # Load full records based on enforcement type
-      loaded_records = case socket.assigns.enforcement_type do
-        :notice ->
-          load_notices_from_scraped_items(scraped_items, socket.assigns.current_user)
-        :case ->
-          load_cases_from_scraped_items(scraped_items, socket.assigns.current_user)
+        Logger.info("🔔 Processing #{length(scraped_items)} scraped items")
+
+        # Load full records based on enforcement type
+        loaded_records =
+          case socket.assigns.enforcement_type do
+            :notice ->
+              load_notices_from_scraped_items(scraped_items, socket.assigns.current_user)
+
+            :case ->
+              load_cases_from_scraped_items(scraped_items, socket.assigns.current_user)
+          end
+
+        Logger.info("🔔 Loaded #{length(loaded_records)} full records")
+
+        # Add all loaded records to scraped_records
+        updated_scraped_records = loaded_records ++ socket.assigns.scraped_records
+
+        # Keep only the most recent 100 records
+        updated_scraped_records = Enum.take(updated_scraped_records, 100)
+
+        assign(socket, scraped_records: updated_scraped_records)
+      else
+        socket
       end
-
-      Logger.info("🔔 Loaded #{length(loaded_records)} full records")
-
-      # Add all loaded records to scraped_records
-      updated_scraped_records = loaded_records ++ socket.assigns.scraped_records
-
-      # Keep only the most recent 100 records
-      updated_scraped_records = Enum.take(updated_scraped_records, 100)
-
-      assign(socket, scraped_records: updated_scraped_records)
-    else
-      socket
-    end
 
     {:noreply, socket}
   end
 
   # Handle record creation during active scraping - notices
   @impl true
-  def handle_info(%Phoenix.Socket.Broadcast{topic: "notice:created", event: "create", payload: %Ash.Notifier.Notification{} = notification}, socket) do
-    Logger.info("🔔 Received notice:created broadcast - notification data: #{inspect(notification.data)}")
-    Logger.info("🔔 Current scraping_session_started_at: #{inspect(socket.assigns.scraping_session_started_at)}")
+  def handle_info(
+        %Phoenix.Socket.Broadcast{
+          topic: "notice:created",
+          event: "create",
+          payload: %Ash.Notifier.Notification{} = notification
+        },
+        socket
+      ) do
+    Logger.info(
+      "🔔 Received notice:created broadcast - notification data: #{inspect(notification.data)}"
+    )
+
+    Logger.info(
+      "🔔 Current scraping_session_started_at: #{inspect(socket.assigns.scraping_session_started_at)}"
+    )
 
     # Only add to scraped_records if we have an active session
-    socket = if socket.assigns.scraping_session_started_at do
-      # Load full notice data with associations
-      notice = Notice
-      |> Ash.get!(notification.data.id, load: [:agency, :offender], actor: socket.assigns.current_user)
+    socket =
+      if socket.assigns.scraping_session_started_at do
+        # Load full notice data with associations
+        notice =
+          Notice
+          |> Ash.get!(notification.data.id,
+            load: [:agency, :offender],
+            actor: socket.assigns.current_user
+          )
 
-      # Get processing status from notification metadata or default to :created
-      processing_status = notification.metadata[:processing_status] || :created
+        # Get processing status from notification metadata or default to :created
+        processing_status = notification.metadata[:processing_status] || :created
 
-      # Add processing status to notice for template use
-      notice_with_status = Map.put(notice, :processing_status, processing_status)
+        # Add processing status to notice for template use
+        notice_with_status = Map.put(notice, :processing_status, processing_status)
 
-      # Remove any existing entry for this notice (deduplicate by regulator_id)
-      existing_records = Enum.reject(socket.assigns.scraped_records, fn existing ->
-        existing.regulator_id == notice.regulator_id
-      end)
+        # Remove any existing entry for this notice (deduplicate by regulator_id)
+        existing_records =
+          Enum.reject(socket.assigns.scraped_records, fn existing ->
+            existing.regulator_id == notice.regulator_id
+          end)
 
-      # Add to the beginning of the list (most recent first)
-      updated_scraped_records = [notice_with_status | existing_records]
+        # Add to the beginning of the list (most recent first)
+        updated_scraped_records = [notice_with_status | existing_records]
 
-      # Keep only the most recent 100 records
-      updated_scraped_records = Enum.take(updated_scraped_records, 100)
+        # Keep only the most recent 100 records
+        updated_scraped_records = Enum.take(updated_scraped_records, 100)
 
-      Logger.debug("Added notice to scraped_records: #{notice.regulator_id} (status: #{processing_status})")
-      assign(socket, scraped_records: updated_scraped_records)
-    else
-      socket
-    end
+        Logger.debug(
+          "Added notice to scraped_records: #{notice.regulator_id} (status: #{processing_status})"
+        )
+
+        assign(socket, scraped_records: updated_scraped_records)
+      else
+        socket
+      end
 
     {:noreply, socket}
   end
 
   # Handle record creation during active scraping - cases
   @impl true
-  def handle_info(%Phoenix.Socket.Broadcast{topic: "case:created", event: "create", payload: %Ash.Notifier.Notification{} = notification}, socket) do
-    Logger.info("🔔 Received case:created broadcast - notification data: #{inspect(notification.data)}")
-    Logger.info("🔔 Current scraping_session_started_at: #{inspect(socket.assigns.scraping_session_started_at)}")
+  def handle_info(
+        %Phoenix.Socket.Broadcast{
+          topic: "case:created",
+          event: "create",
+          payload: %Ash.Notifier.Notification{} = notification
+        },
+        socket
+      ) do
+    Logger.info(
+      "🔔 Received case:created broadcast - notification data: #{inspect(notification.data)}"
+    )
+
+    Logger.info(
+      "🔔 Current scraping_session_started_at: #{inspect(socket.assigns.scraping_session_started_at)}"
+    )
 
     # Only add to scraped_records if we have an active session
-    socket = if socket.assigns.scraping_session_started_at do
-      # Load full case data with associations
-      case_record = Case
-      |> Ash.get!(notification.data.id, load: [:agency, :offender], actor: socket.assigns.current_user)
+    socket =
+      if socket.assigns.scraping_session_started_at do
+        # Load full case data with associations
+        case_record =
+          Case
+          |> Ash.get!(notification.data.id,
+            load: [:agency, :offender],
+            actor: socket.assigns.current_user
+          )
 
-      # Get processing status from notification metadata or default to :created
-      processing_status = notification.metadata[:processing_status] || :created
+        # Get processing status from notification metadata or default to :created
+        processing_status = notification.metadata[:processing_status] || :created
 
-      # Add processing status to case for template use
-      case_with_status = Map.put(case_record, :processing_status, processing_status)
+        # Add processing status to case for template use
+        case_with_status = Map.put(case_record, :processing_status, processing_status)
 
-      # Remove any existing entry for this case (deduplicate by regulator_id)
-      existing_records = Enum.reject(socket.assigns.scraped_records, fn existing ->
-        existing.regulator_id == case_record.regulator_id
-      end)
+        # Remove any existing entry for this case (deduplicate by regulator_id)
+        existing_records =
+          Enum.reject(socket.assigns.scraped_records, fn existing ->
+            existing.regulator_id == case_record.regulator_id
+          end)
 
-      # Add to the beginning of the list (most recent first)
-      updated_scraped_records = [case_with_status | existing_records]
+        # Add to the beginning of the list (most recent first)
+        updated_scraped_records = [case_with_status | existing_records]
 
-      # Keep only the most recent 100 records
-      updated_scraped_records = Enum.take(updated_scraped_records, 100)
+        # Keep only the most recent 100 records
+        updated_scraped_records = Enum.take(updated_scraped_records, 100)
 
-      Logger.debug("Added case to scraped_records: #{case_record.regulator_id} (status: #{processing_status})")
-      assign(socket, scraped_records: updated_scraped_records)
-    else
-      socket
-    end
+        Logger.debug(
+          "Added case to scraped_records: #{case_record.regulator_id} (status: #{processing_status})"
+        )
+
+        assign(socket, scraped_records: updated_scraped_records)
+      else
+        socket
+      end
 
     {:noreply, socket}
   end
@@ -564,43 +657,57 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   # Handle case updates during active scraping - for when existing cases are updated
   @impl true
   def handle_info(%Phoenix.Socket.Broadcast{topic: "case:scraped:updated"} = broadcast, socket) do
-    Logger.info("🔔 Received case:scraped:updated broadcast - payload: #{inspect(broadcast.payload)}")
-    Logger.info("🔔 Current scraping_session_started_at: #{inspect(socket.assigns.scraping_session_started_at)}")
+    Logger.info(
+      "🔔 Received case:scraped:updated broadcast - payload: #{inspect(broadcast.payload)}"
+    )
+
+    Logger.info(
+      "🔔 Current scraping_session_started_at: #{inspect(socket.assigns.scraping_session_started_at)}"
+    )
 
     # Only add to scraped_records if we have an active session
-    socket = if socket.assigns.scraping_session_started_at do
-      case broadcast.payload do
-        %Ash.Notifier.Notification{} = notification ->
-          # Load full case data with associations
-          case_record = Case
-          |> Ash.get!(notification.data.id, load: [:agency, :offender], actor: socket.assigns.current_user)
+    socket =
+      if socket.assigns.scraping_session_started_at do
+        case broadcast.payload do
+          %Ash.Notifier.Notification{} = notification ->
+            # Load full case data with associations
+            case_record =
+              Case
+              |> Ash.get!(notification.data.id,
+                load: [:agency, :offender],
+                actor: socket.assigns.current_user
+              )
 
-          # Get processing status from notification metadata or default to :updated
-          processing_status = notification.metadata[:processing_status] || :updated
+            # Get processing status from notification metadata or default to :updated
+            processing_status = notification.metadata[:processing_status] || :updated
 
-          # Add processing status to case for template use
-          case_with_status = Map.put(case_record, :processing_status, processing_status)
+            # Add processing status to case for template use
+            case_with_status = Map.put(case_record, :processing_status, processing_status)
 
-          # Remove any existing entry for this case (deduplicate by regulator_id)
-          existing_records = Enum.reject(socket.assigns.scraped_records, fn existing ->
-            existing.regulator_id == case_record.regulator_id
-          end)
+            # Remove any existing entry for this case (deduplicate by regulator_id)
+            existing_records =
+              Enum.reject(socket.assigns.scraped_records, fn existing ->
+                existing.regulator_id == case_record.regulator_id
+              end)
 
-          # Add to the beginning of the list (most recent first)
-          updated_scraped_records = [case_with_status | existing_records]
+            # Add to the beginning of the list (most recent first)
+            updated_scraped_records = [case_with_status | existing_records]
 
-          # Keep only the most recent 100 records
-          updated_scraped_records = Enum.take(updated_scraped_records, 100)
+            # Keep only the most recent 100 records
+            updated_scraped_records = Enum.take(updated_scraped_records, 100)
 
-          Logger.debug("Added/updated case in scraped_records: #{case_record.regulator_id} (status: #{processing_status})")
-          assign(socket, scraped_records: updated_scraped_records)
+            Logger.debug(
+              "Added/updated case in scraped_records: #{case_record.regulator_id} (status: #{processing_status})"
+            )
 
-        _ ->
-          socket
+            assign(socket, scraped_records: updated_scraped_records)
+
+          _ ->
+            socket
+        end
+      else
+        socket
       end
-    else
-      socket
-    end
 
     {:noreply, socket}
   end
@@ -638,7 +745,10 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   end
 
   @impl true
-  def handle_info(_, socket), do: {:noreply, socket}
+  def handle_info(msg, socket) do
+    Logger.debug("⚠️ Unhandled message: #{inspect(msg)}")
+    {:noreply, socket}
+  end
 
   @impl true
   def render(assigns) do
@@ -650,25 +760,30 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
         <p class="mt-2 text-gray-600">
           Manually trigger enforcement data scraping from UK regulatory agencies with real-time progress monitoring
         </p>
-
-        <!-- Navigation Links -->
+        
+    <!-- Navigation Links -->
         <div class="mt-4 flex space-x-4">
           <.link
             navigate={~p"/admin"}
             class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
             </svg>
             Admin Dashboard
           </.link>
         </div>
       </div>
-
-      <!-- Flash Messages -->
+      
+    <!-- Flash Messages -->
       <.flash_group flash={@flash} />
-
-      <!-- 2-Column Grid Layout -->
+      
+    <!-- 2-Column Grid Layout -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column: Scraping Configuration (2/3 width) -->
         <div class="lg:col-span-2">
@@ -700,8 +815,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
                   </button>
                 </div>
               </div>
-
-              <!-- Database/Type Selection -->
+              
+    <!-- Database/Type Selection -->
               <div class="mb-6">
                 <label for="database" class="block text-sm font-medium text-gray-700 mb-2">
                   {database_label(@agency)}
@@ -723,18 +838,35 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
                   {database_help_text(@agency, @database)}
                 </p>
               </div>
-
-              <!-- Agency-Specific Parameters -->
-              <%= render_form_fields(assigns) %>
-
-              <!-- Submit Button -->
+              
+    <!-- Agency-Specific Parameters -->
+              {render_form_fields(assigns)}
+              
+    <!-- Submit Button -->
               <div class="mt-6 flex items-center justify-between">
                 <div class="text-sm text-gray-500">
                   <%= if @scraping_active do %>
                     <span class="inline-flex items-center">
-                      <svg class="animate-spin h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        class="animate-spin h-4 w-4 mr-2 text-blue-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          class="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          stroke-width="4"
+                        >
+                        </circle>
+                        <path
+                          class="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        >
+                        </path>
                       </svg>
                       Scraping in progress...
                     </span>
@@ -749,8 +881,18 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   Start Scraping
                 </button>
@@ -764,15 +906,15 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
             </.form>
           </div>
         </div>
-
-        <!-- Right Column: Progress Display (1/3 width) -->
+        
+    <!-- Right Column: Progress Display (1/3 width) -->
         <div class="lg:col-span-1">
-          <%= render_progress(assigns) %>
+          {render_progress(assigns)}
         </div>
       </div>
-
-      <!-- Live Scraped Records (During Active Session) -->
-      <%= if @scraping_session_started_at && length(@scraped_records) > 0 do %>
+      
+    <!-- Live Scraped Records (During Active Session) -->
+      <%= if length(@scraped_records) > 0 do %>
         <div class="mt-8 bg-white shadow rounded-lg border border-gray-200 mb-8">
           <div class="px-6 py-4 border-b border-gray-200">
             <div class="flex items-center justify-between">
@@ -805,11 +947,10 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
             </div>
           </div>
           <div class="px-6 py-4">
-            <%= render_scraped_records(assigns) %>
+            {render_scraped_records(assigns)}
           </div>
         </div>
       <% end %>
-
     </div>
     """
   end
@@ -823,7 +964,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
 
   defp parse_agency("hse"), do: {:ok, :hse}
   defp parse_agency("ea"), do: {:ok, :ea}
-  defp parse_agency("environment_agency"), do: {:ok, :ea}  # Support long form URL
+  # Support long form URL
+  defp parse_agency("environment_agency"), do: {:ok, :ea}
   defp parse_agency(_), do: {:error, :invalid_agency}
 
   defp parse_type("case"), do: {:ok, :case}
@@ -831,15 +973,24 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   defp parse_type(_), do: {:error, :invalid_type}
 
   # Strategy determination based on agency and database selection
-  defp determine_strategy(:hse, "convictions"), do: EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy
-  defp determine_strategy(:hse, "appeals"), do: EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy
-  defp determine_strategy(:hse, "notices"), do: EhsEnforcement.Scraping.Strategies.HSE.NoticeStrategy
+  defp determine_strategy(:hse, "convictions"),
+    do: EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy
+
+  defp determine_strategy(:hse, "appeals"),
+    do: EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy
+
+  defp determine_strategy(:hse, "notices"),
+    do: EhsEnforcement.Scraping.Strategies.HSE.NoticeStrategy
+
   defp determine_strategy(:ea, "cases"), do: EhsEnforcement.Scraping.Strategies.EA.CaseStrategy
-  defp determine_strategy(:ea, "notices"), do: EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy
+
+  defp determine_strategy(:ea, "notices"),
+    do: EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy
 
   # Derive enforcement type from agency and database selection
   defp derive_enforcement_type(:hse, "notices"), do: :notice
-  defp derive_enforcement_type(:hse, _database), do: :case  # convictions or appeals
+  # convictions or appeals
+  defp derive_enforcement_type(:hse, _database), do: :case
   defp derive_enforcement_type(:ea, "notices"), do: :notice
   defp derive_enforcement_type(:ea, "cases"), do: :case
 
@@ -862,11 +1013,20 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     ]
   end
 
-  defp database_help_text(:hse, "convictions"), do: "Scrape HSE conviction cases from the convictions database"
-  defp database_help_text(:hse, "appeals"), do: "Scrape HSE appeal cases from the appeals database"
-  defp database_help_text(:hse, "notices"), do: "Scrape HSE enforcement notices from the notices database"
+  defp database_help_text(:hse, "convictions"),
+    do: "Scrape HSE conviction cases from the convictions database"
+
+  defp database_help_text(:hse, "appeals"),
+    do: "Scrape HSE appeal cases from the appeals database"
+
+  defp database_help_text(:hse, "notices"),
+    do: "Scrape HSE enforcement notices from the notices database"
+
   defp database_help_text(:ea, "cases"), do: "Scrape EA court cases (date range required)"
-  defp database_help_text(:ea, "notices"), do: "Scrape EA enforcement notices (date range required)"
+
+  defp database_help_text(:ea, "notices"),
+    do: "Scrape EA enforcement notices (date range required)"
+
   defp database_help_text(_, _), do: "Select a database to begin scraping"
 
   defp initial_progress do
@@ -910,7 +1070,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
           case database do
             "cases" -> ["court_case"]
             "notices" -> ["enforcement_notice"]
-            _ -> ["court_case"]  # Default fallback
+            # Default fallback
+            _ -> ["court_case"]
           end
 
         %{
@@ -946,15 +1107,22 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   defp derive_enforcement_type_from_session(session) do
     cond do
       # HSE: check database field
-      session.agency == :hse && session.database == "notices" -> :notice
-      session.agency == :hse -> :case
+      session.agency == :hse && session.database == "notices" ->
+        :notice
+
+      session.agency == :hse ->
+        :case
 
       # EA: check action_types
-      session.agency == :environment_agency && session.action_types == [:enforcement_notice] -> :notice
-      session.agency == :environment_agency -> :case
+      session.agency == :environment_agency && session.action_types == [:enforcement_notice] ->
+        :notice
+
+      session.agency == :environment_agency ->
+        :case
 
       # Default fallback
-      true -> :case
+      true ->
+        :case
     end
   end
 
@@ -1075,13 +1243,27 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notice ID</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notice Type</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue Date</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Compliance Date</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processed</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Notice ID
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Recipient
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Notice Type
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Issue Date
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Compliance Date
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Status
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Processed
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -1155,12 +1337,24 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regulator ID</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offender</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fine</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processed</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Regulator ID
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Offender
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Date
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Fine
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Status
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Processed
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">

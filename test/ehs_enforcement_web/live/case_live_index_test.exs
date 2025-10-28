@@ -9,69 +9,77 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
   describe "CaseLive.Index mount" do
     setup do
       # Create test agencies
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
-      {:ok, ea_agency} = Enforcement.create_agency(%{
-        code: :ea,
-        name: "Environment Agency",
-        enabled: true
-      })
+      {:ok, ea_agency} =
+        Enforcement.create_agency(%{
+          code: :ea,
+          name: "Environment Agency",
+          enabled: true
+        })
 
       # Create test offenders
-      {:ok, offender1} = Enforcement.create_offender(%{
-        name: "Test Manufacturing Ltd",
-        local_authority: "Manchester City Council",
-        postcode: "M1 1AA"
-      })
+      {:ok, offender1} =
+        Enforcement.create_offender(%{
+          name: "Test Manufacturing Ltd",
+          local_authority: "Manchester City Council",
+          postcode: "M1 1AA"
+        })
 
-      {:ok, offender2} = Enforcement.create_offender(%{
-        name: "Industrial Corp",
-        local_authority: "Birmingham City Council",
-        postcode: "B2 2BB"
-      })
+      {:ok, offender2} =
+        Enforcement.create_offender(%{
+          name: "Industrial Corp",
+          local_authority: "Birmingham City Council",
+          postcode: "B2 2BB"
+        })
 
-      {:ok, offender3} = Enforcement.create_offender(%{
-        name: "Chemical Processing PLC",
-        local_authority: "Leeds City Council",
-        postcode: "LS3 3CC"
-      })
+      {:ok, offender3} =
+        Enforcement.create_offender(%{
+          name: "Chemical Processing PLC",
+          local_authority: "Leeds City Council",
+          postcode: "LS3 3CC"
+        })
 
       # Create test cases with varying dates and fines for filtering
       base_date = ~D[2024-01-15]
-      
-      {:ok, case1} = Enforcement.create_case(%{
-        regulator_id: "HSE-2024-001",
-        agency_id: hse_agency.id,
-        offender_id: offender1.id,
-        offence_action_date: base_date,
-        offence_fine: Decimal.new("15000.00"),
-        offence_breaches: "Failure to provide adequate safety measures",
-        last_synced_at: DateTime.utc_now()
-      })
 
-      {:ok, case2} = Enforcement.create_case(%{
-        regulator_id: "EA-2024-005", 
-        agency_id: ea_agency.id,
-        offender_id: offender2.id,
-        offence_action_date: Date.add(base_date, 10),
-        offence_fine: Decimal.new("8500.00"),
-        offence_breaches: "Environmental pollution violation",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, case1} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-2024-001",
+          agency_id: hse_agency.id,
+          offender_id: offender1.id,
+          offence_action_date: base_date,
+          offence_fine: Decimal.new("15000.00"),
+          offence_breaches: "Failure to provide adequate safety measures",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, case3} = Enforcement.create_case(%{
-        regulator_id: "HSE-2024-002",
-        agency_id: hse_agency.id,
-        offender_id: offender3.id,
-        offence_action_date: Date.add(base_date, 20),
-        offence_fine: Decimal.new("25000.00"),
-        offence_breaches: "Chemical safety protocol breach",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, case2} =
+        Enforcement.create_case(%{
+          regulator_id: "EA-2024-005",
+          agency_id: ea_agency.id,
+          offender_id: offender2.id,
+          offence_action_date: Date.add(base_date, 10),
+          offence_fine: Decimal.new("8500.00"),
+          offence_breaches: "Environmental pollution violation",
+          last_synced_at: DateTime.utc_now()
+        })
+
+      {:ok, case3} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-2024-002",
+          agency_id: hse_agency.id,
+          offender_id: offender3.id,
+          offence_action_date: Date.add(base_date, 20),
+          offence_fine: Decimal.new("25000.00"),
+          offence_breaches: "Chemical safety protocol breach",
+          last_synced_at: DateTime.utc_now()
+        })
 
       %{
         agencies: [hse_agency, ea_agency],
@@ -130,16 +138,18 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       case_table = element(view, "[data-testid='case-table']") |> render()
 
       # Most recent case (HSE-2024-002, Feb 4) should appear first
-      hse_002_position = case :binary.match(case_table, "HSE-2024-002") do
-        {pos, _} -> pos
-        :nomatch -> 99999
-      end
+      hse_002_position =
+        case :binary.match(case_table, "HSE-2024-002") do
+          {pos, _} -> pos
+          :nomatch -> 99999
+        end
 
       # Older case (HSE-2024-001, Jan 15) should appear last
-      hse_001_position = case :binary.match(case_table, "HSE-2024-001") do
-        {pos, _} -> pos
-        :nomatch -> 99999
-      end
+      hse_001_position =
+        case :binary.match(case_table, "HSE-2024-001") do
+          {pos, _} -> pos
+          :nomatch -> 99999
+        end
 
       assert hse_002_position < hse_001_position, "Cases should be ordered by date descending"
     end
@@ -153,7 +163,7 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       # Should still render without errors
       assert html =~ "Case Management"
       assert html =~ "0 cases" or html =~ "No cases found"
-      
+
       # Should show empty state
       assert html =~ "No enforcement cases" or html =~ "No cases to display"
     end
@@ -162,8 +172,10 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       {:ok, view, html} = live(conn, "/cases")
 
       # Should load and display agency information
-      assert html =~ "HSE" # Agency code
-      assert html =~ "EA"  # Agency code
+      # Agency code
+      assert html =~ "HSE"
+      # Agency code
+      assert html =~ "EA"
 
       # Should load and display offender information
       assert html =~ "Test Manufacturing Ltd"
@@ -179,30 +191,52 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
 
   describe "CaseLive.Index filtering" do
     setup do
-      {:ok, hse} = Enforcement.create_agency(%{code: :hse, name: "Health and Safety Executive", enabled: true})
-      {:ok, ea} = Enforcement.create_agency(%{code: :ea, name: "Environment Agency", enabled: true})
-      
+      {:ok, hse} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
+
+      {:ok, ea} =
+        Enforcement.create_agency(%{code: :ea, name: "Environment Agency", enabled: true})
+
       {:ok, offender1} = Enforcement.create_offender(%{name: "Filter Test Company"})
       {:ok, offender2} = Enforcement.create_offender(%{name: "Another Business"})
 
       # Create cases for different time periods and fine amounts
-      {:ok, recent_case} = Enforcement.create_case(%{
-        regulator_id: "HSE-RECENT", agency_id: hse.id, offender_id: offender1.id,
-        offence_action_date: ~D[2024-03-01], offence_fine: Decimal.new("5000.00"),
-        offence_breaches: "Recent safety breach", last_synced_at: DateTime.utc_now()
-      })
+      {:ok, recent_case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-RECENT",
+          agency_id: hse.id,
+          offender_id: offender1.id,
+          offence_action_date: ~D[2024-03-01],
+          offence_fine: Decimal.new("5000.00"),
+          offence_breaches: "Recent safety breach",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, old_case} = Enforcement.create_case(%{
-        regulator_id: "EA-OLD", agency_id: ea.id, offender_id: offender2.id,
-        offence_action_date: ~D[2023-06-15], offence_fine: Decimal.new("15000.00"),
-        offence_breaches: "Old environmental violation", last_synced_at: DateTime.utc_now()
-      })
+      {:ok, old_case} =
+        Enforcement.create_case(%{
+          regulator_id: "EA-OLD",
+          agency_id: ea.id,
+          offender_id: offender2.id,
+          offence_action_date: ~D[2023-06-15],
+          offence_fine: Decimal.new("15000.00"),
+          offence_breaches: "Old environmental violation",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, medium_case} = Enforcement.create_case(%{
-        regulator_id: "HSE-MEDIUM", agency_id: hse.id, offender_id: offender2.id,
-        offence_action_date: ~D[2024-01-15], offence_fine: Decimal.new("10000.00"),
-        offence_breaches: "Medium priority issue", last_synced_at: DateTime.utc_now()
-      })
+      {:ok, medium_case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-MEDIUM",
+          agency_id: hse.id,
+          offender_id: offender2.id,
+          offence_action_date: ~D[2024-01-15],
+          offence_fine: Decimal.new("10000.00"),
+          offence_breaches: "Medium priority issue",
+          last_synced_at: DateTime.utc_now()
+        })
 
       %{hse: hse, ea: ea, cases: [recent_case, old_case, medium_case]}
     end
@@ -245,9 +279,12 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       filtered_html = render(view)
 
       # Should show 2024 cases
-      assert filtered_html =~ "HSE-RECENT"  # March 2024
-      assert filtered_html =~ "HSE-MEDIUM"  # January 2024
-      refute filtered_html =~ "EA-OLD"      # June 2023
+      # March 2024
+      assert filtered_html =~ "HSE-RECENT"
+      # January 2024
+      assert filtered_html =~ "HSE-MEDIUM"
+      # June 2023
+      refute filtered_html =~ "EA-OLD"
 
       # Filter for very recent cases only
       render_change(view, "filter", %{
@@ -280,8 +317,10 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
 
       # Should show medium case (£10,000)
       assert filtered_html =~ "HSE-MEDIUM"
-      refute filtered_html =~ "HSE-RECENT"  # £5,000 - too low
-      refute filtered_html =~ "EA-OLD"      # £15,000 - too high
+      # £5,000 - too low
+      refute filtered_html =~ "HSE-RECENT"
+      # £15,000 - too high
+      refute filtered_html =~ "EA-OLD"
 
       # Filter for high-value cases only
       render_change(view, "filter", %{
@@ -315,8 +354,10 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
 
       # Should show only HSE-MEDIUM (HSE agency, 2024 date, £10k fine)
       assert combined_filtered_html =~ "HSE-MEDIUM"
-      refute combined_filtered_html =~ "HSE-RECENT"  # Fine too low
-      refute combined_filtered_html =~ "EA-OLD"      # Wrong agency + date
+      # Fine too low
+      refute combined_filtered_html =~ "HSE-RECENT"
+      # Wrong agency + date
+      refute combined_filtered_html =~ "EA-OLD"
     end
 
     test "clears filters correctly", %{conn: conn} do
@@ -358,44 +399,55 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       assert has_element?(view, "input[name='filters[max_fine]'][type='number']")
 
       # Should have filter and clear buttons
-      assert has_element?(view, "button[type='submit']") # Filter button
-      assert has_element?(view, "button[phx-click='clear_filters']") # Clear button
+      # Filter button
+      assert has_element?(view, "button[type='submit']")
+      # Clear button
+      assert has_element?(view, "button[phx-click='clear_filters']")
     end
   end
 
   describe "CaseLive.Index search functionality" do
     setup do
-      {:ok, agency} = Enforcement.create_agency(%{code: :hse, name: "Health and Safety Executive", enabled: true})
-      
-      {:ok, manufacturing_co} = Enforcement.create_offender(%{
-        name: "Advanced Manufacturing Solutions Ltd",
-        local_authority: "Sheffield City Council"
-      })
+      {:ok, agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
-      {:ok, chemicals_plc} = Enforcement.create_offender(%{
-        name: "Chemical Industries PLC", 
-        local_authority: "Liverpool City Council"
-      })
+      {:ok, manufacturing_co} =
+        Enforcement.create_offender(%{
+          name: "Advanced Manufacturing Solutions Ltd",
+          local_authority: "Sheffield City Council"
+        })
 
-      {:ok, _case1} = Enforcement.create_case(%{
-        regulator_id: "HSE-MANUF-001",
-        agency_id: agency.id,
-        offender_id: manufacturing_co.id,
-        offence_action_date: ~D[2024-01-15],
-        offence_fine: Decimal.new("12000.00"),
-        offence_breaches: "Manufacturing safety protocol violation",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, chemicals_plc} =
+        Enforcement.create_offender(%{
+          name: "Chemical Industries PLC",
+          local_authority: "Liverpool City Council"
+        })
 
-      {:ok, _case2} = Enforcement.create_case(%{
-        regulator_id: "HSE-CHEM-002",
-        agency_id: agency.id,
-        offender_id: chemicals_plc.id,
-        offence_action_date: ~D[2024-01-20],
-        offence_fine: Decimal.new("18000.00"),
-        offence_breaches: "Chemical storage safety breach",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, _case1} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-MANUF-001",
+          agency_id: agency.id,
+          offender_id: manufacturing_co.id,
+          offence_action_date: ~D[2024-01-15],
+          offence_fine: Decimal.new("12000.00"),
+          offence_breaches: "Manufacturing safety protocol violation",
+          last_synced_at: DateTime.utc_now()
+        })
+
+      {:ok, _case2} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-CHEM-002",
+          agency_id: agency.id,
+          offender_id: chemicals_plc.id,
+          offence_action_date: ~D[2024-01-20],
+          offence_fine: Decimal.new("18000.00"),
+          offence_breaches: "Chemical storage safety breach",
+          last_synced_at: DateTime.utc_now()
+        })
 
       %{agency: agency, manufacturing: manufacturing_co, chemicals: chemicals_plc}
     end
@@ -561,22 +613,31 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
 
   describe "CaseLive.Index pagination" do
     setup do
-      {:ok, agency} = Enforcement.create_agency(%{code: :hse, name: "Health and Safety Executive", enabled: true})
+      {:ok, agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
+
       {:ok, offender} = Enforcement.create_offender(%{name: "Pagination Test Corp"})
 
       # Create 25 cases to test pagination (default page size is 20)
-      cases = Enum.map(1..25, fn i ->
-        {:ok, case} = Enforcement.create_case(%{
-          regulator_id: "HSE-#{String.pad_leading(to_string(i), 3, "0")}",
-          agency_id: agency.id,
-          offender_id: offender.id,
-          offence_action_date: Date.add(~D[2024-01-01], i),
-          offence_fine: Decimal.new("#{rem(i, 10) + 1}000.00"),
-          offence_breaches: "Breach #{i}",
-          last_synced_at: DateTime.utc_now()
-        })
-        case
-      end)
+      cases =
+        Enum.map(1..25, fn i ->
+          {:ok, case} =
+            Enforcement.create_case(%{
+              regulator_id: "HSE-#{String.pad_leading(to_string(i), 3, "0")}",
+              agency_id: agency.id,
+              offender_id: offender.id,
+              offence_action_date: Date.add(~D[2024-01-01], i),
+              offence_fine: Decimal.new("#{rem(i, 10) + 1}000.00"),
+              offence_breaches: "Breach #{i}",
+              last_synced_at: DateTime.utc_now()
+            })
+
+          case
+        end)
 
       %{agency: agency, offender: offender, cases: cases}
     end
@@ -586,11 +647,11 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
 
       # Should show pagination controls
       assert has_element?(view, "[data-testid='pagination']")
-      
+
       # Should show page numbers
       assert html =~ "Page 1" or html =~ "1"
       assert html =~ "Next" or html =~ ">"
-      
+
       # Should show total count
       assert html =~ "25 cases" or html =~ "Total: 25"
     end
@@ -599,12 +660,13 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       {:ok, view, _html} = live(conn, "/cases")
 
       # Should show 20 cases on first page (default page size)
-      case_rows = view 
-      |> element("[data-testid='case-table']")
-      |> render()
-      |> String.split("HSE-")
-      |> length()
-      
+      case_rows =
+        view
+        |> element("[data-testid='case-table']")
+        |> render()
+        |> String.split("HSE-")
+        |> length()
+
       # Should be 21 (20 cases + 1 for the split)
       assert case_rows == 21
     end
@@ -615,18 +677,21 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       # Should show most recent cases first (HSE-025, HSE-024, etc.)
       first_page = render(view)
       assert first_page =~ "HSE-025"
-      assert first_page =~ "HSE-006" # 20th case on page 1
-      refute first_page =~ "HSE-005" # Should be on page 2
+      # 20th case on page 1
+      assert first_page =~ "HSE-006"
+      # Should be on page 2
+      refute first_page =~ "HSE-005"
 
       # Navigate to page 2
       render_click(view, "paginate", %{"page" => "2"})
 
       second_page = render(view)
-      
+
       # Should show remaining cases
       assert second_page =~ "HSE-005"
       assert second_page =~ "HSE-001"
-      refute second_page =~ "HSE-025" # Should be on page 1
+      # Should be on page 1
+      refute second_page =~ "HSE-025"
     end
 
     test "updates pagination when filters are applied", %{conn: conn} do
@@ -642,7 +707,7 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       # Should show only 1 result, no pagination needed
       assert filtered_html =~ "HSE-001"
       assert filtered_html =~ "1 case" or filtered_html =~ "Total: 1"
-      
+
       # Pagination controls might be hidden for single page
       refute filtered_html =~ "Next" or not has_element?(view, "[data-testid='pagination']")
     end
@@ -652,7 +717,7 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
 
       # Go to page 2
       render_click(view, "paginate", %{"page" => "2"})
-      
+
       # Apply a filter that still has multiple pages worth of results
       render_change(view, "filter", %{
         "filters" => %{"date_from" => "2024-01-01"}
@@ -666,19 +731,21 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
     test "handles invalid page numbers gracefully", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/cases")
 
-      log = capture_log(fn ->
-        # Try to navigate to invalid pages
-        render_click(view, "paginate", %{"page" => "999"})
-        render_click(view, "paginate", %{"page" => "0"})
-        render_click(view, "paginate", %{"page" => "-1"})
-      end)
+      log =
+        capture_log(fn ->
+          # Try to navigate to invalid pages
+          render_click(view, "paginate", %{"page" => "999"})
+          render_click(view, "paginate", %{"page" => "0"})
+          render_click(view, "paginate", %{"page" => "-1"})
+        end)
 
       # Should handle gracefully without crashing
       assert Process.alive?(view.pid)
-      
+
       # Should stay on valid page
       final_html = render(view)
-      assert final_html =~ "HSE-" # Should still show cases
+      # Should still show cases
+      assert final_html =~ "HSE-"
     end
 
     test "displays page size options", %{conn: conn} do
@@ -686,8 +753,8 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
 
       # Should have page size selector
       assert has_element?(view, "select[name='page_size']") or
-             html =~ "per page" or
-             html =~ "items per page"
+               html =~ "per page" or
+               html =~ "items per page"
     end
 
     test "changes page size correctly", %{conn: conn} do
@@ -699,11 +766,13 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       updated_html = render(view)
 
       # Should show only 10 cases
-      case_count = updated_html
-      |> String.split("HSE-")
-      |> length()
-      
-      assert case_count == 11 # 10 cases + 1 for split
+      case_count =
+        updated_html
+        |> String.split("HSE-")
+        |> length()
+
+      # 10 cases + 1 for split
+      assert case_count == 11
 
       # Should show more pages now
       assert updated_html =~ "Page 1"
@@ -713,30 +782,50 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
 
   describe "CaseLive.Index sorting" do
     setup do
-      {:ok, agency} = Enforcement.create_agency(%{code: :hse, name: "Health and Safety Executive", enabled: true})
-      
+      {:ok, agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
+
       {:ok, offender_a} = Enforcement.create_offender(%{name: "Alpha Company"})
       {:ok, offender_z} = Enforcement.create_offender(%{name: "Zulu Corporation"})
       {:ok, offender_m} = Enforcement.create_offender(%{name: "Mid-Range Ltd"})
 
       # Create cases with different dates and fine amounts for sorting
-      {:ok, _low_fine} = Enforcement.create_case(%{
-        regulator_id: "HSE-LOW", agency_id: agency.id, offender_id: offender_a.id,
-        offence_action_date: ~D[2024-02-01], offence_fine: Decimal.new("5000.00"),
-        offence_breaches: "Minor violation", last_synced_at: DateTime.utc_now()
-      })
+      {:ok, _low_fine} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-LOW",
+          agency_id: agency.id,
+          offender_id: offender_a.id,
+          offence_action_date: ~D[2024-02-01],
+          offence_fine: Decimal.new("5000.00"),
+          offence_breaches: "Minor violation",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, _high_fine} = Enforcement.create_case(%{
-        regulator_id: "HSE-HIGH", agency_id: agency.id, offender_id: offender_z.id,
-        offence_action_date: ~D[2024-01-15], offence_fine: Decimal.new("50000.00"),
-        offence_breaches: "Serious violation", last_synced_at: DateTime.utc_now()
-      })
+      {:ok, _high_fine} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-HIGH",
+          agency_id: agency.id,
+          offender_id: offender_z.id,
+          offence_action_date: ~D[2024-01-15],
+          offence_fine: Decimal.new("50000.00"),
+          offence_breaches: "Serious violation",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, _mid_fine} = Enforcement.create_case(%{
-        regulator_id: "HSE-MID", agency_id: agency.id, offender_id: offender_m.id,
-        offence_action_date: ~D[2024-03-01], offence_fine: Decimal.new("15000.00"),
-        offence_breaches: "Moderate violation", last_synced_at: DateTime.utc_now()
-      })
+      {:ok, _mid_fine} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-MID",
+          agency_id: agency.id,
+          offender_id: offender_m.id,
+          offence_action_date: ~D[2024-03-01],
+          offence_fine: Decimal.new("15000.00"),
+          offence_breaches: "Moderate violation",
+          last_synced_at: DateTime.utc_now()
+        })
 
       %{agency: agency}
     end
@@ -818,7 +907,7 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
 
       # Should have sortable headers
       assert has_element?(view, "th[phx-click='sort']")
-      
+
       # Should show current sort direction
       assert html =~ "sort" or html =~ "↑" or html =~ "↓" or html =~ "▲" or html =~ "▼"
     end
@@ -856,16 +945,17 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
     test "handles invalid filter values gracefully", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/cases")
 
-      log = capture_log(fn ->
-        # Send invalid filter values
-        render_change(view, "filter", %{
-          "filters" => %{
-            "agency_id" => "invalid-uuid",
-            "min_fine" => "not-a-number", 
-            "date_from" => "invalid-date"
-          }
-        })
-      end)
+      log =
+        capture_log(fn ->
+          # Send invalid filter values
+          render_change(view, "filter", %{
+            "filters" => %{
+              "agency_id" => "invalid-uuid",
+              "min_fine" => "not-a-number",
+              "date_from" => "invalid-date"
+            }
+          })
+        end)
 
       # Should handle gracefully without crashing
       assert Process.alive?(view.pid)
@@ -878,11 +968,12 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
     test "handles malformed events gracefully", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/cases")
 
-      log = capture_log(fn ->
-        # Send malformed events
-        render_click(view, "invalid_event", %{})
-        render_change(view, "invalid_change", %{"invalid" => "data"})
-      end)
+      log =
+        capture_log(fn ->
+          # Send malformed events
+          render_click(view, "invalid_event", %{})
+          render_change(view, "invalid_change", %{"invalid" => "data"})
+        end)
 
       # Should remain stable
       assert Process.alive?(view.pid)
@@ -901,7 +992,7 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
 
       # Should have ARIA labels
       assert html =~ "aria-label" or html =~ "aria-describedby"
-      
+
       # Should have proper form labels
       assert has_element?(view, "label[for]")
     end

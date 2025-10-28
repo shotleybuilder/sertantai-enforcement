@@ -7,7 +7,7 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
   # and Legl.Services.Airtable modules that need to be updated
   alias EhsEnforcement.Legislation.TypeCode
   alias EhsEnforcement.Integrations.Airtable, as: AT
-  
+
   require Logger
 
   @lrt %{
@@ -124,7 +124,6 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
   end
 
   defp breaches_clean(breaches) do
-
     breaches_clean =
       split_breach_into_title_year_article(breaches)
       |> Enum.reduce({[], []}, fn breach, acc ->
@@ -279,7 +278,6 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
 
     case Map.get(@lrt, search_term) do
       nil ->
-
         breach
         |> Map.put(:type_code, type_code(breach))
         |> get_linked_airtable_record()
@@ -318,7 +316,7 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
          "Offshore Installations and Wells (Design and Construction, etc.) Regulations"
        ),
        do: "1996"
-       
+
   # Catch-all for unknown legislation - return nil so we can handle it gracefully
   defp get_missing_year(_unknown_title), do: nil
 
@@ -405,39 +403,42 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
 
   @doc """
   Process HSE breaches with improved legislation deduplication.
-  
+
   This function replaces the legacy breach processing with a new approach that:
   1. Uses normalized legislation titles
   2. Prevents duplicate legislation records
   3. Works with the find_or_create_legislation system
-  
+
   ## Parameters
   - `breaches` - List of breach strings from HSE data
   - `opts` - Processing options
-  
+
   ## Returns
   - `{:ok, processed_breaches}` - List of processed breach data with legislation IDs
   - `{:error, reason}` - Processing error
   """
-  @spec process_breaches_with_deduplication(list(String.t()), keyword()) :: 
-    {:ok, list(map())} | {:error, term()}
+  @spec process_breaches_with_deduplication(list(String.t()), keyword()) ::
+          {:ok, list(map())} | {:error, term()}
   def process_breaches_with_deduplication(breaches, opts \\ []) when is_list(breaches) do
     Logger.info("Processing #{length(breaches)} HSE breaches with deduplication")
-    
+
     try do
-      processed_breaches = breaches
-      |> Enum.with_index(1)
-      |> Enum.map(fn {breach_text, sequence} ->
-        process_single_breach_with_deduplication(breach_text, sequence, opts)
-      end)
-      |> Enum.filter(fn
-        {:ok, _} -> true
-        {:error, reason} -> 
-          Logger.warning("Failed to process breach: #{inspect(reason)}")
-          false
-      end)
-      |> Enum.map(fn {:ok, breach_data} -> breach_data end)
-      
+      processed_breaches =
+        breaches
+        |> Enum.with_index(1)
+        |> Enum.map(fn {breach_text, sequence} ->
+          process_single_breach_with_deduplication(breach_text, sequence, opts)
+        end)
+        |> Enum.filter(fn
+          {:ok, _} ->
+            true
+
+          {:error, reason} ->
+            Logger.warning("Failed to process breach: #{inspect(reason)}")
+            false
+        end)
+        |> Enum.map(fn {:ok, breach_data} -> breach_data end)
+
       Logger.info("Successfully processed #{length(processed_breaches)} breaches")
       {:ok, processed_breaches}
     rescue
@@ -450,8 +451,8 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
   @doc """
   Process a single HSE breach string into structured legislation data.
   """
-  @spec process_single_breach_with_deduplication(String.t(), integer(), keyword()) :: 
-    {:ok, map()} | {:error, term()}
+  @spec process_single_breach_with_deduplication(String.t(), integer(), keyword()) ::
+          {:ok, map()} | {:error, term()}
   def process_single_breach_with_deduplication(breach_text, sequence, _opts \\ []) do
     try do
       # Parse the breach text into components
@@ -469,13 +470,13 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
                 offence_description: build_offence_description(components),
                 original_breach_text: breach_text
               }
-              
+
               {:ok, breach_data}
-            
+
             {:error, reason} ->
               {:error, {:legislation_error, reason}}
           end
-        
+
         {:error, reason} ->
           {:error, {:parsing_error, reason}}
       end
@@ -487,7 +488,7 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
 
   @doc """
   Parse HSE breach text into structured components.
-  
+
   HSE breach format: "Act/Regulation Title / Section Reference"
   Examples:
   - "Health and Safety at Work Act 1974 / Section 2(1)"
@@ -496,36 +497,39 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
   @spec parse_hse_breach_components(String.t()) :: {:ok, map()} | {:error, term()}
   def parse_hse_breach_components(breach_text) when is_binary(breach_text) do
     try do
-      components = breach_text
-      |> String.trim()
-      |> String.trim_trailing(" /")
-      |> String.split("/")
-      |> Enum.map(&String.trim/1)
-      |> case do
-        [title_year, section] ->
-          title_year_components = parse_title_and_year(title_year)
-          %{
-            title: title_year_components.title,
-            year: title_year_components.year,
-            section: normalize_section_reference(section)
-          }
-        
-        [title_year] ->
-          title_year_components = parse_title_and_year(title_year)
-          %{
-            title: title_year_components.title,
-            year: title_year_components.year,
-            section: nil
-          }
-        
-        _ ->
-          %{
-            title: breach_text,
-            year: nil,
-            section: nil
-          }
-      end
-      
+      components =
+        breach_text
+        |> String.trim()
+        |> String.trim_trailing(" /")
+        |> String.split("/")
+        |> Enum.map(&String.trim/1)
+        |> case do
+          [title_year, section] ->
+            title_year_components = parse_title_and_year(title_year)
+
+            %{
+              title: title_year_components.title,
+              year: title_year_components.year,
+              section: normalize_section_reference(section)
+            }
+
+          [title_year] ->
+            title_year_components = parse_title_and_year(title_year)
+
+            %{
+              title: title_year_components.title,
+              year: title_year_components.year,
+              section: nil
+            }
+
+          _ ->
+            %{
+              title: breach_text,
+              year: nil,
+              section: nil
+            }
+        end
+
       {:ok, components}
     rescue
       error ->
@@ -540,16 +544,19 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
           title: clean_hse_title(title),
           year: String.to_integer(year)
         }
-      
+
       nil ->
         # No year found, try to recover from missing year
         cleaned_title = clean_hse_title(title_year_string)
+
         case get_missing_year(cleaned_title) do
           nil ->
             # Unknown legislation without year information
             %{title: cleaned_title}
+
           year when is_binary(year) ->
             %{title: cleaned_title, year: String.to_integer(year)}
+
           year when is_integer(year) ->
             %{title: cleaned_title, year: year}
         end
@@ -578,7 +585,7 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
       "CDM" => "Construction (Design and Management) Regulations",
       "COMAH" => "Control of Major Accident Hazards Regulations"
     }
-    
+
     # Check if the title is exactly an abbreviation
     case Map.get(abbreviations, String.upcase(title)) do
       nil -> title
@@ -604,31 +611,32 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
   def find_or_create_hse_legislation(%{title: title, year: year} = components) do
     # First check the static lookup table for known HSE legislation
     lookup_key = build_lookup_key(title, year)
-    
+
     case Map.get(@lrt, lookup_key) do
       {_airtable_id, canonical_title, type_code, year_str, number_str} ->
         # Use canonical data from lookup table
         Logger.debug("Found HSE legislation in lookup table: #{canonical_title}")
-        
+
         EhsEnforcement.Enforcement.find_or_create_legislation(
           canonical_title,
           String.to_integer(year_str),
           String.to_integer(number_str),
           map_type_code_to_atom(type_code)
         )
-      
+
       nil ->
         # Not in lookup table, use normalized processing
         Logger.debug("HSE legislation not in lookup table, using normalized processing: #{title}")
-        
+
         # Determine number from context if possible
         number = extract_number_from_hse_context(components)
-        
+
         EhsEnforcement.Enforcement.find_or_create_legislation(
           title,
           year,
           number,
-          nil  # Let the utility determine type
+          # Let the utility determine type
+          nil
         )
     end
   end
@@ -656,6 +664,7 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
 
   defp build_offence_description(%{title: title, section: section}) do
     base = title
+
     if section do
       "#{base} - #{section}"
     else
@@ -665,30 +674,36 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
 
   @doc """
   Convert HSE breaches to offence records using the new system.
-  
+
   This function creates offence records that link to the deduplicated legislation.
   """
-  @spec create_hse_offences(String.t(), list(String.t()), keyword()) :: 
-    {:ok, list(struct())} | {:error, term()}
+  @spec create_hse_offences(String.t(), list(String.t()), keyword()) ::
+          {:ok, list(struct())} | {:error, term()}
   def create_hse_offences(case_id, breach_texts, opts \\ []) do
     case process_breaches_with_deduplication(breach_texts, opts) do
       {:ok, processed_breaches} ->
         # Create offence records
-        offences = processed_breaches
-        |> Enum.map(fn breach_data ->
-          %{
-            case_id: case_id,
-            legislation_id: breach_data.legislation_id,
-            offence_description: breach_data.offence_description,
-            legislation_part: breach_data.legislation_part,
-            sequence_number: breach_data.sequence_number,
-            fine: calculate_proportional_fine(opts[:total_fine], length(processed_breaches), breach_data.sequence_number - 1)
-          }
-        end)
-        
+        offences =
+          processed_breaches
+          |> Enum.map(fn breach_data ->
+            %{
+              case_id: case_id,
+              legislation_id: breach_data.legislation_id,
+              offence_description: breach_data.offence_description,
+              legislation_part: breach_data.legislation_part,
+              sequence_number: breach_data.sequence_number,
+              fine:
+                calculate_proportional_fine(
+                  opts[:total_fine],
+                  length(processed_breaches),
+                  breach_data.sequence_number - 1
+                )
+            }
+          end)
+
         # Batch create the offences
         EhsEnforcement.Enforcement.bulk_create_offences(offences)
-      
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -696,6 +711,7 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
 
   defp calculate_proportional_fine(nil, _count, _index), do: Decimal.new("0.00")
   defp calculate_proportional_fine(total_fine, 1, _index), do: total_fine
+
   defp calculate_proportional_fine(total_fine, count, _index) when count > 1 do
     Decimal.div(total_fine, count) |> Decimal.round(2)
   end

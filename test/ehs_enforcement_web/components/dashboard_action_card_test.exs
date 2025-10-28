@@ -18,10 +18,10 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_actions: []
       }
 
-      html = rendered_to_string(~H"""
-      <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
-      </.dashboard_action_card>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_action_card title={@title} icon={@icon} theme={@theme}></.dashboard_action_card>
+        """)
 
       assert html =~ "Test Card"
       assert html =~ "📁"
@@ -51,10 +51,10 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
           admin_actions: []
         }
 
-        html = rendered_to_string(~H"""
-        <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
-        </.dashboard_action_card>
-        """)
+        html =
+          rendered_to_string(~H"""
+          <.dashboard_action_card title={@title} icon={@icon} theme={@theme}></.dashboard_action_card>
+          """)
 
         for class <- String.split(expected_classes, " ") do
           assert html =~ class, "Expected #{class} for theme #{theme}"
@@ -75,10 +75,11 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_actions: []
       }
 
-      html = rendered_to_string(~H"""
-      <.dashboard_action_card title={@title} icon={@icon} theme={@theme} loading={@loading}>
-      </.dashboard_action_card>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_action_card title={@title} icon={@icon} theme={@theme} loading={@loading}>
+        </.dashboard_action_card>
+        """)
 
       assert html =~ "animate-spin"
       assert html =~ "pointer-events-none"
@@ -98,10 +99,11 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_actions: []
       }
 
-      html = rendered_to_string(~H"""
-      <.dashboard_action_card title={@title} icon={@icon} theme={@theme} error={@error}>
-      </.dashboard_action_card>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_action_card title={@title} icon={@icon} theme={@theme} error={@error}>
+        </.dashboard_action_card>
+        """)
 
       assert html =~ "Something went wrong"
       assert html =~ "bg-red-50"
@@ -123,13 +125,14 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_actions: []
       }
 
-      html = rendered_to_string(~H"""
-      <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
-        <:metrics>
-          <div class="metric-content">Test Metric</div>
-        </:metrics>
-      </.dashboard_action_card>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
+          <:metrics>
+            <div class="metric-content">Test Metric</div>
+          </:metrics>
+        </.dashboard_action_card>
+        """)
 
       assert html =~ "Test Metric"
       assert html =~ "metric-content"
@@ -148,13 +151,14 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_actions: []
       }
 
-      html = rendered_to_string(~H"""
-      <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
-        <:actions>
-          <button class="test-action">Test Action</button>
-        </:actions>
-      </.dashboard_action_card>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
+          <:actions>
+            <button class="test-action">Test Action</button>
+          </:actions>
+        </.dashboard_action_card>
+        """)
 
       assert html =~ "Test Action"
       assert html =~ "test-action"
@@ -173,13 +177,14 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_actions: [%{visible: true}]
       }
 
-      html = rendered_to_string(~H"""
-      <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
-        <:admin_actions visible={true}>
-          <button class="admin-action">Admin Action</button>
-        </:admin_actions>
-      </.dashboard_action_card>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
+          <:admin_actions visible={true}>
+            <button class="admin-action">Admin Action</button>
+          </:admin_actions>
+        </.dashboard_action_card>
+        """)
 
       assert html =~ "Admin Action"
       assert html =~ "admin-action"
@@ -199,13 +204,14 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_actions: [%{visible: false}]
       }
 
-      html = rendered_to_string(~H"""
-      <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
-        <:admin_actions visible={false}>
-          <button class="admin-action">Admin Action</button>
-        </:admin_actions>
-      </.dashboard_action_card>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
+          <:admin_actions visible={false}>
+            <button class="admin-action">Admin Action</button>
+          </:admin_actions>
+        </.dashboard_action_card>
+        """)
 
       assert html =~ "hidden"
     end
@@ -223,10 +229,10 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_actions: []
       }
 
-      html = rendered_to_string(~H"""
-      <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
-      </.dashboard_action_card>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_action_card title={@title} icon={@icon} theme={@theme}></.dashboard_action_card>
+        """)
 
       assert html =~ ~r/role="article"/
       assert html =~ ~r/aria-labelledby="card-title-accessible-card"/
@@ -247,10 +253,11 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_actions: []
       }
 
-      html = rendered_to_string(~H"""
-      <.dashboard_action_card title={@title} icon={@icon} theme={@theme} class={@class}>
-      </.dashboard_action_card>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_action_card title={@title} icon={@icon} theme={@theme} class={@class}>
+        </.dashboard_action_card>
+        """)
 
       assert html =~ "custom-class"
       assert html =~ "another-class"
@@ -261,12 +268,13 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
     test "renders grid layout with responsive classes" do
       assigns = %{}
 
-      html = rendered_to_string(~H"""
-      <.dashboard_card_grid>
-        <div>Card 1</div>
-        <div>Card 2</div>
-      </.dashboard_card_grid>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_card_grid>
+          <div>Card 1</div>
+          <div>Card 2</div>
+        </.dashboard_card_grid>
+        """)
 
       assert html =~ "grid"
       assert html =~ "lg:grid-cols-4"
@@ -283,11 +291,12 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
     test "applies custom CSS classes to grid" do
       assigns = %{}
 
-      html = rendered_to_string(~H"""
-      <.dashboard_card_grid class="custom-grid">
-        <div>Card</div>
-      </.dashboard_card_grid>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_card_grid class="custom-grid">
+          <div>Card</div>
+        </.dashboard_card_grid>
+        """)
 
       assert html =~ "custom-grid"
     end
@@ -302,9 +311,10 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         class: ""
       }
 
-      html = rendered_to_string(~H"""
-      <.metric_item label={@label} value={@value} />
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.metric_item label={@label} value={@value} />
+        """)
 
       assert html =~ "Total Cases"
       assert html =~ "1,003"
@@ -320,9 +330,10 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         class: ""
       }
 
-      html = rendered_to_string(~H"""
-      <.metric_item label={@label} value={@value} sublabel={@sublabel} />
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.metric_item label={@label} value={@value} sublabel={@sublabel} />
+        """)
 
       assert html =~ "Recent Cases"
       assert html =~ "42"
@@ -338,9 +349,10 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         class: "custom-metric-class"
       }
 
-      html = rendered_to_string(~H"""
-      <.metric_item label={@label} value={@value} class={@class} />
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.metric_item label={@label} value={@value} class={@class} />
+        """)
 
       assert html =~ "custom-metric-class"
     end
@@ -353,11 +365,12 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         disabled: false
       }
 
-      html = rendered_to_string(~H"""
-      <.card_action_button phx-click="test_action">
-        Test Button
-      </.card_action_button>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.card_action_button phx-click="test_action">
+          Test Button
+        </.card_action_button>
+        """)
 
       assert html =~ "Test Button"
       assert html =~ "bg-indigo-600"
@@ -374,11 +387,12 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         disabled: true
       }
 
-      html = rendered_to_string(~H"""
-      <.card_action_button disabled={true}>
-        Disabled Button
-      </.card_action_button>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.card_action_button disabled={true}>
+          Disabled Button
+        </.card_action_button>
+        """)
 
       assert html =~ "Disabled Button"
       assert html =~ "bg-gray-100"
@@ -393,9 +407,10 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         disabled: false
       }
 
-      html = rendered_to_string(~H"""
-      <.card_action_button>Focus Test</.card_action_button>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.card_action_button>Focus Test</.card_action_button>
+        """)
 
       assert html =~ "focus:outline-none"
       assert html =~ "focus:ring-2"
@@ -412,11 +427,12 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_only: false
       }
 
-      html = rendered_to_string(~H"""
-      <.card_secondary_button phx-click="secondary_action">
-        Secondary Button
-      </.card_secondary_button>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.card_secondary_button phx-click="secondary_action">
+          Secondary Button
+        </.card_secondary_button>
+        """)
 
       assert html =~ "Secondary Button"
       assert html =~ "bg-white"
@@ -434,11 +450,12 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_only: false
       }
 
-      html = rendered_to_string(~H"""
-      <.card_secondary_button disabled={true}>
-        Disabled Secondary
-      </.card_secondary_button>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.card_secondary_button disabled={true}>
+          Disabled Secondary
+        </.card_secondary_button>
+        """)
 
       assert html =~ "bg-gray-50"
       assert html =~ "text-gray-400"
@@ -454,11 +471,12 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_only: true
       }
 
-      html = rendered_to_string(~H"""
-      <.card_secondary_button admin_only={true}>
-        Admin Button
-      </.card_secondary_button>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.card_secondary_button admin_only={true}>
+          Admin Button
+        </.card_secondary_button>
+        """)
 
       assert html =~ "Admin Button"
       assert html =~ "ADMIN"
@@ -475,9 +493,10 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_only: false
       }
 
-      html = rendered_to_string(~H"""
-      <.card_secondary_button>Focus Test</.card_secondary_button>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.card_secondary_button>Focus Test</.card_secondary_button>
+        """)
 
       assert html =~ "focus:outline-none"
       assert html =~ "focus:ring-2"
@@ -500,23 +519,24 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         admin_actions: [%{visible: true}]
       }
 
-      html = rendered_to_string(~H"""
-      <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
-        <:metrics>
-          <.metric_item label="Total Items" value="100" sublabel="All time" />
-        </:metrics>
-        <:actions>
-          <.card_action_button phx-click="primary_action">
-            Primary Action
-          </.card_action_button>
-        </:actions>
-        <:admin_actions visible={true}>
-          <.card_secondary_button admin_only={true} phx-click="admin_action">
-            Admin Action
-          </.card_secondary_button>
-        </:admin_actions>
-      </.dashboard_action_card>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_action_card title={@title} icon={@icon} theme={@theme}>
+          <:metrics>
+            <.metric_item label="Total Items" value="100" sublabel="All time" />
+          </:metrics>
+          <:actions>
+            <.card_action_button phx-click="primary_action">
+              Primary Action
+            </.card_action_button>
+          </:actions>
+          <:admin_actions visible={true}>
+            <.card_secondary_button admin_only={true} phx-click="admin_action">
+              Admin Action
+            </.card_secondary_button>
+          </:admin_actions>
+        </.dashboard_action_card>
+        """)
 
       # Card structure
       assert html =~ "Complete Card"
@@ -545,22 +565,23 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
     test "grid layout with multiple themed cards" do
       assigns = %{}
 
-      html = rendered_to_string(~H"""
-      <.dashboard_card_grid>
-        <.dashboard_action_card title="Blue Card" icon="🔵" theme="blue">
-          <:metrics><.metric_item label="Blue Metric" value="1" /></:metrics>
-        </.dashboard_action_card>
-        <.dashboard_action_card title="Yellow Card" icon="🟡" theme="yellow">
-          <:metrics><.metric_item label="Yellow Metric" value="2" /></:metrics>
-        </.dashboard_action_card>
-        <.dashboard_action_card title="Purple Card" icon="🟣" theme="purple">
-          <:metrics><.metric_item label="Purple Metric" value="3" /></:metrics>
-        </.dashboard_action_card>
-        <.dashboard_action_card title="Green Card" icon="🟢" theme="green">
-          <:metrics><.metric_item label="Green Metric" value="4" /></:metrics>
-        </.dashboard_action_card>
-      </.dashboard_card_grid>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_card_grid>
+          <.dashboard_action_card title="Blue Card" icon="🔵" theme="blue">
+            <:metrics><.metric_item label="Blue Metric" value="1" /></:metrics>
+          </.dashboard_action_card>
+          <.dashboard_action_card title="Yellow Card" icon="🟡" theme="yellow">
+            <:metrics><.metric_item label="Yellow Metric" value="2" /></:metrics>
+          </.dashboard_action_card>
+          <.dashboard_action_card title="Purple Card" icon="🟣" theme="purple">
+            <:metrics><.metric_item label="Purple Metric" value="3" /></:metrics>
+          </.dashboard_action_card>
+          <.dashboard_action_card title="Green Card" icon="🟢" theme="green">
+            <:metrics><.metric_item label="Green Metric" value="4" /></:metrics>
+          </.dashboard_action_card>
+        </.dashboard_card_grid>
+        """)
 
       # Grid structure
       assert html =~ "lg:grid-cols-4"
@@ -590,11 +611,12 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
     test "card grid includes all responsive breakpoints" do
       assigns = %{}
 
-      html = rendered_to_string(~H"""
-      <.dashboard_card_grid>
-        <div>Test Card</div>
-      </.dashboard_card_grid>
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.dashboard_card_grid>
+          <div>Test Card</div>
+        </.dashboard_card_grid>
+        """)
 
       # Mobile: 1 column
       assert html =~ "grid-cols-1"
@@ -618,9 +640,10 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCardTest do
         class: ""
       }
 
-      html = rendered_to_string(~H"""
-      <.metric_item label={@label} value={@value} />
-      """)
+      html =
+        rendered_to_string(~H"""
+        <.metric_item label={@label} value={@value} />
+        """)
 
       assert html =~ "text-center lg:text-left"
     end

@@ -1,7 +1,7 @@
 defmodule EhsEnforcement.Config.Environment do
   @moduledoc """
   Environment variable management and documentation.
-  
+
   Handles loading, validation, and documentation of all environment
   variables used by the EHS Enforcement application.
   """
@@ -142,18 +142,19 @@ defmodule EhsEnforcement.Config.Environment do
   """
   def check_missing_required do
     required_vars = get_required_vars()
-    
+
     Enum.flat_map(required_vars, fn var ->
       var_name = var.name
       value = System.get_env(var_name)
-      
+
       cond do
         value in [nil, ""] ->
           [var_name]
-        
+
         validate_var(var_name, value) != :ok ->
-          [var_name]  # Include invalid variables as "missing"
-        
+          # Include invalid variables as "missing"
+          [var_name]
+
         true ->
           []
       end
@@ -166,7 +167,7 @@ defmodule EhsEnforcement.Config.Environment do
   def get_environment_documentation do
     required_docs = generate_required_var_docs()
     optional_docs = generate_optional_var_docs()
-    
+
     """
     # Environment Variables
 
@@ -209,10 +210,10 @@ defmodule EhsEnforcement.Config.Environment do
     case File.read(file_path) do
       {:ok, content} ->
         parse_and_load_env_content(content)
-      
+
       {:error, :enoent} ->
         {:error, :file_not_found}
-      
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -224,16 +225,18 @@ defmodule EhsEnforcement.Config.Environment do
   def export_template(:env) do
     required_vars = get_required_vars()
     optional_vars = get_optional_vars()
-    
-    required_section = Enum.map_join(required_vars, "\n", fn var ->
-      "# Required: #{var.description}\n#{var.name}="
-    end)
-    
-    optional_section = Enum.map_join(optional_vars, "\n", fn var ->
-      default_comment = if var.default, do: "\n# Default: #{var.default}", else: ""
-      "# Optional: #{var.description}#{default_comment}\n#{var.name}=#{var.default || ""}"
-    end)
-    
+
+    required_section =
+      Enum.map_join(required_vars, "\n", fn var ->
+        "# Required: #{var.description}\n#{var.name}="
+      end)
+
+    optional_section =
+      Enum.map_join(optional_vars, "\n", fn var ->
+        default_comment = if var.default, do: "\n# Default: #{var.default}", else: ""
+        "# Optional: #{var.description}#{default_comment}\n#{var.name}=#{var.default || ""}"
+      end)
+
     """
     # EHS Enforcement Application Environment Variables
 
@@ -245,11 +248,12 @@ defmodule EhsEnforcement.Config.Environment do
 
   def export_template(:docker_compose) do
     all_vars = get_required_vars() ++ get_optional_vars()
-    
-    env_lines = Enum.map_join(all_vars, "\n      ", fn var ->
-      "- #{var.name}=${#{var.name}}"
-    end)
-    
+
+    env_lines =
+      Enum.map_join(all_vars, "\n      ", fn var ->
+        "- #{var.name}=${#{var.name}}"
+      end)
+
     """
     # Docker Compose environment section
     environment:
@@ -259,12 +263,13 @@ defmodule EhsEnforcement.Config.Environment do
 
   def export_template(:kubernetes) do
     optional_vars = get_optional_vars()
-    
-    config_data = Enum.map_join(optional_vars, "\n  ", fn var ->
-      value = var.default || "changeme"
-      "#{var.name}: \"#{value}\""
-    end)
-    
+
+    config_data =
+      Enum.map_join(optional_vars, "\n  ", fn var ->
+        value = var.default || "changeme"
+        "#{var.name}: \"#{value}\""
+      end)
+
     """
     apiVersion: v1
     kind: ConfigMap
@@ -283,7 +288,8 @@ defmodule EhsEnforcement.Config.Environment do
       "prod" -> :prod
       "dev" -> :dev
       "test" -> :test
-      _ -> :test  # Default for our current context
+      # Default for our current context
+      _ -> :test
     end
   end
 
@@ -330,6 +336,7 @@ defmodule EhsEnforcement.Config.Environment do
     get_optional_vars()
     |> Enum.map_join("\n\n", fn var ->
       default_text = if var.default, do: "\n**Default**: `#{var.default}`", else: ""
+
       """
       ### #{var.name}
       **Description**: #{var.description}#{default_text}
@@ -341,8 +348,8 @@ defmodule EhsEnforcement.Config.Environment do
 
   defp parse_and_load_env_content(content) do
     lines = String.split(content, "\n")
-    
-    env_vars = 
+
+    env_vars =
       lines
       |> Enum.filter(fn line ->
         trimmed = String.trim(line)
@@ -353,15 +360,16 @@ defmodule EhsEnforcement.Config.Environment do
 
     # Validate all variables before setting them
     validation_errors = validate_env_vars(env_vars)
-    
+
     case validation_errors do
       [] ->
         # Set all environment variables
         Enum.each(env_vars, fn {key, value} ->
           System.put_env(key, value)
         end)
+
         :ok
-      
+
       errors ->
         {:error, errors}
     end
@@ -371,7 +379,7 @@ defmodule EhsEnforcement.Config.Environment do
     case String.split(line, "=", parts: 2) do
       [key, value] ->
         {String.trim(key), String.trim(value)}
-      
+
       _ ->
         nil
     end

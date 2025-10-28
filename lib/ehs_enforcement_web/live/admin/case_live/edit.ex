@@ -1,21 +1,22 @@
 defmodule EhsEnforcementWeb.Admin.CaseLive.Edit do
   use EhsEnforcementWeb, :live_view
-  
+
   alias EhsEnforcement.Enforcement.Case
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     case Ash.get(Case, id, actor: socket.assigns.current_user, load: [:agency, :offender]) do
       {:ok, case_record} ->
-        form = AshPhoenix.Form.for_update(case_record, :update, forms: [auto?: false]) |> to_form()
-        
+        form =
+          AshPhoenix.Form.for_update(case_record, :update, forms: [auto?: false]) |> to_form()
+
         {:ok,
          socket
          |> assign(:case, case_record)
          |> assign(:form, form)
          |> assign(:page_title, "Edit Case")
          |> assign(:loading, false)}
-      
+
       {:error, _} ->
         {:ok,
          socket
@@ -43,7 +44,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Edit do
          socket
          |> put_flash(:info, "Case #{case_record.regulator_id} updated successfully")
          |> push_navigate(to: ~p"/admin/cases")}
-      
+
       {:error, form} ->
         {:noreply, assign(socket, :form, form)}
     end
@@ -59,14 +60,17 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Edit do
   defp format_datetime(datetime) when is_struct(datetime, NaiveDateTime) do
     Calendar.strftime(datetime, "%Y-%m-%d %H:%M:%S")
   end
+
   defp format_datetime(datetime) when is_struct(datetime, DateTime) do
     Calendar.strftime(datetime, "%Y-%m-%d %H:%M:%S")
   end
+
   defp format_datetime(_), do: "—"
 
   defp format_date(date) when is_struct(date, Date) do
     Calendar.strftime(date, "%Y-%m-%d")
   end
+
   defp format_date(_), do: ""
 
   defp field_description(field) do
@@ -164,26 +168,33 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Edit do
 
   defp select_options(field) do
     case field do
-      :environmental_impact -> [
-        {"None", "none"},
-        {"Minor", "minor"},
-        {"Major", "major"}
-      ]
-      :environmental_receptor -> [
-        {"Land", "land"},
-        {"Water", "water"},
-        {"Air", "air"}
-      ]
-      :offence_action_type -> [
-        {"Court Case", "Court Case"},
-        {"Caution", "Caution"},
-        {"Enforcement Notice", "Enforcement Notice"},
-        {"Prohibition Notice", "Prohibition Notice"},
-        {"Improvement Notice", "Improvement Notice"},
-        {"Simple Caution", "Simple Caution"},
-        {"Formal Caution", "Formal Caution"}
-      ]
-      _ -> []
+      :environmental_impact ->
+        [
+          {"None", "none"},
+          {"Minor", "minor"},
+          {"Major", "major"}
+        ]
+
+      :environmental_receptor ->
+        [
+          {"Land", "land"},
+          {"Water", "water"},
+          {"Air", "air"}
+        ]
+
+      :offence_action_type ->
+        [
+          {"Court Case", "Court Case"},
+          {"Caution", "Caution"},
+          {"Enforcement Notice", "Enforcement Notice"},
+          {"Prohibition Notice", "Prohibition Notice"},
+          {"Improvement Notice", "Improvement Notice"},
+          {"Simple Caution", "Simple Caution"},
+          {"Formal Caution", "Formal Caution"}
+        ]
+
+      _ ->
+        []
     end
   end
 end

@@ -65,7 +65,8 @@ defmodule EhsEnforcement.Scraping.Shared.EnvironmentalHelpers do
       {"minor", _, _} -> "water"
       {_, "minor", _} -> "land"
       {_, _, "minor"} -> "air"
-      _ -> "land"  # Default to land for general environmental cases
+      # Default to land for general environmental cases
+      _ -> "land"
     end
   end
 
@@ -86,9 +87,10 @@ defmodule EhsEnforcement.Scraping.Shared.EnvironmentalHelpers do
   - String of joined impacts (e.g., "major; minor") or nil if no impacts
   """
   def build_environmental_impact_string(water_impact, land_impact, air_impact) do
-    impacts = [water_impact, land_impact, air_impact]
-    |> Enum.filter(&(&1 != nil && &1 != ""))
-    |> Enum.join("; ")
+    impacts =
+      [water_impact, land_impact, air_impact]
+      |> Enum.filter(&(&1 != nil && &1 != ""))
+      |> Enum.join("; ")
 
     case impacts do
       "" -> nil

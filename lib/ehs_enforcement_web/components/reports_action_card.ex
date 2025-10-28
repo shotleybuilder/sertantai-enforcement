@@ -1,15 +1,15 @@
 defmodule EhsEnforcementWeb.Components.ReportsActionCard do
   @moduledoc """
   Reports & Analytics action card component for the dashboard.
-  
+
   Displays export statistics, provides filtered report generation,
   and multi-format export functionality. Open access implementation with
   database protection through mandatory filtering and date constraints.
   Implements the reports card specification from the dashboard action cards design document.
   """
-  
+
   use Phoenix.Component
-  
+
   import EhsEnforcementWeb.Components.DashboardActionCard
 
   @doc """
@@ -27,27 +27,27 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
   def reports_action_card(assigns) do
     # Calculate metrics using pre-computed stats
     assigns = assign_metrics(assigns)
-    
+
     ~H"""
-    <.dashboard_action_card 
-      title="REPORTS & ANALYTICS" 
-      icon="📊" 
-      theme="green" 
+    <.dashboard_action_card
+      title="REPORTS & ANALYTICS"
+      icon="📊"
+      theme="green"
       loading={@loading}
       class={@class}
     >
       <:metrics>
-        <.metric_item 
-          label="Saved Reports" 
-          value={format_number(@saved_reports_count)} 
+        <.metric_item
+          label="Saved Reports"
+          value={format_number(@saved_reports_count)}
         />
-        <.metric_item 
-          label="Last Export" 
-          value={@last_export_display} 
+        <.metric_item
+          label="Last Export"
+          value={@last_export_display}
         />
-        <.metric_item 
-          label="Data Available" 
-          value={@data_available_display} 
+        <.metric_item
+          label="Data Available"
+          value={@data_available_display}
         />
       </:metrics>
 
@@ -56,16 +56,26 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
           <div class="flex items-center justify-between w-full">
             <span>Generate Report</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
           </div>
         </.card_action_button>
-        
+
         <.card_secondary_button disabled={true}>
           <div class="flex items-center justify-between w-full">
             <span>Export Data</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2zm10-12a4 4 0 00-8 0v2a2 2 0 002 2h4a2 2 0 002-2v-2z"/>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2zm10-12a4 4 0 00-8 0v2a2 2 0 002 2h4a2 2 0 002-2v-2z"
+              />
             </svg>
           </div>
         </.card_secondary_button>
@@ -133,22 +143,22 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
   defp format_time_ago(timestamp) do
     now = DateTime.utc_now()
     diff_in_seconds = DateTime.diff(now, timestamp, :second)
-    
+
     cond do
-      diff_in_seconds < 3600 -> 
+      diff_in_seconds < 3600 ->
         minutes = div(diff_in_seconds, 60)
         "#{minutes} min ago"
-        
-      diff_in_seconds < 86400 -> 
+
+      diff_in_seconds < 86400 ->
         hours = div(diff_in_seconds, 3600)
         "#{hours} hours ago"
-        
-      diff_in_seconds < 604800 -> 
+
+      diff_in_seconds < 604_800 ->
         days = div(diff_in_seconds, 86400)
         "#{days} days ago"
-        
-      true -> 
-        weeks = div(diff_in_seconds, 604800)
+
+      true ->
+        weeks = div(diff_in_seconds, 604_800)
         "#{weeks} weeks ago"
     end
   end
@@ -164,7 +174,7 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
 
       # Estimate data size (rough calculation)
       # Assume ~1KB per case, ~0.8KB per notice, ~0.5KB per offender
-      estimated_size_kb = (total_cases * 1.0) + (total_notices * 0.8) + (total_offenders * 0.5)
+      estimated_size_kb = total_cases * 1.0 + total_notices * 0.8 + total_offenders * 0.5
 
       format_data_size(estimated_size_kb)
     rescue
@@ -177,10 +187,12 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
 
   # Format data size in appropriate units
   defp format_data_size(size_kb) when size_kb < 1024, do: "#{Float.round(size_kb, 1)}KB"
+
   defp format_data_size(size_kb) when size_kb < 1_048_576 do
     size_mb = size_kb / 1024
     "#{Float.round(size_mb, 1)}MB"
   end
+
   defp format_data_size(size_kb) do
     size_gb = size_kb / 1_048_576
     "#{Float.round(size_gb, 1)}GB"
@@ -194,8 +206,6 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
     |> String.replace(~r/.{3}(?=.)/, "\\0,")
     |> String.reverse()
   end
-  
+
   defp format_number(number), do: to_string(number)
-
-
 end

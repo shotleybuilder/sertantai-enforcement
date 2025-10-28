@@ -14,11 +14,12 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
   describe "Full Notice Scraping Workflow" do
     setup do
       # Create HSE agency
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
       # Create admin user for actor context
       admin_user_info = %{
@@ -29,21 +30,32 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
         "avatar_url" => "https://github.com/images/avatars/admin",
         "html_url" => "https://github.com/admin"
       }
-      
+
       admin_oauth_tokens = %{
         "access_token" => "test_admin_access_token",
         "token_type" => "Bearer"
       }
 
-      {:ok, admin_user_base} = Ash.create(EhsEnforcement.Accounts.User, %{
-        user_info: admin_user_info,
-        oauth_tokens: admin_oauth_tokens
-      }, action: :register_with_github)
-      
-      {:ok, admin_user} = Ash.update(admin_user_base, %{
-        is_admin: true,
-        admin_checked_at: DateTime.utc_now()
-      }, action: :update_admin_status, actor: admin_user_base)
+      {:ok, admin_user_base} =
+        Ash.create(
+          EhsEnforcement.Accounts.User,
+          %{
+            user_info: admin_user_info,
+            oauth_tokens: admin_oauth_tokens
+          },
+          action: :register_with_github
+        )
+
+      {:ok, admin_user} =
+        Ash.update(
+          admin_user_base,
+          %{
+            is_admin: true,
+            admin_checked_at: DateTime.utc_now()
+          },
+          action: :update_admin_status,
+          actor: admin_user_base
+        )
 
       # Subscribe to PubSub for testing
       :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scraping:global")
@@ -142,15 +154,20 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
       setup_notice_details_mocks(mock_notice_details)
 
       # Create scrape session
-      {:ok, session} = Ash.create(ScrapeSession, %{
-        agency_id: agency.id,
-        data_type: :notice,
-        status: :pending,
-        config: %{
-          pages_to_scrape: 2,
-          starting_page: 1
-        }
-      }, actor: actor)
+      {:ok, session} =
+        Ash.create(
+          ScrapeSession,
+          %{
+            agency_id: agency.id,
+            data_type: :notice,
+            status: :pending,
+            config: %{
+              pages_to_scrape: 2,
+              starting_page: 1
+            }
+          },
+          actor: actor
+        )
 
       # Start the scraping coordinator
       {:ok, coordinator_pid} = ScrapeCoordinator.start_session(session, actor: actor)
@@ -163,6 +180,7 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
         {:DOWN, ^ref, :process, ^coordinator_pid, :normal} ->
           # Coordinator finished normally
           :ok
+
         {:DOWN, ^ref, :process, ^coordinator_pid, reason} ->
           flunk("Coordinator crashed: #{inspect(reason)}")
       after
@@ -199,20 +217,26 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
       assert company_types == [:construction, :crown_body, :limited_company]
 
       # Verify compliance dates
-      compliance_dates = 
+      compliance_dates =
         notices
         |> Enum.filter(& &1.compliance_date)
         |> Enum.map(& &1.compliance_date)
         |> Enum.sort()
-      
+
       assert compliance_dates == [~D[2025-01-15], ~D[2025-02-01]]
 
       # Verify PubSub events were sent
       session_id = session.id
       assert_received {:scraping_started, %{session_id: ^session_id}}
-      assert_received {:scraping_page_completed, %{session_id: ^session_id, page: 1, found: 2, created: 2}}
-      assert_received {:scraping_page_completed, %{session_id: ^session_id, page: 2, found: 1, created: 1}}
-      assert_received {:scraping_completed, %{session_id: ^session_id, total_found: 3, total_created: 3}}
+
+      assert_received {:scraping_page_completed,
+                       %{session_id: ^session_id, page: 1, found: 2, created: 2}}
+
+      assert_received {:scraping_page_completed,
+                       %{session_id: ^session_id, page: 2, found: 1, created: 1}}
+
+      assert_received {:scraping_completed,
+                       %{session_id: ^session_id, total_found: 3, total_created: 3}}
     end
 
     test "handles partial failures gracefully", %{agency: agency, actor: actor} do
@@ -248,15 +272,20 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
       setup_notice_details_mocks(mock_notice_details)
 
       # Create scrape session
-      {:ok, session} = Ash.create(ScrapeSession, %{
-        agency_id: agency.id,
-        data_type: :notice,
-        status: :pending,
-        config: %{
-          pages_to_scrape: 2,
-          starting_page: 1
-        }
-      }, actor: actor)
+      {:ok, session} =
+        Ash.create(
+          ScrapeSession,
+          %{
+            agency_id: agency.id,
+            data_type: :notice,
+            status: :pending,
+            config: %{
+              pages_to_scrape: 2,
+              starting_page: 1
+            }
+          },
+          actor: actor
+        )
 
       # Start scraping
       {:ok, coordinator_pid} = ScrapeCoordinator.start_session(session, actor: actor)
@@ -295,8 +324,10 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
       }
 
       mock_notices_page_1 = [duplicate_notice]
+
       mock_notices_page_2 = [
-        duplicate_notice,  # Duplicate
+        # Duplicate
+        duplicate_notice,
         %{
           "href" => "/notices/2024/12/new-001",
           "noticeNumber" => "IN/2024/NEW001",
@@ -336,15 +367,20 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
       setup_notice_details_mocks(mock_notice_details)
 
       # Create and run session
-      {:ok, session} = Ash.create(ScrapeSession, %{
-        agency_id: agency.id,
-        data_type: :notice,
-        status: :pending,
-        config: %{
-          pages_to_scrape: 2,
-          starting_page: 1
-        }
-      }, actor: actor)
+      {:ok, session} =
+        Ash.create(
+          ScrapeSession,
+          %{
+            agency_id: agency.id,
+            data_type: :notice,
+            status: :pending,
+            config: %{
+              pages_to_scrape: 2,
+              starting_page: 1
+            }
+          },
+          actor: actor
+        )
 
       {:ok, coordinator_pid} = ScrapeCoordinator.start_session(session, actor: actor)
       ref = Process.monitor(coordinator_pid)
@@ -358,8 +394,10 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
       # Verify results
       {:ok, updated_session} = Ash.get(ScrapeSession, session.id, actor: actor)
       assert updated_session.status == :completed
-      assert updated_session.total_found == 3  # 1 + 2
-      assert updated_session.total_created == 2  # Only unique notices
+      # 1 + 2
+      assert updated_session.total_found == 3
+      # Only unique notices
+      assert updated_session.total_created == 2
 
       # Verify only unique notices exist
       {:ok, notices} = Enforcement.list_notices(actor: actor)
@@ -370,31 +408,37 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
 
     test "respects cancellation during scraping", %{agency: agency, actor: actor} do
       # Mock many pages to allow time for cancellation
-      mock_notices = for i <- 1..10 do
-        %{
-          "href" => "/notices/2024/12/notice-#{i}",
-          "noticeNumber" => "IN/2024/#{String.pad_leading("#{i}", 3, "0")}",
-          "title" => "Company #{i} - Improvement Notice",
-          "noticeType" => "Improvement",
-          "dateOfIssue" => "2024-12-01",
-          "complianceDate" => "2025-01-15"
-        }
-      end
+      mock_notices =
+        for i <- 1..10 do
+          %{
+            "href" => "/notices/2024/12/notice-#{i}",
+            "noticeNumber" => "IN/2024/#{String.pad_leading("#{i}", 3, "0")}",
+            "title" => "Company #{i} - Improvement Notice",
+            "noticeType" => "Improvement",
+            "dateOfIssue" => "2024-12-01",
+            "complianceDate" => "2025-01-15"
+          }
+        end
 
       # Set up mocks for 5 pages
       pages_data = Enum.chunk_every(mock_notices, 2) |> Enum.with_index(1)
       setup_notice_list_mocks(Enum.map(pages_data, fn {notices, page} -> {page, notices} end))
 
       # Create session
-      {:ok, session} = Ash.create(ScrapeSession, %{
-        agency_id: agency.id,
-        data_type: :notice,
-        status: :pending,
-        config: %{
-          pages_to_scrape: 5,
-          starting_page: 1
-        }
-      }, actor: actor)
+      {:ok, session} =
+        Ash.create(
+          ScrapeSession,
+          %{
+            agency_id: agency.id,
+            data_type: :notice,
+            status: :pending,
+            config: %{
+              pages_to_scrape: 5,
+              starting_page: 1
+            }
+          },
+          actor: actor
+        )
 
       # Start scraping
       {:ok, coordinator_pid} = ScrapeCoordinator.start_session(session, actor: actor)
@@ -405,6 +449,7 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
 
       # Wait for coordinator to stop
       ref = Process.monitor(coordinator_pid)
+
       receive do
         {:DOWN, ^ref, :process, ^coordinator_pid, _} -> :ok
       after
@@ -414,7 +459,8 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
       # Verify session was cancelled
       {:ok, updated_session} = Ash.get(ScrapeSession, session.id, actor: actor)
       assert updated_session.status == :cancelled
-      assert updated_session.pages_scraped < 5  # Should not have completed all pages
+      # Should not have completed all pages
+      assert updated_session.pages_scraped < 5
     end
   end
 

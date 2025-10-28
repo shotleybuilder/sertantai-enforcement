@@ -5,8 +5,18 @@
       <ol class="flex items-center space-x-4">
         <li>
           <.link navigate={~p"/notices"} class="text-gray-400 hover:text-gray-500">
-            <svg class="flex-shrink-0 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            <svg
+              class="flex-shrink-0 h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd"
+              />
             </svg>
             <span class="ml-2">Back to Notices</span>
           </.link>
@@ -27,16 +37,26 @@
           <div>
             <h1 class="text-2xl font-bold text-gray-900">Notice Details</h1>
             <div class="mt-2 flex items-center space-x-4">
-              <span class={["inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium", notice_type_class(@notice.offence_action_type)]}>
-                <%= @notice.offence_action_type %>
+              <span class={[
+                "inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium",
+                notice_type_class(@notice.offence_action_type)
+              ]}>
+                {@notice.offence_action_type}
               </span>
-              <span data-testid="compliance-status" data-compliance-status={@compliance_status.status} class={["inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium", @compliance_status.badge_class]}>
-                <%= String.capitalize(@compliance_status.status) %>
+              <span
+                data-testid="compliance-status"
+                data-compliance-status={@compliance_status.status}
+                class={[
+                  "inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium",
+                  @compliance_status.badge_class
+                ]}
+              >
+                {String.capitalize(@compliance_status.status)}
                 <%= if @compliance_status.days_remaining do %>
-                  (<%= @compliance_status.days_remaining %> days remaining)
+                  ({@compliance_status.days_remaining} days remaining)
                 <% end %>
                 <%= if @compliance_status.days_overdue do %>
-                  (<%= @compliance_status.days_overdue %> days overdue)
+                  ({@compliance_status.days_overdue} days overdue)
                 <% end %>
               </span>
             </div>
@@ -58,49 +78,48 @@
               Share
             </button>
             
-            <!-- Edit Button for Admin Users -->
+<!-- Edit Button for Admin Users -->
             <.link
               navigate={~p"/admin/notices/#{@notice.id}/edit"}
               class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <.icon name="hero-pencil" class="h-4 w-4 mr-1" />
-              Edit
+              <.icon name="hero-pencil" class="h-4 w-4 mr-1" /> Edit
             </.link>
           </div>
         </div>
       </div>
-
-      <!-- Notice Information -->
+      
+<!-- Notice Information -->
       <div class="border-b border-gray-200">
         <dl class="divide-y divide-gray-200">
           <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
             <dt class="text-sm font-medium text-gray-500">Notice ID</dt>
             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              <%= @notice.regulator_id %>
+              {@notice.regulator_id}
             </dd>
           </div>
-          
+
           <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
             <dt class="text-sm font-medium text-gray-500">Reference Number</dt>
             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              <%= @notice.regulator_ref_number %>
+              {@notice.regulator_ref_number}
             </dd>
           </div>
 
           <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
             <dt class="text-sm font-medium text-gray-500">Notice Date</dt>
             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              <%= format_date(@notice.notice_date) %>
+              {format_date(@notice.notice_date)}
             </dd>
           </div>
 
           <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
             <dt class="text-sm font-medium text-gray-500">Operative Date</dt>
             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              <%= format_date(@notice.operative_date) %>
+              {format_date(@notice.operative_date)}
               <%= if @notice.notice_date && @notice.operative_date do %>
                 <span class="text-sm text-gray-500">
-                  (<%= days_between(@notice.notice_date, @notice.operative_date) %> days from issue)
+                  ({days_between(@notice.notice_date, @notice.operative_date)} days from issue)
                 </span>
               <% end %>
             </dd>
@@ -109,18 +128,18 @@
           <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
             <dt class="text-sm font-medium text-gray-500">Compliance Date</dt>
             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-              <%= format_date(@notice.compliance_date) %>
+              {format_date(@notice.compliance_date)}
               <%= if @notice.notice_date && @notice.compliance_date do %>
                 <span class="text-sm text-gray-500">
-                  (<%= days_between(@notice.notice_date, @notice.compliance_date) %> days from issue)
+                  ({days_between(@notice.notice_date, @notice.compliance_date)} days from issue)
                 </span>
               <% end %>
             </dd>
           </div>
         </dl>
       </div>
-
-      <!-- Agency Information -->
+      
+<!-- Agency Information -->
       <div class="border-b border-gray-200">
         <div class="px-4 py-5 sm:px-6">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Agency Information</h3>
@@ -130,19 +149,19 @@
             <dt class="text-sm font-medium text-gray-500">Agency</dt>
             <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
               <%= if @notice.agency do %>
-                <%= @notice.agency.name %> (<%= String.upcase(to_string(@notice.agency.code)) %>)
+                {@notice.agency.name} ({String.upcase(to_string(@notice.agency.code))})
               <% end %>
             </dd>
           </div>
-
-          <!-- EA-specific fields (only show if present) -->
+          
+<!-- EA-specific fields (only show if present) -->
           <%= if @notice.legal_act do %>
             <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
               <dt class="text-sm font-medium text-gray-500">Legal Act</dt>
               <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <%= @notice.legal_act %>
+                {@notice.legal_act}
                 <%= if @notice.legal_section do %>
-                  - Section <%= @notice.legal_section %>
+                  - Section {@notice.legal_section}
                 <% end %>
               </dd>
             </div>
@@ -161,10 +180,12 @@
                     _ -> "bg-gray-100 text-gray-800"
                   end
                 ]}>
-                  <%= String.capitalize(@notice.environmental_impact) %> Impact
+                  {String.capitalize(@notice.environmental_impact)} Impact
                 </span>
                 <%= if @notice.environmental_receptor do %>
-                  <span class="ml-2 text-gray-500">(<%= String.capitalize(@notice.environmental_receptor) %>)</span>
+                  <span class="ml-2 text-gray-500">
+                    ({String.capitalize(@notice.environmental_receptor)})
+                  </span>
                 <% end %>
               </dd>
             </div>
@@ -174,14 +195,14 @@
             <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
               <dt class="text-sm font-medium text-gray-500">Event Reference</dt>
               <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <%= @notice.regulator_event_reference %>
+                {@notice.regulator_event_reference}
               </dd>
             </div>
           <% end %>
         </dl>
       </div>
-
-      <!-- Offender Information -->
+      
+<!-- Offender Information -->
       <div class="border-b border-gray-200">
         <div class="px-4 py-5 sm:px-6">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Offender Information</h3>
@@ -191,38 +212,38 @@
             <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
               <dt class="text-sm font-medium text-gray-500">Company Name</dt>
               <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <%= @notice.offender.name %>
+                {@notice.offender.name}
               </dd>
             </div>
-            
+
             <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
               <dt class="text-sm font-medium text-gray-500">Local Authority</dt>
               <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <%= @notice.offender.local_authority %>
+                {@notice.offender.local_authority}
               </dd>
             </div>
-            
+
             <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
               <dt class="text-sm font-medium text-gray-500">Postcode</dt>
               <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <%= @notice.offender.postcode %>
+                {@notice.offender.postcode}
               </dd>
             </div>
-            
+
             <%= if @notice.offender.main_activity do %>
               <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
                 <dt class="text-sm font-medium text-gray-500">Main Activity</dt>
                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  <%= @notice.offender.main_activity %>
+                  {@notice.offender.main_activity}
                 </dd>
               </div>
             <% end %>
-            
+
             <%= if @notice.offender.industry do %>
               <div class="px-4 py-4 sm:px-6 sm:grid sm:grid-cols-3 sm:gap-4">
                 <dt class="text-sm font-medium text-gray-500">Industry</dt>
                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  <%= @notice.offender.industry %>
+                  {@notice.offender.industry}
                 </dd>
               </div>
             <% end %>
@@ -233,15 +254,15 @@
           <% end %>
         </dl>
       </div>
-
-      <!-- Notice Body -->
+      
+<!-- Notice Body -->
       <div class="px-4 py-5 sm:px-6">
         <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Notice Details</h3>
         <div class="bg-gray-50 rounded-lg p-4">
           <%= if @notice.notice_body do %>
             <div class="prose prose-sm max-w-none text-gray-700">
               <%= for paragraph <- format_notice_body(@notice.notice_body) do %>
-                <p class="mb-2"><%= paragraph %></p>
+                <p class="mb-2">{paragraph}</p>
               <% end %>
             </div>
           <% else %>
@@ -249,8 +270,8 @@
           <% end %>
         </div>
       </div>
-
-      <!-- Compliance Timeline -->
+      
+<!-- Compliance Timeline -->
       <div class="px-4 py-5 sm:px-6 border-t border-gray-200">
         <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Compliance Timeline</h3>
         <div data-testid="compliance-timeline" class="flow-root">
@@ -259,14 +280,31 @@
               <li>
                 <div class="relative pb-8">
                   <%= if index != length(@timeline_data) - 1 do %>
-                    <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                    <span
+                      class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
+                      aria-hidden="true"
+                    >
+                    </span>
                   <% end %>
                   <div class="relative flex space-x-3">
                     <div>
-                      <span class={["h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white", timeline_status_class(event.status)]}>
+                      <span class={[
+                        "h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white",
+                        timeline_status_class(event.status)
+                      ]}>
                         <%= if event.status == "completed" do %>
-                          <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                          <svg
+                            class="h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clip-rule="evenodd"
+                            />
                           </svg>
                         <% else %>
                           <span class="h-2.5 w-2.5 bg-white rounded-full"></span>
@@ -275,11 +313,11 @@
                     </div>
                     <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
                       <div>
-                        <p class="text-sm font-medium text-gray-900"><%= event.label %></p>
-                        <p class="text-sm text-gray-500"><%= event.description %></p>
+                        <p class="text-sm font-medium text-gray-900">{event.label}</p>
+                        <p class="text-sm text-gray-500">{event.description}</p>
                       </div>
                       <div class="whitespace-nowrap text-right text-sm text-gray-500">
-                        <%= format_short_date(event.date) %>
+                        {format_short_date(event.date)}
                       </div>
                     </div>
                   </div>
@@ -289,8 +327,8 @@
           </ul>
         </div>
       </div>
-
-      <!-- Related Notices -->
+      
+<!-- Related Notices -->
       <%= if @related_notices && length(@related_notices) > 0 do %>
         <div class="px-4 py-5 sm:px-6 border-t border-gray-200">
           <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Related Notices</h3>
@@ -300,16 +338,19 @@
                 <div class="flex justify-between items-start">
                   <div>
                     <div class="flex items-center space-x-2">
-                      <span class={["inline-flex items-center px-2 py-0.5 rounded text-xs font-medium", notice_type_class(related_notice.offence_action_type)]}>
-                        <%= related_notice.offence_action_type %>
+                      <span class={[
+                        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                        notice_type_class(related_notice.offence_action_type)
+                      ]}>
+                        {related_notice.offence_action_type}
                       </span>
                       <span class="text-sm font-medium text-gray-900">
-                        <%= related_notice.regulator_id %>
+                        {related_notice.regulator_id}
                       </span>
                     </div>
                     <p class="mt-1 text-sm text-gray-500">
-                      <%= format_short_date(related_notice.notice_date) %> - 
-                      <%= if related_notice.agency, do: related_notice.agency.name %>
+                      {format_short_date(related_notice.notice_date)} - {if related_notice.agency,
+                        do: related_notice.agency.name}
                     </p>
                   </div>
                   <.link

@@ -17,30 +17,33 @@ defmodule EhsEnforcement.Repo.Migrations.AddDataValidationConstraints do
   def up do
     # Cases table CHECK constraints
     create constraint(:cases, :offence_fine_non_negative,
-      check: "offence_fine IS NULL OR offence_fine >= 0",
-      comment: "Fine amount must be non-negative"
-    )
+             check: "offence_fine IS NULL OR offence_fine >= 0",
+             comment: "Fine amount must be non-negative"
+           )
 
     create constraint(:cases, :offence_costs_non_negative,
-      check: "offence_costs IS NULL OR offence_costs >= 0",
-      comment: "Costs amount must be non-negative"
-    )
+             check: "offence_costs IS NULL OR offence_costs >= 0",
+             comment: "Costs amount must be non-negative"
+           )
 
     create constraint(:cases, :dates_logical_order,
-      check: "offence_hearing_date IS NULL OR offence_action_date IS NULL OR offence_hearing_date >= offence_action_date",
-      comment: "Hearing date must be on or after action date"
-    )
+             check:
+               "offence_hearing_date IS NULL OR offence_action_date IS NULL OR offence_hearing_date >= offence_action_date",
+             comment: "Hearing date must be on or after action date"
+           )
 
     # Notices table CHECK constraints
     create constraint(:notices, :dates_logical_order,
-      check: "compliance_date IS NULL OR notice_date IS NULL OR compliance_date >= notice_date",
-      comment: "Compliance date must be on or after notice date"
-    )
+             check:
+               "compliance_date IS NULL OR notice_date IS NULL OR compliance_date >= notice_date",
+             comment: "Compliance date must be on or after notice date"
+           )
 
     create constraint(:notices, :operative_date_after_notice,
-      check: "operative_date IS NULL OR notice_date IS NULL OR operative_date >= notice_date",
-      comment: "Operative date must be on or after notice date"
-    )
+             check:
+               "operative_date IS NULL OR notice_date IS NULL OR operative_date >= notice_date",
+             comment: "Operative date must be on or after notice date"
+           )
   end
 
   def down do

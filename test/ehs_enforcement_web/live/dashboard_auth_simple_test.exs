@@ -1,15 +1,16 @@
 defmodule EhsEnforcementWeb.DashboardAuthSimpleTest do
   use EhsEnforcementWeb.ConnCase
   import Phoenix.LiveViewTest
-  
+
   describe "DashboardLive authentication integration" do
     setup do
       # Create test agency for dashboard functionality
-      {:ok, hse_agency} = EhsEnforcement.Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        EhsEnforcement.Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
       %{agency: hse_agency}
     end
@@ -32,10 +33,10 @@ defmodule EhsEnforcementWeb.DashboardAuthSimpleTest do
         is_admin: false,
         admin_checked_at: DateTime.utc_now()
       }
-      
+
       # Sign in the user by setting in connection assigns
       conn = conn |> assign(:current_user, user)
-      
+
       {:ok, view, html} = live(conn, "/dashboard")
 
       # Should show user's name
@@ -57,10 +58,10 @@ defmodule EhsEnforcementWeb.DashboardAuthSimpleTest do
         is_admin: true,
         admin_checked_at: DateTime.utc_now()
       }
-      
+
       # Sign in the admin user
       conn = conn |> assign(:current_user, admin_user)
-      
+
       {:ok, view, html} = live(conn, "/dashboard")
 
       # Should show user's name
@@ -69,10 +70,10 @@ defmodule EhsEnforcementWeb.DashboardAuthSimpleTest do
       assert html =~ "ADMIN"
       # Should show sign-out link
       assert has_element?(view, "a[href='/sign-out']")
-      
+
       # Should show admin actions
       assert html =~ "[ADMIN] > Add New Case"
-      
+
       # Admin buttons should have proper phx-click handlers
       assert has_element?(view, "button[phx-click='navigate_to_new_case']")
     end
@@ -87,21 +88,22 @@ defmodule EhsEnforcementWeb.DashboardAuthSimpleTest do
         is_admin: false,
         admin_checked_at: DateTime.utc_now()
       }
-      
+
       conn = conn |> assign(:current_user, regular_user)
-      
+
       {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should NOT show admin actions for regular user
       refute html =~ "[ADMIN] > Add New Case"
       refute html =~ "[ADMIN] > Add New Notice"
-      refute html =~ "ADMIN" # No admin badge
+      # No admin badge
+      refute html =~ "ADMIN"
     end
 
     test "handles nil current_user gracefully", %{conn: conn} do
       # Explicitly set current_user to nil
       conn = conn |> assign(:current_user, nil)
-      
+
       {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should not crash and show sign-in option
@@ -120,14 +122,13 @@ defmodule EhsEnforcementWeb.DashboardAuthSimpleTest do
         is_admin: true,
         admin_checked_at: DateTime.utc_now()
       }
-      
+
       conn = conn |> assign(:current_user, admin_user)
       {:ok, view, _html} = live(conn, "/dashboard")
 
       # Test case navigation
       view |> element("button[phx-click='navigate_to_new_case']") |> render_click()
       assert_redirected(view, "/cases/new")
-
     end
   end
 end

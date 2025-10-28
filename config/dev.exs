@@ -16,7 +16,8 @@ config :ehs_enforcement, EhsEnforcement.Repo,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10,
-  log: false  # Disable Ecto query logging
+  # Disable Ecto query logging
+  log: false
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -79,8 +80,9 @@ config :logger, :console, format: "[$level] $message\n"
 # Configure logger to filter out noisy logs
 config :logger,
   backends: [:console]
-  # Note: Removed compile_time_purge_matching to allow debug logs after cleanup
-  # Runtime filtering below still suppresses noisy Phoenix/Ecto logs
+
+# Note: Removed compile_time_purge_matching to allow debug logs after cleanup
+# Runtime filtering below still suppresses noisy Phoenix/Ecto logs
 
 # Add runtime filtering for Phoenix socket logs and Ecto queries
 config :logger, :default_handler,
@@ -89,31 +91,34 @@ config :logger, :default_handler,
       fn log_event, _opts ->
         case log_event do
           # Suppress Phoenix LiveView Socket logs
-          %{meta: %{module: Phoenix.LiveView.Socket}} -> 
+          %{meta: %{module: Phoenix.LiveView.Socket}} ->
             :stop
-          
+
           # Suppress Ecto query logs
           %{meta: %{module: module}} when is_atom(module) ->
             module_str = Atom.to_string(module)
+
             if String.starts_with?(module_str, "Elixir.Ecto.Adapters") do
               :stop
             else
               log_event
             end
-          
+
           # Suppress specific message patterns
           %{msg: {:string, msg}} when is_binary(msg) ->
             cond do
               String.contains?(msg, "CONNECTED TO Phoenix.LiveView.Socket") -> :stop
               String.contains?(msg, "QUERY OK") -> :stop
               String.contains?(msg, "MOUNT EhsEnforcementWeb") -> :stop
-              String.contains?(msg, "Broadcasting to topics") -> :stop  # Suppress verbose Ash PubSub broadcast logs
-              String.contains?(msg, "QUERY ERROR") -> log_event  # Keep query errors
+              # Suppress verbose Ash PubSub broadcast logs
+              String.contains?(msg, "Broadcasting to topics") -> :stop
+              # Keep query errors
+              String.contains?(msg, "QUERY ERROR") -> log_event
               true -> log_event
             end
-          
+
           # Default: let the log through
-          _ -> 
+          _ ->
             log_event
         end
       end,

@@ -22,7 +22,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
       }
 
       assert {:ok, %ProcessedNotice{} = processed} = NoticeProcessor.process_notice(basic_notice)
-      
+
       assert processed.regulator_id == "IN2024001"
       assert processed.agency_code == :hse
       assert processed.notice_date == ~D[2024-12-01]
@@ -42,11 +42,12 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
       }
 
       assert {:ok, %ProcessedNotice{} = processed} = NoticeProcessor.process_notice(basic_notice)
-      
+
       assert processed.regulator_id == "PN2024002"
       assert processed.offender_attrs.name == "XYZ Construction"
       assert processed.notice_date == ~D[2024-12-02]
-      assert is_nil(processed.compliance_date) # Prohibition notices don't have compliance dates
+      # Prohibition notices don't have compliance dates
+      assert is_nil(processed.compliance_date)
     end
 
     test "handles crown notices" do
@@ -62,7 +63,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
       }
 
       assert {:ok, %ProcessedNotice{} = processed} = NoticeProcessor.process_notice(basic_notice)
-      
+
       assert processed.regulator_id == "CN2024003"
       assert processed.offender_attrs.name == "NHS Trust"
       assert processed.compliance_date == ~D[2025-02-01]
@@ -73,15 +74,18 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
         regulator_id: "IN2024004",
         offender_name: "Test Company",
         offence_action_type: "Improvement Notice",
-        offence_action_date: "01/12/2024", # DD/MM/YYYY format
-        notice_date: "01-12-2024", # DD-MM-YYYY format
-        operative_date: "2024-12-01", # ISO format
+        # DD/MM/YYYY format
+        offence_action_date: "01/12/2024",
+        # DD-MM-YYYY format
+        notice_date: "01-12-2024",
+        # ISO format
+        operative_date: "2024-12-01",
         offence_compliance_date: "15/01/2025",
         offence_description: "Safety violations"
       }
 
       assert {:ok, %ProcessedNotice{} = processed} = NoticeProcessor.process_notice(basic_notice)
-      
+
       assert processed.notice_date == ~D[2024-12-01]
       assert processed.operative_date == ~D[2024-12-01]
       assert processed.compliance_date == ~D[2025-01-15]
@@ -100,9 +104,10 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
       }
 
       assert {:ok, %ProcessedNotice{} = processed} = NoticeProcessor.process_notice(basic_notice)
-      
+
       assert processed.regulator_id == nil
-      assert processed.offender_attrs.name == "" # Empty string when no name provided
+      # Empty string when no name provided
+      assert processed.offender_attrs.name == ""
       assert is_nil(processed.notice_date)
       assert is_nil(processed.operative_date)
       assert is_nil(processed.compliance_date)
@@ -126,7 +131,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
       }
 
       assert {:ok, %ProcessedNotice{} = processed} = NoticeProcessor.process_notice(basic_notice)
-      
+
       # Breaches formatting only happens when enriched from API, so should be nil for basic notice
       assert is_nil(processed.offence_breaches)
     end
@@ -145,7 +150,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
       }
 
       assert {:ok, %ProcessedNotice{} = processed} = NoticeProcessor.process_notice(basic_notice)
-      
+
       assert is_nil(processed.offence_breaches)
     end
 
@@ -162,8 +167,9 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
       }
 
       assert {:ok, %ProcessedNotice{} = processed} = NoticeProcessor.process_notice(basic_notice)
-      
-      assert processed.regulator_url == "https://resources.hse.gov.uk/notices/notices/notice_details.asp?SF=CN&SV=IN2024007"
+
+      assert processed.regulator_url ==
+               "https://resources.hse.gov.uk/notices/notices/notice_details.asp?SF=CN&SV=IN2024007"
     end
   end
 
@@ -182,7 +188,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
         },
         %{
           regulator_id: "PN2024002",
-          offender_name: "Company B", 
+          offender_name: "Company B",
           offence_action_type: "Prohibition Notice",
           offence_action_date: "2024-12-02",
           notice_date: "2024-12-02",
@@ -192,10 +198,10 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
       ]
 
       assert {:ok, processed_notices} = NoticeProcessor.process_notices(notices)
-      
+
       assert length(processed_notices) == 2
       assert Enum.all?(processed_notices, &match?(%ProcessedNotice{}, &1))
-      
+
       [notice1, notice2] = processed_notices
       assert notice1.regulator_id == "IN2024001"
       assert notice2.regulator_id == "PN2024002"
@@ -226,7 +232,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
       ]
 
       result = NoticeProcessor.process_notices(notices)
-      
+
       # Should return processed notices successfully 
       assert {:ok, processed_notices} = result
       assert length(processed_notices) == 2

@@ -1,12 +1,12 @@
 defmodule EhsEnforcementWeb.Admin.AgencyLive.New do
   use EhsEnforcementWeb, :live_view
-  
+
   alias EhsEnforcement.Enforcement.Agency
 
   @impl true
   def mount(_params, _session, socket) do
     form = AshPhoenix.Form.for_create(Agency, :create, forms: [auto?: false]) |> to_form()
-    
+
     {:ok,
      socket
      |> assign(:form, form)
@@ -33,7 +33,7 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.New do
          socket
          |> put_flash(:info, "Agency #{agency.name} created successfully")
          |> push_navigate(to: ~p"/admin/agencies")}
-      
+
       {:error, form} ->
         {:noreply, assign(socket, :form, form)}
     end

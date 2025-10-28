@@ -1,7 +1,7 @@
 defmodule EhsEnforcementWeb.Components.DashboardActionCard do
   @moduledoc """
   Base dashboard action card component with customizable slots for metrics, actions, and admin indicators.
-  
+
   This component provides a reusable foundation for all dashboard action cards with:
   - Configurable themes (blue, yellow, purple, green)
   - Responsive 1x4 grid layout
@@ -9,7 +9,7 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCard do
   - Admin privilege indicators
   - Accessibility features
   """
-  
+
   use Phoenix.Component
 
   @doc """
@@ -42,11 +42,11 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCard do
   slot :metrics, doc: "Metrics display area" do
     attr :class, :string, doc: "Additional CSS classes for metrics"
   end
-  
+
   slot :actions, doc: "Primary action buttons" do
     attr :class, :string, doc: "Additional CSS classes for actions"
   end
-  
+
   slot :admin_actions, doc: "Admin-only action buttons" do
     attr :class, :string, doc: "Additional CSS classes for admin actions"
     attr :visible, :boolean, doc: "Whether admin actions are visible"
@@ -73,64 +73,63 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCard do
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
       <% end %>
-
-      <!-- Error Overlay -->
+      
+    <!-- Error Overlay -->
       <%= if @error do %>
         <div class="absolute inset-0 bg-red-50 border-2 border-red-200 rounded-lg flex items-center justify-center z-10">
           <div class="text-center">
             <div class="text-red-600 text-2xl mb-2">⚠️</div>
-            <div class="text-red-800 text-sm font-medium"><%= @error %></div>
+            <div class="text-red-800 text-sm font-medium">{@error}</div>
           </div>
         </div>
       <% end %>
-
-      <!-- Card Header -->
+      
+    <!-- Card Header -->
       <div class="flex-shrink-0 mb-4">
         <div class="flex items-center space-x-3">
-          <div class="text-2xl" aria-hidden="true"><%= @icon %></div>
-          <h3 
+          <div class="text-2xl" aria-hidden="true">{@icon}</div>
+          <h3
             id={"card-title-#{String.replace(@title, " ", "-") |> String.downcase()}"}
             class="text-lg font-semibold text-gray-900 leading-tight"
           >
-            <%= @title %>
+            {@title}
           </h3>
         </div>
       </div>
-
-      <!-- Metrics Section -->
+      
+    <!-- Metrics Section -->
       <div class="flex-grow mb-6">
         <%= for metrics <- @metrics do %>
           <div class={["space-y-2", Map.get(metrics, :class, "")]}>
-            <%= render_slot(metrics) %>
+            {render_slot(metrics)}
           </div>
         <% end %>
       </div>
-
-      <!-- Actions Section -->
+      
+    <!-- Actions Section -->
       <div class="flex-shrink-0 space-y-3">
         <!-- Primary Actions -->
         <%= for action <- @actions do %>
           <div class={["w-full", Map.get(action, :class, "")]}>
-            <%= render_slot(action) %>
+            {render_slot(action)}
           </div>
         <% end %>
-
-        <!-- Admin Actions -->
+        
+    <!-- Admin Actions -->
         <%= for admin_action <- @admin_actions do %>
-          <div 
-            class={[
-              "w-full",
-              if(Map.get(admin_action, :visible, true), do: "block", else: "hidden"),
-              Map.get(admin_action, :class, "")
-            ]}
-          >
-            <%= render_slot(admin_action) %>
+          <div class={[
+            "w-full",
+            if(Map.get(admin_action, :visible, true), do: "block", else: "hidden"),
+            Map.get(admin_action, :class, "")
+          ]}>
+            {render_slot(admin_action)}
           </div>
         <% end %>
       </div>
-
-      <!-- Hover Enhancement -->
-      <div class="absolute inset-0 rounded-lg ring-2 ring-transparent group-hover:ring-current opacity-20 pointer-events-none transition-all duration-200"></div>
+      
+    <!-- Hover Enhancement -->
+      <div class="absolute inset-0 rounded-lg ring-2 ring-transparent group-hover:ring-current opacity-20 pointer-events-none transition-all duration-200">
+      </div>
     </div>
     """
   end
@@ -156,21 +155,23 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCard do
 
   def dashboard_card_grid(assigns) do
     ~H"""
-    <div 
-      class={[
-        # Desktop: 1x4 horizontal row
-        "grid gap-4 lg:grid-cols-4 lg:gap-6",
-        # Tablet: 2x2 grid
-        "md:grid-cols-2",
-        # Mobile: 1x4 vertical stack
-        "grid-cols-1",
-        @class
-      ]}
+    <div
+      class={
+        [
+          # Desktop: 1x4 horizontal row
+          "grid gap-4 lg:grid-cols-4 lg:gap-6",
+          # Tablet: 2x2 grid
+          "md:grid-cols-2",
+          # Mobile: 1x4 vertical stack
+          "grid-cols-1",
+          @class
+        ]
+      }
       role="region"
       aria-label="Dashboard action cards"
       {@rest}
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </div>
     """
   end
@@ -192,10 +193,10 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCard do
   def metric_item(assigns) do
     ~H"""
     <div class={["text-center lg:text-left", @class]}>
-      <div class="text-2xl font-bold text-gray-900"><%= @value %></div>
-      <div class="text-sm text-gray-600"><%= @label %></div>
+      <div class="text-2xl font-bold text-gray-900">{@value}</div>
+      <div class="text-sm text-gray-600">{@label}</div>
       <%= if @sublabel do %>
-        <div class="text-xs text-gray-500 mt-1"><%= @sublabel %></div>
+        <div class="text-xs text-gray-500 mt-1">{@sublabel}</div>
       <% end %>
     </div>
     """
@@ -213,7 +214,11 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCard do
   """
   attr :class, :string, default: "", doc: "Additional CSS classes"
   attr :disabled, :boolean, default: false, doc: "Whether button is disabled"
-  attr :rest, :global, include: ~w(phx-click phx-value-* type href target), doc: "Additional HTML attributes"
+
+  attr :rest, :global,
+    include: ~w(phx-click phx-value-* type href target),
+    doc: "Additional HTML attributes"
+
   slot :inner_block, required: true, doc: "Button content"
 
   def card_action_button(assigns) do
@@ -231,7 +236,7 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCard do
       disabled={@disabled}
       {@rest}
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
     </button>
     """
   end
@@ -249,7 +254,11 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCard do
   attr :class, :string, default: "", doc: "Additional CSS classes"
   attr :disabled, :boolean, default: false, doc: "Whether button is disabled"
   attr :admin_only, :boolean, default: false, doc: "Whether this is an admin-only button"
-  attr :rest, :global, include: ~w(phx-click phx-value-* type href target), doc: "Additional HTML attributes"
+
+  attr :rest, :global,
+    include: ~w(phx-click phx-value-* type href target),
+    doc: "Additional HTML attributes"
+
   slot :inner_block, required: true, doc: "Button content"
 
   def card_secondary_button(assigns) do
@@ -268,7 +277,7 @@ defmodule EhsEnforcementWeb.Components.DashboardActionCard do
       disabled={@disabled}
       {@rest}
     >
-      <%= render_slot(@inner_block) %>
+      {render_slot(@inner_block)}
       <%= if @admin_only do %>
         <span class="absolute -top-1 -right-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
           ADMIN

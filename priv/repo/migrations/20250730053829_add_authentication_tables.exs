@@ -7,7 +7,7 @@ defmodule EhsEnforcement.Repo.Migrations.AddAuthenticationTables do
       add :id, :binary_id, primary_key: true
       add :email, :citext, null: false
       add :github_id, :text
-      add :github_login, :text  
+      add :github_login, :text
       add :name, :text
       add :avatar_url, :text
       add :github_url, :text

@@ -18,7 +18,7 @@ defmodule EhsEnforcementWeb.NoticeTimelineComponentTest do
       # - Support filtering by notice type, date range, and agency
       # - Handle view switching between timeline and table views
       # - Provide accessibility features and keyboard navigation
-      
+
       assert true
     end
 
@@ -29,7 +29,7 @@ defmodule EhsEnforcementWeb.NoticeTimelineComponentTest do
       # 3. Assert timeline structure and content
       # 4. Test filtering and interactions
       # 5. Test accessibility features
-      
+
       assert true
     end
   end

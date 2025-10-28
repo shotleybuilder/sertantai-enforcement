@@ -46,7 +46,7 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
         "email" => "roofing-bug-test@example.com",
         "name" => "Roofing Bug Test Admin",
         "login" => "roofingbugtest",
-        "id" => 888888,
+        "id" => 888_888,
         "avatar_url" => "https://github.com/images/avatars/roofingbugtest",
         "html_url" => "https://github.com/roofingbugtest"
       }
@@ -56,30 +56,43 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
         "token_type" => "Bearer"
       }
 
-      {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, %{
-        user_info: user_info,
-        oauth_tokens: oauth_tokens
-      }, action: :register_with_github)
+      {:ok, user} =
+        Ash.create(
+          EhsEnforcement.Accounts.User,
+          %{
+            user_info: user_info,
+            oauth_tokens: oauth_tokens
+          },
+          action: :register_with_github
+        )
 
-      {:ok, admin_user} = Ash.update(user, %{
-        is_admin: true,
-        admin_checked_at: DateTime.utc_now()
-      }, action: :update_admin_status, actor: user)
+      {:ok, admin_user} =
+        Ash.update(
+          user,
+          %{
+            is_admin: true,
+            admin_checked_at: DateTime.utc_now()
+          },
+          action: :update_admin_status,
+          actor: user
+        )
 
       # Create agencies
-      {:ok, _hse_agency} = Ash.create(EhsEnforcement.Enforcement.Agency, %{
-        code: :hse,
-        name: "Health and Safety Executive",
-        base_url: "https://resources.hse.gov.uk",
-        enabled: true
-      })
+      {:ok, _hse_agency} =
+        Ash.create(EhsEnforcement.Enforcement.Agency, %{
+          code: :hse,
+          name: "Health and Safety Executive",
+          base_url: "https://resources.hse.gov.uk",
+          enabled: true
+        })
 
-      {:ok, _ea_agency} = Ash.create(EhsEnforcement.Enforcement.Agency, %{
-        code: :ea,
-        name: "Environment Agency",
-        base_url: "https://environment.data.gov.uk",
-        enabled: true
-      })
+      {:ok, _ea_agency} =
+        Ash.create(EhsEnforcement.Enforcement.Agency, %{
+          code: :ea,
+          name: "Environment Agency",
+          base_url: "https://environment.data.gov.uk",
+          enabled: true
+        })
 
       %{admin_user: admin_user}
     end
@@ -98,7 +111,8 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
           postcode: "CT5 4EY"
         },
         offence_result: "Court Action",
-        offence_fine: Decimal.new(0),  # Production shows £0.00
+        # Production shows £0.00
+        offence_fine: Decimal.new(0),
         offence_costs: Decimal.new(0),
         offence_action_date: ~D[2004-11-24],
         offence_action_type: "Court Case",
@@ -122,7 +136,10 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
       {:ok, ea_case_2005_created, status_2005} =
         CaseProcessor.process_and_create_case_with_status(transformed_2005, admin)
 
-      Logger.info("EA 2005 case result: status=#{status_2005}, fine=#{ea_case_2005_created.offence_fine}")
+      Logger.info(
+        "EA 2005 case result: status=#{status_2005}, fine=#{ea_case_2005_created.offence_fine}"
+      )
+
       assert status_2005 == :created
       assert Decimal.equal?(ea_case_2005_created.offence_fine, Decimal.new(4000))
 
@@ -140,7 +157,9 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
       {:ok, ea_case_2004_created, status_2004} =
         CaseProcessor.process_and_create_case_with_status(transformed_2004, admin)
 
-      Logger.info("EA 2004 case result: status=#{status_2004}, fine=#{ea_case_2004_created.offence_fine}")
+      Logger.info(
+        "EA 2004 case result: status=#{status_2004}, fine=#{ea_case_2004_created.offence_fine}"
+      )
 
       # STEP 4: Verify the bug doesn't occur - should have 3 separate cases
       Logger.info("=== STEP 4: Verifying case counts ===")
@@ -156,6 +175,7 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
 
       # Verify the 2005 case wasn't updated
       {:ok, ea_2005_check} = Ash.get(Enforcement.Case, ea_case_2005_created.id, actor: admin)
+
       assert Decimal.equal?(ea_2005_check.offence_fine, Decimal.new(4000)),
              "EA 2005 case fine was corrupted! Expected 4000, got #{ea_2005_check.offence_fine}"
 
@@ -191,11 +211,15 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
 
       # Check if any of these match
       if transformed_2005[:regulator_id] == "3424" do
-        Logger.error("🐛 BUG FOUND: EA 2005 case generates regulator_id '3424' - matches HSE case!")
+        Logger.error(
+          "🐛 BUG FOUND: EA 2005 case generates regulator_id '3424' - matches HSE case!"
+        )
       end
 
       if transformed_2004[:regulator_id] == "3424" do
-        Logger.error("🐛 BUG FOUND: EA 2004 case generates regulator_id '3424' - matches HSE case!")
+        Logger.error(
+          "🐛 BUG FOUND: EA 2004 case generates regulator_id '3424' - matches HSE case!"
+        )
       end
 
       if transformed_2005[:regulator_id] == transformed_2004[:regulator_id] do
@@ -228,9 +252,11 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
       action_type: :court_case,
       company_registration_number: nil,
       industry_sector: "Construction",
-      total_fine: Decimal.new(4000),  # This is what it SHOULD be
+      # This is what it SHOULD be
+      total_fine: Decimal.new(4000),
       offence_description: "Breach of health and safety regulations",
-      case_reference: "7/H/2005/257487/02",  # Production shows this format
+      # Production shows this format
+      case_reference: "7/H/2005/257487/02",
       event_reference: nil,
       agency_function: "Health and Safety",
       water_impact: nil,
@@ -240,7 +266,8 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
       section: "Section 2",
       legal_reference: nil,
       scraped_at: DateTime.utc_now(),
-      detail_url: "https://environment.data.gov.uk/public-register/enforcement-action/registration/10257487"
+      detail_url:
+        "https://environment.data.gov.uk/public-register/enforcement-action/registration/10257487"
     }
   end
 
@@ -256,9 +283,11 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
       action_type: :court_case,
       company_registration_number: nil,
       industry_sector: "Construction",
-      total_fine: Decimal.new(10500),  # This is the correct fine for 2004 case
+      # This is the correct fine for 2004 case
+      total_fine: Decimal.new(10500),
       offence_description: "Breach of health and safety regulations",
-      case_reference: "7/H/2005/257487/02",  # SAME as 2005 case - this is the bug!
+      # SAME as 2005 case - this is the bug!
+      case_reference: "7/H/2005/257487/02",
       event_reference: nil,
       agency_function: "Health and Safety",
       water_impact: nil,
@@ -268,7 +297,8 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
       section: "Section 2",
       legal_reference: nil,
       scraped_at: DateTime.utc_now(),
-      detail_url: "https://environment.data.gov.uk/public-register/enforcement-action/registration/10241073"
+      detail_url:
+        "https://environment.data.gov.uk/public-register/enforcement-action/registration/10241073"
     }
   end
 end

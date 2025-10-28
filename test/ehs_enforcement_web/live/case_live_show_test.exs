@@ -9,72 +9,80 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
   describe "CaseLive.Show mount" do
     setup do
       # Create test agency
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
       # Create test offender with complete information
-      {:ok, offender} = Enforcement.create_offender(%{
-        name: "Detailed Manufacturing Solutions Ltd",
-        local_authority: "Greater Manchester Combined Authority",
-        postcode: "M15 4FN",
-        total_cases: 0,
-        total_notices: 0,
-        total_fines: Decimal.new("0.00")
-      })
+      {:ok, offender} =
+        Enforcement.create_offender(%{
+          name: "Detailed Manufacturing Solutions Ltd",
+          local_authority: "Greater Manchester Combined Authority",
+          postcode: "M15 4FN",
+          total_cases: 0,
+          total_notices: 0,
+          total_fines: Decimal.new("0.00")
+        })
 
       # Create detailed test case
-      {:ok, case} = Enforcement.create_case(%{
-        regulator_id: "HSE-2024-DETAIL-001",
-        agency_id: hse_agency.id,
-        offender_id: offender.id,
-        offence_action_date: ~D[2024-02-15],
-        offence_fine: Decimal.new("35000.00"),
-        offence_breaches: "Serious breach of health and safety regulations including failure to provide adequate personal protective equipment, inadequate risk assessment procedures, and non-compliance with safety training requirements.",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-2024-DETAIL-001",
+          agency_id: hse_agency.id,
+          offender_id: offender.id,
+          offence_action_date: ~D[2024-02-15],
+          offence_fine: Decimal.new("35000.00"),
+          offence_breaches:
+            "Serious breach of health and safety regulations including failure to provide adequate personal protective equipment, inadequate risk assessment procedures, and non-compliance with safety training requirements.",
+          last_synced_at: DateTime.utc_now()
+        })
 
       # Create related notices for the case
-      {:ok, notice1} = Enforcement.create_notice(%{
-        regulator_id: "NOTICE-IMP-001",
-        agency_id: hse_agency.id,
-        offender_id: offender.id,
-        notice_date: ~D[2024-01-15],
-        operative_date: ~D[2024-01-20],
-        compliance_date: ~D[2024-03-15],
-        notice_body: "Improvement notice for workplace safety measures",
-        offence_action_type: "improvement",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, notice1} =
+        Enforcement.create_notice(%{
+          regulator_id: "NOTICE-IMP-001",
+          agency_id: hse_agency.id,
+          offender_id: offender.id,
+          notice_date: ~D[2024-01-15],
+          operative_date: ~D[2024-01-20],
+          compliance_date: ~D[2024-03-15],
+          notice_body: "Improvement notice for workplace safety measures",
+          offence_action_type: "improvement",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, notice2} = Enforcement.create_notice(%{
-        regulator_id: "NOTICE-PRO-002",
-        agency_id: hse_agency.id,
-        offender_id: offender.id,
-        notice_date: ~D[2024-01-20],
-        operative_date: ~D[2024-01-21],
-        compliance_date: ~D[2024-02-01],
-        notice_body: "Prohibition notice to cease unsafe operations",
-        offence_action_type: "prohibition",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, notice2} =
+        Enforcement.create_notice(%{
+          regulator_id: "NOTICE-PRO-002",
+          agency_id: hse_agency.id,
+          offender_id: offender.id,
+          notice_date: ~D[2024-01-20],
+          operative_date: ~D[2024-01-21],
+          compliance_date: ~D[2024-02-01],
+          notice_body: "Prohibition notice to cease unsafe operations",
+          offence_action_type: "prohibition",
+          last_synced_at: DateTime.utc_now()
+        })
 
       # Create related breaches
-      {:ok, breach1} = Enforcement.create_breach(%{
-        case_id: case.id,
-        legislation_reference: "Section 2 - Health and Safety at Work Act 1974",
-        breach_description: "Failure to ensure safety of employees",
-        legislation_type: :act
-      })
+      {:ok, breach1} =
+        Enforcement.create_breach(%{
+          case_id: case.id,
+          legislation_reference: "Section 2 - Health and Safety at Work Act 1974",
+          breach_description: "Failure to ensure safety of employees",
+          legislation_type: :act
+        })
 
-      {:ok, breach2} = Enforcement.create_breach(%{
-        case_id: case.id,
-        legislation_reference: "Regulation 5 - Personal Protective Equipment Regulations",
-        breach_description: "Inadequate provision of PPE",
-        legislation_type: :regulation
-      })
+      {:ok, breach2} =
+        Enforcement.create_breach(%{
+          case_id: case.id,
+          legislation_reference: "Regulation 5 - Personal Protective Equipment Regulations",
+          breach_description: "Inadequate provision of PPE",
+          legislation_type: :regulation
+        })
 
       %{
         agency: hse_agency,
@@ -116,8 +124,8 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Should have link to offender profile
       assert has_element?(view, "a[href='/offenders/#{offender.id}']") or
-             html =~ "View Offender Profile" or
-             html =~ "View Company Details"
+               html =~ "View Offender Profile" or
+               html =~ "View Company Details"
     end
 
     test "displays agency information section", %{conn: conn, case: case, agency: agency} do
@@ -130,11 +138,15 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Should have link to agency page
       assert has_element?(view, "a[href='/agencies/#{agency.id}']") or
-             html =~ "View Agency" or
-             html =~ "Agency Profile"
+               html =~ "View Agency" or
+               html =~ "Agency Profile"
     end
 
-    test "does not display notices section (no direct case-notice relationship)", %{conn: conn, case: case, notices: notices} do
+    test "does not display notices section (no direct case-notice relationship)", %{
+      conn: conn,
+      case: case,
+      notices: notices
+    } do
       {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should NOT show notices section since there's no direct case-notice relationship
@@ -150,8 +162,10 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       refute html =~ "2 Notices"
 
       # The case page focuses on case details, breaches, and timeline
-      assert html =~ "HSE-2024-DETAIL-001"  # Case ID should be shown
-      assert html =~ "£35,000.00"           # Fine amount should be shown
+      # Case ID should be shown
+      assert html =~ "HSE-2024-DETAIL-001"
+      # Fine amount should be shown
+      assert html =~ "£35,000.00"
     end
 
     test "displays regulatory breaches section", %{conn: conn, case: case, breaches: breaches} do
@@ -183,39 +197,44 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       assert html =~ "Case Timeline" or html =~ "Timeline"
 
       # Timeline should include key dates
-      assert html =~ "2024-01-15" # First notice date
-      assert html =~ "2024-01-20" # Second notice date  
-      assert html =~ "2024-02-15" # Offense action date
+      # First notice date
+      assert html =~ "2024-01-15"
+      # Second notice date  
+      assert html =~ "2024-01-20"
+      # Offense action date
+      assert html =~ "2024-02-15"
 
       # Should show events in chronological order
-      timeline_section = html
-      |> String.split("Timeline", parts: 2)
-      |> List.last()
+      timeline_section =
+        html
+        |> String.split("Timeline", parts: 2)
+        |> List.last()
 
       # Check relative positions of dates in timeline
       pos_jan15 = :binary.match(timeline_section, "2024-01-15") |> elem(0)
-      pos_jan20 = :binary.match(timeline_section, "2024-01-20") |> elem(0) 
+      pos_jan20 = :binary.match(timeline_section, "2024-01-20") |> elem(0)
       pos_feb15 = :binary.match(timeline_section, "2024-02-15") |> elem(0)
 
       # Should be in chronological order (or reverse chronological)
       assert (pos_jan15 < pos_jan20 and pos_jan20 < pos_feb15) or
-             (pos_feb15 < pos_jan20 and pos_jan20 < pos_jan15)
+               (pos_feb15 < pos_jan20 and pos_jan20 < pos_jan15)
     end
 
     test "handles case with no related records gracefully", %{conn: conn} do
       # Create minimal case with no notices or breaches
       {:ok, agency} = Enforcement.create_agency(%{code: :ea, name: "EA", enabled: true})
       {:ok, offender} = Enforcement.create_offender(%{name: "Minimal Corp"})
-      
-      {:ok, minimal_case} = Enforcement.create_case(%{
-        regulator_id: "EA-MINIMAL-001",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_date: ~D[2024-01-01],
-        offence_fine: Decimal.new("1000.00"),
-        offence_breaches: "Minor violation",
-        last_synced_at: DateTime.utc_now()
-      })
+
+      {:ok, minimal_case} =
+        Enforcement.create_case(%{
+          regulator_id: "EA-MINIMAL-001",
+          agency_id: agency.id,
+          offender_id: offender.id,
+          offence_action_date: ~D[2024-01-01],
+          offence_fine: Decimal.new("1000.00"),
+          offence_breaches: "Minor violation",
+          last_synced_at: DateTime.utc_now()
+        })
 
       {:ok, view, html} = live(conn, "/cases/#{minimal_case.id}")
 
@@ -225,8 +244,10 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Should handle missing breaches gracefully (no notices section expected since no direct relationship)
       # Note: The case doesn't create any breaches, so should handle empty breach list
-      assert html =~ "£1,000.00"  # Fine amount should be displayed
-      assert html =~ "Minor violation"  # Breach description should be shown
+      # Fine amount should be displayed
+      assert html =~ "£1,000.00"
+      # Breach description should be shown
+      assert html =~ "Minor violation"
     end
 
     test "handles non-existent case ID", %{conn: conn} do
@@ -249,16 +270,17 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     setup do
       {:ok, agency} = Enforcement.create_agency(%{code: :hse, name: "HSE", enabled: true})
       {:ok, offender} = Enforcement.create_offender(%{name: "Action Test Corp"})
-      
-      {:ok, case} = Enforcement.create_case(%{
-        regulator_id: "HSE-ACTION-001",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_date: ~D[2024-01-15],
-        offence_fine: Decimal.new("10000.00"),
-        offence_breaches: "Test breach",
-        last_synced_at: DateTime.utc_now()
-      })
+
+      {:ok, case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-ACTION-001",
+          agency_id: agency.id,
+          offender_id: offender.id,
+          offence_action_date: ~D[2024-01-15],
+          offence_fine: Decimal.new("10000.00"),
+          offence_breaches: "Test breach",
+          last_synced_at: DateTime.utc_now()
+        })
 
       %{case: case, agency: agency, offender: offender}
     end
@@ -268,8 +290,8 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Should have edit button or link
       assert has_element?(view, "a[href='/cases/#{case.id}/edit']") or
-             has_element?(view, "button[phx-click='edit']") or
-             html =~ "Edit Case"
+               has_element?(view, "button[phx-click='edit']") or
+               html =~ "Edit Case"
     end
 
     test "displays delete case button with confirmation", %{conn: conn, case: case} do
@@ -277,8 +299,8 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Should have delete action
       assert has_element?(view, "button[phx-click='delete']") or
-             html =~ "Delete Case" or
-             html =~ "Remove Case"
+               html =~ "Delete Case" or
+               html =~ "Remove Case"
 
       # Should have confirmation
       assert html =~ "confirm" or html =~ "Are you sure"
@@ -301,8 +323,8 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Should have export functionality
       assert has_element?(view, "button[phx-click='export']") or
-             html =~ "Export" or
-             html =~ "Download"
+               html =~ "Export" or
+               html =~ "Download"
     end
 
     test "displays back to cases list link", %{conn: conn, case: case} do
@@ -310,17 +332,17 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Should have navigation back to cases list
       assert has_element?(view, "a[href='/cases']") or
-             html =~ "Back to Cases" or
-             html =~ "← Cases"
+               html =~ "Back to Cases" or
+               html =~ "← Cases"
     end
 
     test "displays share case link", %{conn: conn, case: case} do
       {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have share functionality or direct link
-      assert html =~ "Share" or 
-             html =~ "/cases/#{case.id}" or
-             has_element?(view, "button[phx-click='share']")
+      assert html =~ "Share" or
+               html =~ "/cases/#{case.id}" or
+               has_element?(view, "button[phx-click='share']")
     end
   end
 
@@ -328,16 +350,17 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     setup do
       {:ok, agency} = Enforcement.create_agency(%{code: :hse, name: "HSE", enabled: true})
       {:ok, offender} = Enforcement.create_offender(%{name: "Update Test Corp"})
-      
-      {:ok, case} = Enforcement.create_case(%{
-        regulator_id: "HSE-UPDATE-001",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_date: ~D[2024-01-15],
-        offence_fine: Decimal.new("5000.00"),
-        offence_breaches: "Original breach",
-        last_synced_at: DateTime.utc_now()
-      })
+
+      {:ok, case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-UPDATE-001",
+          agency_id: agency.id,
+          offender_id: offender.id,
+          offence_action_date: ~D[2024-01-15],
+          offence_fine: Decimal.new("5000.00"),
+          offence_breaches: "Original breach",
+          last_synced_at: DateTime.utc_now()
+        })
 
       %{case: case}
     end
@@ -347,10 +370,10 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Verify the LiveView process is alive and responsive
       assert Process.alive?(view.pid)
-      
+
       # Send a test update message
       send(view.pid, {:case_updated, case.id, %{offence_fine: Decimal.new("7500.00")}})
-      
+
       # Should handle the message without crashing
       :timer.sleep(50)
       assert Process.alive?(view.pid)
@@ -360,14 +383,18 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       {:ok, view, _html} = live(conn, "/cases/#{case.id}")
 
       # Send case update notification
-      send(view.pid, {:case_updated, case.id, %{
-        offence_fine: Decimal.new("8000.00"),
-        offence_breaches: "Updated breach description"
-      }})
-      
+      send(
+        view.pid,
+        {:case_updated, case.id,
+         %{
+           offence_fine: Decimal.new("8000.00"),
+           offence_breaches: "Updated breach description"
+         }}
+      )
+
       # Should update the display
       updated_html = render(view)
-      
+
       # Should show updated information
       assert updated_html =~ "£8,000.00" or updated_html =~ "8000"
       assert updated_html =~ "Updated breach description"
@@ -380,20 +407,21 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       assert initial_html =~ "No notices" or initial_html =~ "0 notices"
 
       # Create a new notice
-      {:ok, new_notice} = Enforcement.create_notice(%{
-        case_id: case.id,
-        notice_type: "improvement",
-        issue_date: ~D[2024-02-01],
-        compliance_date: ~D[2024-03-01],
-        description: "New improvement notice",
-        compliance_status: "pending"
-      })
+      {:ok, new_notice} =
+        Enforcement.create_notice(%{
+          case_id: case.id,
+          notice_type: "improvement",
+          issue_date: ~D[2024-02-01],
+          compliance_date: ~D[2024-03-01],
+          description: "New improvement notice",
+          compliance_status: "pending"
+        })
 
       # Send notification about new notice
       send(view.pid, {:notice_created, case.id, new_notice})
-      
+
       updated_html = render(view)
-      
+
       # Should show the new notice
       assert updated_html =~ "New improvement notice"
       assert updated_html =~ "1 notice" or updated_html =~ "improvement"
@@ -401,14 +429,15 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
     test "handles notice status updates", %{conn: conn, case: case} do
       # Create initial notice
-      {:ok, notice} = Enforcement.create_notice(%{
-        case_id: case.id,
-        notice_type: "improvement",
-        issue_date: ~D[2024-01-15],
-        compliance_date: ~D[2024-02-15],
-        description: "Status test notice",
-        compliance_status: "pending"
-      })
+      {:ok, notice} =
+        Enforcement.create_notice(%{
+          case_id: case.id,
+          notice_type: "improvement",
+          issue_date: ~D[2024-01-15],
+          compliance_date: ~D[2024-02-15],
+          description: "Status test notice",
+          compliance_status: "pending"
+        })
 
       {:ok, view, initial_html} = live(conn, "/cases/#{case.id}")
 
@@ -417,9 +446,9 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Send notice status update
       send(view.pid, {:notice_updated, notice.id, %{compliance_status: "complied"}})
-      
+
       updated_html = render(view)
-      
+
       # Should show updated status
       assert updated_html =~ "complied"
       refute updated_html =~ "pending"
@@ -428,13 +457,14 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     test "handles malformed update messages gracefully", %{conn: conn, case: case} do
       {:ok, view, _html} = live(conn, "/cases/#{case.id}")
 
-      log = capture_log(fn ->
-        # Send malformed messages
-        send(view.pid, {:case_updated, "invalid-id", %{}})
-        send(view.pid, {:invalid_message, case.id})
-        send(view.pid, "not_a_tuple")
-        :timer.sleep(50)
-      end)
+      log =
+        capture_log(fn ->
+          # Send malformed messages
+          send(view.pid, {:case_updated, "invalid-id", %{}})
+          send(view.pid, {:invalid_message, case.id})
+          send(view.pid, "not_a_tuple")
+          :timer.sleep(50)
+        end)
 
       # Should remain stable
       assert Process.alive?(view.pid)
@@ -443,21 +473,30 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
   describe "CaseLive.Show data formatting" do
     setup do
-      {:ok, agency} = Enforcement.create_agency(%{code: :onr, name: "Office for Nuclear Regulation", enabled: true})
-      {:ok, offender} = Enforcement.create_offender(%{
-        name: "Nuclear Safety Ltd",
-        local_authority: "Cumbria County Council"
-      })
-      
-      {:ok, case} = Enforcement.create_case(%{
-        regulator_id: "ONR-2024-FORMAT-001",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_date: ~D[2024-06-15],
-        offence_fine: Decimal.new("125000.50"),
-        offence_breaches: "Multiple nuclear safety regulation violations with significant environmental impact and potential public safety risks.",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, agency} =
+        Enforcement.create_agency(%{
+          code: :onr,
+          name: "Office for Nuclear Regulation",
+          enabled: true
+        })
+
+      {:ok, offender} =
+        Enforcement.create_offender(%{
+          name: "Nuclear Safety Ltd",
+          local_authority: "Cumbria County Council"
+        })
+
+      {:ok, case} =
+        Enforcement.create_case(%{
+          regulator_id: "ONR-2024-FORMAT-001",
+          agency_id: agency.id,
+          offender_id: offender.id,
+          offence_action_date: ~D[2024-06-15],
+          offence_fine: Decimal.new("125000.50"),
+          offence_breaches:
+            "Multiple nuclear safety regulation violations with significant environmental impact and potential public safety risks.",
+          last_synced_at: DateTime.utc_now()
+        })
 
       %{case: case}
     end
@@ -473,10 +512,10 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should format date in readable format
-      assert html =~ "June 15, 2024" or 
-             html =~ "15 June 2024" or 
-             html =~ "2024-06-15" or
-             html =~ "15/06/2024"
+      assert html =~ "June 15, 2024" or
+               html =~ "15 June 2024" or
+               html =~ "2024-06-15" or
+               html =~ "15/06/2024"
     end
 
     test "handles long text content appropriately", %{conn: conn, case: case} do
@@ -488,7 +527,8 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       assert html =~ "public safety risks"
 
       # Long text should be properly wrapped or truncated with expand option
-      assert html =~ "violations" # Should show the content
+      # Should show the content
+      assert html =~ "violations"
     end
 
     test "displays proper labels and field names", %{conn: conn, case: case} do
@@ -507,16 +547,17 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       # Create case with minimal data
       {:ok, agency} = Enforcement.create_agency(%{code: :ea, name: "EA", enabled: true})
       {:ok, offender} = Enforcement.create_offender(%{name: "Minimal Corp"})
-      
-      {:ok, minimal_case} = Enforcement.create_case(%{
-        regulator_id: "EA-MINIMAL-FORMAT",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_date: ~D[2024-01-01],
-        offence_fine: Decimal.new("0.00"),
-        offence_breaches: "",
-        last_synced_at: DateTime.utc_now()
-      })
+
+      {:ok, minimal_case} =
+        Enforcement.create_case(%{
+          regulator_id: "EA-MINIMAL-FORMAT",
+          agency_id: agency.id,
+          offender_id: offender.id,
+          offence_action_date: ~D[2024-01-01],
+          offence_fine: Decimal.new("0.00"),
+          offence_breaches: "",
+          last_synced_at: DateTime.utc_now()
+        })
 
       {:ok, view, html} = live(conn, "/cases/#{minimal_case.id}")
 
@@ -530,61 +571,69 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     setup do
       {:ok, agency} = Enforcement.create_agency(%{code: :hse, name: "HSE", enabled: true})
       {:ok, offender} = Enforcement.create_offender(%{name: "Performance Test Corp"})
-      
-      {:ok, case} = Enforcement.create_case(%{
-        regulator_id: "HSE-PERF-001",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_date: ~D[2024-01-15],
-        offence_fine: Decimal.new("15000.00"),
-        offence_breaches: "Performance test breach",
-        last_synced_at: DateTime.utc_now()
-      })
 
-      # Create multiple notices and breaches to test performance
-      notices = Enum.map(1..10, fn i ->
-        {:ok, notice} = Enforcement.create_notice(%{
-          regulator_id: "NOTICE-#{String.pad_leading(to_string(i), 3, "0")}",
+      {:ok, case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-PERF-001",
           agency_id: agency.id,
           offender_id: offender.id,
-          notice_date: Date.add(~D[2024-01-01], i),
-          operative_date: Date.add(~D[2024-01-15], i),
-          compliance_date: Date.add(~D[2024-02-01], i),
-          notice_body: "Performance test notice #{i}",
-          offence_action_type: if(rem(i, 2) == 0, do: "improvement", else: "prohibition"),
+          offence_action_date: ~D[2024-01-15],
+          offence_fine: Decimal.new("15000.00"),
+          offence_breaches: "Performance test breach",
           last_synced_at: DateTime.utc_now()
         })
-        notice
-      end)
 
-      breaches = Enum.map(1..5, fn i ->
-        {:ok, breach} = Enforcement.create_breach(%{
-          case_id: case.id,
-          legislation_reference: "Test Regulation #{i}",
-          breach_description: "Performance test breach #{i}",
-          legislation_type: case rem(i, 3) do
-            0 -> :act
-            1 -> :regulation
-            2 -> :acop
-          end
-        })
-        breach
-      end)
+      # Create multiple notices and breaches to test performance
+      notices =
+        Enum.map(1..10, fn i ->
+          {:ok, notice} =
+            Enforcement.create_notice(%{
+              regulator_id: "NOTICE-#{String.pad_leading(to_string(i), 3, "0")}",
+              agency_id: agency.id,
+              offender_id: offender.id,
+              notice_date: Date.add(~D[2024-01-01], i),
+              operative_date: Date.add(~D[2024-01-15], i),
+              compliance_date: Date.add(~D[2024-02-01], i),
+              notice_body: "Performance test notice #{i}",
+              offence_action_type: if(rem(i, 2) == 0, do: "improvement", else: "prohibition"),
+              last_synced_at: DateTime.utc_now()
+            })
+
+          notice
+        end)
+
+      breaches =
+        Enum.map(1..5, fn i ->
+          {:ok, breach} =
+            Enforcement.create_breach(%{
+              case_id: case.id,
+              legislation_reference: "Test Regulation #{i}",
+              breach_description: "Performance test breach #{i}",
+              legislation_type:
+                case rem(i, 3) do
+                  0 -> :act
+                  1 -> :regulation
+                  2 -> :acop
+                end
+            })
+
+          breach
+        end)
 
       %{case: case, notices: notices, breaches: breaches}
     end
 
     test "loads case details within reasonable time", %{conn: conn, case: case} do
       start_time = System.monotonic_time(:millisecond)
-      
+
       {:ok, view, html} = live(conn, "/cases/#{case.id}")
-      
+
       end_time = System.monotonic_time(:millisecond)
       load_time = end_time - start_time
 
       # Should load within reasonable time (less than 1 second)
       assert load_time < 1000, "Case details should load within 1 second"
-      
+
       # Should display all content
       assert html =~ "HSE-PERF-001"
       assert html =~ "Performance Test Corp"
@@ -613,16 +662,17 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Should have proper loading indicators for async operations
       # (This would be more relevant for operations that take time)
-      assert html =~ case.regulator_id # Should show content when loaded
+      # Should show content when loaded
+      assert html =~ case.regulator_id
     end
 
     test "implements responsive design", %{conn: conn, case: case} do
       {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have responsive CSS classes
-      assert html =~ "grid" or html =~ "flex" or 
-             html =~ "sm:" or html =~ "md:" or html =~ "lg:" or
-             html =~ "responsive"
+      assert html =~ "grid" or html =~ "flex" or
+               html =~ "sm:" or html =~ "md:" or html =~ "lg:" or
+               html =~ "responsive"
     end
 
     test "includes proper navigation elements", %{conn: conn, case: case} do
@@ -641,16 +691,17 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     setup do
       {:ok, agency} = Enforcement.create_agency(%{code: :hse, name: "HSE", enabled: true})
       {:ok, offender} = Enforcement.create_offender(%{name: "Accessibility Test Corp"})
-      
-      {:ok, case} = Enforcement.create_case(%{
-        regulator_id: "HSE-A11Y-001",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_date: ~D[2024-01-15],
-        offence_fine: Decimal.new("20000.00"),
-        offence_breaches: "Accessibility test breach",
-        last_synced_at: DateTime.utc_now()
-      })
+
+      {:ok, case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-A11Y-001",
+          agency_id: agency.id,
+          offender_id: offender.id,
+          offence_action_date: ~D[2024-01-15],
+          offence_fine: Decimal.new("20000.00"),
+          offence_breaches: "Accessibility test breach",
+          last_synced_at: DateTime.utc_now()
+        })
 
       %{case: case}
     end
@@ -661,18 +712,19 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       # Should use semantic HTML elements
       assert html =~ "<main" or html =~ "<section" or html =~ "<article"
       assert html =~ "<h1" or html =~ "<h2"
-      
+
       # Should have proper heading hierarchy
-      assert html =~ "<h1" # Page title
+      # Page title
+      assert html =~ "<h1"
     end
 
     test "includes ARIA labels and descriptions", %{conn: conn, case: case} do
       {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have ARIA attributes for complex elements
-      assert html =~ "aria-label" or 
-             html =~ "aria-describedby" or
-             html =~ "aria-expanded"
+      assert html =~ "aria-label" or
+               html =~ "aria-describedby" or
+               html =~ "aria-expanded"
     end
 
     test "supports keyboard navigation", %{conn: conn, case: case} do
@@ -680,11 +732,13 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Interactive elements should be keyboard accessible
       if has_element?(view, "button") do
-        assert html =~ "tabindex" or true # Buttons are naturally focusable
+        # Buttons are naturally focusable
+        assert html =~ "tabindex" or true
       end
 
       # Links should be keyboard accessible
-      assert has_element?(view, "a") # Should have navigation links
+      # Should have navigation links
+      assert has_element?(view, "a")
     end
 
     test "provides alternative text for visual elements", %{conn: conn, case: case} do
@@ -706,10 +760,12 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
 
       # Should use CSS classes that provide proper contrast
       # (This is mainly verified through CSS, but we can check for class usage)
-      assert html =~ "class=" # Should use CSS classes for styling
-      
+      # Should use CSS classes for styling
+      assert html =~ "class="
+
       # Should have clear visual hierarchy
-      assert html =~ "<h" # Should use heading elements
+      # Should use heading elements
+      assert html =~ "<h"
     end
   end
 end

@@ -4,17 +4,24 @@
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">Scraping Sessions</h1>
-        <p class="mt-2 text-gray-600">Monitor and review HSE scraping session history and progress</p>
+        <p class="mt-2 text-gray-600">
+          Monitor and review HSE scraping session history and progress
+        </p>
       </div>
       
-      <!-- Navigation Buttons -->
+<!-- Navigation Buttons -->
       <div class="flex gap-3">
         <.link
           navigate={~p"/admin/scrape-sessions-design"}
           class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
           View Design
         </.link>
@@ -24,21 +31,28 @@
           class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
           </svg>
           Admin Dashboard
         </.link>
       </div>
     </div>
   </div>
-
-  <!-- Filters -->
+  
+<!-- Filters -->
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
     <div class="flex flex-wrap items-center gap-4">
       <!-- Status Filter -->
       <div>
-        <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-        <select 
+        <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">
+          Status
+        </label>
+        <select
           id="status-filter"
           phx-change="filter_status"
           name="status"
@@ -51,10 +65,12 @@
         </select>
       </div>
       
-      <!-- Database Filter -->
+<!-- Database Filter -->
       <div>
-        <label for="database-filter" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-        <select 
+        <label for="database-filter" class="block text-sm font-medium text-gray-700 mb-1">
+          Type
+        </label>
+        <select
           id="database-filter"
           phx-change="filter_database"
           name="database"
@@ -66,7 +82,7 @@
         </select>
       </div>
       
-      <!-- Clear Filters Button -->
+<!-- Clear Filters Button -->
       <div class="pt-6">
         <button
           type="button"
@@ -74,15 +90,20 @@
           class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
           Clear Filters
         </button>
       </div>
     </div>
   </div>
-
-  <!-- Sessions Table -->
+  
+<!-- Sessions Table -->
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
     <div class="px-6 py-4 border-b border-gray-200">
       <div class="flex items-center justify-between">
@@ -90,32 +111,67 @@
         <div class="text-sm text-gray-500">
           <%= if @loading do %>
             <div class="flex items-center">
-              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                >
+                </circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                >
+                </path>
               </svg>
               Loading...
             </div>
           <% else %>
-            <%= length(@all_sessions || []) %> session<%= if length(@all_sessions || []) != 1, do: "s" %>
+            {length(@all_sessions || [])} session{if length(@all_sessions || []) != 1, do: "s"}
           <% end %>
         </div>
       </div>
     </div>
-    
+
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session ID</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Started</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pages</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Errors</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Session ID
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Type
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Status
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Started
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Duration
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Pages
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Progress
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Created
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Errors
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -124,68 +180,69 @@
               <tr class="hover:bg-gray-50">
                 <!-- Session ID -->
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                  <%= String.slice(session.session_id, 0, 8) %>
+                  {String.slice(session.session_id, 0, 8)}
                 </td>
                 
-                <!-- Type -->
+<!-- Type -->
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class={"inline-flex items-center px-2 py-1 rounded text-xs font-medium #{database_type_badge_class(session.database)}"}>
-                    <%= format_database_type(session.database) %>
+                    {format_database_type(session.database)}
                   </span>
                 </td>
                 
-                <!-- Status -->
+<!-- Status -->
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class={"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium #{status_badge_class(session.status)}"}>
-                    <%= format_status(session.status) %>
+                    {format_status(session.status)}
                   </span>
                 </td>
                 
-                <!-- Started -->
+<!-- Started -->
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <%= Calendar.strftime(session.inserted_at, "%Y-%m-%d %H:%M") %>
+                  {Calendar.strftime(session.inserted_at, "%Y-%m-%d %H:%M")}
                 </td>
                 
-                <!-- Duration -->
+<!-- Duration -->
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <%= session_duration(session) %>
+                  {session_duration(session)}
                 </td>
                 
-                <!-- Pages Info -->
+<!-- Pages Info -->
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <%= session.pages_processed %>/<%= session.max_pages %>
+                  {session.pages_processed}/{session.max_pages}
                   <%= if session.start_page && session.start_page > 1 do %>
-                    <span class="text-xs text-gray-500">(from <%= session.start_page %>)</span>
+                    <span class="text-xs text-gray-500">(from {session.start_page})</span>
                   <% end %>
                 </td>
                 
-                <!-- Progress Bar -->
+<!-- Progress Bar -->
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
                     <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                      <div 
+                      <div
                         class={"h-2 rounded-full transition-all duration-300 #{if session.status == :completed, do: "bg-green-500", else: if(session.status == :running, do: "bg-blue-500", else: "bg-gray-400")}"}
                         style={"width: #{progress_percentage(session)}%"}
-                      ></div>
+                      >
+                      </div>
                     </div>
                     <span class="text-xs text-gray-600 w-8">
-                      <%= trunc(progress_percentage(session)) %>%
+                      {trunc(progress_percentage(session))}%
                     </span>
                   </div>
                 </td>
                 
-                <!-- Created Count -->
+<!-- Created Count -->
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                  <span class="font-medium text-green-600"><%= session.cases_created || 0 %></span>
+                  <span class="font-medium text-green-600">{session.cases_created || 0}</span>
                   <%= if (session.cases_updated || 0) > 0 do %>
-                    <span class="text-xs text-blue-600">+<%= session.cases_updated %> updated</span>
+                    <span class="text-xs text-blue-600">+{session.cases_updated} updated</span>
                   <% end %>
                 </td>
                 
-                <!-- Errors -->
+<!-- Errors -->
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <%= if (session.errors_count || 0) > 0 do %>
-                    <span class="text-red-600 font-medium"><%= session.errors_count %></span>
+                    <span class="text-red-600 font-medium">{session.errors_count}</span>
                   <% else %>
                     <span class="text-gray-400">0</span>
                   <% end %>
@@ -196,8 +253,18 @@
             <tr>
               <td colspan="9" class="px-6 py-12 text-center">
                 <div class="text-gray-500">
-                  <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    class="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                   <p class="mt-4 text-sm">No scraping sessions found</p>
                   <p class="text-xs text-gray-400 mt-1">

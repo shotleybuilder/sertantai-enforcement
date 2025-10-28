@@ -4,7 +4,7 @@ defmodule EhsEnforcement.Registry do
   In Ash 3.x, resources are managed by domains, not registries.
   This module provides compatibility for tests.
   """
-  
+
   def entries do
     [
       {EhsEnforcement.Enforcement.Agency, %{}},

@@ -4,7 +4,7 @@ defmodule EhsEnforcementWeb.HealthController do
   def check(conn, _params) do
     # Emit telemetry for health check request
     :telemetry.execute([:ehs_enforcement, :health_check], %{requests: 1})
-    
+
     # Basic health checks
     health_status = %{
       status: "ok",
@@ -17,19 +17,23 @@ defmodule EhsEnforcementWeb.HealthController do
     case check_database() do
       :ok ->
         :telemetry.execute([:ehs_enforcement, :health_check], %{success: 1})
+
         conn
         |> put_status(:ok)
         |> json(Map.put(health_status, :database, "connected"))
-        
+
       {:error, reason} ->
         :telemetry.execute([:ehs_enforcement, :health_check], %{failure: 1})
+
         conn
         |> put_status(:service_unavailable)
-        |> json(Map.merge(health_status, %{
-          status: "error",
-          database: "disconnected",
-          error: to_string(reason)
-        }))
+        |> json(
+          Map.merge(health_status, %{
+            status: "error",
+            database: "disconnected",
+            error: to_string(reason)
+          })
+        )
     end
   end
 

@@ -10,7 +10,7 @@ defmodule EhsEnforcement.Repo.Migrations.CreateLegislationAndOffencesTables do
   def up do
     # Enable pg_trgm extension for trigram indexing
     execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
-    
+
     create table(:offences, primary_key: false) do
       add :id, :uuid, null: false, default: fragment("gen_random_uuid()"), primary_key: true
       add :offence_description, :text
@@ -46,9 +46,17 @@ defmodule EhsEnforcement.Repo.Migrations.CreateLegislationAndOffencesTables do
       add :legislation_id, :uuid, null: false
     end
 
-    execute("CREATE INDEX offences_legislation_part_gin_trgm ON offences USING GIN (legislation_part gin_trgm_ops)")
-    execute("CREATE INDEX offences_reference_gin_trgm ON offences USING GIN (offence_reference gin_trgm_ops)")
-    execute("CREATE INDEX offences_description_gin_trgm ON offences USING GIN (offence_description gin_trgm_ops)")
+    execute(
+      "CREATE INDEX offences_legislation_part_gin_trgm ON offences USING GIN (legislation_part gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX offences_reference_gin_trgm ON offences USING GIN (offence_reference gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX offences_description_gin_trgm ON offences USING GIN (offence_description gin_trgm_ops)"
+    )
 
     create index(:offences, [:offence_reference],
              name: "offences_reference_unique",
@@ -109,7 +117,9 @@ defmodule EhsEnforcement.Repo.Migrations.CreateLegislationAndOffencesTables do
         default: fragment("(now() AT TIME ZONE 'utc')")
     end
 
-    execute("CREATE INDEX legislation_title_gin_trgm ON legislation USING GIN (legislation_title gin_trgm_ops)")
+    execute(
+      "CREATE INDEX legislation_title_gin_trgm ON legislation USING GIN (legislation_title gin_trgm_ops)"
+    )
 
     create index(:legislation, [:legislation_year], name: "legislation_year_index")
 
@@ -196,11 +206,11 @@ defmodule EhsEnforcement.Repo.Migrations.CreateLegislationAndOffencesTables do
     drop_if_exists index(:offences, [:offence_reference], name: "offences_reference_unique")
 
     execute("DROP INDEX IF EXISTS offences_description_gin_trgm")
-    execute("DROP INDEX IF EXISTS offences_reference_gin_trgm")  
+    execute("DROP INDEX IF EXISTS offences_reference_gin_trgm")
     execute("DROP INDEX IF EXISTS offences_legislation_part_gin_trgm")
 
     drop table(:offences)
-    
+
     # Note: We don't drop pg_trgm extension as it may be used by other tables
     # execute("DROP EXTENSION IF EXISTS pg_trgm")
   end

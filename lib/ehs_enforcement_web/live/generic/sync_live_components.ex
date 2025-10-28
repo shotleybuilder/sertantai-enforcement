@@ -1,13 +1,13 @@
 defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
   @moduledoc """
   Reusable LiveView components for generic sync interfaces.
-  
+
   This module provides a comprehensive set of LiveView components that can be
   used in any Phoenix application to build sync management interfaces. The components
   are designed to be framework-agnostic and work with any sync engine implementation.
-  
+
   ## Components
-  
+
   - `sync_status_panel` - Real-time sync status display
   - `sync_progress_bar` - Animated progress visualization  
   - `sync_statistics_cards` - Statistics display cards
@@ -16,18 +16,18 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
   - `sync_error_panel` - Error display and recovery interface
   - `sync_history_table` - Historical sync sessions table
   - `sync_control_buttons` - Action buttons (start, stop, cancel)
-  
+
   ## Features
-  
+
   - Real-time updates via Phoenix LiveView
   - Responsive design with Tailwind CSS
   - Accessibility-compliant markup
   - Configurable themes and styling
   - Event-driven architecture
   - Package-ready for extraction
-  
+
   ## Usage
-  
+
       # In your LiveView template
       <.sync_status_panel 
         session_id={@session_id} 
@@ -47,27 +47,27 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
         disabled={@sync_running} 
       />
   """
-  
+
   use Phoenix.Component
   alias Phoenix.LiveView.JS
 
   @doc """
   Sync status panel with real-time status updates.
-  
+
   Displays current sync session status, progress information, and key metrics.
   Updates automatically via LiveView events.
-  
+
   ## Attributes
-  
+
   * `session_id` - Current sync session ID
   * `status` - Current sync status (:pending, :running, :completed, :failed, :cancelled)
   * `progress` - Current progress information map
   * `theme` - UI theme (:default, :dark, :minimal) 
   * `class` - Additional CSS classes
   * `rest` - Additional HTML attributes
-  
+
   ## Examples
-  
+
       <.sync_status_panel 
         session_id="sync_abc123"
         status={:running}
@@ -84,11 +84,14 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
 
   def sync_status_panel(assigns) do
     ~H"""
-    <div class={[
-      "sync-status-panel rounded-lg border p-6",
-      theme_classes(@theme, :panel),
-      @class
-    ]} {@rest}>
+    <div
+      class={[
+        "sync-status-panel rounded-lg border p-6",
+        theme_classes(@theme, :panel),
+        @class
+      ]}
+      {@rest}
+    >
       <!-- Header -->
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -97,46 +100,46 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
         <div class="flex items-center space-x-2">
           <.sync_status_badge status={@status} />
           <span class="text-sm text-gray-500 dark:text-gray-400">
-            Session: <%= String.slice(@session_id, -8..-1) %>
+            Session: {String.slice(@session_id, -8..-1)}
           </span>
         </div>
       </div>
       
-      <!-- Progress Overview -->
+    <!-- Progress Overview -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <.sync_stat_card 
-          title="Processed" 
-          value={Map.get(@progress, :processed, 0)} 
-          theme={@theme} 
-        />
-        <.sync_stat_card 
-          title="Remaining" 
-          value={Map.get(@progress, :total, 0) - Map.get(@progress, :processed, 0)} 
-          theme={@theme} 
-        />
-        <.sync_stat_card 
-          title="Errors" 
-          value={Map.get(@progress, :errors, 0)} 
+        <.sync_stat_card
+          title="Processed"
+          value={Map.get(@progress, :processed, 0)}
           theme={@theme}
-          alert={Map.get(@progress, :errors, 0) > 0} 
+        />
+        <.sync_stat_card
+          title="Remaining"
+          value={Map.get(@progress, :total, 0) - Map.get(@progress, :processed, 0)}
+          theme={@theme}
+        />
+        <.sync_stat_card
+          title="Errors"
+          value={Map.get(@progress, :errors, 0)}
+          theme={@theme}
+          alert={Map.get(@progress, :errors, 0) > 0}
         />
       </div>
       
-      <!-- Progress Bar -->
-      <.sync_progress_bar 
+    <!-- Progress Bar -->
+      <.sync_progress_bar
         progress={Map.get(@progress, :processed, 0)}
         total={Map.get(@progress, :total, 1)}
         animated={@status == :running}
         theme={@theme}
       />
       
-      <!-- Status Details -->
+    <!-- Status Details -->
       <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
         <div class="flex justify-between items-center">
-          <span>Status: <%= format_status(@status) %></span>
+          <span>Status: {format_status(@status)}</span>
           <span>
             <%= if Map.get(@progress, :processing_time_ms) do %>
-              Duration: <%= format_duration(Map.get(@progress, :processing_time_ms, 0)) %>
+              Duration: {format_duration(Map.get(@progress, :processing_time_ms, 0))}
             <% end %>
           </span>
         </div>
@@ -147,11 +150,11 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
 
   @doc """
   Animated progress bar with customizable styling.
-  
+
   Shows sync progress with optional animation and status-based coloring.
-  
+
   ## Attributes
-  
+
   * `progress` - Current progress value
   * `total` - Total target value  
   * `animated` - Enable animation (boolean)
@@ -168,23 +171,23 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
 
   def sync_progress_bar(assigns) do
     assigns = assign(assigns, :percentage, calculate_percentage(assigns.progress, assigns.total))
-    
+
     ~H"""
     <div class={["sync-progress-bar", @class]}>
       <div class="flex justify-between items-center mb-2">
         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Progress</span>
         <%= if @show_percentage do %>
           <span class="text-sm text-gray-500 dark:text-gray-400">
-            <%= @percentage %>% (<%= @progress %>/<%= @total %>)
+            {@percentage}% ({@progress}/{@total})
           </span>
         <% end %>
       </div>
-      
+
       <div class={[
         "w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700",
         theme_classes(@theme, :progress_bg)
       ]}>
-        <div 
+        <div
           class={[
             "h-2.5 rounded-full transition-all duration-300 ease-out",
             progress_bar_color(@percentage),
@@ -200,12 +203,12 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
 
   @doc """
   Sync configuration form with validation and real-time updates.
-  
+
   Provides a comprehensive form for configuring sync operations with
   validation, help text, and conditional field display.
-  
+
   ## Attributes
-  
+
   * `config` - Current configuration map
   * `on_submit` - Submit event handler
   * `disabled` - Disable form (boolean)
@@ -229,8 +232,8 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Resource Type
             </label>
-            <select 
-              name="resource_type" 
+            <select
+              name="resource_type"
               class={form_input_classes(@theme)}
               disabled={@disabled}
             >
@@ -245,42 +248,42 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
               </option>
             </select>
           </div>
-          
+
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Batch Size
             </label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               name="batch_size"
               value={Map.get(@config, :batch_size, 100)}
-              min="1" 
+              min="1"
               max="1000"
               class={form_input_classes(@theme)}
               disabled={@disabled}
             />
             <p class="mt-1 text-xs text-gray-500">Records per batch (1-1000)</p>
           </div>
-          
+
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Record Limit
             </label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               name="limit"
               value={Map.get(@config, :limit, 1000)}
-              min="1" 
+              min="1"
               max="100000"
               class={form_input_classes(@theme)}
               disabled={@disabled}
             />
             <p class="mt-1 text-xs text-gray-500">Maximum records to sync (1-100,000)</p>
           </div>
-          
+
           <div class="flex items-center">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               name="enable_error_recovery"
               checked={Map.get(@config, :enable_error_recovery, true)}
               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -292,17 +295,17 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
           </div>
         </div>
         
-        <!-- Advanced Configuration (Collapsible) -->
+    <!-- Advanced Configuration (Collapsible) -->
         <%= if @show_advanced do %>
           <div class="border-t pt-6">
             <h4 class="text-md font-medium text-gray-900 dark:text-gray-100 mb-4">
               Advanced Options
             </h4>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="flex items-center">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   name="enable_integrity_monitoring"
                   checked={Map.get(@config, :enable_integrity_monitoring, true)}
                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -312,10 +315,10 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
                   Enable Integrity Monitoring
                 </label>
               </div>
-              
+
               <div class="flex items-center">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   name="enable_circuit_breaker"
                   checked={Map.get(@config, :enable_circuit_breaker, true)}
                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -325,25 +328,25 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
                   Enable Circuit Breaker
                 </label>
               </div>
-              
+
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Max Recovery Attempts
                 </label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   name="max_recovery_attempts"
                   value={Map.get(@config, :max_recovery_attempts, 3)}
-                  min="1" 
+                  min="1"
                   max="10"
                   class={form_input_classes(@theme)}
                   disabled={@disabled}
                 />
               </div>
-              
+
               <div class="flex items-center">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   name="generate_integrity_report"
                   checked={Map.get(@config, :generate_integrity_report, true)}
                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -357,18 +360,18 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
           </div>
         <% end %>
         
-        <!-- Form Actions -->
+    <!-- Form Actions -->
         <div class="flex justify-between items-center pt-6">
-          <button 
+          <button
             type="button"
             phx-click={JS.toggle(to: ".advanced-options")}
             class="text-sm text-blue-600 hover:text-blue-500"
           >
-            <%= if @show_advanced, do: "Hide", else: "Show" %> Advanced Options
+            {if @show_advanced, do: "Hide", else: "Show"} Advanced Options
           </button>
-          
+
           <div class="flex space-x-3">
-            <button 
+            <button
               type="button"
               phx-click="reset_config"
               class={[
@@ -381,8 +384,8 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
             >
               Reset
             </button>
-            
-            <button 
+
+            <button
               type="submit"
               class={[
                 "px-4 py-2 text-sm font-medium rounded-md",
@@ -403,12 +406,12 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
 
   @doc """
   Sync control buttons with real-time state management.
-  
+
   Provides start, stop, cancel, and other action buttons with appropriate
   state-based enabling/disabling and visual feedback.
-  
+
   ## Attributes
-  
+
   * `sync_status` - Current sync status
   * `session_id` - Current session ID (if any)
   * `theme` - UI theme
@@ -425,7 +428,7 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
     ~H"""
     <div class={["sync-control-buttons flex space-x-3", @class]}>
       <%= if :start in @actions do %>
-        <button 
+        <button
           phx-click="start_sync"
           class={[
             "flex items-center px-4 py-2 text-sm font-medium rounded-md",
@@ -435,14 +438,20 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
           disabled={@sync_status in [:running, :cancelling]}
         >
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m-6-8h1m4 0h1M10 6V4a2 2 0 012-2h0a2 2 0 012 2v2m-4 6V6"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m-6-8h1m4 0h1M10 6V4a2 2 0 012-2h0a2 2 0 012 2v2m-4 6V6"
+            >
+            </path>
           </svg>
           Start Sync
         </button>
       <% end %>
-      
+
       <%= if :stop in @actions and @sync_status == :running do %>
-        <button 
+        <button
           phx-click="stop_sync"
           phx-value-session-id={@session_id}
           class={[
@@ -451,15 +460,22 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
           ]}
         >
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6v4H9z"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            >
+            </path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6v4H9z">
+            </path>
           </svg>
           Stop Sync
         </button>
       <% end %>
-      
+
       <%= if :cancel in @actions and @sync_status in [:running, :pending] do %>
-        <button 
+        <button
           phx-click="cancel_sync"
           phx-value-session-id={@session_id}
           class={[
@@ -468,14 +484,20 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
           ]}
         >
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            >
+            </path>
           </svg>
           Cancel
         </button>
       <% end %>
-      
+
       <%= if :refresh in @actions do %>
-        <button 
+        <button
           phx-click="refresh_status"
           class={[
             "flex items-center px-4 py-2 text-sm font-medium rounded-md",
@@ -483,7 +505,13 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
           ]}
         >
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            >
+            </path>
           </svg>
           Refresh
         </button>
@@ -494,11 +522,11 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
 
   @doc """
   Statistics display card for sync metrics.
-  
+
   Shows individual sync statistics with optional alert styling.
   """
   attr :title, :string, required: true
-  attr :value, :any, required: true  
+  attr :value, :any, required: true
   attr :theme, :atom, default: :default
   attr :alert, :boolean, default: false
   attr :class, :string, default: ""
@@ -514,21 +542,26 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
       <div class="flex items-center justify-between">
         <div>
           <p class={[
-            "text-sm font-medium", 
+            "text-sm font-medium",
             (@alert && "text-red-800 dark:text-red-200") || "text-gray-600 dark:text-gray-400"
           ]}>
-            <%= @title %>
+            {@title}
           </p>
           <p class={[
             "text-2xl font-bold",
             (@alert && "text-red-900 dark:text-red-100") || "text-gray-900 dark:text-gray-100"
           ]}>
-            <%= format_stat_value(@value) %>
+            {format_stat_value(@value)}
           </p>
         </div>
         <%= if @alert do %>
           <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"
+            >
+            </path>
           </svg>
         <% end %>
       </div>
@@ -538,7 +571,7 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
 
   @doc """
   Status badge with color coding.
-  
+
   Shows sync status with appropriate colors and icons.
   """
   attr :status, :atom, required: true
@@ -551,13 +584,17 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
       status_badge_classes(@status),
       size_classes(@size)
     ]}>
-      <svg class={[
-        "mr-1.5",
-        (@size == :small && "w-2 h-2") || "w-2 h-2"
-      ]} fill="currentColor" viewBox="0 0 8 8">
-        <circle cx="4" cy="4" r="3"/>
+      <svg
+        class={[
+          "mr-1.5",
+          (@size == :small && "w-2 h-2") || "w-2 h-2"
+        ]}
+        fill="currentColor"
+        viewBox="0 0 8 8"
+      >
+        <circle cx="4" cy="4" r="3" />
       </svg>
-      <%= format_status(@status) %>
+      {format_status(@status)}
     </span>
     """
   end
@@ -567,10 +604,11 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
   defp calculate_percentage(progress, total) when total > 0 do
     Float.round(progress / total * 100, 1)
   end
+
   defp calculate_percentage(_progress, _total), do: 0.0
 
   defp format_status(:pending), do: "Pending"
-  defp format_status(:running), do: "Running"  
+  defp format_status(:running), do: "Running"
   defp format_status(:completed), do: "Completed"
   defp format_status(:failed), do: "Failed"
   defp format_status(:cancelled), do: "Cancelled"
@@ -581,19 +619,21 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
   rescue
     _ -> to_string(value)
   end
+
   defp format_stat_value(value), do: to_string(value)
 
   defp format_duration(ms) when is_integer(ms) do
     seconds = div(ms, 1000)
     minutes = div(seconds, 60)
     hours = div(minutes, 60)
-    
+
     cond do
       hours > 0 -> "#{hours}h #{rem(minutes, 60)}m"
       minutes > 0 -> "#{minutes}m #{rem(seconds, 60)}s"
       true -> "#{seconds}s"
     end
   end
+
   defp format_duration(_), do: "0s"
 
   defp theme_classes(:dark, :panel), do: "bg-gray-800 border-gray-700"
@@ -622,21 +662,34 @@ defmodule EhsEnforcementWeb.Live.Generic.SyncLiveComponents do
   defp size_classes(:small), do: "text-xs px-2 py-1"
   defp size_classes(_), do: "text-sm px-2.5 py-0.5"
 
-  defp button_classes(:primary, :dark), do: "text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
-  defp button_classes(:primary, _), do: "text-white bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
+  defp button_classes(:primary, :dark),
+    do: "text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
 
-  defp button_classes(:secondary, :dark), do: "text-gray-300 bg-gray-600 hover:bg-gray-700 focus:ring-gray-500"
-  defp button_classes(:secondary, _), do: "text-gray-700 bg-gray-100 hover:bg-gray-200 focus:ring-2 focus:ring-gray-500"
+  defp button_classes(:primary, _),
+    do: "text-white bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
 
-  defp button_classes(:warning, :dark), do: "text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500"
-  defp button_classes(:warning, _), do: "text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-2 focus:ring-yellow-500"
+  defp button_classes(:secondary, :dark),
+    do: "text-gray-300 bg-gray-600 hover:bg-gray-700 focus:ring-gray-500"
 
-  defp button_classes(:danger, :dark), do: "text-white bg-red-600 hover:bg-red-700 focus:ring-red-500"
-  defp button_classes(:danger, _), do: "text-white bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-red-500"
+  defp button_classes(:secondary, _),
+    do: "text-gray-700 bg-gray-100 hover:bg-gray-200 focus:ring-2 focus:ring-gray-500"
+
+  defp button_classes(:warning, :dark),
+    do: "text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500"
+
+  defp button_classes(:warning, _),
+    do: "text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-2 focus:ring-yellow-500"
+
+  defp button_classes(:danger, :dark),
+    do: "text-white bg-red-600 hover:bg-red-700 focus:ring-red-500"
+
+  defp button_classes(:danger, _),
+    do: "text-white bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-red-500"
 
   defp form_input_classes(:dark) do
     "block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
   end
+
   defp form_input_classes(_) do
     "block w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
   end

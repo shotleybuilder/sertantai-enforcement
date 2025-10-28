@@ -110,7 +110,7 @@ defmodule EhsEnforcement.Agencies.Hse.NoticesTest do
              "51"
            }
   end
-  
+
   test "api_get_hse_notices/1" do
     # Test that the api function exists and accepts options list
     # This is an integration test function that makes actual API calls

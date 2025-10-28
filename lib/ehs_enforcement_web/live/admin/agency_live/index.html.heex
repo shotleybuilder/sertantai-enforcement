@@ -9,43 +9,42 @@
             <p class="mt-2 text-sm text-gray-700">
               Manage Enforcement Agencies
               <%= if @total_agencies > 0 do %>
-                · <%= @total_agencies %> agencies
+                · {@total_agencies} agencies
               <% else %>
                 · No agencies found
               <% end %>
             </p>
           </div>
-          
+
           <div class="flex space-x-3">
             <!-- Back to Dashboard Button -->
             <.link
               navigate={~p"/admin"}
               class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <.icon name="hero-arrow-left" class="h-4 w-4 mr-2" />
-              Back to Dashboard
+              <.icon name="hero-arrow-left" class="h-4 w-4 mr-2" /> Back to Dashboard
             </.link>
             
-            <!-- Create New Agency Button -->
+<!-- Create New Agency Button -->
             <.link
               navigate={~p"/admin/agencies/new"}
               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <.icon name="hero-plus" class="h-4 w-4 mr-2" />
-              New Agency
+              <.icon name="hero-plus" class="h-4 w-4 mr-2" /> New Agency
             </.link>
           </div>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- Main Content -->
+  
+<!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Loading State -->
     <%= if @loading do %>
       <div class="text-center py-12">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600">
+        </div>
         <p class="mt-2 text-sm text-gray-500">Loading agencies...</p>
       </div>
     <% else %>
@@ -58,25 +57,46 @@
               <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                   <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       ID
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Code
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Name
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Base URL
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Enabled
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Inserted At
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Updated At
                     </th>
                     <th scope="col" class="relative px-6 py-3">
@@ -84,34 +104,38 @@
                     </th>
                   </tr>
                 </thead>
-                
+
                 <tbody class="bg-white divide-y divide-gray-200">
                   <%= for agency <- @agencies do %>
                     <tr class="hover:bg-gray-50">
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
-                        <%= String.slice(agency.id, 0, 8) %>...
+                        {String.slice(agency.id, 0, 8)}...
                       </td>
-                      
+
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          <%= String.upcase(to_string(agency.code)) %>
+                          {String.upcase(to_string(agency.code))}
                         </span>
                       </td>
-                      
+
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <%= agency.name %>
+                        {agency.name}
                       </td>
-                      
+
                       <td class="px-6 py-4 text-sm text-gray-900">
                         <%= if agency.base_url do %>
-                          <a href={agency.base_url} target="_blank" class="text-blue-600 hover:text-blue-500 underline">
-                            <%= agency.base_url %>
+                          <a
+                            href={agency.base_url}
+                            target="_blank"
+                            class="text-blue-600 hover:text-blue-500 underline"
+                          >
+                            {agency.base_url}
                           </a>
                         <% else %>
                           <span class="text-gray-400">—</span>
                         <% end %>
                       </td>
-                      
+
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <%= if agency.enabled do %>
                           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -123,18 +147,17 @@
                           </span>
                         <% end %>
                       </td>
-                      
+
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <%= format_datetime(agency.inserted_at) %>
+                        {format_datetime(agency.inserted_at)}
                       </td>
-                      
+
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <%= format_datetime(agency.updated_at) %>
+                        {format_datetime(agency.updated_at)}
                       </td>
-                      
+
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div class="flex items-center space-x-2">
-                          
                           <.link
                             navigate={~p"/admin/agencies/#{agency.id}/edit"}
                             class="text-green-600 hover:text-green-900"
@@ -142,7 +165,7 @@
                           >
                             <.icon name="hero-pencil" class="h-4 w-4" />
                           </.link>
-                          
+
                           <button
                             phx-click="delete_agency"
                             phx-value-id={agency.id}
@@ -172,8 +195,7 @@
                   navigate={~p"/admin/agencies/new"}
                   class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <.icon name="hero-plus" class="h-4 w-4 mr-2" />
-                  New Agency
+                  <.icon name="hero-plus" class="h-4 w-4 mr-2" /> New Agency
                 </.link>
               </div>
             </div>

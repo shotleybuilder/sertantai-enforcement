@@ -1,14 +1,25 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   <%= if @loading do %>
     <div class="text-center py-8">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600">
+      </div>
       <p class="mt-2 text-sm text-gray-500">Loading legislation...</p>
     </div>
   <% else %>
     <%= if @error == :not_found do %>
       <div class="text-center py-8">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <svg
+          class="mx-auto h-12 w-12 text-gray-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
         </svg>
         <h3 class="mt-2 text-sm font-medium text-gray-900">Legislation not found</h3>
         <p class="mt-1 text-sm text-gray-500">
@@ -35,25 +46,34 @@
                   <ol class="flex items-center space-x-4">
                     <li>
                       <div>
-                        <.link navigate={~p"/legislation"} class="text-gray-400 hover:text-gray-500">
+                        <.link
+                          navigate={~p"/legislation"}
+                          class="text-gray-400 hover:text-gray-500"
+                        >
                           Legislation
                         </.link>
                       </div>
                     </li>
                     <li>
                       <div class="flex items-center">
-                        <svg class="flex-shrink-0 h-5 w-5 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                        <svg
+                          class="flex-shrink-0 h-5 w-5 text-gray-300"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                          aria-hidden="true"
+                        >
                           <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
                         </svg>
                         <span class="ml-4 text-sm font-medium text-gray-500 truncate">
-                          <%= @legislation.legislation_title %>
+                          {@legislation.legislation_title}
                         </span>
                       </div>
                     </li>
                   </ol>
                 </nav>
                 
-                <!-- Title and metadata -->
+<!-- Title and metadata -->
                 <div class="mt-2 flex items-center">
                   <span class={[
                     "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mr-3",
@@ -65,39 +85,50 @@
                       _ -> "bg-gray-100 text-gray-800"
                     end
                   ]}>
-                    <%= format_legislation_type(@legislation.legislation_type) %>
+                    {format_legislation_type(@legislation.legislation_type)}
                   </span>
-                  
+
                   <%= if @legislation.legislation_year do %>
                     <span class="text-sm text-gray-500 mr-3">
-                      <%= @legislation.legislation_year %>
+                      {@legislation.legislation_year}
                     </span>
                   <% end %>
-                  
+
                   <%= if @legislation.legislation_number do %>
                     <span class="text-sm text-gray-500">
-                      No. <%= @legislation.legislation_number %>
+                      No. {@legislation.legislation_number}
                     </span>
                   <% end %>
                 </div>
-                
+
                 <h1 class="mt-2 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                  <%= @legislation.legislation_title %>
+                  {@legislation.legislation_title}
                 </h1>
               </div>
               
-              <!-- Actions -->
+<!-- Actions -->
               <div class="mt-6 flex space-x-3 md:mt-0 md:ml-4">
                 <button
                   phx-click="export_legislation"
                   class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    class="-ml-1 mr-2 h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                   Export
                 </button>
-                
+
                 <div class="relative inline-block text-left">
                   <button
                     type="button"
@@ -105,13 +136,24 @@
                     phx-value-method="url"
                     class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
-                    <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                    <svg
+                      class="-ml-1 mr-2 h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                      />
                     </svg>
                     Share
                   </button>
                 </div>
-                
+
                 <%= if @current_user do %>
                   <.link
                     patch={~p"/legislation/#{@legislation.id}/edit"}
@@ -119,7 +161,7 @@
                   >
                     Edit
                   </.link>
-                  
+
                   <button
                     phx-click="delete_legislation"
                     data-confirm="Are you sure you want to delete this legislation? This action cannot be undone."
@@ -132,8 +174,8 @@
             </div>
           </div>
         </div>
-
-        <!-- Content -->
+        
+<!-- Content -->
         <div class="mt-8">
           <div class="max-w-3xl mx-auto grid grid-cols-1 gap-6 lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-3">
             <!-- Main content -->
@@ -142,7 +184,10 @@
               <section aria-labelledby="legislation-details-title">
                 <div class="bg-white shadow sm:rounded-lg">
                   <div class="px-4 py-5 sm:px-6">
-                    <h2 id="legislation-details-title" class="text-lg leading-6 font-medium text-gray-900">
+                    <h2
+                      id="legislation-details-title"
+                      class="text-lg leading-6 font-medium text-gray-900"
+                    >
                       Legislation Details
                     </h2>
                   </div>
@@ -151,76 +196,89 @@
                       <div>
                         <dt class="text-sm font-medium text-gray-500">Full Reference</dt>
                         <dd class="mt-1 text-sm text-gray-900">
-                          <%= @legislation.legislation_title %>
+                          {@legislation.legislation_title}
                           <%= if @legislation.legislation_year do %>
-                            <%= @legislation.legislation_year %>
+                            {@legislation.legislation_year}
                           <% end %>
                           <%= if @legislation.legislation_number do %>
-                            No. <%= @legislation.legislation_number %>
+                            No. {@legislation.legislation_number}
                           <% end %>
                         </dd>
                       </div>
-                      
+
                       <div>
                         <dt class="text-sm font-medium text-gray-500">Type</dt>
                         <dd class="mt-1 text-sm text-gray-900">
-                          <%= format_legislation_type(@legislation.legislation_type) %>
+                          {format_legislation_type(@legislation.legislation_type)}
                         </dd>
                       </div>
-                      
+
                       <%= if @legislation.legislation_year do %>
                         <div>
                           <dt class="text-sm font-medium text-gray-500">Year</dt>
                           <dd class="mt-1 text-sm text-gray-900">
-                            <%= @legislation.legislation_year %>
+                            {@legislation.legislation_year}
                           </dd>
                         </div>
                       <% end %>
-                      
+
                       <%= if @legislation.legislation_number do %>
                         <div>
                           <dt class="text-sm font-medium text-gray-500">Number</dt>
                           <dd class="mt-1 text-sm text-gray-900">
-                            <%= @legislation.legislation_number %>
+                            {@legislation.legislation_number}
                           </dd>
                         </div>
                       <% end %>
-                      
+
                       <div>
                         <dt class="text-sm font-medium text-gray-500">Created</dt>
                         <dd class="mt-1 text-sm text-gray-900">
-                          <%= format_datetime(@legislation.created_at) %>
+                          {format_datetime(@legislation.created_at)}
                         </dd>
                       </div>
-                      
+
                       <div>
                         <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
                         <dd class="mt-1 text-sm text-gray-900">
-                          <%= format_datetime(@legislation.updated_at) %>
+                          {format_datetime(@legislation.updated_at)}
                         </dd>
                       </div>
                     </dl>
                   </div>
                 </div>
               </section>
-
-              <!-- Related Cases -->
+              
+<!-- Related Cases -->
               <section aria-labelledby="related-cases-title">
                 <div class="bg-white shadow sm:rounded-lg">
                   <div class="px-4 py-5 sm:px-6">
-                    <h2 id="related-cases-title" class="text-lg leading-6 font-medium text-gray-900">
-                      Related Cases (<%= length(@related_cases) %>)
+                    <h2
+                      id="related-cases-title"
+                      class="text-lg leading-6 font-medium text-gray-900"
+                    >
+                      Related Cases ({length(@related_cases)})
                     </h2>
                     <p class="mt-1 text-sm text-gray-500">
                       Enforcement cases that reference this legislation.
                     </p>
                   </div>
-                  
+
                   <%= if Enum.empty?(@related_cases) do %>
                     <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
                       <div class="text-center py-6">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <svg
+                          class="mx-auto h-12 w-12 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
                         </svg>
                         <h3 class="mt-2 text-sm font-medium text-gray-900">No related cases</h3>
                         <p class="mt-1 text-sm text-gray-500">
@@ -239,42 +297,42 @@
                                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                     Case
                                   </span>
-                                  
+
                                   <%= if case.offence_action_date do %>
                                     <span class="text-sm text-gray-500">
-                                      <%= format_date(case.offence_action_date) %>
+                                      {format_date(case.offence_action_date)}
                                     </span>
                                   <% end %>
-                                  
+
                                   <%= if case.offence_fine do %>
                                     <span class="text-sm text-gray-500">
-                                      <%= format_currency(case.offence_fine) %>
+                                      {format_currency(case.offence_fine)}
                                     </span>
                                   <% end %>
                                 </div>
-                                
-                                <.link 
+
+                                <.link
                                   navigate={~p"/cases/#{case.id}"}
                                   class="mt-2 block"
                                 >
                                   <h4 class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                                    Case <%= case.regulator_id %>
+                                    Case {case.regulator_id}
                                   </h4>
                                 </.link>
-                                
+
                                 <%= if case.offender do %>
                                   <p class="mt-1 text-sm text-gray-500">
-                                    <%= case.offender.name %>
+                                    {case.offender.name}
                                   </p>
                                 <% end %>
-                                
+
                                 <%= if case.computed_breaches_summary do %>
                                   <p class="mt-1 text-sm text-gray-500">
-                                    <%= truncate_text(case.computed_breaches_summary, 150) %>
+                                    {truncate_text(case.computed_breaches_summary, 150)}
                                   </p>
                                 <% end %>
                               </div>
-                              
+
                               <div class="flex items-center space-x-2">
                                 <.link
                                   navigate={~p"/cases/#{case.id}"}
@@ -291,24 +349,37 @@
                   <% end %>
                 </div>
               </section>
-
-              <!-- Related Notices -->
+              
+<!-- Related Notices -->
               <section aria-labelledby="related-notices-title">
                 <div class="bg-white shadow sm:rounded-lg">
                   <div class="px-4 py-5 sm:px-6">
-                    <h2 id="related-notices-title" class="text-lg leading-6 font-medium text-gray-900">
-                      Related Notices (<%= length(@related_notices) %>)
+                    <h2
+                      id="related-notices-title"
+                      class="text-lg leading-6 font-medium text-gray-900"
+                    >
+                      Related Notices ({length(@related_notices)})
                     </h2>
                     <p class="mt-1 text-sm text-gray-500">
                       Enforcement notices that reference this legislation.
                     </p>
                   </div>
-                  
+
                   <%= if Enum.empty?(@related_notices) do %>
                     <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
                       <div class="text-center py-6">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <svg
+                          class="mx-auto h-12 w-12 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
                         </svg>
                         <h3 class="mt-2 text-sm font-medium text-gray-900">No related notices</h3>
                         <p class="mt-1 text-sm text-gray-500">
@@ -327,36 +398,36 @@
                                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     Notice
                                   </span>
-                                  
+
                                   <%= if notice.offence_action_date do %>
                                     <span class="text-sm text-gray-500">
-                                      <%= format_date(notice.offence_action_date) %>
+                                      {format_date(notice.offence_action_date)}
                                     </span>
                                   <% end %>
                                 </div>
-                                
-                                <.link 
+
+                                <.link
                                   navigate={~p"/notices/#{notice.id}"}
                                   class="mt-2 block"
                                 >
                                   <h4 class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                                    Notice <%= notice.regulator_id %>
+                                    Notice {notice.regulator_id}
                                   </h4>
                                 </.link>
-                                
+
                                 <%= if notice.offender do %>
                                   <p class="mt-1 text-sm text-gray-500">
-                                    <%= notice.offender.name %>
+                                    {notice.offender.name}
                                   </p>
                                 <% end %>
-                                
+
                                 <%= if notice.notice_body do %>
                                   <p class="mt-1 text-sm text-gray-500">
-                                    <%= truncate_text(notice.notice_body, 150) %>
+                                    {truncate_text(notice.notice_body, 150)}
                                   </p>
                                 <% end %>
                               </div>
-                              
+
                               <div class="flex items-center space-x-2">
                                 <.link
                                   navigate={~p"/notices/#{notice.id}"}
@@ -374,33 +445,35 @@
                 </div>
               </section>
             </div>
-
-            <!-- Sidebar -->
+            
+<!-- Sidebar -->
             <section aria-labelledby="timeline-title" class="lg:col-start-3 lg:col-span-1">
               <div class="bg-white px-4 py-5 shadow sm:rounded-lg sm:px-6">
                 <h2 id="timeline-title" class="text-lg font-medium text-gray-900">
                   Quick Stats
                 </h2>
-                
+
                 <div class="mt-6 flow-root">
                   <dl class="divide-y divide-gray-200">
                     <div class="py-3 flex justify-between text-sm font-medium">
                       <dt class="text-gray-500">Related Cases</dt>
-                      <dd class="text-gray-900"><%= length(@related_cases) %></dd>
+                      <dd class="text-gray-900">{length(@related_cases)}</dd>
                     </div>
-                    
+
                     <div class="py-3 flex justify-between text-sm font-medium">
                       <dt class="text-gray-500">Related Notices</dt>
-                      <dd class="text-gray-900"><%= length(@related_notices) %></dd>
+                      <dd class="text-gray-900">{length(@related_notices)}</dd>
                     </div>
-                    
+
                     <div class="py-3 flex justify-between text-sm font-medium">
                       <dt class="text-gray-500">Total References</dt>
-                      <dd class="text-gray-900"><%= length(@related_cases) + length(@related_notices) %></dd>
+                      <dd class="text-gray-900">
+                        {length(@related_cases) + length(@related_notices)}
+                      </dd>
                     </div>
                   </dl>
                 </div>
-                
+
                 <div class="mt-6">
                   <.link
                     navigate={~p"/legislation"}

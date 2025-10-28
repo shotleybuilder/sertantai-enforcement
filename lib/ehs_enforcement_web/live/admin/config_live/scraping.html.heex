@@ -8,32 +8,41 @@
       </p>
     </div>
     <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-      <a 
+      <a
         href="/admin/config"
         class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       >
         <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          />
         </svg>
         Back to Config
       </a>
     </div>
   </div>
-
-  <!-- Loading State -->
+  
+<!-- Loading State -->
   <%= if @loading do %>
     <div class="mt-8 flex justify-center">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>
   <% end %>
-
-  <!-- Error Messages -->
+  
+<!-- Error Messages -->
   <%= if length(@errors) > 0 do %>
     <div class="mt-6 bg-red-50 border border-red-200 rounded-md p-4">
       <div class="flex">
         <div class="flex-shrink-0">
           <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
           </svg>
         </div>
         <div class="ml-3">
@@ -41,7 +50,7 @@
           <div class="mt-2 text-sm text-red-700">
             <ul class="list-disc pl-5 space-y-1">
               <%= for error <- @errors do %>
-                <li><%= error %></li>
+                <li>{error}</li>
               <% end %>
             </ul>
           </div>
@@ -57,122 +66,148 @@
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
           <div>
             <h3 class="text-lg leading-6 font-medium text-gray-900">
-              Active Configuration: <%= @active_config.name %>
+              Active Configuration: {@active_config.name}
             </h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              <%= @active_config.description || "No description provided" %>
+              {@active_config.description || "No description provided"}
             </p>
           </div>
           <div class="flex space-x-2">
-            <button 
-              type="button" 
+            <button
+              type="button"
               phx-click="start_editing"
               class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <svg class="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              <svg
+                class="-ml-0.5 mr-2 h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
               </svg>
               Edit Configuration
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               phx-click="start_creating"
               class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <svg class="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              <svg
+                class="-ml-0.5 mr-2 h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
               </svg>
               New Configuration
             </button>
           </div>
         </div>
-        
+
         <div class="border-t border-gray-200">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 py-5 sm:px-6">
             
-            <!-- HSE Settings -->
+<!-- HSE Settings -->
             <div>
               <h4 class="text-sm font-medium text-gray-900 mb-3">HSE Settings</h4>
               <dl class="space-y-2 text-sm">
                 <div class="flex justify-between">
                   <dt class="text-gray-500">Base URL:</dt>
-                  <dd class="text-gray-900 font-mono"><%= @active_config.hse_base_url %></dd>
+                  <dd class="text-gray-900 font-mono">{@active_config.hse_base_url}</dd>
                 </div>
                 <div class="flex justify-between">
                   <dt class="text-gray-500">Database:</dt>
-                  <dd class="text-gray-900"><%= @active_config.hse_database %></dd>
+                  <dd class="text-gray-900">{@active_config.hse_database}</dd>
                 </div>
               </dl>
             </div>
             
-            <!-- Rate Limiting -->
+<!-- Rate Limiting -->
             <div>
               <h4 class="text-sm font-medium text-gray-900 mb-3">Rate Limiting</h4>
               <dl class="space-y-2 text-sm">
                 <div class="flex justify-between">
                   <dt class="text-gray-500">Requests/minute:</dt>
-                  <dd class="text-gray-900"><%= @active_config.requests_per_minute %></dd>
+                  <dd class="text-gray-900">{@active_config.requests_per_minute}</dd>
                 </div>
                 <div class="flex justify-between">
                   <dt class="text-gray-500">Network timeout:</dt>
-                  <dd class="text-gray-900"><%= @active_config.network_timeout_ms %>ms</dd>
+                  <dd class="text-gray-900">{@active_config.network_timeout_ms}ms</dd>
                 </div>
                 <div class="flex justify-between">
                   <dt class="text-gray-500">Page pause:</dt>
-                  <dd class="text-gray-900"><%= @active_config.pause_between_pages_ms %>ms</dd>
+                  <dd class="text-gray-900">{@active_config.pause_between_pages_ms}ms</dd>
                 </div>
               </dl>
             </div>
             
-            <!-- Scraping Behavior -->
+<!-- Scraping Behavior -->
             <div>
               <h4 class="text-sm font-medium text-gray-900 mb-3">Scraping Behavior</h4>
               <dl class="space-y-2 text-sm">
                 <div class="flex justify-between">
                   <dt class="text-gray-500">Stop threshold:</dt>
-                  <dd class="text-gray-900"><%= @active_config.consecutive_existing_threshold %></dd>
+                  <dd class="text-gray-900">{@active_config.consecutive_existing_threshold}</dd>
                 </div>
                 <div class="flex justify-between">
                   <dt class="text-gray-500">Max pages/session:</dt>
-                  <dd class="text-gray-900"><%= @active_config.max_pages_per_session %></dd>
+                  <dd class="text-gray-900">{@active_config.max_pages_per_session}</dd>
                 </div>
                 <div class="flex justify-between">
                   <dt class="text-gray-500">Max errors:</dt>
-                  <dd class="text-gray-900"><%= @active_config.max_consecutive_errors %></dd>
+                  <dd class="text-gray-900">{@active_config.max_consecutive_errors}</dd>
                 </div>
                 <div class="flex justify-between">
                   <dt class="text-gray-500">Batch size:</dt>
-                  <dd class="text-gray-900"><%= @active_config.batch_size %></dd>
+                  <dd class="text-gray-900">{@active_config.batch_size}</dd>
                 </div>
               </dl>
             </div>
             
-            <!-- Feature Flags -->
+<!-- Feature Flags -->
             <div>
               <h4 class="text-sm font-medium text-gray-900 mb-3">Feature Flags</h4>
               <dl class="space-y-2 text-sm">
                 <div class="flex justify-between items-center">
                   <dt class="text-gray-500">Manual Scraping:</dt>
                   <dd class={elem(feature_flag_status(@active_config.manual_scraping_enabled), 1)}>
-                    <%= elem(feature_flag_status(@active_config.manual_scraping_enabled), 0) %>
+                    {elem(feature_flag_status(@active_config.manual_scraping_enabled), 0)}
                   </dd>
                 </div>
                 <div class="flex justify-between items-center">
                   <dt class="text-gray-500">Scheduled Scraping:</dt>
-                  <dd class={elem(feature_flag_status(@active_config.scheduled_scraping_enabled), 1)}>
-                    <%= elem(feature_flag_status(@active_config.scheduled_scraping_enabled), 0) %>
+                  <dd class={
+                    elem(feature_flag_status(@active_config.scheduled_scraping_enabled), 1)
+                  }>
+                    {elem(feature_flag_status(@active_config.scheduled_scraping_enabled), 0)}
                   </dd>
                 </div>
                 <div class="flex justify-between items-center">
                   <dt class="text-gray-500">Real-time Progress:</dt>
-                  <dd class={elem(feature_flag_status(@active_config.real_time_progress_enabled), 1)}>
-                    <%= elem(feature_flag_status(@active_config.real_time_progress_enabled), 0) %>
+                  <dd class={
+                    elem(feature_flag_status(@active_config.real_time_progress_enabled), 1)
+                  }>
+                    {elem(feature_flag_status(@active_config.real_time_progress_enabled), 0)}
                   </dd>
                 </div>
                 <div class="flex justify-between items-center">
                   <dt class="text-gray-500">Admin Notifications:</dt>
-                  <dd class={elem(feature_flag_status(@active_config.admin_notifications_enabled), 1)}>
-                    <%= elem(feature_flag_status(@active_config.admin_notifications_enabled), 0) %>
+                  <dd class={
+                    elem(feature_flag_status(@active_config.admin_notifications_enabled), 1)
+                  }>
+                    {elem(feature_flag_status(@active_config.admin_notifications_enabled), 0)}
                   </dd>
                 </div>
               </dl>
@@ -181,95 +216,112 @@
         </div>
       </div>
     <% end %>
-
-    <!-- No Active Configuration -->
+    
+<!-- No Active Configuration -->
     <%= if !@active_config && !@editing && !@creating do %>
       <div class="mt-8 text-center">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+        <svg
+          class="mx-auto h-12 w-12 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+          />
         </svg>
         <h3 class="mt-2 text-sm font-medium text-gray-900">No Active Configuration</h3>
-        <p class="mt-1 text-sm text-gray-500">Get started by creating a new scraping configuration.</p>
+        <p class="mt-1 text-sm text-gray-500">
+          Get started by creating a new scraping configuration.
+        </p>
         <div class="mt-6">
-          <button 
-            type="button" 
+          <button
+            type="button"
             phx-click="start_creating"
             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
             </svg>
             Create Configuration
           </button>
         </div>
       </div>
     <% end %>
-
-    <!-- Configuration Form -->
+    
+<!-- Configuration Form -->
     <%= if @editing || @creating do %>
       <div class="mt-8">
         <div class="bg-white shadow sm:rounded-lg">
           <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
             <div>
               <h3 class="text-lg leading-6 font-medium text-gray-900">
-                <%= if @creating, do: "Create New Configuration", else: "Edit Configuration" %>
+                {if @creating, do: "Create New Configuration", else: "Edit Configuration"}
               </h3>
               <p class="mt-1 max-w-2xl text-sm text-gray-500">
                 Configure HSE scraping parameters and feature flags.
               </p>
             </div>
-            <button 
-              type="button" 
+            <button
+              type="button"
               phx-click="cancel_editing"
               class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Cancel
             </button>
           </div>
-          
+
           <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
-            <.form 
-              for={@form} 
-              phx-change="validate" 
+            <.form
+              for={@form}
+              phx-change="validate"
               phx-submit="save"
               class="space-y-6"
             >
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
-                <!-- Basic Information -->
+<!-- Basic Information -->
                 <div class="space-y-4">
                   <h4 class="text-sm font-medium text-gray-900">Basic Information</h4>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:name]} 
-                      label="Configuration Name" 
+                    <.input
+                      field={@form[:name]}
+                      label="Configuration Name"
                       placeholder="e.g., hse_production"
                       required
                     />
                   </div>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:description]} 
-                      label="Description" 
+                    <.input
+                      field={@form[:description]}
+                      label="Description"
                       type="textarea"
                       placeholder="Optional description of this configuration"
                     />
                   </div>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:hse_base_url]} 
-                      label="HSE Base URL" 
+                    <.input
+                      field={@form[:hse_base_url]}
+                      label="HSE Base URL"
                       placeholder="https://www.hse.gov.uk"
                       required
                     />
                   </div>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:hse_database]} 
+                    <.input
+                      field={@form[:hse_database]}
                       label="HSE Database"
                       type="select"
                       options={[
@@ -282,37 +334,39 @@
                   </div>
                 </div>
                 
-                <!-- Rate Limiting -->
+<!-- Rate Limiting -->
                 <div class="space-y-4">
                   <h4 class="text-sm font-medium text-gray-900">Rate Limiting</h4>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:requests_per_minute]} 
-                      label="Requests per Minute" 
+                    <.input
+                      field={@form[:requests_per_minute]}
+                      label="Requests per Minute"
                       type="number"
                       min="1"
                       max="60"
                       required
                     />
-                    <p class="mt-1 text-xs text-gray-500">Lower values are more respectful to HSE servers</p>
+                    <p class="mt-1 text-xs text-gray-500">
+                      Lower values are more respectful to HSE servers
+                    </p>
                   </div>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:network_timeout_ms]} 
-                      label="Network Timeout (ms)" 
+                    <.input
+                      field={@form[:network_timeout_ms]}
+                      label="Network Timeout (ms)"
                       type="number"
                       min="5000"
                       max="120000"
                       required
                     />
                   </div>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:pause_between_pages_ms]} 
-                      label="Pause Between Pages (ms)" 
+                    <.input
+                      field={@form[:pause_between_pages_ms]}
+                      label="Pause Between Pages (ms)"
                       type="number"
                       min="1000"
                       max="30000"
@@ -321,48 +375,50 @@
                   </div>
                 </div>
                 
-                <!-- Scraping Behavior -->
+<!-- Scraping Behavior -->
                 <div class="space-y-4">
                   <h4 class="text-sm font-medium text-gray-900">Scraping Behavior</h4>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:consecutive_existing_threshold]} 
-                      label="Stop After Consecutive Existing" 
+                    <.input
+                      field={@form[:consecutive_existing_threshold]}
+                      label="Stop After Consecutive Existing"
                       type="number"
                       min="3"
                       max="50"
                       required
                     />
-                    <p class="mt-1 text-xs text-gray-500">Stop scraping after this many consecutive existing records</p>
+                    <p class="mt-1 text-xs text-gray-500">
+                      Stop scraping after this many consecutive existing records
+                    </p>
                   </div>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:max_pages_per_session]} 
-                      label="Max Pages per Session" 
+                    <.input
+                      field={@form[:max_pages_per_session]}
+                      label="Max Pages per Session"
                       type="number"
                       min="5"
                       max="1000"
                       required
                     />
                   </div>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:max_consecutive_errors]} 
-                      label="Max Consecutive Errors" 
+                    <.input
+                      field={@form[:max_consecutive_errors]}
+                      label="Max Consecutive Errors"
                       type="number"
                       min="1"
                       max="10"
                       required
                     />
                   </div>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:batch_size]} 
-                      label="Batch Size" 
+                    <.input
+                      field={@form[:batch_size]}
+                      label="Batch Size"
                       type="number"
                       min="10"
                       max="500"
@@ -371,55 +427,55 @@
                   </div>
                 </div>
                 
-                <!-- Feature Flags -->
+<!-- Feature Flags -->
                 <div class="space-y-4">
                   <h4 class="text-sm font-medium text-gray-900">Feature Flags</h4>
-                  
+
                   <div class="space-y-3">
-                    <.input 
-                      field={@form[:manual_scraping_enabled]} 
-                      label="Enable Manual Scraping" 
+                    <.input
+                      field={@form[:manual_scraping_enabled]}
+                      label="Enable Manual Scraping"
                       type="checkbox"
                     />
-                    
-                    <.input 
-                      field={@form[:scheduled_scraping_enabled]} 
-                      label="Enable Scheduled Scraping" 
+
+                    <.input
+                      field={@form[:scheduled_scraping_enabled]}
+                      label="Enable Scheduled Scraping"
                       type="checkbox"
                     />
-                    
-                    <.input 
-                      field={@form[:real_time_progress_enabled]} 
-                      label="Enable Real-time Progress Updates" 
+
+                    <.input
+                      field={@form[:real_time_progress_enabled]}
+                      label="Enable Real-time Progress Updates"
                       type="checkbox"
                     />
-                    
-                    <.input 
-                      field={@form[:admin_notifications_enabled]} 
-                      label="Enable Admin Error Notifications" 
+
+                    <.input
+                      field={@form[:admin_notifications_enabled]}
+                      label="Enable Admin Error Notifications"
                       type="checkbox"
                     />
                   </div>
                 </div>
               </div>
               
-              <!-- Schedule Configuration -->
+<!-- Schedule Configuration -->
               <div class="border-t border-gray-200 pt-6">
                 <h4 class="text-sm font-medium text-gray-900 mb-4">Schedule Configuration</h4>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
-                    <.input 
-                      field={@form[:daily_scrape_cron]} 
-                      label="Daily Scrape Schedule (Cron)" 
+                    <.input
+                      field={@form[:daily_scrape_cron]}
+                      label="Daily Scrape Schedule (Cron)"
                       placeholder="0 2 * * *"
                     />
                     <p class="mt-1 text-xs text-gray-500">Default: 2 AM daily</p>
                   </div>
-                  
+
                   <div>
-                    <.input 
-                      field={@form[:weekly_scrape_cron]} 
-                      label="Weekly Deep Scrape (Cron)" 
+                    <.input
+                      field={@form[:weekly_scrape_cron]}
+                      label="Weekly Deep Scrape (Cron)"
                       placeholder="0 1 * * 0"
                     />
                     <p class="mt-1 text-xs text-gray-500">Default: 1 AM Sunday</p>
@@ -427,21 +483,21 @@
                 </div>
               </div>
               
-              <!-- Submit Button -->
+<!-- Submit Button -->
               <div class="border-t border-gray-200 pt-6">
                 <div class="flex justify-end space-x-3">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     phx-click="cancel_editing"
                     class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     Cancel
                   </button>
-                  <button 
+                  <button
                     type="submit"
                     class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    <%= if @creating, do: "Create Configuration", else: "Save Changes" %>
+                    {if @creating, do: "Create Configuration", else: "Save Changes"}
                   </button>
                 </div>
               </div>
@@ -450,14 +506,14 @@
         </div>
       </div>
     <% end %>
-
-    <!-- Preview Panel -->
+    
+<!-- Preview Panel -->
     <%= if @preview_enabled && (@editing || @creating) do %>
       <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div class="flex justify-between items-center mb-3">
           <h4 class="text-sm font-medium text-blue-900">Configuration Preview</h4>
-          <button 
-            type="button" 
+          <button
+            type="button"
             phx-click="toggle_preview"
             class="text-blue-600 hover:text-blue-800 text-sm"
           >
@@ -467,25 +523,25 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
           <div>
             <dt class="text-blue-700 font-medium">Rate Limit:</dt>
-            <dd class="text-blue-900"><%= @preview_data.rate_limit_delay %></dd>
+            <dd class="text-blue-900">{@preview_data.rate_limit_delay}</dd>
           </div>
           <div>
             <dt class="text-blue-700 font-medium">Requests/Hour:</dt>
-            <dd class="text-blue-900"><%= @preview_data.requests_per_hour %></dd>
+            <dd class="text-blue-900">{@preview_data.requests_per_hour}</dd>
           </div>
           <div>
             <dt class="text-blue-700 font-medium">Est. Pages/Hour:</dt>
-            <dd class="text-blue-900"><%= @preview_data.estimated_pages_per_hour %></dd>
+            <dd class="text-blue-900">{@preview_data.estimated_pages_per_hour}</dd>
           </div>
           <div>
             <dt class="text-blue-700 font-medium">Features:</dt>
-            <dd class="text-blue-900"><%= @preview_data.feature_flags_summary %></dd>
+            <dd class="text-blue-900">{@preview_data.feature_flags_summary}</dd>
           </div>
         </div>
       </div>
     <% end %>
-
-    <!-- All Configurations List -->
+    
+<!-- All Configurations List -->
     <%= if length(@all_configs) > 1 do %>
       <div class="mt-8">
         <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">All Configurations</h3>
@@ -497,16 +553,16 @@
                   <div class="flex items-center">
                     <div class="flex-shrink-0">
                       <span class={"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium #{config_status_badge(config)}"}>
-                        <%= config_status_text(config) %>
+                        {config_status_text(config)}
                       </span>
                     </div>
                     <div class="ml-4">
                       <div class="text-sm font-medium text-gray-900">
-                        <%= config.name %>
+                        {config.name}
                       </div>
                       <div class="text-sm text-gray-500">
                         <%= if config.description do %>
-                          <%= config.description %>
+                          {config.description}
                         <% else %>
                           No description provided
                         <% end %>
@@ -515,16 +571,16 @@
                   </div>
                   <div class="flex items-center space-x-2">
                     <%= unless config.is_active do %>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         phx-click="activate_config"
                         phx-value-config_id={config.id}
                         class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
                         Activate
                       </button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         phx-click="delete_config"
                         phx-value-config_id={config.id}
                         data-confirm="Are you sure you want to delete this configuration?"

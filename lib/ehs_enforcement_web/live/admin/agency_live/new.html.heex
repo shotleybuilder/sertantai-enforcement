@@ -9,7 +9,10 @@
               <ol class="flex items-center space-x-4">
                 <li>
                   <div>
-                    <.link navigate={~p"/admin/agencies"} class="text-gray-400 hover:text-gray-500">
+                    <.link
+                      navigate={~p"/admin/agencies"}
+                      class="text-gray-400 hover:text-gray-500"
+                    >
                       <.icon name="hero-building-office" class="flex-shrink-0 h-5 w-5" />
                       <span class="sr-only">Agencies</span>
                     </.link>
@@ -18,7 +21,10 @@
                 <li>
                   <div class="flex items-center">
                     <.icon name="hero-chevron-right" class="flex-shrink-0 h-5 w-5 text-gray-400" />
-                    <.link navigate={~p"/admin/agencies"} class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                    <.link
+                      navigate={~p"/admin/agencies"}
+                      class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700"
+                    >
                       Agencies
                     </.link>
                   </div>
@@ -38,7 +44,7 @@
               Create a new enforcement agency
             </p>
           </div>
-          
+
           <div class="flex space-x-3">
             <button
               type="button"
@@ -52,8 +58,8 @@
       </div>
     </div>
   </div>
-
-  <!-- Main Content -->
+  
+<!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white shadow overflow-hidden sm:rounded-lg">
       <.simple_form
@@ -65,7 +71,7 @@
         <div class="px-4 py-5 sm:p-6">
           <h3 class="text-lg leading-6 font-medium text-gray-900 mb-6">Agency Details</h3>
           
-          <!-- Three-column layout table -->
+<!-- Three-column layout table -->
           <div class="overflow-hidden">
             <table class="min-w-full">
               <thead class="bg-gray-50">
@@ -85,10 +91,10 @@
                 <!-- Code Field -->
                 <tr>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:code) %> *
+                    {field_display_name(:code)} *
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:code) %>
+                    {field_description(:code)}
                   </td>
                   <td class="px-6 py-4">
                     <.input
@@ -105,14 +111,14 @@
                     />
                   </td>
                 </tr>
-
-                <!-- Name Field -->
+                
+<!-- Name Field -->
                 <tr class="bg-gray-50">
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:name) %> *
+                    {field_display_name(:name)} *
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:name) %>
+                    {field_description(:name)}
                   </td>
                   <td class="px-6 py-4">
                     <.input
@@ -123,14 +129,14 @@
                     />
                   </td>
                 </tr>
-
-                <!-- Base URL Field -->
+                
+<!-- Base URL Field -->
                 <tr>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:base_url) %>
+                    {field_display_name(:base_url)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:base_url) %>
+                    {field_description(:base_url)}
                   </td>
                   <td class="px-6 py-4">
                     <.input
@@ -141,14 +147,14 @@
                     />
                   </td>
                 </tr>
-
-                <!-- Enabled Field -->
+                
+<!-- Enabled Field -->
                 <tr class="bg-gray-50">
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:enabled) %>
+                    {field_display_name(:enabled)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:enabled) %>
+                    {field_description(:enabled)}
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center">
@@ -166,13 +172,13 @@
               </tbody>
             </table>
           </div>
-          
+
           <div class="mt-6 text-sm text-gray-500">
             <p><span class="text-red-500">*</span> Required fields</p>
           </div>
         </div>
-
-        <!-- Action Buttons -->
+        
+<!-- Action Buttons -->
         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <button
             type="submit"

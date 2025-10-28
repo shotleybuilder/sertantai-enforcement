@@ -80,7 +80,7 @@ defmodule EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy do
     # Progress = (current_page / max_pages) * 100
     if session.max_pages > 0 do
       current = session.current_page || 0
-      (current / session.max_pages) * 100.0
+      current / session.max_pages * 100.0
     else
       0.0
     end
@@ -88,7 +88,7 @@ defmodule EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy do
 
   @impl true
   def calculate_progress(%{current_page: current, max_pages: max}) when max > 0 do
-    (current / max) * 100.0
+    current / max * 100.0
   end
 
   @impl true
@@ -133,26 +133,31 @@ defmodule EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy do
 
   defp validate_start_page(nil), do: {:ok, 1}
   defp validate_start_page(page) when is_integer(page) and page > 0, do: {:ok, page}
+
   defp validate_start_page(page) when is_binary(page) do
     case Integer.parse(page) do
       {int, ""} when int > 0 -> {:ok, int}
       _ -> {:error, "start_page must be a positive integer"}
     end
   end
+
   defp validate_start_page(_), do: {:error, "start_page must be a positive integer"}
 
   defp validate_max_pages(nil), do: {:ok, 10}
   defp validate_max_pages(pages) when is_integer(pages) and pages > 0, do: {:ok, pages}
+
   defp validate_max_pages(pages) when is_binary(pages) do
     case Integer.parse(pages) do
       {int, ""} when int > 0 -> {:ok, int}
       _ -> {:error, "max_pages must be a positive integer"}
     end
   end
+
   defp validate_max_pages(_), do: {:error, "max_pages must be a positive integer"}
 
   defp validate_database(nil), do: {:ok, @default_database}
   defp validate_database(database) when database in @valid_databases, do: {:ok, database}
+
   defp validate_database(database) when is_binary(database) do
     if database in @valid_databases do
       {:ok, database}
@@ -160,5 +165,6 @@ defmodule EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy do
       {:error, "database must be one of: #{Enum.join(@valid_databases, ", ")}"}
     end
   end
+
   defp validate_database(_), do: {:error, "database must be a valid string"}
 end

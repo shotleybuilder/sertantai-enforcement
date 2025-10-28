@@ -13,7 +13,6 @@ config :ehs_enforcement,
   ecto_repos: [EhsEnforcement.Repo],
   generators: [timestamp_type: :utc_datetime]
 
-
 # Configures the endpoint
 config :ehs_enforcement, EhsEnforcementWeb.Endpoint,
   url: [host: "localhost"],

@@ -38,7 +38,11 @@ defmodule Mix.Tasks.DebugAdmin do
       IO.puts("\n🔧 Configuration Values:")
       IO.puts("  GITHUB_REPO_OWNER: #{inspect(owner)}")
       IO.puts("  GITHUB_REPO_NAME: #{inspect(repo)}")
-      IO.puts("  GITHUB_ACCESS_TOKEN: #{if access_token, do: "[SET (#{String.length(access_token)} chars)]", else: "[NOT SET]"}")
+
+      IO.puts(
+        "  GITHUB_ACCESS_TOKEN: #{if access_token, do: "[SET (#{String.length(access_token)} chars)]", else: "[NOT SET]"}"
+      )
+
       IO.puts("  GITHUB_ALLOWED_USERS: #{inspect(allowed_users)}")
 
       IO.puts("\n👤 Checking user: #{github_login}")
@@ -47,8 +51,8 @@ defmodule Mix.Tasks.DebugAdmin do
         cond do
           # Repository-based: all three must be present AND non-empty
           is_binary(access_token) and access_token != "" and
-          is_binary(owner) and owner != "" and
-          is_binary(repo) and repo != "" ->
+            is_binary(owner) and owner != "" and
+            is_binary(repo) and repo != "" ->
             IO.puts("\n✓ Using repository-based admin check")
             IO.puts("  Checking if '#{github_login}' is a collaborator on #{owner}/#{repo}...")
             check_repo_access(github_login, owner, repo, access_token)

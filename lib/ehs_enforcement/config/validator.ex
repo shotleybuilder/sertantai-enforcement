@@ -1,7 +1,7 @@
 defmodule EhsEnforcement.Config.Validator do
   @moduledoc """
   Configuration validation for application startup and runtime.
-  
+
   Ensures all required configuration is present and valid before
   the application starts or when configuration changes.
   """
@@ -19,7 +19,7 @@ defmodule EhsEnforcement.Config.Validator do
       &validate_feature_flags/0
     ]
 
-    errors = 
+    errors =
       validations
       |> Enum.map(& &1.())
       |> Enum.filter(&(&1 != :ok))
@@ -55,14 +55,14 @@ defmodule EhsEnforcement.Config.Validator do
   """
   def validate_database_connection do
     database_url = System.get_env("DATABASE_URL")
-    
+
     cond do
       database_url in [nil, ""] ->
         {:error, :database_connection_failed}
-      
+
       not String.starts_with?(database_url, "postgresql://") ->
         {:error, :database_connection_failed}
-      
+
       true ->
         # In a real application, we might try to connect here
         # For testing, we'll accept valid-looking URLs
@@ -75,10 +75,11 @@ defmodule EhsEnforcement.Config.Validator do
   """
   def validate_feature_flags do
     auto_sync_value = System.get_env("AUTO_SYNC_ENABLED", "false")
-    
+
     case auto_sync_value do
       value when value in ["true", "false", "TRUE", "FALSE", "True", "False", "1", "0"] ->
         :ok
+
       _ ->
         {:error, :invalid_feature_flag_value}
     end
@@ -101,14 +102,14 @@ defmodule EhsEnforcement.Config.Validator do
 
   defp validate_api_key do
     api_key = System.get_env("AT_UK_E_API_KEY")
-    
+
     cond do
       api_key in [nil, ""] ->
         {:error, :missing_airtable_api_key}
-      
+
       String.length(api_key) < 10 ->
         {:error, :invalid_api_key_format}
-      
+
       true ->
         :ok
     end
@@ -116,7 +117,7 @@ defmodule EhsEnforcement.Config.Validator do
 
   defp validate_base_id do
     base_id = System.get_env("AIRTABLE_BASE_ID", "appq5OQW9bTHC1zO5")
-    
+
     if String.starts_with?(base_id, "app") and String.length(base_id) > 10 do
       :ok
     else
@@ -126,10 +127,11 @@ defmodule EhsEnforcement.Config.Validator do
 
   defp validate_sync_interval do
     interval_str = System.get_env("SYNC_INTERVAL", "60")
-    
+
     case Integer.parse(interval_str) do
       {interval, ""} when interval > 0 ->
         :ok
+
       _ ->
         {:error, :invalid_sync_interval}
     end
@@ -137,14 +139,14 @@ defmodule EhsEnforcement.Config.Validator do
 
   defp validate_database_config do
     database_url = System.get_env("DATABASE_URL")
-    
+
     cond do
       database_url in [nil, ""] ->
         {:error, :missing_database_url}
-      
+
       not String.starts_with?(database_url, "postgresql://") ->
         {:error, :invalid_database_url}
-      
+
       true ->
         :ok
     end
@@ -152,14 +154,14 @@ defmodule EhsEnforcement.Config.Validator do
 
   defp validate_secret_key_base do
     secret_key = System.get_env("SECRET_KEY_BASE")
-    
+
     cond do
       secret_key in [nil, ""] ->
         {:error, :missing_secret_key_base}
-      
+
       String.length(secret_key) < 64 ->
         {:error, :invalid_secret_key_base}
-      
+
       true ->
         :ok
     end

@@ -22,14 +22,15 @@ defmodule EhsEnforcement.RetryLogic do
     max_delay_ms = Keyword.get(opts, :max_delay_ms, 30_000)
     operation = Keyword.get(opts, :operation, "unknown")
     context = Keyword.get(opts, :context, %{})
-    
-    delays = calculate_backoff_delays(
-      base_delay_ms: base_delay_ms,
-      max_delay_ms: max_delay_ms,
-      max_attempts: max_attempts,
-      jitter: true
-    )
-    
+
+    delays =
+      calculate_backoff_delays(
+        base_delay_ms: base_delay_ms,
+        max_delay_ms: max_delay_ms,
+        max_attempts: max_attempts,
+        jitter: true
+      )
+
     retry_with_delays(fun, delays, operation, context)
   end
 
@@ -41,11 +42,11 @@ defmodule EhsEnforcement.RetryLogic do
     max_delay_ms = Keyword.get(opts, :max_delay_ms, 30_000)
     max_attempts = Keyword.get(opts, :max_attempts, 3)
     jitter = Keyword.get(opts, :jitter, false)
-    
+
     1..max_attempts
     |> Enum.map(fn attempt ->
       delay = min(base_delay_ms * :math.pow(2, attempt - 1), max_delay_ms) |> round()
-      
+
       if jitter do
         jitter_range = div(delay, 2)
         delay + :rand.uniform(jitter_range) - div(jitter_range, 2)
@@ -65,12 +66,13 @@ defmodule EhsEnforcement.RetryLogic do
     delay_ms = Keyword.get(opts, :delay_ms, 1000)
     operation = Keyword.get(opts, :operation, "unknown")
     context = Keyword.get(opts, :context, %{})
-    
-    delays = calculate_linear_delays(
-      delay_ms: delay_ms,
-      max_attempts: max_attempts
-    )
-    
+
+    delays =
+      calculate_linear_delays(
+        delay_ms: delay_ms,
+        max_attempts: max_attempts
+      )
+
     retry_with_delays(fun, delays, operation, context)
   end
 
@@ -80,7 +82,7 @@ defmodule EhsEnforcement.RetryLogic do
   def calculate_linear_delays(opts \\ []) do
     delay_ms = Keyword.get(opts, :delay_ms, 1000)
     max_attempts = Keyword.get(opts, :max_attempts, 3)
-    
+
     List.duplicate(delay_ms, max_attempts)
   end
 
@@ -95,13 +97,14 @@ defmodule EhsEnforcement.RetryLogic do
     max_delay_ms = Keyword.get(opts, :max_delay_ms, 30_000)
     operation = Keyword.get(opts, :operation, "unknown")
     context = Keyword.get(opts, :context, %{})
-    
-    delays = calculate_fibonacci_delays(
-      base_delay_ms: base_delay_ms,
-      max_delay_ms: max_delay_ms,
-      max_attempts: max_attempts
-    )
-    
+
+    delays =
+      calculate_fibonacci_delays(
+        base_delay_ms: base_delay_ms,
+        max_delay_ms: max_delay_ms,
+        max_attempts: max_attempts
+      )
+
     retry_with_delays(fun, delays, operation, context)
   end
 
@@ -112,7 +115,7 @@ defmodule EhsEnforcement.RetryLogic do
     base_delay_ms = Keyword.get(opts, :base_delay_ms, 1000)
     max_delay_ms = Keyword.get(opts, :max_delay_ms, 30_000)
     max_attempts = Keyword.get(opts, :max_attempts, 5)
-    
+
     fibonacci_sequence(max_attempts)
     |> Enum.map(fn fib_num -> min(fib_num * base_delay_ms, max_delay_ms) end)
   end
@@ -127,7 +130,7 @@ defmodule EhsEnforcement.RetryLogic do
     max_attempts = Keyword.get(opts, :max_attempts, 3)
     base_delay_ms = Keyword.get(opts, :base_delay_ms, 1000)
     operation = Keyword.get(opts, :operation, "unknown")
-    
+
     attempt_with_condition(fun, retry_when, max_attempts, base_delay_ms, operation, 1)
   end
 
@@ -138,9 +141,9 @@ defmodule EhsEnforcement.RetryLogic do
     context = Keyword.get(opts, :context, %{})
     retry_policy = Keyword.get(opts, :retry_policy, :default)
     max_attempts = Keyword.get(opts, :max_attempts, 3)
-    
+
     policy = get_retry_policy(retry_policy)
-    
+
     case policy.backoff_type do
       :exponential ->
         with_exponential_backoff(fun,
@@ -150,9 +153,9 @@ defmodule EhsEnforcement.RetryLogic do
           operation: context[:operation],
           context: context
         )
-      
+
       # :linear backoff not currently supported in policies
-      
+
       :fibonacci ->
         with_fibonacci_backoff(fun,
           max_attempts: max_attempts,
@@ -171,7 +174,7 @@ defmodule EhsEnforcement.RetryLogic do
   """
   def init_circuit_breaker(circuit_name, opts \\ []) do
     ensure_tables_exist()
-    
+
     config = %{
       failure_threshold: Keyword.get(opts, :failure_threshold, 5),
       timeout_ms: Keyword.get(opts, :timeout_ms, 60_000),
@@ -183,7 +186,7 @@ defmodule EhsEnforcement.RetryLogic do
       failed_calls: 0,
       blocked_calls: 0
     }
-    
+
     :ets.insert(@circuit_breakers_table, {circuit_name, config})
     :ok
   end
@@ -193,13 +196,13 @@ defmodule EhsEnforcement.RetryLogic do
   """
   def call_with_circuit_breaker(circuit_name, fun) do
     ensure_tables_exist()
-    
+
     case :ets.lookup(@circuit_breakers_table, circuit_name) do
       [{^circuit_name, config}] ->
         case config.state do
           :closed ->
             execute_with_circuit_breaker(circuit_name, config, fun)
-          
+
           :open ->
             if should_attempt_reset?(config) do
               # Transition to half-open
@@ -210,11 +213,11 @@ defmodule EhsEnforcement.RetryLogic do
               update_blocked_calls(circuit_name, config)
               {:error, :circuit_open}
             end
-          
+
           :half_open ->
             execute_with_circuit_breaker(circuit_name, config, fun)
         end
-      
+
       [] ->
         # Initialize circuit breaker if not found
         init_circuit_breaker(circuit_name)
@@ -227,17 +230,13 @@ defmodule EhsEnforcement.RetryLogic do
   """
   def reset_circuit_breaker(circuit_name) do
     ensure_tables_exist()
-    
+
     case :ets.lookup(@circuit_breakers_table, circuit_name) do
       [{^circuit_name, config}] ->
-        reset_config = %{config | 
-          state: :closed,
-          failure_count: 0,
-          last_failure_time: nil
-        }
+        reset_config = %{config | state: :closed, failure_count: 0, last_failure_time: nil}
         :ets.insert(@circuit_breakers_table, {circuit_name, reset_config})
         :ok
-      
+
       [] ->
         :ok
     end
@@ -257,7 +256,7 @@ defmodule EhsEnforcement.RetryLogic do
           blocked_calls: config.blocked_calls,
           failure_rate: calculate_failure_rate(config)
         }
-      
+
       [] ->
         %{error: :circuit_not_found}
     end
@@ -273,7 +272,7 @@ defmodule EhsEnforcement.RetryLogic do
     base_delay_ms = Keyword.get(opts, :base_delay_ms, 1000)
     on_success = Keyword.get(opts, :on_success, fn _ -> :ok end)
     on_failure = Keyword.get(opts, :on_failure, fn _ -> :ok end)
-    
+
     Task.async(fn ->
       case with_exponential_backoff(fun, max_attempts: max_attempts, base_delay_ms: base_delay_ms) do
         {:ok, result} -> on_success.(result)
@@ -289,14 +288,14 @@ defmodule EhsEnforcement.RetryLogic do
   """
   def init_rate_limiter(limiter_name, opts \\ []) do
     ensure_tables_exist()
-    
+
     config = %{
       max_requests: Keyword.get(opts, :max_requests, 10),
       window_ms: Keyword.get(opts, :window_ms, 60_000),
       requests: [],
       created_at: System.monotonic_time(:millisecond)
     }
-    
+
     :ets.insert(@rate_limiters_table, {limiter_name, config})
     :ok
   end
@@ -308,11 +307,11 @@ defmodule EhsEnforcement.RetryLogic do
     rate_limiter = Keyword.get(opts, :rate_limiter)
     max_attempts = Keyword.get(opts, :max_attempts, 3)
     base_delay_ms = Keyword.get(opts, :base_delay_ms, 1000)
-    
+
     case check_rate_limit(rate_limiter) do
       :ok ->
         with_exponential_backoff(fun, max_attempts: max_attempts, base_delay_ms: base_delay_ms)
-      
+
       :rate_limited ->
         {:error, :rate_limited}
     end
@@ -387,13 +386,13 @@ defmodule EhsEnforcement.RetryLogic do
           base_delay_ms: policy.base_delay_ms,
           max_delay_ms: policy.max_delay_ms
         )
-      
+
       :linear ->
         with_linear_backoff(fun,
           max_attempts: policy.max_attempts,
           delay_ms: policy.base_delay_ms
         )
-      
+
       :fibonacci ->
         with_fibonacci_backoff(fun,
           max_attempts: policy.max_attempts,
@@ -419,25 +418,27 @@ defmodule EhsEnforcement.RetryLogic do
   """
   def get_retry_metrics do
     ensure_tables_exist()
-    
+
     metrics_data = :ets.tab2list(@retry_metrics_table)
-    
+
     total_operations = length(metrics_data)
     successful_operations = Enum.count(metrics_data, fn {_, data} -> data.outcome == :success end)
     failed_operations = total_operations - successful_operations
-    
+
     total_attempts = Enum.sum(Enum.map(metrics_data, fn {_, data} -> data.attempts end))
-    
-    by_operation = 
+
+    by_operation =
       metrics_data
       |> Enum.group_by(fn {_, data} -> data.operation end)
       |> Enum.into(%{}, fn {operation, operation_data} ->
         operation_total = length(operation_data)
-        operation_successful = Enum.count(operation_data, fn {_, data} -> data.outcome == :success end)
-        
+
+        operation_successful =
+          Enum.count(operation_data, fn {_, data} -> data.outcome == :success end)
+
         {operation, %{total: operation_total, successful: operation_successful}}
       end)
-    
+
     %{
       total_operations: total_operations,
       successful_operations: successful_operations,
@@ -452,25 +453,27 @@ defmodule EhsEnforcement.RetryLogic do
   """
   def generate_performance_report do
     metrics = get_retry_metrics()
-    
-    overall_success_rate = if metrics.total_operations > 0 do
-      metrics.successful_operations / metrics.total_operations
-    else
-      0.0
-    end
-    
-    average_attempts = if metrics.total_operations > 0 do
-      metrics.total_attempts / metrics.total_operations
-    else
-      0.0
-    end
-    
-    most_retried = 
+
+    overall_success_rate =
+      if metrics.total_operations > 0 do
+        metrics.successful_operations / metrics.total_operations
+      else
+        0.0
+      end
+
+    average_attempts =
+      if metrics.total_operations > 0 do
+        metrics.total_attempts / metrics.total_operations
+      else
+        0.0
+      end
+
+    most_retried =
       metrics.by_operation
       |> Enum.sort_by(fn {_, data} -> data.total end, :desc)
       |> Enum.take(5)
       |> Enum.map(fn {operation, _} -> operation end)
-    
+
     %{
       total_operations: metrics.total_operations,
       overall_success_rate: overall_success_rate,
@@ -484,12 +487,12 @@ defmodule EhsEnforcement.RetryLogic do
 
   defp retry_with_delays(fun, delays, operation, _context) do
     record_operation_start(operation)
-    
+
     case attempt_with_delays(fun, delays, operation, 1) do
       {:ok, result} ->
         record_operation_outcome(operation, :success, length(delays))
         {:ok, result}
-      
+
       {:error, _reason} ->
         record_operation_outcome(operation, :failure, length(delays))
         {:error, :max_attempts_exceeded}
@@ -500,43 +503,64 @@ defmodule EhsEnforcement.RetryLogic do
 
   defp attempt_with_delays(fun, [delay | remaining_delays], operation, attempt) do
     log_retry_attempt(operation, attempt)
-    
+
     case fun.() do
-      {:ok, result} -> {:ok, result}
-      {:error, _reason} when remaining_delays == [] -> {:error, :max_attempts_exceeded}
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, _reason} when remaining_delays == [] ->
+        {:error, :max_attempts_exceeded}
+
       {:error, _reason} ->
         :timer.sleep(delay)
         attempt_with_delays(fun, remaining_delays, operation, attempt + 1)
     end
   end
 
-  defp attempt_with_condition(fun, retry_when, max_attempts, base_delay_ms, operation, attempt) when attempt <= max_attempts do
+  defp attempt_with_condition(fun, retry_when, max_attempts, base_delay_ms, operation, attempt)
+       when attempt <= max_attempts do
     log_retry_attempt(operation, attempt)
-    
+
     case fun.() do
       {:ok, result} ->
         {:ok, result}
-      
+
       {:error, _reason} = _error when attempt == max_attempts ->
         {:error, :max_attempts_exceeded}
-      
+
       {:error, _reason} = error ->
         if retry_when.(error) do
           :timer.sleep(base_delay_ms)
-          attempt_with_condition(fun, retry_when, max_attempts, base_delay_ms, operation, attempt + 1)
+
+          attempt_with_condition(
+            fun,
+            retry_when,
+            max_attempts,
+            base_delay_ms,
+            operation,
+            attempt + 1
+          )
         else
           error
         end
     end
   end
 
-  defp attempt_with_condition(_fun, _retry_when, _max_attempts, _base_delay_ms, _operation, _attempt) do
+  defp attempt_with_condition(
+         _fun,
+         _retry_when,
+         _max_attempts,
+         _base_delay_ms,
+         _operation,
+         _attempt
+       ) do
     {:error, :max_attempts_exceeded}
   end
 
   defp fibonacci_sequence(n) when n <= 0, do: []
   defp fibonacci_sequence(1), do: [1]
   defp fibonacci_sequence(2), do: [1, 1]
+
   defp fibonacci_sequence(n) do
     fib_list = fibonacci_sequence(n - 1)
     last_two = Enum.take(fib_list, -2)
@@ -545,27 +569,33 @@ defmodule EhsEnforcement.RetryLogic do
 
   defp execute_with_circuit_breaker(circuit_name, config, fun) do
     updated_config = %{config | total_calls: config.total_calls + 1}
-    
+
     case fun.() do
       {:ok, result} ->
-        success_config = %{updated_config | 
-          successful_calls: config.successful_calls + 1,
-          failure_count: 0,
-          state: :closed
+        success_config = %{
+          updated_config
+          | successful_calls: config.successful_calls + 1,
+            failure_count: 0,
+            state: :closed
         }
+
         :ets.insert(@circuit_breakers_table, {circuit_name, success_config})
         {:ok, result}
-      
+
       {:error, _reason} = error ->
         new_failure_count = config.failure_count + 1
-        new_state = if new_failure_count >= config.failure_threshold, do: :open, else: config.state
-        
-        failure_config = %{updated_config |
-          failed_calls: config.failed_calls + 1,
-          failure_count: new_failure_count,
-          last_failure_time: System.monotonic_time(:millisecond),
-          state: new_state
+
+        new_state =
+          if new_failure_count >= config.failure_threshold, do: :open, else: config.state
+
+        failure_config = %{
+          updated_config
+          | failed_calls: config.failed_calls + 1,
+            failure_count: new_failure_count,
+            last_failure_time: System.monotonic_time(:millisecond),
+            state: new_state
         }
+
         :ets.insert(@circuit_breakers_table, {circuit_name, failure_config})
         error
     end
@@ -573,8 +603,9 @@ defmodule EhsEnforcement.RetryLogic do
 
   defp should_attempt_reset?(config) do
     current_time = System.monotonic_time(:millisecond)
-    config.last_failure_time != nil and 
-      (current_time - config.last_failure_time) > config.timeout_ms
+
+    config.last_failure_time != nil and
+      current_time - config.last_failure_time > config.timeout_ms
   end
 
   defp update_blocked_calls(circuit_name, config) do
@@ -595,12 +626,13 @@ defmodule EhsEnforcement.RetryLogic do
       [{^limiter_name, config}] ->
         current_time = System.monotonic_time(:millisecond)
         window_start = current_time - config.window_ms
-        
+
         # Filter requests within current window
-        recent_requests = Enum.filter(config.requests, fn request_time ->
-          request_time > window_start
-        end)
-        
+        recent_requests =
+          Enum.filter(config.requests, fn request_time ->
+            request_time > window_start
+          end)
+
         if length(recent_requests) < config.max_requests do
           # Add current request to the list
           updated_requests = [current_time | recent_requests]
@@ -610,9 +642,10 @@ defmodule EhsEnforcement.RetryLogic do
         else
           :rate_limited
         end
-      
+
       [] ->
-        :ok  # No rate limiter configured
+        # No rate limiter configured
+        :ok
     end
   end
 
@@ -623,14 +656,14 @@ defmodule EhsEnforcement.RetryLogic do
 
   defp record_operation_outcome(operation, outcome, attempts) do
     ensure_tables_exist()
-    
+
     operation_data = %{
       operation: operation,
       outcome: outcome,
       attempts: attempts,
       timestamp: DateTime.utc_now()
     }
-    
+
     operation_id = :crypto.strong_rand_bytes(8) |> Base.encode16() |> String.downcase()
     :ets.insert(@retry_metrics_table, {operation_id, operation_data})
   end
@@ -647,11 +680,11 @@ defmodule EhsEnforcement.RetryLogic do
     unless :ets.whereis(@retry_metrics_table) != :undefined do
       :ets.new(@retry_metrics_table, [:named_table, :public, :set])
     end
-    
+
     unless :ets.whereis(@circuit_breakers_table) != :undefined do
       :ets.new(@circuit_breakers_table, [:named_table, :public, :set])
     end
-    
+
     unless :ets.whereis(@rate_limiters_table) != :undefined do
       :ets.new(@rate_limiters_table, [:named_table, :public, :set])
     end

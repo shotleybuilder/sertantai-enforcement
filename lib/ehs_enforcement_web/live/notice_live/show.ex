@@ -25,7 +25,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
          |> assign(:compliance_status, calculate_compliance_status(notice))
          |> assign(:timeline_data, build_timeline_data(notice))
          |> assign(:loading, false)}
-      
+
       {:error, _error} ->
         {:noreply,
          socket
@@ -36,6 +36,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
     error ->
       require Logger
       Logger.error("Failed to load notice #{id}: #{inspect(error)}")
+
       {:noreply,
        socket
        |> put_flash(:error, "Notice not found")
@@ -66,10 +67,9 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
 
   # Private functions
 
-
   defp calculate_compliance_status(notice) do
     today = Date.utc_today()
-    
+
     cond do
       is_nil(notice.compliance_date) ->
         %{
@@ -79,16 +79,17 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
           days_remaining: nil,
           days_overdue: nil
         }
-      
+
       notice.compliance_date && Date.compare(notice.compliance_date, today) == :gt ->
         days_remaining = Date.diff(notice.compliance_date, today)
-        
-        status = cond do
-          days_remaining <= 7 -> "urgent"
-          days_remaining <= 14 -> "immediate"
-          true -> "pending"
-        end
-        
+
+        status =
+          cond do
+            days_remaining <= 7 -> "urgent"
+            days_remaining <= 14 -> "immediate"
+            true -> "pending"
+          end
+
         %{
           status: status,
           class: status_to_class(status),
@@ -96,10 +97,10 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
           days_remaining: days_remaining,
           days_overdue: nil
         }
-      
+
       true ->
         days_overdue = Date.diff(today, notice.compliance_date)
-        
+
         %{
           status: "overdue",
           class: "text-red-600",
@@ -122,42 +123,58 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
 
   defp build_timeline_data(notice) do
     today = Date.utc_today()
-    
+
     timeline = [
       %{
         date: notice.notice_date,
         label: "Notice Issued",
-        status: if(notice.notice_date && Date.compare(today, notice.notice_date) != :lt, do: "completed", else: "future"),
+        status:
+          if(notice.notice_date && Date.compare(today, notice.notice_date) != :lt,
+            do: "completed",
+            else: "future"
+          ),
         description: "Notice #{notice.regulator_id} issued"
       }
     ]
-    
-    timeline = if notice.operative_date do
-      timeline ++ [
-        %{
-          date: notice.operative_date,
-          label: "Operative Date",
-          status: if(notice.operative_date && Date.compare(today, notice.operative_date) != :lt, do: "completed", else: "future"),
-          description: "Notice becomes legally enforceable"
-        }
-      ]
-    else
-      timeline
-    end
-    
-    timeline = if notice.compliance_date do
-      timeline ++ [
-        %{
-          date: notice.compliance_date,
-          label: "Compliance Due",
-          status: if(notice.compliance_date && Date.compare(today, notice.compliance_date) != :lt, do: "completed", else: "future"),
-          description: "All required actions must be completed"
-        }
-      ]
-    else
-      timeline
-    end
-    
+
+    timeline =
+      if notice.operative_date do
+        timeline ++
+          [
+            %{
+              date: notice.operative_date,
+              label: "Operative Date",
+              status:
+                if(notice.operative_date && Date.compare(today, notice.operative_date) != :lt,
+                  do: "completed",
+                  else: "future"
+                ),
+              description: "Notice becomes legally enforceable"
+            }
+          ]
+      else
+        timeline
+      end
+
+    timeline =
+      if notice.compliance_date do
+        timeline ++
+          [
+            %{
+              date: notice.compliance_date,
+              label: "Compliance Due",
+              status:
+                if(notice.compliance_date && Date.compare(today, notice.compliance_date) != :lt,
+                  do: "completed",
+                  else: "future"
+                ),
+              description: "All required actions must be completed"
+            }
+          ]
+      else
+        timeline
+      end
+
     timeline
   end
 
@@ -185,6 +202,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
   defp timeline_status_class(_), do: "bg-gray-300"
 
   defp format_notice_body(nil), do: []
+
   defp format_notice_body(body) do
     body
     |> String.split("\n")

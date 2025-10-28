@@ -16,8 +16,8 @@ defmodule EhsEnforcement.Events.Event do
 
   event_log do
     # Required: Module that implements clear_records! callback for replay functionality
-    clear_records_for_replay EhsEnforcement.Events.ClearAllRecords
-    
+    clear_records_for_replay(EhsEnforcement.Events.ClearAllRecords)
+
     # Use regular UUID for now - can upgrade to UUIDv7 later when extension is available
     # primary_key_type Ash.Type.UUIDv7
   end

@@ -10,17 +10,17 @@
               Enforcement Notices
               <%= cond do %>
                 <% @total_notices > 0 -> %>
-                  · <%= @total_notices %> notices loaded
+                  · {@total_notices} notices loaded
                 <% @filters_applied && @total_notices == 0 -> %>
                   · No notices found for current filters
                 <% (map_size(@filters) > 0 || @search_query != "") && !@filters_applied -> %>
-                  · <%= @filter_count %> notices match current criteria
+                  · {@filter_count} notices match current criteria
                 <% true -> %>
                   · Apply filters to view notices. Limited to 1000 records.
               <% end %>
             </p>
           </div>
-          
+
           <div class="flex space-x-3">
             <!-- Back to Admin Button (Admin Users Only) -->
             <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
@@ -29,40 +29,37 @@
                 class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
-                <.icon name="hero-cog-6-tooth" class="h-4 w-4 mr-2" />
-                Admin
+                <.icon name="hero-cog-6-tooth" class="h-4 w-4 mr-2" /> Admin
               </.link>
             <% end %>
             
-            <!-- Back to Dashboard Button -->
+<!-- Back to Dashboard Button -->
             <.link
               navigate={~p"/"}
               class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
-              <.icon name="hero-home" class="h-4 w-4 mr-2" />
-              Dashboard
+              <.icon name="hero-home" class="h-4 w-4 mr-2" /> Dashboard
             </.link>
             
-            <!-- Export Button (Disabled) -->
+<!-- Export Button (Disabled) -->
             <button
               disabled
               title="Export functionality coming soon"
               class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-50"
             >
-              <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" />
-              Export CSV
+              <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" /> Export CSV
             </button>
           </div>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- Main Content -->
+  
+<!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
-    <!-- Filters Section -->
+<!-- Filters Section -->
     <div class="bg-white shadow rounded-lg mb-6">
       <div class="px-4 py-5 sm:p-6">
         <form phx-change="filter" data-testid="notice-filters" class="space-y-4">
@@ -80,13 +77,13 @@
                 <option value="">All Agencies</option>
                 <%= for agency <- @agencies do %>
                   <option value={agency.id} selected={@filters[:agency_id] == agency.id}>
-                    <%= agency.name %>
+                    {agency.name}
                   </option>
                 <% end %>
               </select>
             </div>
-
-            <!-- Row 1, Column 2: Date From Filter -->
+            
+<!-- Row 1, Column 2: Date From Filter -->
             <div>
               <label for="date_from" class="block text-sm font-medium text-gray-700">
                 Date From
@@ -99,8 +96,8 @@
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
-
-            <!-- Row 1, Column 3: Date To Filter -->
+            
+<!-- Row 1, Column 3: Date To Filter -->
             <div>
               <label for="date_to" class="block text-sm font-medium text-gray-700">
                 Date To
@@ -113,8 +110,8 @@
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
-
-            <!-- Row 2, Column 1: Region Filter -->
+            
+<!-- Row 2, Column 1: Region Filter -->
             <div>
               <label for="region" class="block text-sm font-medium text-gray-700">
                 Region
@@ -128,8 +125,8 @@
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               />
             </div>
-
-            <!-- Row 2, Column 2: Notice Type Filter -->
+            
+<!-- Row 2, Column 2: Notice Type Filter -->
             <div>
               <label for="offence_action_type" class="block text-sm font-medium text-gray-700">
                 Notice Type
@@ -140,13 +137,22 @@
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
               >
                 <option value="">All Types</option>
-                <option value="Improvement Notice" selected={@filters[:offence_action_type] == "Improvement Notice"}>
+                <option
+                  value="Improvement Notice"
+                  selected={@filters[:offence_action_type] == "Improvement Notice"}
+                >
                   Improvement Notice
                 </option>
-                <option value="Prohibition Notice" selected={@filters[:offence_action_type] == "Prohibition Notice"}>
+                <option
+                  value="Prohibition Notice"
+                  selected={@filters[:offence_action_type] == "Prohibition Notice"}
+                >
                   Prohibition Notice
                 </option>
-                <option value="Enforcement Notice" selected={@filters[:offence_action_type] == "Enforcement Notice"}>
+                <option
+                  value="Enforcement Notice"
+                  selected={@filters[:offence_action_type] == "Enforcement Notice"}
+                >
                   Enforcement Notice
                 </option>
               </select>
@@ -183,7 +189,7 @@
                 <% end %>
               </div>
               
-              <!-- Fuzzy Search Toggle -->
+<!-- Fuzzy Search Toggle -->
               <div class="flex items-center">
                 <input
                   id="fuzzy-search-toggle"
@@ -201,12 +207,13 @@
               </div>
             </div>
             
-            <!-- Filter Count and Action Buttons -->
+<!-- Filter Count and Action Buttons -->
             <div class="flex items-center space-x-3">
               <!-- Real-time Filter Count -->
               <%= if @counting_filters do %>
                 <div class="flex items-center text-sm text-gray-600">
-                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2">
+                  </div>
                   Counting...
                 </div>
               <% else %>
@@ -214,7 +221,7 @@
                   <div class="flex items-center text-sm">
                     <span class="text-gray-600">Found:</span>
                     <span class={"ml-1 font-semibold #{if @filter_count > 1000, do: "text-red-600", else: "text-blue-600"}"}>
-                      <%= @filter_count %> notices
+                      {@filter_count} notices
                     </span>
                     <%= if @filter_count > 1000 do %>
                       <span class="ml-2 text-xs text-red-600 font-medium">(Too many)</span>
@@ -223,7 +230,7 @@
                 <% end %>
               <% end %>
               
-              <!-- Apply Filter Button -->
+<!-- Apply Filter Button -->
               <%= if (map_size(@filters) > 0 || @search_query != "") && !@filters_applied do %>
                 <%= if @filter_count <= 1000 do %>
                   <button
@@ -231,8 +238,7 @@
                     phx-click="apply_filters"
                     class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
-                    Apply Filters
+                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" /> Apply Filters
                   </button>
                 <% else %>
                   <button
@@ -241,13 +247,12 @@
                     class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-75"
                     title="Too many records found. Please refine your filters to 1,000 or fewer records."
                   >
-                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
-                    Apply Filters
+                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" /> Apply Filters
                   </button>
                 <% end %>
               <% end %>
               
-              <!-- Clear Filters Button -->
+<!-- Clear Filters Button -->
               <button
                 type="button"
                 phx-click="clear_filters"
@@ -260,11 +265,12 @@
         </form>
       </div>
     </div>
-
-    <!-- Loading State -->
+    
+<!-- Loading State -->
     <%= if @loading do %>
       <div class="text-center py-12">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600">
+        </div>
         <p class="mt-2 text-sm text-gray-500">Loading notices...</p>
       </div>
     <% else %>
@@ -276,13 +282,13 @@
             <div class="flex items-center space-x-4">
               <span class="text-sm text-gray-700">
                 <%= if @total_notices > 0 do %>
-                  Showing <%= (@page - 1) * @page_size + 1 %>-<%= min(@page * @page_size, @total_notices) %> of <%= @total_notices %> notices
+                  Showing {(@page - 1) * @page_size + 1}-{min(@page * @page_size, @total_notices)} of {@total_notices} notices
                 <% else %>
                   No notices to display
                 <% end %>
               </span>
               
-              <!-- Page Size Selector -->
+<!-- Page Size Selector -->
               <div class="flex items-center space-x-2">
                 <label for="page-size" class="text-sm text-gray-700">Show:</label>
                 <select
@@ -299,8 +305,7 @@
                 <span class="text-sm text-gray-700">per page</span>
                 <%= if @fuzzy_search && @search_query != "" do %>
                   <div class="flex items-center ml-4 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs">
-                    <.icon name="hero-sparkles" class="h-3 w-3 mr-1" />
-                    Fuzzy search active
+                    <.icon name="hero-sparkles" class="h-3 w-3 mr-1" /> Fuzzy search active
                   </div>
                 <% end %>
               </div>
@@ -336,7 +341,7 @@
                       phx-click="sort"
                       phx-value-field="regulator_id"
                     >
-                      Notice ID <%= get_sort_icon(assigns, "regulator_id") %>
+                      Notice ID {get_sort_icon(assigns, "regulator_id")}
                     </th>
                     <th
                       scope="col"
@@ -344,7 +349,7 @@
                       phx-click="sort"
                       phx-value-field="offence_action_type"
                     >
-                      Notice Type <%= get_sort_icon(assigns, "offence_action_type") %>
+                      Notice Type {get_sort_icon(assigns, "offence_action_type")}
                     </th>
                     <th
                       scope="col"
@@ -352,7 +357,7 @@
                       phx-click="sort"
                       phx-value-field="offender_id"
                     >
-                      Offender <%= get_sort_icon(assigns, "offender_id") %>
+                      Offender {get_sort_icon(assigns, "offender_id")}
                     </th>
                     <th
                       scope="col"
@@ -366,7 +371,7 @@
                       phx-click="sort"
                       phx-value-field="notice_date"
                     >
-                      Notice Date <%= get_sort_icon(assigns, "notice_date") %>
+                      Notice Date {get_sort_icon(assigns, "notice_date")}
                     </th>
                     <th scope="col" class="relative px-6 py-3">
                       <span class="sr-only">Actions</span>
@@ -381,30 +386,35 @@
                           navigate={~p"/notices/#{notice.id}"}
                           class="text-sm font-medium text-blue-600 hover:text-blue-500"
                         >
-                          <%= notice.regulator_id %>
+                          {notice.regulator_id}
                         </.link>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
-                        <span class={["inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", notice_type_class(notice.offence_action_type)]}>
-                          <%= notice.offence_action_type %>
+                        <span class={[
+                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+                          notice_type_class(notice.offence_action_type)
+                        ]}>
+                          {notice.offence_action_type}
                         </span>
                       </td>
                       <td class="px-6 py-4">
                         <%= if notice.offender do %>
-                          <div class="text-sm text-gray-900"><%= notice.offender.name %></div>
+                          <div class="text-sm text-gray-900">{notice.offender.name}</div>
                           <div class="text-sm text-gray-500">
-                            <%= notice.offender.local_authority %>
+                            {notice.offender.local_authority}
                           </div>
                         <% end %>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
                         <%= if notice.agency do %>
-                          <div class="text-sm text-gray-900"><%= notice.agency.name %></div>
-                          <div class="text-sm text-gray-500"><%= String.upcase(to_string(notice.agency.code)) %></div>
+                          <div class="text-sm text-gray-900">{notice.agency.name}</div>
+                          <div class="text-sm text-gray-500">
+                            {String.upcase(to_string(notice.agency.code))}
+                          </div>
                         <% end %>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <%= format_date(notice.notice_date) %>
+                        {format_date(notice.notice_date)}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div class="flex items-center justify-end space-x-2">
@@ -415,7 +425,7 @@
                           >
                             <.icon name="hero-eye" class="h-4 w-4" />
                           </.link>
-                          
+
                           <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
                             <.link
                               navigate={~p"/admin/notices/#{notice.id}/edit"}
@@ -445,10 +455,13 @@
           <% end %>
         </div>
       </div>
-
-      <!-- Pagination -->
+      
+<!-- Pagination -->
       <%= if @total_notices > @page_size do %>
-        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6 rounded-lg shadow" data-testid="pagination">
+        <div
+          class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6 rounded-lg shadow"
+          data-testid="pagination"
+        >
           <div class="flex-1 flex justify-between sm:hidden">
             <!-- Mobile Pagination -->
             <%= if @page > 1 do %>
@@ -460,7 +473,7 @@
                 Previous
               </button>
             <% end %>
-            
+
             <%= if @page < total_pages(@total_notices, @page_size) do %>
               <button
                 phx-click="paginate"
@@ -471,18 +484,22 @@
               </button>
             <% end %>
           </div>
-          
+
           <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p class="text-sm text-gray-700">
-                Showing <span class="font-medium"><%= (@page - 1) * @page_size + 1 %></span>
-                to <span class="font-medium"><%= min(@page * @page_size, @total_notices) %></span>
-                of <span class="font-medium"><%= @total_notices %></span> results
+                Showing <span class="font-medium">{(@page - 1) * @page_size + 1}</span>
+                to <span class="font-medium">{min(@page * @page_size, @total_notices)}</span>
+                of <span class="font-medium">{@total_notices}</span>
+                results
               </p>
             </div>
-            
+
             <div>
-              <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <nav
+                class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                aria-label="Pagination"
+              >
                 <!-- Previous Button -->
                 <%= if @page > 1 do %>
                   <button
@@ -498,13 +515,13 @@
                     <.icon name="hero-chevron-left" class="h-5 w-5" />
                   </span>
                 <% end %>
-
-                <!-- Page Numbers -->
+                
+<!-- Page Numbers -->
                 <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
-                  <%= @page %>
+                  {@page}
                 </span>
-
-                <!-- Next Button -->
+                
+<!-- Next Button -->
                 <%= if @page < total_pages(@total_notices, @page_size) do %>
                   <button
                     phx-click="paginate"

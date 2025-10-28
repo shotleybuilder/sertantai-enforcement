@@ -1,21 +1,22 @@
 defmodule EhsEnforcementWeb.Admin.OffenderLive.Edit do
   use EhsEnforcementWeb, :live_view
-  
+
   alias EhsEnforcement.Enforcement.Offender
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     case Ash.get(Offender, id, actor: socket.assigns.current_user) do
       {:ok, offender_record} ->
-        form = AshPhoenix.Form.for_update(offender_record, :update, forms: [auto?: false]) |> to_form()
-        
+        form =
+          AshPhoenix.Form.for_update(offender_record, :update, forms: [auto?: false]) |> to_form()
+
         {:ok,
          socket
          |> assign(:offender, offender_record)
          |> assign(:form, form)
          |> assign(:page_title, "Edit Offender")
          |> assign(:loading, false)}
-      
+
       {:error, _} ->
         {:ok,
          socket
@@ -43,7 +44,7 @@ defmodule EhsEnforcementWeb.Admin.OffenderLive.Edit do
          socket
          |> put_flash(:info, "Offender #{offender_record.name} updated successfully")
          |> push_navigate(to: ~p"/offenders")}
-      
+
       {:error, form} ->
         {:noreply, assign(socket, :form, form)}
     end
@@ -59,14 +60,17 @@ defmodule EhsEnforcementWeb.Admin.OffenderLive.Edit do
   defp format_datetime(datetime) when is_struct(datetime, NaiveDateTime) do
     Calendar.strftime(datetime, "%Y-%m-%d %H:%M:%S")
   end
+
   defp format_datetime(datetime) when is_struct(datetime, DateTime) do
     Calendar.strftime(datetime, "%Y-%m-%d %H:%M:%S")
   end
+
   defp format_datetime(_), do: "—"
 
   defp format_date(date) when is_struct(date, Date) do
     Calendar.strftime(date, "%Y-%m-%d")
   end
+
   defp format_date(_), do: ""
 
   defp format_currency(amount) when is_struct(amount, Decimal) do
@@ -78,6 +82,7 @@ defmodule EhsEnforcementWeb.Admin.OffenderLive.Edit do
   rescue
     _ -> "£0.00"
   end
+
   defp format_currency(_), do: "£0.00"
 
   defp field_description(field) do
@@ -167,14 +172,17 @@ defmodule EhsEnforcementWeb.Admin.OffenderLive.Edit do
 
   defp select_options(field) do
     case field do
-      :business_type -> [
-        {"Limited Company", "limited_company"},
-        {"Individual", "individual"},
-        {"Partnership", "partnership"},
-        {"Public Limited Company", "plc"},
-        {"Other", "other"}
-      ]
-      _ -> []
+      :business_type ->
+        [
+          {"Limited Company", "limited_company"},
+          {"Individual", "individual"},
+          {"Partnership", "partnership"},
+          {"Public Limited Company", "plc"},
+          {"Other", "other"}
+        ]
+
+      _ ->
+        []
     end
   end
 end

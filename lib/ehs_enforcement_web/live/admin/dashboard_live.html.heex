@@ -13,14 +13,17 @@
       <div class="mt-4 flex items-center space-x-3 md:ml-4 md:mt-0">
         <!-- User info -->
         <div class="flex items-center space-x-2">
-          <span class="text-sm text-gray-600">Welcome, <%= Map.get(@current_user, :display_name) || Map.get(@current_user, :name) || @current_user.email %></span>
+          <span class="text-sm text-gray-600">
+            Welcome, {Map.get(@current_user, :display_name) || Map.get(@current_user, :name) ||
+              @current_user.email}
+          </span>
           <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
             ADMIN
           </span>
           <a href="/" class="text-sm text-gray-500 hover:text-gray-700">← Main Dashboard</a>
         </div>
         
-        <!-- Time Period Selector -->
+<!-- Time Period Selector -->
         <div class="mr-3">
           <form phx-change="change_time_period">
             <select
@@ -35,8 +38,8 @@
         </div>
       </div>
     </div>
-
-    <!-- Admin Statistics Overview -->
+    
+<!-- Admin Statistics Overview -->
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6 mb-8">
       <!-- System Health -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
@@ -44,109 +47,168 @@
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Data Quality</dt>
-                <dd class="text-lg font-medium text-gray-900"><%= @stats.data_quality_score %>%</dd>
+                <dd class="text-lg font-medium text-gray-900">{@stats.data_quality_score}%</dd>
               </dl>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Active Agencies -->
+      
+<!-- Active Agencies -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-5">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Active Agencies</dt>
-                <dd class="text-lg font-medium text-gray-900"><%= @stats.active_agencies %> Agencies</dd>
+                <dd class="text-lg font-medium text-gray-900">
+                  {@stats.active_agencies} Agencies
+                </dd>
               </dl>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Recent Cases -->
+      
+<!-- Recent Cases -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-5">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Recent Cases</dt>
-                <dd class="text-lg font-medium text-gray-900"><%= @stats.recent_cases %> Cases</dd>
-                <dd class="text-xs text-gray-400"><%= @stats.timeframe %></dd>
+                <dd class="text-lg font-medium text-gray-900">{@stats.recent_cases} Cases</dd>
+                <dd class="text-xs text-gray-400">{@stats.timeframe}</dd>
               </dl>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Recent Notices -->
+      
+<!-- Recent Notices -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-5">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Recent Notices</dt>
-                <dd class="text-lg font-medium text-gray-900"><%= @stats.recent_notices %> Notices</dd>
-                <dd class="text-xs text-gray-400"><%= @stats.timeframe %></dd>
+                <dd class="text-lg font-medium text-gray-900">{@stats.recent_notices} Notices</dd>
+                <dd class="text-xs text-gray-400">{@stats.timeframe}</dd>
               </dl>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Total Fines -->
+      
+<!-- Total Fines -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-5">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
             <div class="ml-5 w-0 flex-1">
               <dl>
                 <dt class="text-sm font-medium text-gray-500 truncate">Recent Fines</dt>
-                <dd class="text-lg font-medium text-gray-900">£<%= Decimal.to_string(@stats.total_fines, :normal) %></dd>
-                <dd class="text-xs text-gray-400"><%= @stats.timeframe %></dd>
+                <dd class="text-lg font-medium text-gray-900">
+                  £{Decimal.to_string(@stats.total_fines, :normal)}
+                </dd>
+                <dd class="text-xs text-gray-400">{@stats.timeframe}</dd>
               </dl>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Sync Errors -->
+      
+<!-- Sync Errors -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-5">
           <div class="flex items-center">
@@ -156,12 +218,34 @@
                 if(@stats.sync_errors == 0, do: "bg-green-500", else: "bg-red-500")
               ]}>
                 <%= if @stats.sync_errors == 0 do %>
-                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  <svg
+                    class="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    >
+                    </path>
                   </svg>
                 <% else %>
-                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  <svg
+                    class="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+                    >
+                    </path>
                   </svg>
                 <% end %>
               </div>
@@ -173,7 +257,7 @@
                   "text-lg font-medium",
                   if(@stats.sync_errors == 0, do: "text-green-600", else: "text-red-600")
                 ]}>
-                  <%= if @stats.sync_errors == 0, do: "Healthy", else: "#{@stats.sync_errors} Errors" %>
+                  {if @stats.sync_errors == 0, do: "Healthy", else: "#{@stats.sync_errors} Errors"}
                 </dd>
               </dl>
             </div>
@@ -181,8 +265,8 @@
         </div>
       </div>
     </div>
-
-    <!-- Admin Action Cards -->
+    
+<!-- Admin Action Cards -->
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
       <!-- Data Management -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
@@ -190,8 +274,19 @@
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
@@ -208,8 +303,18 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Scrape Cases</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </button>
@@ -220,8 +325,18 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Scrape Notices</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </button>
@@ -232,8 +347,18 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">All Scraping</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </button>
@@ -243,24 +368,51 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">View Sessions</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </a>
           </div>
         </div>
       </div>
-
-      <!-- System Operations -->
+      
+<!-- System Operations -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-6">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  >
+                  </path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
@@ -276,8 +428,19 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Refresh Metrics</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  >
+                  </path>
                 </svg>
               </div>
             </button>
@@ -287,23 +450,44 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">System Config</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </button>
           </div>
         </div>
       </div>
-
-      <!-- Agency Management -->
+      
+<!-- Agency Management -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-6">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
@@ -319,8 +503,18 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Manage Agencies</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </a>
@@ -330,23 +524,44 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">New Agency</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
               </div>
             </a>
           </div>
         </div>
       </div>
-
-      <!-- Case Management -->
+      
+<!-- Case Management -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-6">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
@@ -362,8 +577,18 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Manage Cases</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </a>
@@ -373,21 +598,30 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Check for Duplicates</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2v0M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2v0M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
+                  />
                 </svg>
               </div>
               <%= if assigns[:duplicate_results] do %>
                 <div class={"mt-2 text-xs font-medium #{if String.contains?(@duplicate_results, "No duplicate"), do: "text-green-600", else: "text-orange-600"}"}>
-                  <%= @duplicate_results %>
+                  {@duplicate_results}
                 </div>
                 <%= if not String.contains?(@duplicate_results, "No duplicate") do %>
                   <.link
                     navigate={~p"/admin/duplicates?tab=cases"}
                     class="mt-2 inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
                   >
-                    <.icon name="hero-arrow-right" class="h-3 w-3 mr-1" />
-                    Manage Duplicates
+                    <.icon name="hero-arrow-right" class="h-3 w-3 mr-1" /> Manage Duplicates
                   </.link>
                 <% end %>
               <% end %>
@@ -395,15 +629,26 @@
           </div>
         </div>
       </div>
-
-      <!-- Notice Management -->
+      
+<!-- Notice Management -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-6">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
@@ -419,8 +664,18 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Manage Notices</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </a>
@@ -430,21 +685,30 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Check for Duplicates</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2v0M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2v0M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
+                  />
                 </svg>
               </div>
               <%= if assigns[:notice_duplicate_results] do %>
                 <div class={"mt-2 text-xs font-medium #{if String.contains?(@notice_duplicate_results, "No duplicate"), do: "text-green-600", else: "text-orange-600"}"}>
-                  <%= @notice_duplicate_results %>
+                  {@notice_duplicate_results}
                 </div>
                 <%= if not String.contains?(@notice_duplicate_results, "No duplicate") do %>
                   <.link
                     navigate={~p"/admin/duplicates?tab=notices"}
                     class="mt-2 inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
                   >
-                    <.icon name="hero-arrow-right" class="h-3 w-3 mr-1" />
-                    Manage Duplicates
+                    <.icon name="hero-arrow-right" class="h-3 w-3 mr-1" /> Manage Duplicates
                   </.link>
                 <% end %>
               <% end %>
@@ -452,15 +716,26 @@
           </div>
         </div>
       </div>
-
-      <!-- Offender Management -->
+      
+<!-- Offender Management -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-6">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-emerald-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
@@ -476,8 +751,18 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Manage Offenders</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </a>
@@ -487,21 +772,30 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Check for Duplicates</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2v0M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2v0M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
+                  />
                 </svg>
               </div>
               <%= if assigns[:offender_duplicate_results] do %>
                 <div class={"mt-2 text-xs font-medium #{if String.contains?(@offender_duplicate_results, "No duplicate"), do: "text-green-600", else: "text-orange-600"}"}>
-                  <%= @offender_duplicate_results %>
+                  {@offender_duplicate_results}
                 </div>
                 <%= if not String.contains?(@offender_duplicate_results, "No duplicate") do %>
                   <.link
                     navigate={~p"/admin/duplicates?tab=offenders"}
                     class="mt-2 inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800"
                   >
-                    <.icon name="hero-arrow-right" class="h-3 w-3 mr-1" />
-                    Manage Duplicates
+                    <.icon name="hero-arrow-right" class="h-3 w-3 mr-1" /> Manage Duplicates
                   </.link>
                 <% end %>
               <% end %>
@@ -510,15 +804,17 @@
         </div>
       </div>
     </div>
-
-    <!-- Secondary Grid for Agency Status and Reports -->
+    
+<!-- Secondary Grid for Agency Status and Reports -->
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-8">
       <!-- Agency Status -->
       <%= if length(@agencies) > 0 do %>
         <div class="bg-white shadow overflow-hidden sm:rounded-md">
           <div class="px-4 py-5 sm:px-6">
             <h3 class="text-lg leading-6 font-medium text-gray-900">Agency Status</h3>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">Current sync and data collection status</p>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              Current sync and data collection status
+            </p>
           </div>
           <ul role="list" class="divide-y divide-gray-200">
             <%= for agency <- @agencies do %>
@@ -528,14 +824,15 @@
                     <div class={[
                       "flex-shrink-0 w-2.5 h-2.5 rounded-full",
                       if(agency.enabled, do: "bg-green-400", else: "bg-gray-300")
-                    ]}></div>
+                    ]}>
+                    </div>
                     <div class="ml-4">
                       <div class="flex items-center">
-                        <p class="text-sm font-medium text-gray-900"><%= agency.name %></p>
-                        <p class="ml-2 text-sm text-gray-500">(<%= agency.code %>)</p>
+                        <p class="text-sm font-medium text-gray-900">{agency.name}</p>
+                        <p class="ml-2 text-sm text-gray-500">({agency.code})</p>
                       </div>
                       <p class="text-sm text-gray-500">
-                        Status: <%= if agency.enabled, do: "Active", else: "Inactive" %>
+                        Status: {if agency.enabled, do: "Active", else: "Inactive"}
                       </p>
                     </div>
                   </div>
@@ -551,7 +848,7 @@
                           _ -> "bg-gray-100 text-gray-800"
                         end
                       ]}>
-                        <%= String.capitalize(status.status) %>
+                        {String.capitalize(status.status)}
                       </span>
                     <% else %>
                       <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
@@ -565,15 +862,26 @@
           </ul>
         </div>
       <% end %>
-
-      <!-- Reports & Export -->
+      
+<!-- Reports & Export -->
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="p-6">
           <div class="flex items-center">
             <div class="flex-shrink-0">
               <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                <svg
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  >
+                  </path>
                 </svg>
               </div>
             </div>
@@ -590,8 +898,19 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Export CSV</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  >
+                  </path>
                 </svg>
               </div>
             </button>
@@ -602,8 +921,19 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Export JSON</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                  >
+                  </path>
                 </svg>
               </div>
             </button>
@@ -614,8 +944,19 @@
             >
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-gray-900">Export Excel</span>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  >
+                  </path>
                 </svg>
               </div>
             </button>

@@ -52,13 +52,15 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   def handle_event("filter_change", params, socket) do
     filters = parse_filters(params["filters"] || %{})
     search_query = get_in(params, ["search", "query"]) || params["search[query]"] || ""
-    
+
     # Count records that match the filters in real-time
-    socket_with_filters = socket
+    socket_with_filters =
+      socket
       |> assign(:filters, filters)
       |> assign(:search_query, search_query)
-      |> assign(:filters_applied, false)  # Reset applied state
-    
+      # Reset applied state
+      |> assign(:filters_applied, false)
+
     {:noreply,
      socket_with_filters
      |> assign(:current_page, 1)
@@ -73,7 +75,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
      |> async_load_offenders()}
   end
 
-  @impl true  
+  @impl true
   def handle_event("clear_filters", _params, socket) do
     {:noreply,
      socket
@@ -105,12 +107,13 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
 
   @impl true
   def handle_event("sort", params, socket) do
-    {sort_by, sort_order} = case params do
-      %{"sort_by" => sort_by, "sort_order" => sort_order} -> {sort_by, sort_order}
-      %{"sort_by" => sort_by} -> {sort_by, socket.assigns.sort_order}
-      %{"sort_order" => sort_order} -> {socket.assigns.sort_by, sort_order}
-      _ -> {socket.assigns.sort_by, socket.assigns.sort_order}
-    end
+    {sort_by, sort_order} =
+      case params do
+        %{"sort_by" => sort_by, "sort_order" => sort_order} -> {sort_by, sort_order}
+        %{"sort_by" => sort_by} -> {sort_by, socket.assigns.sort_order}
+        %{"sort_order" => sort_order} -> {socket.assigns.sort_by, sort_order}
+        _ -> {socket.assigns.sort_by, socket.assigns.sort_order}
+      end
 
     socket =
       socket
@@ -124,14 +127,16 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   def handle_event("next_page", _params, socket) do
     next_page = socket.assigns.current_page + 1
     max_page = max_pages(socket.assigns.total_count, socket.assigns.per_page)
-    
+
     if next_page <= max_page do
       socket =
         socket
         |> assign(:current_page, next_page)
         |> assign(:loading, true)
-        |> push_patch(to: build_path(socket, socket.assigns.filters, socket.assigns.search_query, next_page))
-      
+        |> push_patch(
+          to: build_path(socket, socket.assigns.filters, socket.assigns.search_query, next_page)
+        )
+
       {:noreply, socket}
     else
       {:noreply, socket}
@@ -141,13 +146,15 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   @impl true
   def handle_event("prev_page", _params, socket) do
     prev_page = max(socket.assigns.current_page - 1, 1)
-    
+
     socket =
       socket
       |> assign(:current_page, prev_page)
       |> assign(:loading, true)
-      |> push_patch(to: build_path(socket, socket.assigns.filters, socket.assigns.search_query, prev_page))
-    
+      |> push_patch(
+        to: build_path(socket, socket.assigns.filters, socket.assigns.search_query, prev_page)
+      )
+
     {:noreply, socket}
   end
 
@@ -158,7 +165,8 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     socket =
       socket
       |> assign(:fuzzy_search, fuzzy_search)
-      |> assign(:current_page, 1)  # Reset to first page when changing search mode
+      # Reset to first page when changing search mode
+      |> assign(:current_page, 1)
       |> assign(:loading, true)
       |> load_offenders()
 
@@ -168,11 +176,12 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   @impl true
   def handle_event("change_page_size", %{"page_size" => page_size_str}, socket) do
     page_size = String.to_integer(page_size_str)
-    
+
     socket =
       socket
       |> assign(:per_page, page_size)
-      |> assign(:current_page, 1)  # Reset to first page when changing page size
+      # Reset to first page when changing page size
+      |> assign(:current_page, 1)
       |> assign(:loading, true)
       |> load_offenders()
 
@@ -182,7 +191,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   @impl true
   def handle_event("export_csv", _params, socket) do
     csv_data = generate_csv(socket.assigns.offenders)
-    
+
     socket =
       socket
       |> push_event("download_csv", %{
@@ -203,14 +212,14 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
              socket
              |> put_flash(:info, "Offender deleted successfully")
              |> load_offenders()}
-          
+
           {:error, error} ->
             {:noreply,
              socket
              |> put_flash(:error, "Failed to delete offender: #{Exception.message(error)}")
              |> load_offenders()}
         end
-      
+
       {:error, _} ->
         {:noreply,
          socket
@@ -255,6 +264,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     if socket.assigns.search_task_ref == task_ref do
       require Logger
       Logger.warning("Offender search query timed out after 10 seconds")
+
       {:noreply,
        socket
        |> assign(:loading, false)
@@ -270,6 +280,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     if socket.assigns.search_task_ref == task_ref do
       require Logger
       Logger.error("Offender search query failed: #{inspect(error)}")
+
       {:noreply,
        socket
        |> assign(:offenders, [])
@@ -300,6 +311,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     if socket.assigns.count_task_ref == task_ref do
       require Logger
       Logger.warning("Offender filter count query timed out after 5 seconds")
+
       {:noreply,
        socket
        |> assign(:filter_count, 0)
@@ -315,6 +327,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     if socket.assigns.count_task_ref == task_ref do
       require Logger
       Logger.error("Offender filter count query failed: #{inspect(error)}")
+
       {:noreply,
        socket
        |> assign(:filter_count, 0)
@@ -353,6 +366,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
 
   defp maybe_add_filter(filters, _key, nil), do: filters
   defp maybe_add_filter(filters, _key, ""), do: filters
+
   defp maybe_add_filter(filters, key, value) when key == :repeat_only do
     case value do
       "true" -> Map.put(filters, key, true)
@@ -360,19 +374,27 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
       _ -> filters
     end
   end
+
   defp maybe_add_filter(filters, key, value), do: Map.put(filters, key, value)
 
   defp load_offenders(socket) do
-    %{filters: filters, search_query: search_query, sort_by: sort_by, sort_order: sort_order, 
-      current_page: page, per_page: page_size, fuzzy_search: fuzzy_search, 
-      filters_applied: filters_applied} = socket.assigns
-    
+    %{
+      filters: filters,
+      search_query: search_query,
+      sort_by: sort_by,
+      sort_order: sort_order,
+      current_page: page,
+      per_page: page_size,
+      fuzzy_search: fuzzy_search,
+      filters_applied: filters_applied
+    } = socket.assigns
+
     try do
       # Don't load any offenders unless filters have been explicitly applied
       has_filters = map_size(filters) > 0
       has_search = is_binary(search_query) && String.trim(search_query) != ""
-      
-      if (!has_filters && !has_search) || (!filters_applied) do
+
+      if (!has_filters && !has_search) || !filters_applied do
         socket
         |> assign(:offenders, [])
         |> assign(:total_count, 0)
@@ -380,55 +402,70 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
       else
         # Check if fuzzy search is enabled and we have a search query
         use_fuzzy = fuzzy_search && has_search
-        
-        {offenders, total_count} = if use_fuzzy do
-          # Use fuzzy search with pg_trgm
-          trimmed_query = String.trim(search_query)
-          limited_query = if String.length(trimmed_query) > 100 do
-            String.slice(trimmed_query, 0, 100)
+
+        {offenders, total_count} =
+          if use_fuzzy do
+            # Use fuzzy search with pg_trgm
+            trimmed_query = String.trim(search_query)
+
+            limited_query =
+              if String.length(trimmed_query) > 100 do
+                String.slice(trimmed_query, 0, 100)
+              else
+                trimmed_query
+              end
+
+            offset = (page - 1) * page_size
+
+            fuzzy_opts = [
+              limit: page_size,
+              offset: offset
+            ]
+
+            {:ok, fuzzy_results} = Enforcement.fuzzy_search_offenders(limited_query, fuzzy_opts)
+
+            # For fuzzy search, estimate total count
+            estimated_total =
+              if length(fuzzy_results) == page_size do
+                # Estimate there's at least one more page
+                page * page_size + 1
+              else
+                # We've reached the end
+                offset + length(fuzzy_results)
+              end
+
+            {fuzzy_results, estimated_total}
           else
-            trimmed_query
+            # Use regular filtering with optimized indexes
+            query_opts =
+              build_optimized_query_options(
+                filters,
+                search_query,
+                sort_by,
+                sort_order,
+                page,
+                page_size
+              )
+
+            regular_results = Enforcement.list_offenders_with_filters_cached!(query_opts)
+
+            # Get total count using same optimized filter
+            count_opts = [filter: build_optimized_filter(filters, search_query)]
+            regular_total = Enforcement.count_offenders_cached!(count_opts)
+
+            {regular_results, regular_total}
           end
-          
-          offset = (page - 1) * page_size
-          fuzzy_opts = [
-            limit: page_size,
-            offset: offset
-          ]
-          
-          {:ok, fuzzy_results} = Enforcement.fuzzy_search_offenders(limited_query, fuzzy_opts)
-          
-          # For fuzzy search, estimate total count
-          estimated_total = if length(fuzzy_results) == page_size do
-            (page * page_size) + 1  # Estimate there's at least one more page
-          else
-            offset + length(fuzzy_results)  # We've reached the end
-          end
-          
-          {fuzzy_results, estimated_total}
-        else
-          # Use regular filtering with optimized indexes
-          query_opts = build_optimized_query_options(filters, search_query, sort_by, sort_order, page, page_size)
-          regular_results = Enforcement.list_offenders_with_filters_cached!(query_opts)
-          
-          # Get total count using same optimized filter
-          count_opts = [filter: build_optimized_filter(filters, search_query)]
-          regular_total = Enforcement.count_offenders_cached!(count_opts)
-          
-          {regular_results, regular_total}
-        end
-        
+
         socket
         |> assign(:offenders, offenders)
         |> assign(:total_count, total_count)
         |> assign(:loading, false)
       end
-      
     rescue
       error ->
         require Logger
         Logger.error("Failed to load offenders: #{inspect(error)}")
-        
+
         socket
         |> assign(:offenders, [])
         |> assign(:total_count, 0)
@@ -439,7 +476,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
 
   defp build_optimized_query_options(filters, search_query, sort_by, sort_order, page, page_size) do
     offset = (page - 1) * page_size
-    
+
     [
       filter: build_optimized_filter(filters, search_query),
       sort: build_sort_options(sort_by, sort_order),
@@ -459,7 +496,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     |> add_filter_if_present(filters, :repeat_only)
     |> add_search_filter(search_query)
   end
-  
+
   defp add_filter_if_present(acc, filters, key) do
     case filters[key] do
       value when is_binary(value) and value != "" -> Map.put(acc, key, value)
@@ -467,42 +504,53 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
       _ -> acc
     end
   end
-  
+
   defp add_search_filter(acc, search_query) do
     case search_query do
       query when is_binary(query) and query != "" ->
         trimmed_query = String.trim(query)
-        
+
         # Limit search term length to prevent database issues
-        limited_query = if String.length(trimmed_query) > 100 do
-          String.slice(trimmed_query, 0, 100)
-        else
-          trimmed_query
-        end
-        
+        limited_query =
+          if String.length(trimmed_query) > 100 do
+            String.slice(trimmed_query, 0, 100)
+          else
+            trimmed_query
+          end
+
         search_pattern = "%#{limited_query}%"
         Map.put(acc, :search, search_pattern)
-      _ -> acc
+
+      _ ->
+        acc
     end
   end
 
   defp build_sort_options(sort_by, sort_order) do
     sort_by_atom = if is_binary(sort_by), do: String.to_atom(sort_by), else: sort_by
     sort_order_atom = if is_binary(sort_order), do: String.to_atom(sort_order), else: sort_order
-    
+
     case {sort_by_atom, sort_order_atom} do
-      {field, dir} when field in [:name, :total_fines, :total_cases, :total_notices, :first_seen_date, :last_seen_date] ->
+      {field, dir}
+      when field in [
+             :name,
+             :total_fines,
+             :total_cases,
+             :total_notices,
+             :first_seen_date,
+             :last_seen_date
+           ] ->
         [{field, dir}]
+
       _ ->
-        [total_fines: :desc]  # Default sort
+        # Default sort
+        [total_fines: :desc]
     end
   end
 
-
-
   defp build_path(socket, filters, search_query, page) do
     params = %{}
-    
+
     params = if filters != %{}, do: Map.put(params, "filters", filters), else: params
     params = if search_query != "", do: Map.put(params, "search", search_query), else: params
     params = if page != 1, do: Map.put(params, "page", page), else: params
@@ -522,36 +570,41 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   end
 
   defp format_currency(nil), do: "£0"
+
   defp format_currency(amount) when is_binary(amount) do
     case Decimal.parse(amount) do
       {decimal, _} -> format_currency(decimal)
       :error -> "£0"
     end
   end
+
   defp format_currency(%Decimal{} = amount) do
     "£#{Decimal.to_string(amount)}"
   end
+
   defp format_currency(amount) when is_integer(amount) do
     "£#{amount}"
   end
 
   defp generate_csv(offenders) do
-    headers = "Name,Local Authority,Industry,Total Cases,Total Notices,Total Fines,First Seen,Last Seen"
-    
-    rows = Enum.map(offenders, fn offender ->
-      [
-        offender.name || "",
-        offender.local_authority || "",
-        offender.industry || "",
-        to_string(offender.total_cases || 0),
-        to_string(offender.total_notices || 0),
-        Decimal.to_string(offender.total_fines || Decimal.new(0)),
-        format_date(offender.first_seen_date),
-        format_date(offender.last_seen_date)
-      ]
-      |> Enum.join(",")
-    end)
-    
+    headers =
+      "Name,Local Authority,Industry,Total Cases,Total Notices,Total Fines,First Seen,Last Seen"
+
+    rows =
+      Enum.map(offenders, fn offender ->
+        [
+          offender.name || "",
+          offender.local_authority || "",
+          offender.industry || "",
+          to_string(offender.total_cases || 0),
+          to_string(offender.total_notices || 0),
+          Decimal.to_string(offender.total_fines || Decimal.new(0)),
+          format_date(offender.first_seen_date),
+          format_date(offender.last_seen_date)
+        ]
+        |> Enum.join(",")
+      end)
+
     [headers | rows]
     |> Enum.join("\n")
   end
@@ -618,7 +671,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
   defp execute_offender_count_query(count_params) do
     %{filters: filters, search_query: search_query} = count_params
     filter = build_optimized_filter(filters, search_query)
-    Enforcement.count_offenders_cached!([filter: filter])
+    Enforcement.count_offenders_cached!(filter: filter)
   end
 
   defp cancel_previous_count(socket) do
@@ -698,7 +751,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
     has_filters = map_size(filters) > 0
     has_search = is_binary(search_query) && String.trim(search_query) != ""
 
-    if (!has_filters && !has_search) || (!filters_applied) do
+    if (!has_filters && !has_search) || !filters_applied do
       {[], 0}
     else
       # Check if fuzzy search is enabled and we have a search query
@@ -707,13 +760,16 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
       if use_fuzzy do
         # Use fuzzy search with pg_trgm
         trimmed_query = String.trim(search_query)
-        limited_query = if String.length(trimmed_query) > 100 do
-          String.slice(trimmed_query, 0, 100)
-        else
-          trimmed_query
-        end
+
+        limited_query =
+          if String.length(trimmed_query) > 100 do
+            String.slice(trimmed_query, 0, 100)
+          else
+            trimmed_query
+          end
 
         offset = (page - 1) * page_size
+
         fuzzy_opts = [
           limit: page_size,
           offset: offset
@@ -722,11 +778,14 @@ defmodule EhsEnforcementWeb.OffenderLive.Index do
         {:ok, fuzzy_results} = Enforcement.fuzzy_search_offenders(limited_query, fuzzy_opts)
 
         # For fuzzy search, estimate total count
-        estimated_total = if length(fuzzy_results) == page_size do
-          (page * page_size) + 1  # Estimate there's at least one more page
-        else
-          offset + length(fuzzy_results)  # We've reached the end
-        end
+        estimated_total =
+          if length(fuzzy_results) == page_size do
+            # Estimate there's at least one more page
+            page * page_size + 1
+          else
+            # We've reached the end
+            offset + length(fuzzy_results)
+          end
 
         {fuzzy_results, estimated_total}
       else

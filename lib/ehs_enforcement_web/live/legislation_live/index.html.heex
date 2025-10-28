@@ -10,17 +10,17 @@
               UK Legislation
               <%= cond do %>
                 <% @total_legislation > 0 -> %>
-                  · <%= @total_legislation %> legislation loaded
+                  · {@total_legislation} legislation loaded
                 <% @filters_applied && @total_legislation == 0 -> %>
                   · No legislation found for current filters
                 <% map_size(@filters) > 0 && !@filters_applied -> %>
-                  · <%= @filter_count %> legislation match current criteria
+                  · {@filter_count} legislation match current criteria
                 <% true -> %>
                   · Apply filters to view legislation. Limited to 1000 records.
               <% end %>
             </p>
           </div>
-          
+
           <div class="flex space-x-3">
             <!-- Back to Admin Button (Admin Users Only) -->
             <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
@@ -29,28 +29,25 @@
                 class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
-                <.icon name="hero-cog-6-tooth" class="h-4 w-4 mr-2" />
-                Admin
+                <.icon name="hero-cog-6-tooth" class="h-4 w-4 mr-2" /> Admin
               </.link>
             <% end %>
             
-            <!-- Back to Dashboard Button -->
+<!-- Back to Dashboard Button -->
             <.link
               navigate={~p"/"}
               class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
-              <.icon name="hero-home" class="h-4 w-4 mr-2" />
-              Dashboard
+              <.icon name="hero-home" class="h-4 w-4 mr-2" /> Dashboard
             </.link>
-            
+
             <%= if @current_user do %>
               <.link
                 patch={~p"/legislation/new"}
                 class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                <.icon name="hero-plus" class="h-4 w-4 mr-2" />
-                Add Legislation
+                <.icon name="hero-plus" class="h-4 w-4 mr-2" /> Add Legislation
               </.link>
             <% end %>
           </div>
@@ -58,14 +55,19 @@
       </div>
     </div>
   </div>
-
-  <!-- Main Content -->
+  
+<!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
-    <!-- Filters Section -->
+<!-- Filters Section -->
     <div class="bg-white shadow rounded-lg mb-6">
       <div class="px-4 py-5 sm:p-6">
-        <form phx-change="filter" phx-debounce="500" data-testid="legislation-filters" class="space-y-4">
+        <form
+          phx-change="filter"
+          phx-debounce="500"
+          data-testid="legislation-filters"
+          class="space-y-4"
+        >
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
             <!-- Search -->
             <div class="sm:col-span-2">
@@ -98,7 +100,7 @@
               </div>
             </div>
             
-            <!-- Agency Filter -->
+<!-- Agency Filter -->
             <div>
               <label for="agency" class="block text-sm font-medium text-gray-700">
                 Agency
@@ -110,11 +112,13 @@
               >
                 <option value="">All Agencies</option>
                 <option value="hse" selected={@filters[:agency] == "hse"}>HSE</option>
-                <option value="ea" selected={@filters[:agency] == "ea"}>Environment Agency</option>
+                <option value="ea" selected={@filters[:agency] == "ea"}>
+                  Environment Agency
+                </option>
               </select>
             </div>
             
-            <!-- Type Filter -->
+<!-- Type Filter -->
             <div>
               <label for="legislation_type" class="block text-sm font-medium text-gray-700">
                 Type
@@ -126,13 +130,19 @@
               >
                 <option value="">All Types</option>
                 <option value="act" selected={@filters[:legislation_type] == "act"}>Act</option>
-                <option value="regulation" selected={@filters[:legislation_type] == "regulation"}>Regulation</option>
-                <option value="order" selected={@filters[:legislation_type] == "order"}>Order</option>
-                <option value="acop" selected={@filters[:legislation_type] == "acop"}>ACOP</option>
+                <option value="regulation" selected={@filters[:legislation_type] == "regulation"}>
+                  Regulation
+                </option>
+                <option value="order" selected={@filters[:legislation_type] == "order"}>
+                  Order
+                </option>
+                <option value="acop" selected={@filters[:legislation_type] == "acop"}>
+                  ACOP
+                </option>
               </select>
             </div>
             
-            <!-- Year From -->
+<!-- Year From -->
             <div>
               <label for="year_from" class="block text-sm font-medium text-gray-700">
                 Year From
@@ -149,7 +159,7 @@
               />
             </div>
             
-            <!-- Year To -->
+<!-- Year To -->
             <div>
               <label for="year_to" class="block text-sm font-medium text-gray-700">
                 Year To
@@ -187,12 +197,13 @@
               </div>
             </div>
             
-            <!-- Filter Count and Action Buttons -->
+<!-- Filter Count and Action Buttons -->
             <div class="flex items-center space-x-3">
               <!-- Real-time Filter Count -->
               <%= if @counting_filters do %>
                 <div class="flex items-center text-sm text-gray-600">
-                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2">
+                  </div>
                   Counting...
                 </div>
               <% else %>
@@ -200,7 +211,7 @@
                   <div class="flex items-center text-sm">
                     <span class="text-gray-600">Found:</span>
                     <span class={"ml-1 font-semibold #{if @filter_count > 1000, do: "text-red-600", else: "text-blue-600"}"}>
-                      <%= @filter_count %> legislation
+                      {@filter_count} legislation
                     </span>
                     <%= if @filter_count > 1000 do %>
                       <span class="ml-2 text-xs text-red-600 font-medium">(Too many)</span>
@@ -209,7 +220,7 @@
                 <% end %>
               <% end %>
               
-              <!-- Apply Filter Button -->
+<!-- Apply Filter Button -->
               <%= if map_size(@filters) > 0 && !@filters_applied do %>
                 <%= if @filter_count <= 1000 do %>
                   <button
@@ -217,8 +228,7 @@
                     phx-click="apply_filters"
                     class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
-                    Apply Filters
+                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" /> Apply Filters
                   </button>
                 <% else %>
                   <button
@@ -227,13 +237,12 @@
                     class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-75"
                     title="Too many records found. Please refine your filters to 1,000 or fewer records."
                   >
-                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" />
-                    Apply Filters
+                    <.icon name="hero-funnel" class="h-4 w-4 mr-2" /> Apply Filters
                   </button>
                 <% end %>
               <% end %>
               
-              <!-- Clear Filters Button -->
+<!-- Clear Filters Button -->
               <button
                 type="button"
                 phx-click="clear_filters"
@@ -246,11 +255,12 @@
         </form>
       </div>
     </div>
-
-    <!-- Loading State -->
+    
+<!-- Loading State -->
     <%= if @loading do %>
       <div class="text-center py-12">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600">
+        </div>
         <p class="mt-2 text-sm text-gray-500">Loading legislation...</p>
       </div>
     <% else %>
@@ -280,13 +290,16 @@
               <div class="flex items-center space-x-4">
                 <span class="text-sm text-gray-700">
                   <%= if @total_legislation > 0 do %>
-                    Showing <%= (@page - 1) * @page_size + 1 %>-<%= min(@page * @page_size, @total_legislation) %> of <%= @total_legislation %> legislation
+                    Showing {(@page - 1) * @page_size + 1}-{min(
+                      @page * @page_size,
+                      @total_legislation
+                    )} of {@total_legislation} legislation
                   <% else %>
                     No legislation to display
                   <% end %>
                 </span>
                 
-                <!-- Page Size Selector -->
+<!-- Page Size Selector -->
                 <form phx-change="change_page_size" class="flex items-center space-x-2">
                   <label for="page-size" class="text-sm text-gray-700">Show:</label>
                   <select
@@ -303,8 +316,7 @@
                 </form>
                 <%= if @fuzzy_search && @filters[:search] && @filters[:search] != "" do %>
                   <div class="flex items-center ml-4 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs">
-                    <.icon name="hero-sparkles" class="h-3 w-3 mr-1" />
-                    Fuzzy search active
+                    <.icon name="hero-sparkles" class="h-3 w-3 mr-1" /> Fuzzy search active
                   </div>
                 <% end %>
               </div>
@@ -320,7 +332,7 @@
                       phx-click="sort"
                       phx-value-field="legislation_title"
                     >
-                      Title <%= get_sort_icon(assigns, "legislation_title") %>
+                      Title {get_sort_icon(assigns, "legislation_title")}
                     </th>
                     <th
                       scope="col"
@@ -328,7 +340,7 @@
                       phx-click="sort"
                       phx-value-field="legislation_type"
                     >
-                      Type <%= get_sort_icon(assigns, "legislation_type") %>
+                      Type {get_sort_icon(assigns, "legislation_type")}
                     </th>
                     <th
                       scope="col"
@@ -336,7 +348,7 @@
                       phx-click="sort"
                       phx-value-field="legislation_year"
                     >
-                      Year <%= get_sort_icon(assigns, "legislation_year") %>
+                      Year {get_sort_icon(assigns, "legislation_year")}
                     </th>
                     <th
                       scope="col"
@@ -351,25 +363,31 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                   <%= for legislation <- @legislation do %>
-                    <tr data-legislation-type={legislation.legislation_type} class="hover:bg-gray-50">
+                    <tr
+                      data-legislation-type={legislation.legislation_type}
+                      class="hover:bg-gray-50"
+                    >
                       <td class="px-6 py-4">
                         <.link
                           navigate={~p"/legislation/#{legislation.id}"}
                           class="text-sm font-medium text-blue-600 hover:text-blue-500"
                         >
-                          <%= legislation.legislation_title %>
+                          {legislation.legislation_title}
                         </.link>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap">
-                        <span class={["inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", legislation_type_class(legislation.legislation_type)]}>
-                          <%= format_legislation_type(legislation.legislation_type) %>
+                        <span class={[
+                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+                          legislation_type_class(legislation.legislation_type)
+                        ]}>
+                          {format_legislation_type(legislation.legislation_type)}
                         </span>
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <%= legislation.legislation_year %>
+                        {legislation.legislation_year}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <%= legislation.legislation_number %>
+                        {legislation.legislation_number}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div class="flex items-center justify-end space-x-2">
@@ -380,7 +398,7 @@
                           >
                             <.icon name="hero-eye" class="h-4 w-4" />
                           </.link>
-                          
+
                           <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
                             <.link
                               patch={~p"/legislation/#{legislation.id}/edit"}
@@ -410,10 +428,13 @@
           <% end %>
         </div>
       </div>
-
-      <!-- Pagination -->
+      
+<!-- Pagination -->
       <%= if @total_legislation > @page_size do %>
-        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6 rounded-lg shadow" data-testid="pagination">
+        <div
+          class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6 rounded-lg shadow"
+          data-testid="pagination"
+        >
           <div class="flex-1 flex justify-between sm:hidden">
             <!-- Mobile Pagination -->
             <%= if @page > 1 do %>
@@ -425,7 +446,7 @@
                 Previous
               </button>
             <% end %>
-            
+
             <%= if @page < total_pages(@total_legislation, @page_size) do %>
               <button
                 phx-click="paginate"
@@ -436,18 +457,22 @@
               </button>
             <% end %>
           </div>
-          
+
           <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p class="text-sm text-gray-700">
-                Showing <span class="font-medium"><%= (@page - 1) * @page_size + 1 %></span>
-                to <span class="font-medium"><%= min(@page * @page_size, @total_legislation) %></span>
-                of <span class="font-medium"><%= @total_legislation %></span> results
+                Showing <span class="font-medium">{(@page - 1) * @page_size + 1}</span>
+                to <span class="font-medium">{min(@page * @page_size, @total_legislation)}</span>
+                of <span class="font-medium">{@total_legislation}</span>
+                results
               </p>
             </div>
-            
+
             <div>
-              <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <nav
+                class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                aria-label="Pagination"
+              >
                 <!-- Previous Button -->
                 <%= if @page > 1 do %>
                   <button
@@ -463,13 +488,13 @@
                     <.icon name="hero-chevron-left" class="h-5 w-5" />
                   </span>
                 <% end %>
-
-                <!-- Page Numbers -->
+                
+<!-- Page Numbers -->
                 <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
-                  <%= @page %>
+                  {@page}
                 </span>
-
-                <!-- Next Button -->
+                
+<!-- Next Button -->
                 <%= if @page < total_pages(@total_legislation, @page_size) do %>
                   <button
                     phx-click="paginate"

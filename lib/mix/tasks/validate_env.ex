@@ -76,14 +76,15 @@ defmodule Mix.Tasks.ValidateEnv do
   defp check_required_vars do
     IO.puts("📋 Required Variables:")
 
-    missing = Enum.filter(@required_vars, fn var ->
-      value = System.get_env(var)
-      status = if is_nil(value) or value == "", do: "❌ MISSING", else: "✅ SET"
-      display_value = if is_nil(value) or value == "", do: "", else: " (#{mask_value(value)})"
-      IO.puts("  #{status} #{var}#{display_value}")
+    missing =
+      Enum.filter(@required_vars, fn var ->
+        value = System.get_env(var)
+        status = if is_nil(value) or value == "", do: "❌ MISSING", else: "✅ SET"
+        display_value = if is_nil(value) or value == "", do: "", else: " (#{mask_value(value)})"
+        IO.puts("  #{status} #{var}#{display_value}")
 
-      is_nil(value) or value == ""
-    end)
+        is_nil(value) or value == ""
+      end)
 
     missing
   end
@@ -91,19 +92,21 @@ defmodule Mix.Tasks.ValidateEnv do
   defp check_admin_vars do
     IO.puts("\n🔐 Admin Authorization Configuration:")
 
-    configured = Enum.any?(@admin_vars, fn var_group ->
-      all_set = Enum.all?(var_group, fn var ->
-        value = System.get_env(var)
-        not is_nil(value) and value != ""
+    configured =
+      Enum.any?(@admin_vars, fn var_group ->
+        all_set =
+          Enum.all?(var_group, fn var ->
+            value = System.get_env(var)
+            not is_nil(value) and value != ""
+          end)
+
+        if all_set do
+          method = if length(var_group) == 3, do: "Repository-based", else: "Allow list"
+          IO.puts("  ✅ #{method} (#{Enum.join(var_group, ", ")})")
+        end
+
+        all_set
       end)
-
-      if all_set do
-        method = if length(var_group) == 3, do: "Repository-based", else: "Allow list"
-        IO.puts("  ✅ #{method} (#{Enum.join(var_group, ", ")})")
-      end
-
-      all_set
-    end)
 
     if not configured do
       IO.puts("  ❌ No admin configuration detected")
@@ -121,8 +124,10 @@ defmodule Mix.Tasks.ValidateEnv do
       case value do
         nil ->
           IO.puts("  ⚪ #{var} (not set, will use default)")
+
         "" ->
           IO.puts("  ⚪ #{var} (empty, will use default)")
+
         val ->
           IO.puts("  ✅ #{var} (#{mask_value(val)})")
       end
@@ -133,8 +138,10 @@ defmodule Mix.Tasks.ValidateEnv do
     cond do
       String.length(value) <= 8 ->
         String.duplicate("*", String.length(value))
+
       String.starts_with?(value, "http") ->
         value
+
       true ->
         prefix = String.slice(value, 0..3)
         suffix = String.slice(value, -4..-1//1)

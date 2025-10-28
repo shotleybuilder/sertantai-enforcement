@@ -62,7 +62,8 @@ defmodule EhsEnforcementWeb.SearchDebounceTest do
         |> element("input[name='search']")
         |> render_change(%{"_target" => ["search"], "search" => query})
 
-        Process.sleep(20)  # Very fast typing
+        # Very fast typing
+        Process.sleep(20)
       end)
 
       # Wait for debounce

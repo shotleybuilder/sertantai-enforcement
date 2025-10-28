@@ -9,18 +9,45 @@ defmodule EhsEnforcement.Repo.Migrations.EnablePgTrgmIndexes do
 
   def up do
     # Create pg_trgm GIN indexes with proper operator class
-    execute("CREATE INDEX IF NOT EXISTS offenders_postcode_gin_trgm ON offenders USING GIN (postcode gin_trgm_ops)")
-    execute("CREATE INDEX IF NOT EXISTS offenders_main_activity_gin_trgm ON offenders USING GIN (main_activity gin_trgm_ops)")
-    execute("CREATE INDEX IF NOT EXISTS offenders_local_authority_gin_trgm ON offenders USING GIN (local_authority gin_trgm_ops)")
-    execute("CREATE INDEX IF NOT EXISTS offenders_normalized_name_gin_trgm ON offenders USING GIN (normalized_name gin_trgm_ops)")
-    execute("CREATE INDEX IF NOT EXISTS offenders_name_gin_trgm ON offenders USING GIN (name gin_trgm_ops)")
-    
-    execute("CREATE INDEX IF NOT EXISTS notices_notice_body_gin_trgm ON notices USING GIN (notice_body gin_trgm_ops)")
-    execute("CREATE INDEX IF NOT EXISTS notices_offence_breaches_gin_trgm ON notices USING GIN (offence_breaches gin_trgm_ops)")
-    execute("CREATE INDEX IF NOT EXISTS notices_regulator_id_gin_trgm ON notices USING GIN (regulator_id gin_trgm_ops)")
-    
-    execute("CREATE INDEX IF NOT EXISTS cases_offence_breaches_gin_trgm ON cases USING GIN (offence_breaches gin_trgm_ops)")
-    execute("CREATE INDEX IF NOT EXISTS cases_regulator_id_gin_trgm ON cases USING GIN (regulator_id gin_trgm_ops)")
+    execute(
+      "CREATE INDEX IF NOT EXISTS offenders_postcode_gin_trgm ON offenders USING GIN (postcode gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX IF NOT EXISTS offenders_main_activity_gin_trgm ON offenders USING GIN (main_activity gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX IF NOT EXISTS offenders_local_authority_gin_trgm ON offenders USING GIN (local_authority gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX IF NOT EXISTS offenders_normalized_name_gin_trgm ON offenders USING GIN (normalized_name gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX IF NOT EXISTS offenders_name_gin_trgm ON offenders USING GIN (name gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX IF NOT EXISTS notices_notice_body_gin_trgm ON notices USING GIN (notice_body gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX IF NOT EXISTS notices_offence_breaches_gin_trgm ON notices USING GIN (offence_breaches gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX IF NOT EXISTS notices_regulator_id_gin_trgm ON notices USING GIN (regulator_id gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX IF NOT EXISTS cases_offence_breaches_gin_trgm ON cases USING GIN (offence_breaches gin_trgm_ops)"
+    )
+
+    execute(
+      "CREATE INDEX IF NOT EXISTS cases_regulator_id_gin_trgm ON cases USING GIN (regulator_id gin_trgm_ops)"
+    )
 
     execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
   end
@@ -29,17 +56,17 @@ defmodule EhsEnforcement.Repo.Migrations.EnablePgTrgmIndexes do
     # Drop pg_trgm GIN indexes
     execute("DROP INDEX IF EXISTS cases_regulator_id_gin_trgm")
     execute("DROP INDEX IF EXISTS cases_offence_breaches_gin_trgm")
-    
+
     execute("DROP INDEX IF EXISTS notices_regulator_id_gin_trgm")
     execute("DROP INDEX IF EXISTS notices_offence_breaches_gin_trgm")
     execute("DROP INDEX IF EXISTS notices_notice_body_gin_trgm")
-    
+
     execute("DROP INDEX IF EXISTS offenders_name_gin_trgm")
     execute("DROP INDEX IF EXISTS offenders_normalized_name_gin_trgm")
     execute("DROP INDEX IF EXISTS offenders_local_authority_gin_trgm")
     execute("DROP INDEX IF EXISTS offenders_main_activity_gin_trgm")
     execute("DROP INDEX IF EXISTS offenders_postcode_gin_trgm")
-    
+
     execute("DROP EXTENSION IF EXISTS pg_trgm")
   end
 end

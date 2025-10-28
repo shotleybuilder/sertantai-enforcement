@@ -1,7 +1,7 @@
 defmodule EhsEnforcement.Config.Settings do
   @moduledoc """
   Central configuration management for the EHS Enforcement application.
-  
+
   Handles loading and accessing configuration from environment variables
   with proper defaults and validation.
   """
@@ -58,7 +58,7 @@ defmodule EhsEnforcement.Config.Settings do
         else
           {:error, reason} -> {:error, reason}
         end
-      
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -98,7 +98,8 @@ defmodule EhsEnforcement.Config.Settings do
   defp parse_sync_interval(value) when is_binary(value) do
     case Integer.parse(value) do
       {interval, ""} when interval > 0 -> interval
-      _ -> 60  # Default fallback
+      # Default fallback
+      _ -> 60
     end
   end
 
@@ -117,7 +118,8 @@ defmodule EhsEnforcement.Config.Settings do
   defp parse_integer(value) when is_binary(value) do
     case Integer.parse(value) do
       {int, ""} -> int
-      _ -> 10  # Default fallback
+      # Default fallback
+      _ -> 10
     end
   end
 
@@ -126,10 +128,11 @@ defmodule EhsEnforcement.Config.Settings do
 
   defp validate_required_env_vars do
     required_vars = ["AT_UK_E_API_KEY", "DATABASE_URL"]
-    
-    missing = Enum.filter(required_vars, fn var ->
-      System.get_env(var) in [nil, ""]
-    end)
+
+    missing =
+      Enum.filter(required_vars, fn var ->
+        System.get_env(var) in [nil, ""]
+      end)
 
     case missing do
       [] -> :ok
@@ -141,7 +144,7 @@ defmodule EhsEnforcement.Config.Settings do
 
   defp validate_airtable_config do
     api_key = System.get_env("AT_UK_E_API_KEY")
-    
+
     # API key presence already checked in validate_required_env_vars
     if api_key && String.length(api_key) < 10 do
       {:error, :invalid_api_key_format}
@@ -152,7 +155,7 @@ defmodule EhsEnforcement.Config.Settings do
 
   defp validate_sync_interval do
     interval_str = System.get_env("SYNC_INTERVAL", "60")
-    
+
     case Integer.parse(interval_str) do
       {interval, ""} when interval > 0 -> :ok
       _ -> {:error, :invalid_sync_interval}

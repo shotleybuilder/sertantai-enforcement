@@ -21,26 +21,33 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    socket = assign(socket,
-      # Page metadata
-      page_title: "Session Design Parameters",
+    socket =
+      assign(socket,
+        # Page metadata
+        page_title: "Session Design Parameters",
 
-      # Loading state
-      loading: false,
+        # Loading state
+        loading: false,
 
-      # Filter state
-      filter_status: "all",
-      filter_agency: "all",
+        # Filter state
+        filter_status: "all",
+        filter_agency: "all",
 
-      # Sessions data
-      all_sessions: [],
+        # Sessions data
+        all_sessions: [],
 
-      # UI state
-      last_update: System.monotonic_time(:millisecond)
-    )
+        # UI state
+        last_update: System.monotonic_time(:millisecond)
+      )
 
     # Load initial sessions data
-    sessions = load_sessions(socket.assigns.filter_status, socket.assigns.filter_agency, socket.assigns.current_user)
+    sessions =
+      load_sessions(
+        socket.assigns.filter_status,
+        socket.assigns.filter_agency,
+        socket.assigns.current_user
+      )
+
     socket = assign(socket, all_sessions: sessions)
 
     if connected?(socket) do
@@ -80,15 +87,31 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
   # Handle scrape session updates
   @impl true
   def handle_info(%Phoenix.Socket.Broadcast{topic: "scrape_session:updated"}, socket) do
-    sessions = load_sessions(socket.assigns.filter_status, socket.assigns.filter_agency, socket.assigns.current_user)
-    socket = assign(socket, all_sessions: sessions, last_update: System.monotonic_time(:millisecond))
+    sessions =
+      load_sessions(
+        socket.assigns.filter_status,
+        socket.assigns.filter_agency,
+        socket.assigns.current_user
+      )
+
+    socket =
+      assign(socket, all_sessions: sessions, last_update: System.monotonic_time(:millisecond))
+
     {:noreply, socket}
   end
 
   @impl true
   def handle_info(%Phoenix.Socket.Broadcast{topic: "scrape_session:created"}, socket) do
-    sessions = load_sessions(socket.assigns.filter_status, socket.assigns.filter_agency, socket.assigns.current_user)
-    socket = assign(socket, all_sessions: sessions, last_update: System.monotonic_time(:millisecond))
+    sessions =
+      load_sessions(
+        socket.assigns.filter_status,
+        socket.assigns.filter_agency,
+        socket.assigns.current_user
+      )
+
+    socket =
+      assign(socket, all_sessions: sessions, last_update: System.monotonic_time(:millisecond))
+
     {:noreply, socket}
   end
 
@@ -100,26 +123,29 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
   # Private Functions
 
   defp load_sessions(status_filter, agency_filter, actor) do
-    base_query = ScrapeSession
-    |> Ash.Query.sort(inserted_at: :desc)
-    |> Ash.Query.limit(100)
+    base_query =
+      ScrapeSession
+      |> Ash.Query.sort(inserted_at: :desc)
+      |> Ash.Query.limit(100)
 
     # Apply status filter
-    query_with_status = case status_filter do
-      "all" -> base_query
-      "active" -> Ash.Query.filter(base_query, status in [:pending, :running])
-      "completed" -> Ash.Query.filter(base_query, status == :completed)
-      "failed" -> Ash.Query.filter(base_query, status in [:failed, :stopped])
-      _ -> base_query
-    end
+    query_with_status =
+      case status_filter do
+        "all" -> base_query
+        "active" -> Ash.Query.filter(base_query, status in [:pending, :running])
+        "completed" -> Ash.Query.filter(base_query, status == :completed)
+        "failed" -> Ash.Query.filter(base_query, status in [:failed, :stopped])
+        _ -> base_query
+      end
 
     # Apply agency filter
-    final_query = case agency_filter do
-      "all" -> query_with_status
-      "hse" -> Ash.Query.filter(query_with_status, agency == :hse)
-      "ea" -> Ash.Query.filter(query_with_status, agency == :environment_agency)
-      _ -> query_with_status
-    end
+    final_query =
+      case agency_filter do
+        "all" -> query_with_status
+        "hse" -> Ash.Query.filter(query_with_status, agency == :hse)
+        "ea" -> Ash.Query.filter(query_with_status, agency == :environment_agency)
+        _ -> query_with_status
+      end
 
     Ash.read!(final_query, actor: actor)
   end
@@ -180,6 +206,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
   defp format_date_range(nil, nil), do: "N/A"
   defp format_date_range(date_from, nil), do: "From #{format_date(date_from)}"
   defp format_date_range(nil, date_to), do: "Until #{format_date(date_to)}"
+
   defp format_date_range(date_from, date_to) do
     "#{format_date(date_from)} - #{format_date(date_to)}"
   end
@@ -187,12 +214,15 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
   defp format_date(date) when is_struct(date, Date) do
     Calendar.strftime(date, "%b %Y")
   end
+
   defp format_date(_), do: "N/A"
 
   defp format_action_types(nil), do: []
+
   defp format_action_types(action_types) when is_list(action_types) do
     Enum.map(action_types, &format_action_type/1)
   end
+
   defp format_action_types(_), do: []
 
   defp format_action_type(action_type) do

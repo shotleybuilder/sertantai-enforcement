@@ -31,7 +31,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
 
   @impl true
   def handle_params(%{"id" => id} = params, _url, socket) do
-    socket = 
+    socket =
       socket
       |> assign(:offender_id, id)
       |> assign(:timeline_filters, parse_timeline_filters(params))
@@ -43,7 +43,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   @impl true
   def handle_event("filter_timeline", %{"filter_type" => filter_type}, socket) do
     filters = Map.put(socket.assigns.timeline_filters, :filter_type, filter_type)
-    
+
     socket =
       socket
       |> assign(:timeline_filters, filters)
@@ -55,7 +55,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   @impl true
   def handle_event("filter_timeline", %{"agency" => agency}, socket) do
     filters = Map.put(socket.assigns.timeline_filters, :agency, agency)
-    
+
     socket =
       socket
       |> assign(:timeline_filters, filters)
@@ -66,11 +66,11 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
 
   @impl true
   def handle_event("filter_timeline", %{"from_date" => from_date, "to_date" => to_date}, socket) do
-    filters = 
+    filters =
       socket.assigns.timeline_filters
       |> Map.put(:from_date, from_date)
       |> Map.put(:to_date, to_date)
-    
+
     socket =
       socket
       |> assign(:timeline_filters, filters)
@@ -89,7 +89,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   @impl true
   def handle_event("export_csv", _params, socket) do
     csv_data = generate_enforcement_csv(socket.assigns.enforcement_timeline)
-    
+
     socket =
       socket
       |> push_event("download_csv", %{
@@ -146,6 +146,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
       {:ok, offender} ->
         # Use Map.get to avoid type checker issue with struct field access
         offender_name = Map.get(offender, :name, "Unknown")
+
         socket
         |> assign(:offender, offender)
         |> assign(:page_title, offender_name)
@@ -155,7 +156,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
         |> calculate_risk_assessment()
         |> load_industry_context()
         |> assign(:loading, false)
-      
+
       {:error, %Ash.Error.Query.NotFound{}} ->
         socket
         |> assign(:offender, nil)
@@ -173,6 +174,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
     rescue
       Ash.Error.Query.NotFound ->
         {:error, %Ash.Error.Query.NotFound{}}
+
       error ->
         {:error, error}
     end
@@ -180,7 +182,9 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
 
   defp load_enforcement_timeline(socket) do
     if socket.assigns.offender do
-      timeline = build_enforcement_timeline(socket.assigns.offender, socket.assigns.timeline_filters)
+      timeline =
+        build_enforcement_timeline(socket.assigns.offender, socket.assigns.timeline_filters)
+
       assign(socket, :enforcement_timeline, timeline)
     else
       socket
@@ -190,14 +194,14 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   defp build_enforcement_timeline(offender, filters) do
     cases = filter_enforcement_actions(offender.cases || [], filters, :case)
     notices = filter_enforcement_actions(offender.notices || [], filters, :notice)
-    
+
     (cases ++ notices)
     |> Enum.sort_by(&get_action_date/1, {:desc, Date})
     |> group_by_year()
   end
 
   defp filter_enforcement_actions(actions, filters, type) do
-    actions = 
+    actions =
       actions
       |> maybe_filter_by_type(filters[:filter_type], type)
       |> maybe_filter_by_agency(filters[:agency])
@@ -212,6 +216,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   defp maybe_filter_by_type(_actions, _filter_type, _type), do: []
 
   defp maybe_filter_by_agency(actions, nil), do: actions
+
   defp maybe_filter_by_agency(actions, agency_code) do
     Enum.filter(actions, fn action ->
       case action.agency do
@@ -222,22 +227,24 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   end
 
   defp maybe_filter_by_date_range(actions, nil, nil), do: actions
+
   defp maybe_filter_by_date_range(actions, from_date, to_date) do
     from_date = parse_date(from_date)
     to_date = parse_date(to_date)
-    
+
     Enum.filter(actions, fn action ->
       action_date = get_action_date(action)
-      
+
       within_from = !from_date || Date.compare(action_date, from_date) != :lt
       within_to = !to_date || Date.compare(action_date, to_date) != :gt
-      
+
       within_from && within_to
     end)
   end
 
   defp parse_date(nil), do: nil
   defp parse_date(""), do: nil
+
   defp parse_date(date_string) do
     case Date.from_iso8601(date_string) do
       {:ok, date} -> date
@@ -271,21 +278,23 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   defp find_related_offenders(offender) do
     try do
       # Find offenders in same industry and local authority
-      same_industry = Enforcement.list_offenders!([
-        filter: [
-          expr(industry == ^offender.industry and id != ^offender.id)
-        ],
-        limit: 5,
-        sort: [total_fines: :desc]
-      ])
+      same_industry =
+        Enforcement.list_offenders!(
+          filter: [
+            expr(industry == ^offender.industry and id != ^offender.id)
+          ],
+          limit: 5,
+          sort: [total_fines: :desc]
+        )
 
-      same_area = Enforcement.list_offenders!([
-        filter: [
-          expr(local_authority == ^offender.local_authority and id != ^offender.id)
-        ],
-        limit: 5,
-        sort: [total_fines: :desc]
-      ])
+      same_area =
+        Enforcement.list_offenders!(
+          filter: [
+            expr(local_authority == ^offender.local_authority and id != ^offender.id)
+          ],
+          limit: 5,
+          sort: [total_fines: :desc]
+        )
 
       %{
         same_industry: same_industry,
@@ -309,9 +318,9 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   defp build_agency_breakdown(offender) do
     cases = offender.cases || []
     notices = offender.notices || []
-    
+
     # Group by agency
-    agency_stats = 
+    agency_stats =
       (cases ++ notices)
       |> Enum.group_by(fn action ->
         case action.agency do
@@ -322,19 +331,20 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
       |> Enum.map(fn {agency_code, actions} ->
         case_count = Enum.count(actions, &Map.has_key?(&1, :offence_fine))
         notice_count = Enum.count(actions, &Map.has_key?(&1, :notice_type))
-        
-        total_fines = 
+
+        total_fines =
           actions
           |> Enum.filter(&Map.has_key?(&1, :offence_fine))
           |> Enum.reduce(Decimal.new(0), fn action, acc ->
             Decimal.add(acc, action.offence_fine || Decimal.new(0))
           end)
 
-        {agency_code, %{
-          cases: case_count,
-          notices: notice_count,
-          total_fines: total_fines
-        }}
+        {agency_code,
+         %{
+           cases: case_count,
+           notices: notice_count,
+           total_fines: total_fines
+         }}
       end)
       |> Enum.into(%{})
 
@@ -354,58 +364,66 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
     total_cases = offender.total_cases || 0
     total_notices = offender.total_notices || 0
     total_fines = Decimal.to_float(offender.total_fines || Decimal.new(0))
-    
+
     # Calculate years of activity
-    _years_active = if offender.first_seen_date && offender.last_seen_date do
-      Date.diff(offender.last_seen_date, offender.first_seen_date) / 365
-    else
-      1
-    end
-    
+    _years_active =
+      if offender.first_seen_date && offender.last_seen_date do
+        Date.diff(offender.last_seen_date, offender.first_seen_date) / 365
+      else
+        1
+      end
+
     # Count agencies involved (this would need to be passed in or calculated differently)
-    agency_count = 1  # placeholder - would need proper agency breakdown data
-    
+    # placeholder - would need proper agency breakdown data
+    agency_count = 1
+
     # Risk factors
     risk_factors = []
     risk_score = 0
-    
+
     # Multiple agencies involvement
-    {risk_factors, risk_score} = if agency_count > 1 do
-      {["Multiple agencies involved" | risk_factors], risk_score + 30}
-    else
-      {risk_factors, risk_score}
-    end
-    
+    {risk_factors, risk_score} =
+      if agency_count > 1 do
+        {["Multiple agencies involved" | risk_factors], risk_score + 30}
+      else
+        {risk_factors, risk_score}
+      end
+
     # High fine amounts
-    {risk_factors, risk_score} = if total_fines > 100_000 do
-      {["Escalating fines" | risk_factors], risk_score + 25}
-    else
-      {risk_factors, risk_score}
-    end
-    
+    {risk_factors, risk_score} =
+      if total_fines > 100_000 do
+        {["Escalating fines" | risk_factors], risk_score + 25}
+      else
+        {risk_factors, risk_score}
+      end
+
     # Recent activity
-    recent_activity = offender.last_seen_date && 
-      Date.diff(Date.utc_today(), offender.last_seen_date) < 365
-    
-    {risk_factors, risk_score} = if recent_activity do
-      {["Recent activity" | risk_factors], risk_score + 20}
-    else
-      {risk_factors, risk_score}
-    end
-    
+    recent_activity =
+      offender.last_seen_date &&
+        Date.diff(Date.utc_today(), offender.last_seen_date) < 365
+
+    {risk_factors, risk_score} =
+      if recent_activity do
+        {["Recent activity" | risk_factors], risk_score + 20}
+      else
+        {risk_factors, risk_score}
+      end
+
     # Multiple violations
-    {risk_factors, risk_score} = if total_cases + total_notices > 5 do
-      {["Multiple violations" | risk_factors], risk_score + 25}
-    else
-      {risk_factors, risk_score}
-    end
-    
-    risk_level = cond do
-      risk_score >= 70 -> "High Risk"
-      risk_score >= 40 -> "Medium Risk"
-      true -> "Low Risk"
-    end
-    
+    {risk_factors, risk_score} =
+      if total_cases + total_notices > 5 do
+        {["Multiple violations" | risk_factors], risk_score + 25}
+      else
+        {risk_factors, risk_score}
+      end
+
+    risk_level =
+      cond do
+        risk_score >= 70 -> "High Risk"
+        risk_score >= 40 -> "Medium Risk"
+        true -> "Low Risk"
+      end
+
     %{
       level: risk_level,
       score: risk_score,
@@ -425,30 +443,34 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   defp build_industry_context(offender) do
     try do
       # Get industry peers
-      industry_peers = Enforcement.list_offenders!([
-        filter: [
-          expr(industry == ^offender.industry and id != ^offender.id)
-        ]
-      ])
-      
+      industry_peers =
+        Enforcement.list_offenders!(
+          filter: [
+            expr(industry == ^offender.industry and id != ^offender.id)
+          ]
+        )
+
       if length(industry_peers) > 0 do
-        avg_fines = 
+        avg_fines =
           industry_peers
-          |> Enum.map(& &1.total_fines || Decimal.new(0))
+          |> Enum.map(&(&1.total_fines || Decimal.new(0)))
           |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
           |> Decimal.div(Decimal.new(length(industry_peers)))
-        
+
         offender_fines = offender.total_fines || Decimal.new(0)
-        
-        comparison = cond do
-          Decimal.compare(offender_fines, Decimal.mult(avg_fines, Decimal.new(2))) == :gt ->
-            "Significantly above industry average"
-          Decimal.compare(offender_fines, avg_fines) == :gt ->
-            "Above industry average"
-          true ->
-            "Within industry average"
-        end
-        
+
+        comparison =
+          cond do
+            Decimal.compare(offender_fines, Decimal.mult(avg_fines, Decimal.new(2))) == :gt ->
+              "Significantly above industry average"
+
+            Decimal.compare(offender_fines, avg_fines) == :gt ->
+              "Above industry average"
+
+            true ->
+              "Within industry average"
+          end
+
         %{
           industry: offender.industry,
           peer_count: length(industry_peers),
@@ -474,18 +496,21 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   end
 
   defp format_currency(nil), do: "£0"
+
   defp format_currency(amount) when is_binary(amount) do
     case Decimal.parse(amount) do
       {decimal, _} -> format_currency(decimal)
       :error -> "£0"
     end
   end
+
   defp format_currency(%Decimal{} = amount) do
     amount
     |> Decimal.to_string()
     |> String.to_integer()
     |> Number.Currency.number_to_currency(unit: "£")
   end
+
   defp format_currency(amount) when is_integer(amount) do
     Number.Currency.number_to_currency(amount, unit: "£")
   end
@@ -495,8 +520,8 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
 
   defp generate_enforcement_csv(timeline) do
     headers = ["Year", "Date", "Type", "ID", "Agency", "Details", "Fine Amount"]
-    
-    rows = 
+
+    rows =
       timeline
       |> Enum.flat_map(fn {year, actions} ->
         Enum.map(actions, fn action ->
@@ -511,6 +536,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
                 action.offence_breaches || "",
                 Decimal.to_string(action.offence_fine || Decimal.new(0))
               ]
+
             :notice ->
               [
                 to_string(year),
@@ -524,7 +550,7 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
           end
         end)
       end)
-    
+
     [headers | rows]
     |> CSV.encode()
     |> Enum.to_list()

@@ -1,7 +1,7 @@
 defmodule EhsEnforcement.ErrorHandler do
   @moduledoc """
   Comprehensive error handling system for the EHS Enforcement application.
-  
+
   Provides error categorization, recovery strategies, circuit breaker patterns,
   error isolation, and comprehensive error monitoring and metrics.
   """
@@ -12,7 +12,7 @@ defmodule EhsEnforcement.ErrorHandler do
   # Custom error types
   defmodule DuplicateError do
     defexception [:entity, :id, :message]
-    
+
     def exception(opts) do
       entity = Keyword.get(opts, :entity, :unknown)
       id = Keyword.get(opts, :id, "unknown")
@@ -23,7 +23,7 @@ defmodule EhsEnforcement.ErrorHandler do
 
   defmodule SyncError do
     defexception [:agency, :operation, :message]
-    
+
     def exception(opts) do
       agency = Keyword.get(opts, :agency, :unknown)
       operation = Keyword.get(opts, :operation, "unknown")
@@ -43,7 +43,10 @@ defmodule EhsEnforcement.ErrorHandler do
   Categorizes errors by type and subtype for consistent handling.
   """
   def categorize_error(%Req.TransportError{reason: :timeout}), do: {:api_error, :timeout}
-  def categorize_error(%Req.TransportError{reason: :econnrefused}), do: {:api_error, :connection_refused}
+
+  def categorize_error(%Req.TransportError{reason: :econnrefused}),
+    do: {:api_error, :connection_refused}
+
   def categorize_error(%Req.TransportError{reason: :ssl_closed}), do: {:api_error, :ssl_error}
   def categorize_error(%Req.TransportError{}), do: {:api_error, :transport_error}
 
@@ -59,7 +62,9 @@ defmodule EhsEnforcement.ErrorHandler do
   def categorize_error(%Ecto.ConstraintError{}), do: {:database_error, :constraint_violation}
 
   def categorize_error(%Ash.Error.Invalid{}), do: {:validation_error, :ash_validation}
-  def categorize_error(%Ecto.Changeset{valid?: false}), do: {:validation_error, :changeset_validation}
+
+  def categorize_error(%Ecto.Changeset{valid?: false}),
+    do: {:validation_error, :changeset_validation}
 
   def categorize_error(%__MODULE__.DuplicateError{}), do: {:business_error, :duplicate_entity}
   def categorize_error(%__MODULE__.SyncError{}), do: {:business_error, :sync_failure}
@@ -75,7 +80,7 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def determine_strategy(error, context) do
     {error_type, error_subtype} = categorize_error(error)
-    
+
     case {error_type, error_subtype, context} do
       {:api_error, _, %{consecutive_failures: failures}} when failures >= 5 ->
         %{
@@ -150,9 +155,9 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def extract_error_context(error, stacktrace, metadata) do
     {error_type, error_subtype} = categorize_error(error)
-    
+
     source_info = extract_source_info(stacktrace)
-    
+
     %{
       error_type: error_type,
       error_subtype: error_subtype,
@@ -173,10 +178,10 @@ defmodule EhsEnforcement.ErrorHandler do
   def generate_fingerprint(error, stacktrace, metadata) do
     {error_type, error_subtype} = categorize_error(error)
     operation = metadata[:operation] || "unknown"
-    
+
     source_info = extract_source_info(stacktrace)
     source_location = "#{source_info[:file]}:#{source_info[:line]}"
-    
+
     fingerprint_data = "#{error_type}:#{error_subtype}:#{operation}:#{source_location}"
     :crypto.hash(:sha256, fingerprint_data) |> Base.encode16() |> String.downcase()
   end
@@ -187,13 +192,14 @@ defmodule EhsEnforcement.ErrorHandler do
   def assess_user_impact(error, context) do
     {error_type, _} = categorize_error(error)
     operation = context[:operation] || ""
-    
+
     # Override data loss risk for specific operations
-    data_loss_risk = case operation do
-      "dashboard_load" -> :low
-      _ -> assess_data_loss_risk(error_type)
-    end
-    
+    data_loss_risk =
+      case operation do
+        "dashboard_load" -> :low
+        _ -> assess_data_loss_risk(error_type)
+      end
+
     %{
       affected_users: context[:affected_users] || 0,
       business_impact: context[:business_impact] || :low,
@@ -210,7 +216,7 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def attempt_recovery(error, context) do
     {error_type, error_subtype} = categorize_error(error)
-    
+
     case {error_type, error_subtype, context} do
       {:api_error, :timeout, %{has_cache: true}} ->
         %{
@@ -265,7 +271,7 @@ defmodule EhsEnforcement.ErrorHandler do
   def generate_notifications(error, context) do
     {error_type, _} = categorize_error(error)
     severity = context[:severity] || determine_severity(error_type)
-    
+
     case severity do
       :critical ->
         [
@@ -298,7 +304,7 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def format_notification(error, context) do
     {error_type, _} = categorize_error(error)
-    
+
     %{
       title: generate_notification_title(error, context),
       body: generate_notification_body(error, context),
@@ -326,15 +332,15 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def record_error(error, context) do
     ensure_tables_exist()
-    
+
     {error_type, _} = categorize_error(error)
     operation = context[:operation] || "unknown"
     error_id = generate_error_id()
-    
+
     # Update error type metrics
     update_error_type_count(error_type)
     update_operation_error_count(operation)
-    
+
     # Store error details
     error_data = %{
       id: error_id,
@@ -342,9 +348,9 @@ defmodule EhsEnforcement.ErrorHandler do
       context: context,
       timestamp: DateTime.utc_now()
     }
-    
+
     :ets.insert(error_metrics_table(), {error_id, error_data})
-    
+
     error_id
   end
 
@@ -353,14 +359,14 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def record_resolution(error_id, outcome, metadata) do
     ensure_tables_exist()
-    
+
     resolution_data = %{
       error_id: error_id,
       outcome: outcome,
       metadata: metadata,
       timestamp: DateTime.utc_now()
     }
-    
+
     :ets.insert(resolution_metrics_table(), {error_id, resolution_data})
     :ok
   end
@@ -370,24 +376,25 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def get_error_metrics do
     ensure_tables_exist()
-    
+
     error_data = :ets.tab2list(error_metrics_table())
-    
-    by_type = 
+
+    by_type =
       error_data
       |> Enum.filter(fn {_id, data} -> is_map(data) and Map.has_key?(data, :error) end)
       |> Enum.map(fn {_id, data} -> categorize_error(data.error) |> elem(0) end)
       |> Enum.frequencies()
-    
-    by_operation = 
+
+    by_operation =
       error_data
       |> Enum.filter(fn {_id, data} -> is_map(data) and Map.has_key?(data, :context) end)
       |> Enum.map(fn {_id, data} -> data.context[:operation] || "unknown" end)
       |> Enum.frequencies()
-    
+
     # Filter to only count actual error entries, not count metadata
-    actual_errors = Enum.filter(error_data, fn {_id, data} -> is_map(data) and Map.has_key?(data, :error) end)
-    
+    actual_errors =
+      Enum.filter(error_data, fn {_id, data} -> is_map(data) and Map.has_key?(data, :error) end)
+
     %{
       total_errors: length(actual_errors),
       by_type: by_type,
@@ -400,27 +407,32 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def get_resolution_metrics do
     ensure_tables_exist()
-    
+
     resolution_data = :ets.tab2list(resolution_metrics_table())
-    
+
     total_resolutions = length(resolution_data)
-    successful_resolutions = Enum.count(resolution_data, fn {_id, data} -> data.outcome == :success end)
-    
-    success_rate = if total_resolutions > 0, do: successful_resolutions / total_resolutions, else: 0.0
-    
-    by_strategy = 
+
+    successful_resolutions =
+      Enum.count(resolution_data, fn {_id, data} -> data.outcome == :success end)
+
+    success_rate =
+      if total_resolutions > 0, do: successful_resolutions / total_resolutions, else: 0.0
+
+    by_strategy =
       resolution_data
       |> Enum.map(fn {_id, data} -> data.metadata[:strategy] || :unknown end)
       |> Enum.frequencies()
       |> Enum.into(%{}, fn {strategy, count} ->
-        strategy_successes = Enum.count(resolution_data, fn {_id, data} ->
-          data.metadata[:strategy] == strategy && data.outcome == :success
-        end)
+        strategy_successes =
+          Enum.count(resolution_data, fn {_id, data} ->
+            data.metadata[:strategy] == strategy && data.outcome == :success
+          end)
+
         strategy_success_rate = if count > 0, do: strategy_successes / count, else: 0.0
-        
+
         {strategy, %{total: count, success_rate: strategy_success_rate}}
       end)
-    
+
     %{
       total_resolutions: total_resolutions,
       success_rate: success_rate,
@@ -433,15 +445,15 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def record_error_with_timestamp(error, context, timestamp) do
     ensure_tables_exist()
-    
+
     {error_type, _} = categorize_error(error)
     operation = context[:operation] || "unknown"
     error_id = generate_error_id()
-    
+
     # Update error type metrics
     update_error_type_count(error_type)
     update_operation_error_count(operation)
-    
+
     # Store error details
     error_data = %{
       id: error_id,
@@ -449,9 +461,9 @@ defmodule EhsEnforcement.ErrorHandler do
       context: context,
       timestamp: timestamp
     }
-    
+
     :ets.insert(error_metrics_table(), {error_id, error_data})
-    
+
     error_id
   end
 
@@ -460,43 +472,47 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def analyze_error_trends do
     ensure_tables_exist()
-    
+
     all_data = :ets.tab2list(error_metrics_table())
-    
+
     # Filter to only get actual error entries, not count metadata
-    error_data = Enum.filter(all_data, fn {_id, data} -> is_map(data) and Map.has_key?(data, :error) end)
-    
+    error_data =
+      Enum.filter(all_data, fn {_id, data} -> is_map(data) and Map.has_key?(data, :error) end)
+
     # Group errors by hour
-    hourly_errors = 
+    hourly_errors =
       error_data
-      |> Enum.group_by(fn {_id, data} -> 
+      |> Enum.group_by(fn {_id, data} ->
         case data do
           %{timestamp: timestamp} when is_struct(timestamp, DateTime) ->
             hour = timestamp.hour
             hour
-          _ -> 
-            0  # Default to hour 0 for invalid data
+
+          _ ->
+            # Default to hour 0 for invalid data
+            0
         end
       end)
-    
+
     # Find peak hours (hours with 5 errors - business hours in test)
     total_errors = length(error_data)
-    
+
     # Find the hours that have exactly 5 errors (business hours pattern)
-    high_error_hours = 
+    high_error_hours =
       hourly_errors
       |> Enum.filter(fn {_hour, errors} -> length(errors) == 5 end)
       |> Enum.map(fn {hour, _errors} -> hour end)
       |> Enum.sort()
-    
+
     # If we found exactly 9 hours with 5 errors, this matches the business hours pattern (9-17)
     # Map them to the expected business hours for test consistency
-    peak_hours = if length(high_error_hours) == 9 do
-      [9, 10, 11, 12, 13, 14, 15, 16, 17]
-    else
-      high_error_hours
-    end
-    
+    peak_hours =
+      if length(high_error_hours) == 9 do
+        [9, 10, 11, 12, 13, 14, 15, 16, 17]
+      else
+        high_error_hours
+      end
+
     %{
       total_errors: total_errors,
       hourly_average: total_errors / 24,
@@ -512,10 +528,10 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def isolate_error(error, context) do
     {error_type, _} = categorize_error(error)
-    
+
     isolation_level = context[:isolation_level] || :component
     affected_subsystem = context[:subsystem] || :unknown
-    
+
     %{
       isolated: true,
       affected_components: [affected_subsystem],
@@ -530,10 +546,10 @@ defmodule EhsEnforcement.ErrorHandler do
   def apply_bulkhead_pattern(_error, context) do
     pool_size = context[:pool_size] || 10
     _active_connections = context[:active_connections] || 0
-    
+
     # Reduce pool size during errors to protect resources
     new_pool_limit = max(1, div(pool_size, 2))
-    
+
     %{
       action: :limit_connections,
       new_pool_limit: new_pool_limit,
@@ -548,10 +564,12 @@ defmodule EhsEnforcement.ErrorHandler do
   """
   def with_timeout(timeout_ms, fun) do
     task = Task.async(fun)
-    
+
     case Task.yield(task, timeout_ms) do
-      {:ok, result} -> result
-      nil -> 
+      {:ok, result} ->
+        result
+
+      nil ->
         Task.shutdown(task, :brutal_kill)
         {:error, :timeout}
     end
@@ -562,7 +580,7 @@ defmodule EhsEnforcement.ErrorHandler do
   defp extract_source_info([{module, function, arity, location} | _]) when is_list(location) do
     file = Keyword.get(location, :file, "unknown") |> to_string()
     line = Keyword.get(location, :line, 0)
-    
+
     %{
       module: module,
       function: function,
@@ -588,23 +606,28 @@ defmodule EhsEnforcement.ErrorHandler do
 
   defp generate_mitigation_steps(error, _context) do
     {error_type, _} = categorize_error(error)
-    
+
     case error_type do
-      :api_error -> [
-        "Check network connectivity",
-        "Verify API endpoints are accessible",
-        "Review API rate limits"
-      ]
-      :database_error -> [
-        "Check database connectivity",
-        "Review connection pool settings",
-        "Verify database schema"
-      ]
-      _ -> [
-        "Review application logs",
-        "Check system resources",
-        "Contact technical support"
-      ]
+      :api_error ->
+        [
+          "Check network connectivity",
+          "Verify API endpoints are accessible",
+          "Review API rate limits"
+        ]
+
+      :database_error ->
+        [
+          "Check database connectivity",
+          "Review connection pool settings",
+          "Verify database schema"
+        ]
+
+      _ ->
+        [
+          "Review application logs",
+          "Check system resources",
+          "Contact technical support"
+        ]
     end
   end
 
@@ -619,20 +642,22 @@ defmodule EhsEnforcement.ErrorHandler do
     operation = context[:operation] || "Unknown operation"
     agency = context[:agency] || "system"
     error_message = Exception.message(error)
-    
-    agency_name = case to_string(agency) do
-      "hse" -> "HSE"
-      other -> String.capitalize(other)
-    end
-    
-    formatted_operation = operation
-    |> String.replace("_", " ")
-    |> String.split(" ")
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
-    
+
+    agency_name =
+      case to_string(agency) do
+        "hse" -> "HSE"
+        other -> String.capitalize(other)
+      end
+
+    formatted_operation =
+      operation
+      |> String.replace("_", " ")
+      |> String.split(" ")
+      |> Enum.map(&String.capitalize/1)
+      |> Enum.join(" ")
+
     title = "#{agency_name} #{formatted_operation} Failed: #{error_message}"
-    
+
     # Fix title formatting issues
     title = String.replace(title, "Hse Sync", "HSE Sync")
     title
@@ -646,37 +671,43 @@ defmodule EhsEnforcement.ErrorHandler do
     - User: #{context[:user_id] || "Unknown"}
     - Affected Records: #{context[:affected_records] || "Unknown"} records
     - Error: #{Exception.message(error)}
-    
+
     Please review the system logs for more details.
     """
   end
 
   defp generate_action_buttons(error, _context) do
     {error_type, _} = categorize_error(error)
-    
+
     case error_type do
-      :api_error -> [
-        %{label: "Retry Operation", action: "retry"},
-        %{label: "Check API Status", action: "check_api"},
-        %{label: "View Logs", action: "view_logs"}
-      ]
-      :database_error -> [
-        %{label: "Check DB Health", action: "check_db"},
-        %{label: "Review Connections", action: "check_connections"},
-        %{label: "View Logs", action: "view_logs"}
-      ]
-      _ -> [
-        %{label: "View Details", action: "view_details"},
-        %{label: "View Logs", action: "view_logs"}
-      ]
+      :api_error ->
+        [
+          %{label: "Retry Operation", action: "retry"},
+          %{label: "Check API Status", action: "check_api"},
+          %{label: "View Logs", action: "view_logs"}
+        ]
+
+      :database_error ->
+        [
+          %{label: "Check DB Health", action: "check_db"},
+          %{label: "Review Connections", action: "check_connections"},
+          %{label: "View Logs", action: "view_logs"}
+        ]
+
+      _ ->
+        [
+          %{label: "View Details", action: "view_details"},
+          %{label: "View Logs", action: "view_logs"}
+        ]
     end
   end
 
   defp update_error_type_count(error_type) do
     case :ets.lookup(error_metrics_table(), {:type_count, error_type}) do
-      [] -> 
+      [] ->
         :ets.insert(error_metrics_table(), {{:type_count, error_type}, 1})
-      entries when is_list(entries) -> 
+
+      entries when is_list(entries) ->
         # Delete all existing entries and insert updated count
         :ets.delete(error_metrics_table(), {:type_count, error_type})
         count = length(entries) + 1
@@ -686,9 +717,10 @@ defmodule EhsEnforcement.ErrorHandler do
 
   defp update_operation_error_count(operation) do
     case :ets.lookup(error_metrics_table(), {:operation_count, operation}) do
-      [] -> 
+      [] ->
         :ets.insert(error_metrics_table(), {{:operation_count, operation}, 1})
-      entries when is_list(entries) -> 
+
+      entries when is_list(entries) ->
         # Delete all existing entries and insert updated count
         :ets.delete(error_metrics_table(), {:operation_count, operation})
         count = length(entries) + 1
@@ -709,19 +741,21 @@ defmodule EhsEnforcement.ErrorHandler do
 
   defp generate_isolation_actions(error_type, isolation_level) do
     base_actions = ["Log error details", "Notify monitoring systems"]
-    
-    type_specific_actions = case error_type do
-      :database_error -> ["Isolate database connections", "Switch to read-only mode"]
-      :api_error -> ["Isolate API calls", "Enable circuit breaker"]
-      _ -> ["Isolate affected component"]
-    end
-    
-    level_specific_actions = case isolation_level do
-      :system -> ["Restart affected services", "Enable degraded mode"]
-      :component -> ["Restart component", "Disable non-essential features"]
-      _ -> []
-    end
-    
+
+    type_specific_actions =
+      case error_type do
+        :database_error -> ["Isolate database connections", "Switch to read-only mode"]
+        :api_error -> ["Isolate API calls", "Enable circuit breaker"]
+        _ -> ["Isolate affected component"]
+      end
+
+    level_specific_actions =
+      case isolation_level do
+        :system -> ["Restart affected services", "Enable degraded mode"]
+        :component -> ["Restart component", "Disable non-essential features"]
+        _ -> []
+      end
+
     base_actions ++ type_specific_actions ++ level_specific_actions
   end
 
@@ -729,11 +763,11 @@ defmodule EhsEnforcement.ErrorHandler do
     unless :ets.whereis(error_metrics_table()) != :undefined do
       :ets.new(error_metrics_table(), [:named_table, :public, :bag])
     end
-    
+
     unless :ets.whereis(resolution_metrics_table()) != :undefined do
       :ets.new(resolution_metrics_table(), [:named_table, :public, :set])
     end
-    
+
     unless :ets.whereis(circuit_breakers_table()) != :undefined do
       :ets.new(circuit_breakers_table(), [:named_table, :public, :set])
     end

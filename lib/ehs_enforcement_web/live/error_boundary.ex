@@ -1,7 +1,7 @@
 defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   @moduledoc """
   LiveView error boundary component for graceful error handling and recovery.
-  
+
   Provides error isolation, recovery UI, error reporting, and user-friendly
   error interfaces with comprehensive error tracking and management.
   """
@@ -43,7 +43,7 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
     def render(assigns) do
       ~H"""
       <div>
-        <p>Status: <%= @status %></p>
+        <p>Status: {@status}</p>
         <p>Normal operation</p>
         <button phx-click="trigger_error">Trigger Error</button>
         <button phx-click="failing_event">Failing Event</button>
@@ -80,23 +80,23 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
 
   def mount(_params, session, socket) do
     ensure_tables_exist()
-    
+
     # Initialize error boundary state
     error_state = session["error_state"]
     config = session["config"] || get_config(:test)
     children = session["children"] || []
-    
-    socket = 
+
+    socket =
       socket
       |> assign(:error_state, error_state)
       |> assign(:config, config)
       |> assign(:children, children)
       |> assign(:error_history, [])
       |> assign(:recovery_attempts, 0)
-    
+
     # Handle simulation params
     socket = handle_simulation_params(socket, session)
-    
+
     {:ok, socket}
   end
 
@@ -104,9 +104,9 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
     ~H"""
     <div class="error-boundary" data-testid="error-boundary">
       <%= if @error_state do %>
-        <%= render_error_ui(assigns) %>
+        {render_error_ui(assigns)}
       <% else %>
-        <%= render_normal_content(assigns) %>
+        {render_normal_content(assigns)}
       <% end %>
     </div>
     """
@@ -116,30 +116,30 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
 
   def handle_event("retry", _params, socket) do
     Logger.info("Error boundary retry attempted")
-    
+
     # Clear error state and attempt recovery
-    socket = 
+    socket =
       socket
       |> assign(:error_state, nil)
       |> assign(:recovery_attempts, socket.assigns.recovery_attempts + 1)
-    
+
     clear_error_state(socket.id)
-    
+
     {:noreply, socket}
   end
 
   def handle_event("reset", _params, socket) do
     Logger.info("Error boundary reset triggered")
-    
+
     # Reset to initial state
-    socket = 
+    socket =
       socket
       |> assign(:error_state, nil)
       |> assign(:recovery_attempts, 0)
       |> assign(:error_history, [])
-    
+
     clear_error_state(socket.id)
-    
+
     {:noreply, put_flash(socket, :info, "Content reset successfully")}
   end
 
@@ -151,22 +151,22 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   def handle_event("simulate_error", params, socket) do
     error_type = params["error_type"] || "generic"
     error = create_simulated_error(error_type)
-    
+
     error_state = %{
       error: error,
       error_info: %{component: "TestComponent", simulated: true},
       recovery_options: [:retry, :reset]
     }
-    
+
     record_error_in_history(socket.id, error_state)
-    
+
     # Report error if enabled
     if socket.assigns.config[:error_reporting] do
       report_error_to_service(error, %{component: "TestComponent"})
     end
-    
+
     Logger.error("ErrorBoundary caught error", error, [], %{error_inspect: inspect(error)})
-    
+
     {:noreply, assign(socket, :error_state, error_state)}
   end
 
@@ -178,23 +178,23 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   def handle_event("rapid_error", _params, socket) do
     # Simulate rapid error for performance testing
     error = %RuntimeError{message: "Rapid error #{:rand.uniform(1000)}"}
-    
+
     error_state = %{
       error: error,
       error_info: %{component: "PerformanceTest", rapid: true}
     }
-    
+
     {:noreply, assign(socket, :error_state, error_state)}
   end
 
   def handle_event("identical_error", _params, socket) do
     # Generate identical error for throttling tests
     error = %RuntimeError{message: "Identical error for throttling"}
-    
+
     if should_report_error?(error, socket.assigns.config) do
       report_error_to_service(error, %{component: "ThrottleTest"})
     end
-    
+
     {:noreply, socket}
   end
 
@@ -202,14 +202,14 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
     # Generate error with ID for memory testing
     error_id = params["id"]
     error = %RuntimeError{message: "Memory test error #{error_id}"}
-    
+
     error_state = %{
       error: error,
       error_info: %{component: "MemoryTest", id: error_id}
     }
-    
+
     record_error_in_history(socket.id, error_state)
-    
+
     {:noreply, assign(socket, :error_state, error_state)}
   end
 
@@ -225,7 +225,7 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
 
   def get_error_history(view_id) do
     ensure_tables_exist()
-    
+
     case :ets.lookup(@error_history_table, view_id) do
       [{^view_id, history}] -> history
       [] -> []
@@ -242,7 +242,7 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
 
   def get_error_state(view_id) do
     ensure_tables_exist()
-    
+
     case :ets.lookup(@error_state_table, view_id) do
       [{^view_id, state}] -> state
       [] -> nil
@@ -305,62 +305,72 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
       <div class="flex items-center mb-4">
         <div class="text-red-500 mr-3">
           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"
+            >
+            </path>
           </svg>
         </div>
         <h3 class="text-lg font-semibold text-red-800">
-          <%= get_error_title(@error_state) %>
+          {get_error_title(@error_state)}
         </h3>
       </div>
-      
+
       <div class="text-red-700 mb-4">
-        <%= get_error_message(@error_state, @config) %>
+        {get_error_message(@error_state, @config)}
       </div>
-      
+
       <%= if @config[:show_error_details] && @error_state.error_info[:error_id] do %>
         <div class="text-sm text-red-600 mb-4">
-          <strong>Error ID:</strong> <%= @error_state.error_info.error_id %>
-          <br>
+          <strong>Error ID:</strong> {@error_state.error_info.error_id}
+          <br />
           <small>Reference this ID when contacting support</small>
         </div>
       <% end %>
-      
+
       <%= if @error_state.error_info[:suggestions] do %>
         <div class="mb-4">
           <h4 class="font-medium text-red-800 mb-2">Suggestions:</h4>
           <ul class="list-disc list-inside text-red-700 space-y-1">
             <%= for suggestion <- @error_state.error_info.suggestions do %>
-              <li><%= suggestion %></li>
+              <li>{suggestion}</li>
             <% end %>
           </ul>
         </div>
       <% end %>
-      
+
       <div class="flex space-x-3">
         <%= if @config[:enable_retry] && retryable_error?(@error_state) do %>
-          <button 
-            phx-click="retry" 
-            class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors">
+          <button
+            phx-click="retry"
+            class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+          >
             Try Again
           </button>
         <% end %>
-        
-        <button 
-          phx-click="reset" 
-          class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors">
+
+        <button
+          phx-click="reset"
+          class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+        >
           Reset
         </button>
-        
-        <button 
-          phx-click="reload" 
-          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+
+        <button
+          phx-click="reload"
+          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+        >
           Reload Page
         </button>
       </div>
-      
+
       <%= if @config[:show_error_details] do %>
         <details class="mt-4">
-          <summary class="cursor-pointer text-red-600 hover:text-red-800">Show Technical Details</summary>
+          <summary class="cursor-pointer text-red-600 hover:text-red-800">
+            Show Technical Details
+          </summary>
           <pre class="mt-2 text-xs bg-red-100 p-3 rounded overflow-auto"><%= inspect(@error_state.error, pretty: true) %></pre>
         </details>
       <% end %>
@@ -372,7 +382,7 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
     ~H"""
     <div class="normal-content">
       <%= if @children != [] do %>
-        <%= render_children(@children) %>
+        {render_children(@children)}
       <% else %>
         <div class="text-center py-8">
           <p class="text-gray-600">Ready to load content</p>
@@ -401,10 +411,10 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
     cond do
       config[:custom_error_message] ->
         config.custom_error_message
-      
+
       error_state.error_info[:user_action] ->
         get_contextual_message(error_state.error_info.user_action)
-      
+
       true ->
         get_default_message(error_state.error)
     end
@@ -413,7 +423,9 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   defp get_contextual_message("saving_case"), do: "Error saving case"
   defp get_contextual_message(_), do: "An error occurred while processing your request"
 
-  defp get_default_message(%Req.TransportError{reason: :timeout}), do: "Connection timeout occurred"
+  defp get_default_message(%Req.TransportError{reason: :timeout}),
+    do: "Connection timeout occurred"
+
   defp get_default_message(%Postgrex.Error{}), do: "Database connection error"
   defp get_default_message(%Ash.Error.Invalid{}), do: "Data validation error"
   defp get_default_message(_), do: "An unexpected error occurred"
@@ -433,17 +445,18 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
           error: session["simulate_error"],
           error_info: session["error_context"] || %{}
         }
+
         assign(socket, :error_state, error_state)
-      
+
       session["performance_test"] ->
         assign(socket, :performance_test, true)
-      
+
       session["memory_test"] ->
         assign(socket, :memory_test, true)
-      
+
       session["throttle_errors"] ->
         assign(socket, :throttle_errors, true)
-      
+
       true ->
         socket
     end
@@ -456,21 +469,21 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
 
   defp record_error_in_history(view_id, error_state) do
     ensure_tables_exist()
-    
+
     current_history = get_error_history(view_id)
     max_history = Application.get_env(:ehs_enforcement, :max_error_history, 100)
-    
+
     new_error = %{
       error: error_state.error,
       error_info: error_state.error_info,
       timestamp: DateTime.utc_now(),
       type: extract_error_type(error_state.error)
     }
-    
-    updated_history = 
+
+    updated_history =
       [new_error | current_history]
       |> Enum.take(max_history)
-    
+
     :ets.insert(@error_history_table, {view_id, updated_history})
   end
 
@@ -482,12 +495,17 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   defp extract_error_type(%Req.TransportError{reason: _reason}), do: "timeout"
   defp extract_error_type(%Ash.Error.Invalid{}), do: "validation"
   defp extract_error_type(%Postgrex.Error{}), do: "database"
+
   defp extract_error_type(%RuntimeError{message: message}) do
     cond do
-      String.contains?(message, "error_") -> String.replace(message, ~r/.*error_(\d+).*/, "error_\\1")
-      true -> "runtime"
+      String.contains?(message, "error_") ->
+        String.replace(message, ~r/.*error_(\d+).*/, "error_\\1")
+
+      true ->
+        "runtime"
     end
   end
+
   defp extract_error_type(_), do: "unknown"
 
   defp report_error_to_service(error, context) do
@@ -501,7 +519,8 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   defp should_report_error?(_error, config) do
     if config[:throttle_errors] do
       # Simple throttling logic for testing
-      :rand.uniform() > 0.7  # Throttle ~70% of identical errors
+      # Throttle ~70% of identical errors
+      :rand.uniform() > 0.7
     else
       true
     end
@@ -511,7 +530,7 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
     unless :ets.whereis(@error_history_table) != :undefined do
       :ets.new(@error_history_table, [:named_table, :public, :set])
     end
-    
+
     unless :ets.whereis(@error_state_table) != :undefined do
       :ets.new(@error_state_table, [:named_table, :public, :set])
     end

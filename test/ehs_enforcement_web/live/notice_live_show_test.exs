@@ -9,70 +9,77 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
   describe "NoticeLive.Show mount" do
     setup do
       # Create test agency
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
       # Create test offender
-      {:ok, offender} = Enforcement.create_offender(%{
-        name: "Industrial Manufacturing Ltd",
-        local_authority: "Manchester City Council",
-        postcode: "M1 1AA",
-        main_activity: "Chemical Processing",
-        business_type: :limited_company,
-        industry: "Manufacturing"
-      })
+      {:ok, offender} =
+        Enforcement.create_offender(%{
+          name: "Industrial Manufacturing Ltd",
+          local_authority: "Manchester City Council",
+          postcode: "M1 1AA",
+          main_activity: "Chemical Processing",
+          business_type: :limited_company,
+          industry: "Manufacturing"
+        })
 
       # Create related case for context
-      {:ok, related_case} = Enforcement.create_case(%{
-        regulator_id: "HSE-CASE-2024-001",
-        agency_id: hse_agency.id,
-        offender_id: offender.id,
-        offence_action_date: ~D[2024-01-10],
-        offence_fine: Decimal.new("25000.00"),
-        offence_breaches: "Health and Safety at Work Act 1974 - Section 2(1)",
-        offence_result: "Guilty plea - prosecution successful"
-      })
+      {:ok, related_case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-CASE-2024-001",
+          agency_id: hse_agency.id,
+          offender_id: offender.id,
+          offence_action_date: ~D[2024-01-10],
+          offence_fine: Decimal.new("25000.00"),
+          offence_breaches: "Health and Safety at Work Act 1974 - Section 2(1)",
+          offence_result: "Guilty plea - prosecution successful"
+        })
 
       # Create main test notice
-      {:ok, notice} = Enforcement.create_notice(%{
-        regulator_id: "HSE-NOTICE-2024-015",
-        regulator_ref_number: "HSE/REF/2024/015",
-        agency_id: hse_agency.id,
-        offender_id: offender.id,
-        offence_action_type: "Improvement Notice",
-        notice_date: ~D[2024-01-15],
-        operative_date: ~D[2024-01-29],
-        compliance_date: ~D[2024-03-15],
-        notice_body: "The company must implement and maintain adequate safety procedures for the handling of hazardous chemicals. This includes: 1) Provision of appropriate personal protective equipment, 2) Implementation of emergency response procedures, 3) Regular safety training for all personnel, 4) Maintenance of safety data sheets for all chemicals."
-      })
+      {:ok, notice} =
+        Enforcement.create_notice(%{
+          regulator_id: "HSE-NOTICE-2024-015",
+          regulator_ref_number: "HSE/REF/2024/015",
+          agency_id: hse_agency.id,
+          offender_id: offender.id,
+          offence_action_type: "Improvement Notice",
+          notice_date: ~D[2024-01-15],
+          operative_date: ~D[2024-01-29],
+          compliance_date: ~D[2024-03-15],
+          notice_body:
+            "The company must implement and maintain adequate safety procedures for the handling of hazardous chemicals. This includes: 1) Provision of appropriate personal protective equipment, 2) Implementation of emergency response procedures, 3) Regular safety training for all personnel, 4) Maintenance of safety data sheets for all chemicals."
+        })
 
       # Create additional notices for the same offender to test related notices
-      {:ok, related_notice1} = Enforcement.create_notice(%{
-        regulator_id: "HSE-NOTICE-2024-002",
-        regulator_ref_number: "HSE/REF/2024/002",
-        agency_id: hse_agency.id,
-        offender_id: offender.id,
-        offence_action_type: "Prohibition Notice",
-        notice_date: ~D[2024-01-05],
-        operative_date: ~D[2024-01-05],
-        compliance_date: ~D[2024-02-05],
-        notice_body: "Immediate prohibition of crane operations pending structural inspection"
-      })
+      {:ok, related_notice1} =
+        Enforcement.create_notice(%{
+          regulator_id: "HSE-NOTICE-2024-002",
+          regulator_ref_number: "HSE/REF/2024/002",
+          agency_id: hse_agency.id,
+          offender_id: offender.id,
+          offence_action_type: "Prohibition Notice",
+          notice_date: ~D[2024-01-05],
+          operative_date: ~D[2024-01-05],
+          compliance_date: ~D[2024-02-05],
+          notice_body: "Immediate prohibition of crane operations pending structural inspection"
+        })
 
-      {:ok, related_notice2} = Enforcement.create_notice(%{
-        regulator_id: "HSE-NOTICE-2024-020",
-        regulator_ref_number: "HSE/REF/2024/020",
-        agency_id: hse_agency.id,
-        offender_id: offender.id,
-        offence_action_type: "Improvement Notice",
-        notice_date: ~D[2024-02-01],
-        operative_date: ~D[2024-02-15],
-        compliance_date: ~D[2024-04-01],
-        notice_body: "Follow-up notice requiring completion of safety improvements"
-      })
+      {:ok, related_notice2} =
+        Enforcement.create_notice(%{
+          regulator_id: "HSE-NOTICE-2024-020",
+          regulator_ref_number: "HSE/REF/2024/020",
+          agency_id: hse_agency.id,
+          offender_id: offender.id,
+          offence_action_type: "Improvement Notice",
+          notice_date: ~D[2024-02-01],
+          operative_date: ~D[2024-02-15],
+          compliance_date: ~D[2024-04-01],
+          notice_body: "Follow-up notice requiring completion of safety improvements"
+        })
 
       %{
         notice: notice,
@@ -114,7 +121,11 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
       assert html =~ "personal protective equipment"
     end
 
-    test "displays offender information section", %{conn: conn, notice: notice, offender: offender} do
+    test "displays offender information section", %{
+      conn: conn,
+      notice: notice,
+      offender: offender
+    } do
       {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
 
       # Offender details
@@ -139,12 +150,12 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
       # Should display compliance timeline
       assert has_element?(view, "[data-testid='compliance-timeline']")
-      
+
       # Timeline should show key dates
       assert html =~ "Notice Issued"
       assert html =~ "Operative Date"
       assert html =~ "Compliance Due"
-      
+
       # Should calculate and show days
       assert html =~ "days" or html =~ "Days"
     end
@@ -166,7 +177,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
       # Should show current compliance status
       assert has_element?(view, "[data-testid='compliance-status']")
       assert html =~ "Pending" or html =~ "Overdue" or html =~ "Compliant"
-      
+
       # Should have appropriate styling for status
       assert has_element?(view, "[data-compliance-status]")
     end
@@ -176,7 +187,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
       # Should include back navigation
       assert has_element?(view, "a[href='/notices']") or html =~ "Back to Notices"
-      
+
       # Should include action buttons
       assert has_element?(view, "button", "Export") or html =~ "Export"
       assert has_element?(view, "button", "Share") or html =~ "Share"
@@ -184,33 +195,36 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
     test "handles case with minimal notice data", %{conn: conn} do
       # Create minimal notice
-      {:ok, agency} = Enforcement.create_agency(%{
-        code: :ea,
-        name: "Environment Agency",
-        enabled: true
-      })
+      {:ok, agency} =
+        Enforcement.create_agency(%{
+          code: :ea,
+          name: "Environment Agency",
+          enabled: true
+        })
 
-      {:ok, offender} = Enforcement.create_offender(%{
-        name: "Minimal Data Ltd",
-        local_authority: "Test Council",
-        postcode: "T1 1ST"
-      })
+      {:ok, offender} =
+        Enforcement.create_offender(%{
+          name: "Minimal Data Ltd",
+          local_authority: "Test Council",
+          postcode: "T1 1ST"
+        })
 
-      {:ok, minimal_notice} = Enforcement.create_notice(%{
-        regulator_id: "EA-NOTICE-2024-MIN",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_type: "Enforcement Notice",
-        notice_date: ~D[2024-01-01]
-        # Missing optional fields
-      })
+      {:ok, minimal_notice} =
+        Enforcement.create_notice(%{
+          regulator_id: "EA-NOTICE-2024-MIN",
+          agency_id: agency.id,
+          offender_id: offender.id,
+          offence_action_type: "Enforcement Notice",
+          notice_date: ~D[2024-01-01]
+          # Missing optional fields
+        })
 
       {:ok, _view, html} = live(conn, "/notices/#{minimal_notice.id}")
 
       assert html =~ "EA-NOTICE-2024-MIN"
       assert html =~ "Minimal Data Ltd"
       assert html =~ "Environment Agency"
-      
+
       # Should handle missing data gracefully
       refute html =~ "error" or html =~ "Error"
     end
@@ -219,7 +233,12 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
   describe "NoticeLive.Show related notices section" do
     setup :create_notice_with_relations
 
-    test "displays related notices for same offender", %{conn: conn, notice: notice, related_notice1: related_notice1, related_notice2: related_notice2} do
+    test "displays related notices for same offender", %{
+      conn: conn,
+      notice: notice,
+      related_notice1: related_notice1,
+      related_notice2: related_notice2
+    } do
       {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should show related notices section
@@ -239,14 +258,22 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
       assert pos1 < pos2
     end
 
-    test "links to related notice details", %{conn: conn, notice: notice, related_notice1: related_notice1} do
+    test "links to related notice details", %{
+      conn: conn,
+      notice: notice,
+      related_notice1: related_notice1
+    } do
       {:ok, view, _html} = live(conn, "/notices/#{notice.id}")
 
       # Should have links to related notices
       assert has_element?(view, "a[href='/notices/#{related_notice1.id}']")
     end
 
-    test "displays related case information", %{conn: conn, notice: notice, related_case: related_case} do
+    test "displays related case information", %{
+      conn: conn,
+      notice: notice,
+      related_case: related_case
+    } do
       {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should show related case if exists
@@ -257,31 +284,35 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
     test "handles notice with no related records", %{conn: conn} do
       # Create isolated notice
-      {:ok, agency} = Enforcement.create_agency(%{
-        code: :orr,
-        name: "Office of Rail and Road",
-        enabled: true
-      })
+      {:ok, agency} =
+        Enforcement.create_agency(%{
+          code: :orr,
+          name: "Office of Rail and Road",
+          enabled: true
+        })
 
-      {:ok, offender} = Enforcement.create_offender(%{
-        name: "Isolated Company Ltd",
-        local_authority: "Remote Council",
-        postcode: "R1 1MT"
-      })
+      {:ok, offender} =
+        Enforcement.create_offender(%{
+          name: "Isolated Company Ltd",
+          local_authority: "Remote Council",
+          postcode: "R1 1MT"
+        })
 
-      {:ok, isolated_notice} = Enforcement.create_notice(%{
-        regulator_id: "ORR-NOTICE-2024-001",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_type: "Improvement Notice",
-        notice_date: ~D[2024-01-01]
-      })
+      {:ok, isolated_notice} =
+        Enforcement.create_notice(%{
+          regulator_id: "ORR-NOTICE-2024-001",
+          agency_id: agency.id,
+          offender_id: offender.id,
+          offence_action_type: "Improvement Notice",
+          notice_date: ~D[2024-01-01]
+        })
 
       {:ok, _view, html} = live(conn, "/notices/#{isolated_notice.id}")
 
       assert html =~ "ORR-NOTICE-2024-001"
       # Should handle absence of related records gracefully
-      assert html =~ "No related notices" or html =~ "no other notices" or refute html =~ "Related Notices"
+      assert html =~ "No related notices" or html =~ "no other notices" or
+               refute(html =~ "Related Notices")
     end
   end
 
@@ -297,34 +328,39 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
     test "shows overdue status for past compliance dates", %{conn: conn} do
       # Create overdue notice
-      {:ok, agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
-      {:ok, offender} = Enforcement.create_offender(%{
-        name: "Overdue Company Ltd",
-        local_authority: "Test Council",
-        postcode: "T1 1ST"
-      })
+      {:ok, offender} =
+        Enforcement.create_offender(%{
+          name: "Overdue Company Ltd",
+          local_authority: "Test Council",
+          postcode: "T1 1ST"
+        })
 
-      {:ok, overdue_notice} = Enforcement.create_notice(%{
-        regulator_id: "HSE-NOTICE-2023-001",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_type: "Improvement Notice",
-        notice_date: ~D[2023-01-01],
-        compliance_date: ~D[2023-02-01] # Past date
-      })
+      {:ok, overdue_notice} =
+        Enforcement.create_notice(%{
+          regulator_id: "HSE-NOTICE-2023-001",
+          agency_id: agency.id,
+          offender_id: offender.id,
+          offence_action_type: "Improvement Notice",
+          notice_date: ~D[2023-01-01],
+          # Past date
+          compliance_date: ~D[2023-02-01]
+        })
 
       {:ok, view, html} = live(conn, "/notices/#{overdue_notice.id}")
 
       # Should indicate overdue status
       assert html =~ "Overdue" or html =~ "overdue"
+
       assert has_element?(view, "[data-compliance-status='overdue']") or
-             has_element?(view, ".status-overdue") or
-             html =~ "red" or html =~ "danger"
+               has_element?(view, ".status-overdue") or
+               html =~ "red" or html =~ "danger"
     end
 
     test "displays compliance progress indicators", %{conn: conn, notice: notice} do
@@ -332,8 +368,8 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
       # Should show progress indicators
       assert has_element?(view, "[data-testid='compliance-progress']") or
-             html =~ "progress" or html =~ "Progress"
-      
+               html =~ "progress" or html =~ "Progress"
+
       # Should show percentage or steps completed
       assert html =~ "%" or html =~ "step" or html =~ "stage"
     end
@@ -371,17 +407,19 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
       html = render(view)
       # Should reflect updated status
-      assert html =~ "Notice Details" # Still displays
+      # Still displays
+      assert html =~ "Notice Details"
     end
 
     test "handles malformed update messages gracefully", %{conn: conn, notice: notice} do
       {:ok, view, _html} = live(conn, "/notices/#{notice.id}")
 
       # Send malformed message
-      log = capture_log(fn ->
-        send(view.pid, {:invalid_message, "malformed_data"})
-        Process.sleep(50)
-      end)
+      log =
+        capture_log(fn ->
+          send(view.pid, {:invalid_message, "malformed_data"})
+          Process.sleep(50)
+        end)
 
       # Should not crash
       html = render(view)
@@ -428,10 +466,11 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
       {:ok, view, _html} = live(conn, "/notices/#{notice.id}")
 
       # Simulate export failure
-      log = capture_log(fn ->
-        view |> element("button", "Export") |> render_click()
-        Process.sleep(50)
-      end)
+      log =
+        capture_log(fn ->
+          view |> element("button", "Export") |> render_click()
+          Process.sleep(50)
+        end)
 
       html = render(view)
       # Should not crash and may show error message
@@ -458,7 +497,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
       assert html =~ "adequate safety procedures"
       assert html =~ "1) Provision of appropriate"
       assert html =~ "2) Implementation of emergency"
-      
+
       # Should preserve formatting/line breaks
       assert String.contains?(html, "1)") and String.contains?(html, "2)")
     end
@@ -479,32 +518,35 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
     test "handles null or empty values gracefully", %{conn: conn} do
       # Create notice with minimal data
-      {:ok, agency} = Enforcement.create_agency(%{
-        code: :ea,
-        name: "Environment Agency",
-        enabled: true
-      })
+      {:ok, agency} =
+        Enforcement.create_agency(%{
+          code: :ea,
+          name: "Environment Agency",
+          enabled: true
+        })
 
-      {:ok, offender} = Enforcement.create_offender(%{
-        name: "Empty Fields Ltd",
-        local_authority: "Test Council",
-        postcode: "T1 1ST"
-      })
+      {:ok, offender} =
+        Enforcement.create_offender(%{
+          name: "Empty Fields Ltd",
+          local_authority: "Test Council",
+          postcode: "T1 1ST"
+        })
 
-      {:ok, minimal_notice} = Enforcement.create_notice(%{
-        regulator_id: "EA-NOTICE-MIN",
-        agency_id: agency.id,
-        offender_id: offender.id,
-        offence_action_type: "Enforcement Notice",
-        notice_date: ~D[2024-01-01]
-        # Other fields left nil
-      })
+      {:ok, minimal_notice} =
+        Enforcement.create_notice(%{
+          regulator_id: "EA-NOTICE-MIN",
+          agency_id: agency.id,
+          offender_id: offender.id,
+          offence_action_type: "Enforcement Notice",
+          notice_date: ~D[2024-01-01]
+          # Other fields left nil
+        })
 
       {:ok, _view, html} = live(conn, "/notices/#{minimal_notice.id}")
 
       assert html =~ "EA-NOTICE-MIN"
       # Should handle missing fields gracefully
-      assert html =~ "N/A" or html =~ "Not specified" or html =~ "-" or refute html =~ "nil"
+      assert html =~ "N/A" or html =~ "Not specified" or html =~ "-" or refute(html =~ "nil")
     end
   end
 
@@ -513,14 +555,15 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
     test "loads notice details within reasonable time", %{conn: conn, notice: notice} do
       start_time = System.monotonic_time(:millisecond)
-      
+
       {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
-      
+
       end_time = System.monotonic_time(:millisecond)
       load_time = end_time - start_time
-      
+
       assert html =~ notice.regulator_id
-      assert load_time < 2000 # Should load within 2 seconds
+      # Should load within 2 seconds
+      assert load_time < 2000
     end
 
     test "implements responsive design", %{conn: conn, notice: notice} do
@@ -536,8 +579,9 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
       # Should handle loading states appropriately
       refute has_element?(view, "[data-testid='loading-error']")
+
       assert has_element?(view, "[data-testid='notice-details']") or
-             render(view) =~ notice.regulator_id
+               render(view) =~ notice.regulator_id
     end
 
     test "includes proper navigation elements", %{conn: conn, notice: notice} do
@@ -578,7 +622,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
       if html =~ "<img" do
         assert html =~ "alt=" or has_element?(view, "img[alt]")
       end
-      
+
       # Should have accessible button and link text
       assert has_element?(view, "button") or has_element?(view, "a")
     end
@@ -588,78 +632,86 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
 
       # Should use proper heading hierarchy
       assert has_element?(view, "h1") or has_element?(view, "h2")
-      
+
       # Should not rely solely on color for information
-      assert html =~ "status" or html =~ "type" # Text indicators alongside colors
+      # Text indicators alongside colors
+      assert html =~ "status" or html =~ "type"
     end
   end
 
   # Helper function to create notice with related data
   defp create_notice_with_relations(_context) do
     # Create test agency
-    {:ok, hse_agency} = Enforcement.create_agency(%{
-      code: :hse,
-      name: "Health and Safety Executive",
-      enabled: true
-    })
+    {:ok, hse_agency} =
+      Enforcement.create_agency(%{
+        code: :hse,
+        name: "Health and Safety Executive",
+        enabled: true
+      })
 
     # Create test offender
-    {:ok, offender} = Enforcement.create_offender(%{
-      name: "Industrial Manufacturing Ltd",
-      local_authority: "Manchester City Council",
-      postcode: "M1 1AA",
-      main_activity: "Chemical Processing",
-      business_type: :limited_company,
-      industry: "Manufacturing"
-    })
+    {:ok, offender} =
+      Enforcement.create_offender(%{
+        name: "Industrial Manufacturing Ltd",
+        local_authority: "Manchester City Council",
+        postcode: "M1 1AA",
+        main_activity: "Chemical Processing",
+        business_type: :limited_company,
+        industry: "Manufacturing"
+      })
 
     # Create related case
-    {:ok, related_case} = Enforcement.create_case(%{
-      regulator_id: "HSE-CASE-2024-001",
-      agency_id: hse_agency.id,
-      offender_id: offender.id,
-      offence_action_date: ~D[2024-01-10],
-      offence_fine: Decimal.new("25000.00"),
-      offence_breaches: "Health and Safety at Work Act 1974 - Section 2(1)"
-    })
+    {:ok, related_case} =
+      Enforcement.create_case(%{
+        regulator_id: "HSE-CASE-2024-001",
+        agency_id: hse_agency.id,
+        offender_id: offender.id,
+        offence_action_date: ~D[2024-01-10],
+        offence_fine: Decimal.new("25000.00"),
+        offence_breaches: "Health and Safety at Work Act 1974 - Section 2(1)"
+      })
 
     # Create main notice
-    {:ok, notice} = Enforcement.create_notice(%{
-      regulator_id: "HSE-NOTICE-2024-015",
-      regulator_ref_number: "HSE/REF/2024/015",
-      agency_id: hse_agency.id,
-      offender_id: offender.id,
-      offence_action_type: "Improvement Notice",
-      notice_date: ~D[2024-01-15],
-      operative_date: ~D[2024-01-29],
-      compliance_date: ~D[2024-03-15],
-      notice_body: "The company must implement and maintain adequate safety procedures for the handling of hazardous chemicals. This includes: 1) Provision of appropriate personal protective equipment, 2) Implementation of emergency response procedures, 3) Regular safety training for all personnel, 4) Maintenance of safety data sheets for all chemicals."
-    })
+    {:ok, notice} =
+      Enforcement.create_notice(%{
+        regulator_id: "HSE-NOTICE-2024-015",
+        regulator_ref_number: "HSE/REF/2024/015",
+        agency_id: hse_agency.id,
+        offender_id: offender.id,
+        offence_action_type: "Improvement Notice",
+        notice_date: ~D[2024-01-15],
+        operative_date: ~D[2024-01-29],
+        compliance_date: ~D[2024-03-15],
+        notice_body:
+          "The company must implement and maintain adequate safety procedures for the handling of hazardous chemicals. This includes: 1) Provision of appropriate personal protective equipment, 2) Implementation of emergency response procedures, 3) Regular safety training for all personnel, 4) Maintenance of safety data sheets for all chemicals."
+      })
 
     # Create related notices
-    {:ok, related_notice1} = Enforcement.create_notice(%{
-      regulator_id: "HSE-NOTICE-2024-002",
-      regulator_ref_number: "HSE/REF/2024/002",
-      agency_id: hse_agency.id,
-      offender_id: offender.id,
-      offence_action_type: "Prohibition Notice",
-      notice_date: ~D[2024-01-05],
-      operative_date: ~D[2024-01-05],
-      compliance_date: ~D[2024-02-05],
-      notice_body: "Immediate prohibition of crane operations pending structural inspection"
-    })
+    {:ok, related_notice1} =
+      Enforcement.create_notice(%{
+        regulator_id: "HSE-NOTICE-2024-002",
+        regulator_ref_number: "HSE/REF/2024/002",
+        agency_id: hse_agency.id,
+        offender_id: offender.id,
+        offence_action_type: "Prohibition Notice",
+        notice_date: ~D[2024-01-05],
+        operative_date: ~D[2024-01-05],
+        compliance_date: ~D[2024-02-05],
+        notice_body: "Immediate prohibition of crane operations pending structural inspection"
+      })
 
-    {:ok, related_notice2} = Enforcement.create_notice(%{
-      regulator_id: "HSE-NOTICE-2024-020",
-      regulator_ref_number: "HSE/REF/2024/020",
-      agency_id: hse_agency.id,
-      offender_id: offender.id,
-      offence_action_type: "Improvement Notice",
-      notice_date: ~D[2024-02-01],
-      operative_date: ~D[2024-02-15],
-      compliance_date: ~D[2024-04-01],
-      notice_body: "Follow-up notice requiring completion of safety improvements"
-    })
+    {:ok, related_notice2} =
+      Enforcement.create_notice(%{
+        regulator_id: "HSE-NOTICE-2024-020",
+        regulator_ref_number: "HSE/REF/2024/020",
+        agency_id: hse_agency.id,
+        offender_id: offender.id,
+        offence_action_type: "Improvement Notice",
+        notice_date: ~D[2024-02-01],
+        operative_date: ~D[2024-02-15],
+        compliance_date: ~D[2024-04-01],
+        notice_body: "Follow-up notice requiring completion of safety improvements"
+      })
 
     %{
       notice: notice,

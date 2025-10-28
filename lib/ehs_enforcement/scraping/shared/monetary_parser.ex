@@ -39,7 +39,8 @@ defmodule EhsEnforcement.Scraping.Shared.MonetaryParser do
         |> String.replace(",", "")
         |> Decimal.new()
 
-      _ -> Decimal.new("0")
+      _ ->
+        Decimal.new("0")
     end
   end
 

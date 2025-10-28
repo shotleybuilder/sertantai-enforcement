@@ -8,17 +8,20 @@ defmodule EhsEnforcement.LoggerTest do
     # Set logger level to debug for tests to capture all log levels
     original_level = Logger.level()
     Logger.configure(level: :debug)
-    
+
     # Configure console logger to include metadata
-    :logger.set_handler_config(:default, :formatter, 
-      {:logger_formatter, %{template: [:level, " ", :msg, " ", :mfa, " ", :meta, "\n"]}})
-    
+    :logger.set_handler_config(
+      :default,
+      :formatter,
+      {:logger_formatter, %{template: [:level, " ", :msg, " ", :mfa, " ", :meta, "\n"]}}
+    )
+
     on_exit(fn ->
       Logger.configure(level: original_level)
       # Reset to default formatter
       :logger.set_handler_config(:default, :formatter, {:logger_formatter, %{}})
     end)
-    
+
     :ok
   end
 
@@ -30,11 +33,12 @@ defmodule EhsEnforcement.LoggerTest do
         records_count: 150,
         user_id: "user123"
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.info("Sync operation completed", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.info("Sync operation completed", metadata)
+        end)
+
       assert log =~ "info"
       assert log =~ "Sync operation completed"
       assert log =~ "operation=sync_cases"
@@ -46,17 +50,18 @@ defmodule EhsEnforcement.LoggerTest do
     test "logs error messages with stacktrace and error details" do
       error = %RuntimeError{message: "Database connection failed"}
       stacktrace = [{:module, :function, 1, [file: ~c"lib/test.ex", line: 10]}]
-      
+
       metadata = %{
         operation: "database_query",
         query: "SELECT * FROM cases",
         error_id: "err_123"
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.error("Database operation failed", error, stacktrace, metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.error("Database operation failed", error, stacktrace, metadata)
+        end)
+
       assert log =~ "error"
       assert log =~ "Database operation failed"
       assert log =~ "Database connection failed"
@@ -72,11 +77,12 @@ defmodule EhsEnforcement.LoggerTest do
         invalid_records: 5,
         total_records: 100
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.warn("Found invalid records during sync", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.warn("Found invalid records during sync", metadata)
+        end)
+
       assert log =~ "warning"
       assert log =~ "Found invalid records during sync"
       assert log =~ "invalid_records=5"
@@ -89,11 +95,12 @@ defmodule EhsEnforcement.LoggerTest do
         function: "process_batch",
         batch_size: 50
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.debug("Processing batch of records", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.debug("Processing batch of records", metadata)
+        end)
+
       assert log =~ "debug"
       assert log =~ "Processing batch of records"
       assert log =~ "batch_size=50"
@@ -108,11 +115,12 @@ defmodule EhsEnforcement.LoggerTest do
         user_agent: "Mozilla/5.0...",
         session_id: "sess_abc123"
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.log_auth_success("User login successful", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.log_auth_success("User login successful", metadata)
+        end)
+
       assert log =~ "info"
       assert log =~ "User login successful"
       assert log =~ "user_id=user123"
@@ -127,11 +135,12 @@ defmodule EhsEnforcement.LoggerTest do
         failure_reason: "invalid_password",
         attempt_count: 3
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.log_auth_failure("Login attempt failed", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.log_auth_failure("Login attempt failed", metadata)
+        end)
+
       assert log =~ "warning"
       assert log =~ "Login attempt failed"
       assert log =~ "attempted_user=admin"
@@ -148,11 +157,12 @@ defmodule EhsEnforcement.LoggerTest do
         resource_ids: ["case_1", "case_2"],
         agency: :hse
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.log_data_access("User accessed enforcement cases", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.log_data_access("User accessed enforcement cases", metadata)
+        end)
+
       assert log =~ "info"
       assert log =~ "User accessed enforcement cases"
       assert log =~ "resource=cases"
@@ -169,11 +179,12 @@ defmodule EhsEnforcement.LoggerTest do
         changes: %{status: "closed"},
         reason: "case_resolved"
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.log_data_modification("Case status updated", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.log_data_modification("Case status updated", metadata)
+        end)
+
       assert log =~ "info"
       assert log =~ "Case status updated"
       assert log =~ "action=update"
@@ -190,11 +201,12 @@ defmodule EhsEnforcement.LoggerTest do
         query: "SELECT * FROM cases WHERE complex_condition",
         threshold_ms: 1000
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.log_slow_operation("Slow database query detected", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.log_slow_operation("Slow database query detected", metadata)
+        end)
+
       assert log =~ "warning"
       assert log =~ "Slow database query detected"
       assert log =~ "duration_ms=2500"
@@ -209,11 +221,12 @@ defmodule EhsEnforcement.LoggerTest do
         threshold: 80.0,
         unit: "percent"
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.log_resource_usage("High memory usage detected", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.log_resource_usage("High memory usage detected", metadata)
+        end)
+
       assert log =~ "warning"
       assert log =~ "High memory usage detected"
       assert log =~ "current_usage=85.5"
@@ -232,11 +245,12 @@ defmodule EhsEnforcement.LoggerTest do
         total_records: 1000,
         progress_percent: 50.0
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.log_sync_progress("HSE sync in progress", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.log_sync_progress("HSE sync in progress", metadata)
+        end)
+
       assert log =~ "info"
       assert log =~ "HSE sync in progress"
       assert log =~ "progress_percent=50.0"
@@ -253,11 +267,12 @@ defmodule EhsEnforcement.LoggerTest do
         ],
         record_id: "rec_123"
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.log_validation_errors("Data validation failed", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.log_validation_errors("Data validation failed", metadata)
+        end)
+
       assert log =~ "warning"
       assert log =~ "Data validation failed"
       assert log =~ "validation_errors"
@@ -274,11 +289,12 @@ defmodule EhsEnforcement.LoggerTest do
         similarity_score: 0.95,
         matching_fields: ["name", "postcode"]
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.log_duplicate_detected("Duplicate offender detected", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.log_duplicate_detected("Duplicate offender detected", metadata)
+        end)
+
       assert log =~ "info"
       assert log =~ "Duplicate offender detected"
       assert log =~ "similarity_score=0.95"
@@ -295,11 +311,12 @@ defmodule EhsEnforcement.LoggerTest do
         user_email: "user@example.com",
         safe_field: "safe_value"
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.info("API operation completed", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.info("API operation completed", metadata)
+        end)
+
       assert log =~ "API operation completed"
       assert log =~ "api_key=***REDACTED***"
       assert log =~ "database_url=***REDACTED***"
@@ -311,13 +328,14 @@ defmodule EhsEnforcement.LoggerTest do
     test "filters logs by severity level" do
       # Test that debug logs are filtered in production
       Application.put_env(:logger, :level, :info)
-      
-      log = capture_log(fn ->
-        EhsLogger.debug("Debug message that should be filtered", %{})
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.debug("Debug message that should be filtered", %{})
+        end)
+
       assert log == ""
-      
+
       # Reset to default
       Application.put_env(:logger, :level, :debug)
     end
@@ -330,47 +348,51 @@ defmodule EhsEnforcement.LoggerTest do
         national_insurance: "AB123456C",
         case_reference: "HSE_2023_001"
       }
-      
-      log = capture_log(fn ->
-        EhsLogger.info("User information logged", metadata)
-      end)
-      
+
+      log =
+        capture_log(fn ->
+          EhsLogger.info("User information logged", metadata)
+        end)
+
       assert log =~ "user_name=***REDACTED***"
       assert log =~ "phone_number=***REDACTED***"
       assert log =~ "national_insurance=***REDACTED***"
-      assert log =~ "case_reference=HSE_2023_001"  # Case references are not PII
+      # Case references are not PII
+      assert log =~ "case_reference=HSE_2023_001"
     end
   end
 
   describe "log formatting and structure" do
     test "formats log messages with consistent timestamp format" do
-      log = capture_log(fn ->
-        EhsLogger.info("Test message", %{})
-      end)
-      
+      log =
+        capture_log(fn ->
+          EhsLogger.info("Test message", %{})
+        end)
+
       # Check for ISO 8601 timestamp format
       assert log =~ ~r/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/
     end
 
     test "includes correlation IDs for request tracing" do
       correlation_id = "req_abc123"
-      
-      log = capture_log(fn ->
-        EhsLogger.with_correlation_id(correlation_id, fn ->
-          EhsLogger.info("Request processing", %{step: "validation"})
+
+      log =
+        capture_log(fn ->
+          EhsLogger.with_correlation_id(correlation_id, fn ->
+            EhsLogger.info("Request processing", %{step: "validation"})
+          end)
         end)
-      end)
-      
+
       assert log =~ "correlation_id=req_abc123"
       assert log =~ "step=validation"
     end
 
     test "supports structured JSON logging format" do
       metadata = %{operation: "test", count: 42}
-      
+
       json_log = EhsLogger.format_as_json("Test message", :info, metadata)
       parsed = Jason.decode!(json_log)
-      
+
       assert parsed["level"] == "info"
       assert parsed["message"] == "Test message"
       assert parsed["metadata"]["operation"] == "test"
@@ -379,10 +401,11 @@ defmodule EhsEnforcement.LoggerTest do
     end
 
     test "includes application context in all logs" do
-      log = capture_log(fn ->
-        EhsLogger.info("Test message", %{})
-      end)
-      
+      log =
+        capture_log(fn ->
+          EhsLogger.info("Test message", %{})
+        end)
+
       assert log =~ "app=ehs_enforcement"
       assert log =~ "env=test"
       assert log =~ "node="
@@ -393,14 +416,14 @@ defmodule EhsEnforcement.LoggerTest do
     test "tracks log message counts by level" do
       # Clear existing metrics
       EhsLogger.reset_metrics()
-      
+
       EhsLogger.info("Info message 1", %{})
       EhsLogger.info("Info message 2", %{})
       EhsLogger.error("Error message", %RuntimeError{}, [], %{})
       EhsLogger.warn("Warning message", %{})
-      
+
       metrics = EhsLogger.get_log_metrics()
-      
+
       assert metrics.info_count == 2
       assert metrics.error_count == 1
       assert metrics.warn_count == 1
@@ -409,31 +432,31 @@ defmodule EhsEnforcement.LoggerTest do
 
     test "tracks most frequent error types" do
       EhsLogger.reset_metrics()
-      
+
       EhsLogger.error("API error", %Req.TransportError{reason: :timeout}, [], %{})
       EhsLogger.error("API error", %Req.TransportError{reason: :timeout}, [], %{})
       EhsLogger.error("DB error", %Postgrex.Error{message: "connection failed"}, [], %{})
-      
+
       metrics = EhsLogger.get_error_metrics()
-      
+
       assert metrics.most_frequent_errors == [
-        {"Req.TransportError", 2},
-        {"Postgrex.Error", 1}
-      ]
+               {"Req.TransportError", 2},
+               {"Postgrex.Error", 1}
+             ]
     end
 
     test "generates log summary reports" do
       EhsLogger.reset_metrics()
-      
+
       # Generate some test logs
       Enum.each(1..10, fn i ->
         EhsLogger.info("Test message #{i}", %{operation: "test_op"})
       end)
-      
+
       EhsLogger.error("Test error", %RuntimeError{}, [], %{operation: "test_op"})
-      
+
       report = EhsLogger.generate_summary_report()
-      
+
       assert report.total_logs == 11
       assert report.error_rate < 0.1
       assert length(report.top_operations) > 0

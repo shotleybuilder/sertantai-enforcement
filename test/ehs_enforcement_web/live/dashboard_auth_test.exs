@@ -1,17 +1,18 @@
 defmodule EhsEnforcementWeb.DashboardAuthTest do
   use EhsEnforcementWeb.ConnCase
   import Phoenix.LiveViewTest
-  
+
   alias EhsEnforcement.Accounts
-  
+
   describe "DashboardLive authentication integration" do
     setup do
       # Create test agencies for dashboard functionality
-      {:ok, hse_agency} = EhsEnforcement.Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        EhsEnforcement.Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
       %{agency: hse_agency}
     end
@@ -26,15 +27,16 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
 
     test "shows user information when authenticated as regular user", %{conn: conn} do
       # Create a test user with proper authentication setup
-      user = create_test_user(%{
-        email: "user@test.com",
-        name: "Test User",
-        github_login: "testuser"
-      })
-      
+      user =
+        create_test_user(%{
+          email: "user@test.com",
+          name: "Test User",
+          github_login: "testuser"
+        })
+
       # Properly log in the user with session authentication
       conn = log_in_user(conn, user)
-      
+
       {:ok, view, html} = live(conn, "/dashboard", session: %{"current_user" => user})
 
       # Should show user's name
@@ -48,15 +50,16 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
 
     test "shows admin badge and privileges when authenticated as admin user", %{conn: conn} do
       # Create a test admin user with proper authentication setup
-      admin_user = create_test_admin(%{
-        email: "admin@test.com",
-        name: "Admin User",
-        github_login: "adminuser"
-      })
-      
+      admin_user =
+        create_test_admin(%{
+          email: "admin@test.com",
+          name: "Admin User",
+          github_login: "adminuser"
+        })
+
       # Properly log in the admin user
       conn = log_in_user(conn, admin_user)
-      
+
       {:ok, view, html} = live(conn, "/dashboard")
 
       # Should show user's name
@@ -69,33 +72,35 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
 
     test "shows admin action buttons only for admin users", %{conn: conn} do
       # Test with regular user first
-      regular_user = create_test_user(%{
-        email: "user@test.com",
-        name: "Regular User",
-        github_login: "regularuser"
-      })
-      
+      regular_user =
+        create_test_user(%{
+          email: "user@test.com",
+          name: "Regular User",
+          github_login: "regularuser"
+        })
+
       conn_regular = log_in_user(conn, regular_user)
-      
+
       {:ok, _view_regular, html_regular} = live(conn_regular, "/dashboard")
 
       # Should NOT show admin actions for regular user
       refute html_regular =~ "[ADMIN] > Add New Case"
 
       # Test with admin user
-      admin_user = create_test_admin(%{
-        email: "admin@test.com",
-        name: "Admin User", 
-        github_login: "adminuser"
-      })
-      
+      admin_user =
+        create_test_admin(%{
+          email: "admin@test.com",
+          name: "Admin User",
+          github_login: "adminuser"
+        })
+
       conn_admin = log_in_user(conn, admin_user)
-      
+
       {:ok, view_admin, html_admin} = live(conn_admin, "/dashboard")
 
       # Should show admin actions for admin user
       assert html_admin =~ "[ADMIN] > Add New Case"
-      
+
       # Admin buttons should have proper phx-click handlers
       assert has_element?(view_admin, "button[phx-click='navigate_to_new_case']")
     end
@@ -103,7 +108,7 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
     test "handles nil current_user gracefully", %{conn: conn} do
       # Explicitly set current_user to nil
       conn = conn |> assign(:current_user, nil)
-      
+
       {:ok, view, html} = live(conn, "/dashboard")
 
       # Should not crash and show sign-in option
@@ -118,15 +123,15 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
       user_attrs = %{
         email: "legacy@test.com",
         name: "Legacy User",
-        github_login: "legacyuser", 
+        github_login: "legacyuser",
         is_admin: false
         # No admin_checked_at field
       }
-      
+
       {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, user_attrs)
       user = Ash.load!(user, [:display_name])
       conn = conn |> assign(:current_user, user)
-      
+
       {:ok, view, html} = live(conn, "/dashboard")
 
       # Should handle gracefully
@@ -136,8 +141,9 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
 
     test "updates admin status when admin_checked_at is old", %{conn: conn} do
       # Create user with old admin check
-      old_timestamp = DateTime.add(DateTime.utc_now(), -7200, :second) # 2 hours ago
-      
+      # 2 hours ago
+      old_timestamp = DateTime.add(DateTime.utc_now(), -7200, :second)
+
       user_attrs = %{
         email: "stale@test.com",
         name: "Stale User",
@@ -145,11 +151,11 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
         is_admin: false,
         admin_checked_at: old_timestamp
       }
-      
+
       {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, user_attrs)
       user = Ash.load!(user, [:display_name])
       conn = conn |> assign(:current_user, user)
-      
+
       {:ok, view, html} = live(conn, "/dashboard")
 
       # Should still display (admin refresh happens in background)
@@ -162,22 +168,26 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
   describe "DashboardLive admin privilege enforcement" do
     setup do
       # Create regular and admin users
-      {:ok, regular_user} = Ash.create(EhsEnforcement.Accounts.User, %{
-        email: "regular@test.com",
-        name: "Regular User",
-        github_login: "regular",
-        is_admin: false,
-        admin_checked_at: DateTime.utc_now()
-      })
+      {:ok, regular_user} =
+        Ash.create(EhsEnforcement.Accounts.User, %{
+          email: "regular@test.com",
+          name: "Regular User",
+          github_login: "regular",
+          is_admin: false,
+          admin_checked_at: DateTime.utc_now()
+        })
+
       regular_user = Ash.load!(regular_user, [:display_name])
 
-      {:ok, admin_user} = Ash.create(EhsEnforcement.Accounts.User, %{
-        email: "admin@test.com", 
-        name: "Admin User",
-        github_login: "admin",
-        is_admin: true,
-        admin_checked_at: DateTime.utc_now()
-      })
+      {:ok, admin_user} =
+        Ash.create(EhsEnforcement.Accounts.User, %{
+          email: "admin@test.com",
+          name: "Admin User",
+          github_login: "admin",
+          is_admin: true,
+          admin_checked_at: DateTime.utc_now()
+        })
+
       admin_user = Ash.load!(admin_user, [:display_name])
 
       %{regular_user: regular_user, admin_user: admin_user}
@@ -190,7 +200,7 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
       # Cases management card should not show admin actions
       assert html =~ "ENFORCEMENT CASES"
       refute html =~ "[ADMIN] > Add New Case"
-      
+
       # Notices management card should not show admin actions  
       assert html =~ "ENFORCEMENT NOTICES"
       refute html =~ "[ADMIN] > Add New Notice"
@@ -203,9 +213,9 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
       # Cases management card should show admin actions
       assert html =~ "ENFORCEMENT CASES"
       assert html =~ "[ADMIN] > Add New Case"
-      
+
       # Notices management card should show admin actions
-      assert html =~ "ENFORCEMENT NOTICES"  
+      assert html =~ "ENFORCEMENT NOTICES"
       assert html =~ "[ADMIN] > Add New Notice"
     end
 
@@ -216,12 +226,13 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
       # Admin buttons should not be disabled
       refute html =~ "disabled=\"true\""
       refute html =~ "disabled={true}"
-      
+
       # Should have proper navigation attributes
       assert has_element?(view, "*[navigate='/cases/new']") or
-             has_element?(view, "a[href='/cases/new']")
+               has_element?(view, "a[href='/cases/new']")
+
       assert has_element?(view, "*[navigate='/notices/new']") or
-             has_element?(view, "a[href='/notices/new']")
+               has_element?(view, "a[href='/notices/new']")
     end
 
     test "handles dynamic admin status changes", %{conn: conn, regular_user: user} do
@@ -234,7 +245,7 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
 
       # Simulate user being promoted to admin (would happen via background process)
       updated_user = %{user | is_admin: true}
-      
+
       # Reconnect with updated user
       conn_updated = conn |> assign(:current_user, updated_user)
       {:ok, view_updated, html_updated} = live(conn_updated, "/dashboard")
@@ -242,7 +253,8 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
       # Should now show admin actions
       assert html_updated =~ "[ADMIN] > Add New Case"
       assert html_updated =~ "[ADMIN] > Add New Notice"
-      assert html_updated =~ "ADMIN" # Admin badge
+      # Admin badge
+      assert html_updated =~ "ADMIN"
     end
   end
 
@@ -255,11 +267,11 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
         is_admin: false,
         admin_checked_at: DateTime.utc_now()
       }
-      
+
       {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, user_attrs)
       user = Ash.load!(user, [:display_name])
       conn = conn |> assign(:current_user, user)
-      
+
       {:ok, view, html} = live(conn, "/dashboard")
 
       # Should display user info initially
@@ -284,11 +296,11 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
         is_admin: true,
         admin_checked_at: DateTime.utc_now()
       }
-      
+
       {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, user_attrs)
       user = Ash.load!(user, [:display_name])
       conn = conn |> assign(:current_user, user)
-      
+
       # First load
       {:ok, view1, html1} = live(conn, "/dashboard")
       assert html1 =~ "Welcome, Persistent User"
@@ -313,16 +325,16 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
         is_admin: false,
         admin_checked_at: DateTime.utc_now()
       }
-      
+
       {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, user_attrs)
       user = Ash.load!(user, [:display_name])
       conn = conn |> assign(:current_user, user)
-      
+
       {:ok, view, html} = live(conn, "/dashboard")
 
       # Should display GitHub username
       assert html =~ "GitHub User"
-      
+
       # May include GitHub profile information (depending on implementation)
       # This test ensures it doesn't crash with GitHub-specific user data
       assert Process.alive?(view.pid)
@@ -336,11 +348,11 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
         is_admin: false,
         admin_checked_at: DateTime.utc_now()
       }
-      
+
       {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, user_attrs)
       user = Ash.load!(user, [:display_name])
       conn = conn |> assign(:current_user, user)
-      
+
       {:ok, view, html} = live(conn, "/dashboard")
 
       # Should handle missing GitHub data without errors

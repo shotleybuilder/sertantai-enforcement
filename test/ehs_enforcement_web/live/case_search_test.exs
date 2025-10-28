@@ -9,83 +9,97 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
   describe "Case search functionality" do
     setup do
       # Create test agencies
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
-      {:ok, ea_agency} = Enforcement.create_agency(%{
-        code: :ea,
-        name: "Environment Agency",
-        enabled: true
-      })
+      {:ok, ea_agency} =
+        Enforcement.create_agency(%{
+          code: :ea,
+          name: "Environment Agency",
+          enabled: true
+        })
 
       # Create diverse offenders for comprehensive search testing
-      {:ok, manufacturing_co} = Enforcement.create_offender(%{
-        name: "Advanced Manufacturing Solutions Ltd",
-        local_authority: "Sheffield City Council",
-        postcode: "S1 2HE"
-      })
+      {:ok, manufacturing_co} =
+        Enforcement.create_offender(%{
+          name: "Advanced Manufacturing Solutions Ltd",
+          local_authority: "Sheffield City Council",
+          postcode: "S1 2HE"
+        })
 
-      {:ok, chemical_corp} = Enforcement.create_offender(%{
-        name: "Chemical Industries Corporation PLC",
-        local_authority: "Liverpool City Council", 
-        postcode: "L3 9PP"
-      })
+      {:ok, chemical_corp} =
+        Enforcement.create_offender(%{
+          name: "Chemical Industries Corporation PLC",
+          local_authority: "Liverpool City Council",
+          postcode: "L3 9PP"
+        })
 
-      {:ok, construction_ltd} = Enforcement.create_offender(%{
-        name: "Premier Construction & Engineering Limited",
-        local_authority: "Birmingham City Council",
-        postcode: "B1 1AA"
-      })
+      {:ok, construction_ltd} =
+        Enforcement.create_offender(%{
+          name: "Premier Construction & Engineering Limited",
+          local_authority: "Birmingham City Council",
+          postcode: "B1 1AA"
+        })
 
-      {:ok, waste_services} = Enforcement.create_offender(%{
-        name: "Metro Waste Management Services",
-        local_authority: "Manchester City Council",
-        postcode: "M1 5WG"
-      })
+      {:ok, waste_services} =
+        Enforcement.create_offender(%{
+          name: "Metro Waste Management Services",
+          local_authority: "Manchester City Council",
+          postcode: "M1 5WG"
+        })
 
       # Create test cases with varied content for search testing
-      {:ok, manufacturing_case} = Enforcement.create_case(%{
-        regulator_id: "HSE-MANUF-2024-001",
-        agency_id: hse_agency.id,
-        offender_id: manufacturing_co.id,
-        offence_action_date: ~D[2024-01-15],
-        offence_fine: Decimal.new("25000.00"),
-        offence_breaches: "Manufacturing safety protocol violations including inadequate machine guarding and failure to provide proper training to employees operating heavy machinery",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, manufacturing_case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-MANUF-2024-001",
+          agency_id: hse_agency.id,
+          offender_id: manufacturing_co.id,
+          offence_action_date: ~D[2024-01-15],
+          offence_fine: Decimal.new("25000.00"),
+          offence_breaches:
+            "Manufacturing safety protocol violations including inadequate machine guarding and failure to provide proper training to employees operating heavy machinery",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, chemical_case} = Enforcement.create_case(%{
-        regulator_id: "HSE-CHEM-2024-002",
-        agency_id: hse_agency.id,
-        offender_id: chemical_corp.id,
-        offence_action_date: ~D[2024-02-01],
-        offence_fine: Decimal.new("45000.00"),
-        offence_breaches: "Chemical storage and handling safety breaches resulting in environmental contamination risk and worker exposure to hazardous substances",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, chemical_case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-CHEM-2024-002",
+          agency_id: hse_agency.id,
+          offender_id: chemical_corp.id,
+          offence_action_date: ~D[2024-02-01],
+          offence_fine: Decimal.new("45000.00"),
+          offence_breaches:
+            "Chemical storage and handling safety breaches resulting in environmental contamination risk and worker exposure to hazardous substances",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, construction_case} = Enforcement.create_case(%{
-        regulator_id: "HSE-CONST-2024-003",
-        agency_id: hse_agency.id,
-        offender_id: construction_ltd.id,
-        offence_action_date: ~D[2024-02-15],
-        offence_fine: Decimal.new("18000.00"),
-        offence_breaches: "Construction site safety violations including working at height without proper fall protection and inadequate scaffolding safety measures",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, construction_case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-CONST-2024-003",
+          agency_id: hse_agency.id,
+          offender_id: construction_ltd.id,
+          offence_action_date: ~D[2024-02-15],
+          offence_fine: Decimal.new("18000.00"),
+          offence_breaches:
+            "Construction site safety violations including working at height without proper fall protection and inadequate scaffolding safety measures",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, waste_case} = Enforcement.create_case(%{
-        regulator_id: "EA-WASTE-2024-004",
-        agency_id: ea_agency.id,
-        offender_id: waste_services.id,
-        offence_action_date: ~D[2024-03-01],
-        offence_fine: Decimal.new("12000.00"),
-        offence_breaches: "Environmental waste management violations including improper disposal of hazardous materials and contamination of groundwater resources",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, waste_case} =
+        Enforcement.create_case(%{
+          regulator_id: "EA-WASTE-2024-004",
+          agency_id: ea_agency.id,
+          offender_id: waste_services.id,
+          offence_action_date: ~D[2024-03-01],
+          offence_fine: Decimal.new("12000.00"),
+          offence_breaches:
+            "Environmental waste management violations including improper disposal of hazardous materials and contamination of groundwater resources",
+          last_synced_at: DateTime.utc_now()
+        })
 
       %{
         agencies: [hse_agency, ea_agency],
@@ -160,7 +174,8 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       assert ltd_results =~ "Advanced Manufacturing Solutions Ltd"
       assert ltd_results =~ "Premier Construction & Engineering Limited"
-      refute ltd_results =~ "Chemical Industries Corporation PLC" # This is PLC, not Ltd
+      # This is PLC, not Ltd
+      refute ltd_results =~ "Chemical Industries Corporation PLC"
 
       # Search for "PLC"
       render_change(view, "filter", %{
@@ -240,10 +255,14 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
       safety_results = render(view)
 
       # Should find cases mentioning safety
-      assert safety_results =~ "HSE-MANUF-2024-001" # "safety protocol violations"
-      assert safety_results =~ "HSE-CHEM-2024-002"  # "safety breaches"
-      assert safety_results =~ "HSE-CONST-2024-003" # "safety violations"
-      refute safety_results =~ "EA-WASTE-2024-004"  # No "safety" in this case
+      # "safety protocol violations"
+      assert safety_results =~ "HSE-MANUF-2024-001"
+      # "safety breaches"
+      assert safety_results =~ "HSE-CHEM-2024-002"
+      # "safety violations"
+      assert safety_results =~ "HSE-CONST-2024-003"
+      # No "safety" in this case
+      refute safety_results =~ "EA-WASTE-2024-004"
 
       # Search for "environmental"
       render_change(view, "filter", %{
@@ -252,8 +271,10 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       env_results = render(view)
 
-      assert env_results =~ "HSE-CHEM-2024-002"   # "environmental contamination"
-      assert env_results =~ "EA-WASTE-2024-004"   # "Environmental waste management"
+      # "environmental contamination"
+      assert env_results =~ "HSE-CHEM-2024-002"
+      # "Environmental waste management"
+      assert env_results =~ "EA-WASTE-2024-004"
       refute env_results =~ "HSE-MANUF-2024-001"
 
       # Search for "machinery"
@@ -263,7 +284,8 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       machinery_results = render(view)
 
-      assert machinery_results =~ "HSE-MANUF-2024-001" # "heavy machinery"
+      # "heavy machinery"
+      assert machinery_results =~ "HSE-MANUF-2024-001"
       refute machinery_results =~ "HSE-CHEM-2024-002"
     end
 
@@ -277,8 +299,10 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       contamination_results = render(view)
 
-      assert contamination_results =~ "HSE-CHEM-2024-002"  # "contamination risk"
-      assert contamination_results =~ "EA-WASTE-2024-004"  # "contamination of groundwater"
+      # "contamination risk"
+      assert contamination_results =~ "HSE-CHEM-2024-002"
+      # "contamination of groundwater"
+      assert contamination_results =~ "EA-WASTE-2024-004"
       refute contamination_results =~ "HSE-MANUF-2024-001"
 
       # Search for "scaffolding"
@@ -288,7 +312,8 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       scaffolding_results = render(view)
 
-      assert scaffolding_results =~ "HSE-CONST-2024-003" # "scaffolding safety measures"
+      # "scaffolding safety measures"
+      assert scaffolding_results =~ "HSE-CONST-2024-003"
       refute scaffolding_results =~ "HSE-MANUF-2024-001"
       refute scaffolding_results =~ "HSE-CHEM-2024-002"
 
@@ -299,8 +324,10 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       hazardous_results = render(view)
 
-      assert hazardous_results =~ "HSE-CHEM-2024-002"  # "hazardous substances"
-      assert hazardous_results =~ "EA-WASTE-2024-004"  # "hazardous materials"
+      # "hazardous substances"
+      assert hazardous_results =~ "HSE-CHEM-2024-002"
+      # "hazardous materials"
+      assert hazardous_results =~ "EA-WASTE-2024-004"
       refute hazardous_results =~ "HSE-MANUF-2024-001"
     end
 
@@ -310,7 +337,7 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
       # Test different case variations
       search_terms = [
         "manufacturing",
-        "MANUFACTURING", 
+        "MANUFACTURING",
         "Manufacturing",
         "mAnUfAcTuRiNg"
       ]
@@ -321,7 +348,7 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
         })
 
         results = render(view)
-        
+
         assert results =~ "Advanced Manufacturing Solutions Ltd"
         assert results =~ "HSE-MANUF-2024-001"
       end)
@@ -335,7 +362,7 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
         })
 
         results = render(view)
-        
+
         # Should find cases with "safety" in breaches
         assert results =~ "HSE-MANUF-2024-001"
         assert results =~ "HSE-CHEM-2024-002"
@@ -363,8 +390,10 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       safety_violations_results = render(view)
 
-      assert safety_violations_results =~ "HSE-MANUF-2024-001" # "safety protocol violations"
-      assert safety_violations_results =~ "HSE-CONST-2024-003" # "safety violations"
+      # "safety protocol violations"
+      assert safety_violations_results =~ "HSE-MANUF-2024-001"
+      # "safety violations"
+      assert safety_violations_results =~ "HSE-CONST-2024-003"
       refute safety_violations_results =~ "EA-WASTE-2024-004"
 
       # Search for phrase in quotes (if supported)
@@ -425,7 +454,8 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
       assert combined_results =~ "HSE-MANUF-2024-001"
       assert combined_results =~ "HSE-CHEM-2024-002"
       assert combined_results =~ "HSE-CONST-2024-003"
-      refute combined_results =~ "EA-WASTE-2024-004" # Wrong agency
+      # Wrong agency
+      refute combined_results =~ "EA-WASTE-2024-004"
 
       # Combine search with date filter
       render_change(view, "filter", %{
@@ -438,8 +468,10 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       date_search_results = render(view)
 
-      assert date_search_results =~ "HSE-CHEM-2024-002" # Feb 1, 2024
-      refute date_search_results =~ "HSE-MANUF-2024-001" # Jan 15, outside range
+      # Feb 1, 2024
+      assert date_search_results =~ "HSE-CHEM-2024-002"
+      # Jan 15, outside range
+      refute date_search_results =~ "HSE-MANUF-2024-001"
 
       # Combine search with fine range
       render_change(view, "filter", %{
@@ -452,9 +484,12 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       fine_search_results = render(view)
 
-      assert fine_search_results =~ "HSE-MANUF-2024-001" # £25,000 fine
-      refute fine_search_results =~ "HSE-CHEM-2024-002"  # £45,000 - too high
-      refute fine_search_results =~ "HSE-CONST-2024-003" # £18,000 - too low
+      # £25,000 fine
+      assert fine_search_results =~ "HSE-MANUF-2024-001"
+      # £45,000 - too high
+      refute fine_search_results =~ "HSE-CHEM-2024-002"
+      # £18,000 - too low
+      refute fine_search_results =~ "HSE-CONST-2024-003"
     end
 
     test "handles empty and whitespace searches", %{conn: conn} do
@@ -494,7 +529,9 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
       no_results = render(view)
 
       # Should show no results message
-      assert no_results =~ "No cases found" or no_results =~ "0 cases" or no_results =~ "No results"
+      assert no_results =~ "No cases found" or no_results =~ "0 cases" or
+               no_results =~ "No results"
+
       refute no_results =~ "HSE-MANUF-2024-001"
       refute no_results =~ "HSE-CHEM-2024-002"
 
@@ -509,11 +546,12 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
       # Very long search term
       long_search = String.duplicate("a", 1000)
 
-      log = capture_log(fn ->
-        render_change(view, "filter", %{
-          "filters" => %{"search" => long_search}
-        })
-      end)
+      log =
+        capture_log(fn ->
+          render_change(view, "filter", %{
+            "filters" => %{"search" => long_search}
+          })
+        end)
 
       # Should handle gracefully without crashing
       assert Process.alive?(view.pid)
@@ -534,7 +572,7 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       # Should find matches and potentially highlight the search term
       assert partial_results =~ "Manufacturing"
-      
+
       # Check for highlighting (depends on implementation)
       if partial_results =~ "<mark>" or partial_results =~ "highlight" do
         assert partial_results =~ "Manufactur"
@@ -543,24 +581,27 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
     test "handles search performance with large datasets", %{conn: conn} do
       # Create additional test data
-      {:ok, agency} = Enforcement.create_agency(%{code: :test, name: "Test Agency", enabled: true})
-      
+      {:ok, agency} =
+        Enforcement.create_agency(%{code: :test, name: "Test Agency", enabled: true})
+
       # Create 50 additional offenders and cases
       Enum.each(1..50, fn i ->
-        {:ok, offender} = Enforcement.create_offender(%{
-          name: "Performance Test Company #{i}",
-          local_authority: "Test Council #{i}"
-        })
+        {:ok, offender} =
+          Enforcement.create_offender(%{
+            name: "Performance Test Company #{i}",
+            local_authority: "Test Council #{i}"
+          })
 
-        {:ok, _case} = Enforcement.create_case(%{
-          regulator_id: "PERF-#{String.pad_leading(to_string(i), 3, "0")}",
-          agency_id: agency.id,
-          offender_id: offender.id,
-          offence_action_date: Date.add(~D[2024-01-01], i),
-          offence_fine: Decimal.new("#{rem(i, 20) + 1}000.00"),
-          offence_breaches: "Performance test breach #{i} with safety violations",
-          last_synced_at: DateTime.utc_now()
-        })
+        {:ok, _case} =
+          Enforcement.create_case(%{
+            regulator_id: "PERF-#{String.pad_leading(to_string(i), 3, "0")}",
+            agency_id: agency.id,
+            offender_id: offender.id,
+            offence_action_date: Date.add(~D[2024-01-01], i),
+            offence_fine: Decimal.new("#{rem(i, 20) + 1}000.00"),
+            offence_breaches: "Performance test breach #{i} with safety violations",
+            last_synced_at: DateTime.utc_now()
+          })
       end)
 
       {:ok, view, _html} = live(conn, "/cases")
@@ -573,7 +614,7 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
       })
 
       search_results = render(view)
-      
+
       end_time = System.monotonic_time(:millisecond)
       search_time = end_time - start_time
 
@@ -594,35 +635,38 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
       {:ok, partial_match} = Enforcement.create_offender(%{name: "Premier Safety Services"})
       {:ok, content_match} = Enforcement.create_offender(%{name: "Industrial Corp"})
 
-      {:ok, exact_case} = Enforcement.create_case(%{
-        regulator_id: "HSE-EXACT-001",
-        agency_id: agency.id,
-        offender_id: exact_match.id,
-        offence_action_date: ~D[2024-01-01],
-        offence_fine: Decimal.new("10000.00"),
-        offence_breaches: "Minor safety violation",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, exact_case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-EXACT-001",
+          agency_id: agency.id,
+          offender_id: exact_match.id,
+          offence_action_date: ~D[2024-01-01],
+          offence_fine: Decimal.new("10000.00"),
+          offence_breaches: "Minor safety violation",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, partial_case} = Enforcement.create_case(%{
-        regulator_id: "HSE-PARTIAL-002",
-        agency_id: agency.id,
-        offender_id: partial_match.id,
-        offence_action_date: ~D[2024-01-02],
-        offence_fine: Decimal.new("15000.00"),
-        offence_breaches: "Equipment failure leading to incident",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, partial_case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-PARTIAL-002",
+          agency_id: agency.id,
+          offender_id: partial_match.id,
+          offence_action_date: ~D[2024-01-02],
+          offence_fine: Decimal.new("15000.00"),
+          offence_breaches: "Equipment failure leading to incident",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, content_case} = Enforcement.create_case(%{
-        regulator_id: "HSE-CONTENT-003",
-        agency_id: agency.id,
-        offender_id: content_match.id,
-        offence_action_date: ~D[2024-01-03],
-        offence_fine: Decimal.new("20000.00"),
-        offence_breaches: "Major safety protocol breaches with multiple safety violations",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, content_case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-CONTENT-003",
+          agency_id: agency.id,
+          offender_id: content_match.id,
+          offence_action_date: ~D[2024-01-03],
+          offence_fine: Decimal.new("20000.00"),
+          offence_breaches: "Major safety protocol breaches with multiple safety violations",
+          last_synced_at: DateTime.utc_now()
+        })
 
       %{
         exact_case: exact_case,
@@ -641,20 +685,25 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
       search_results = render(view)
 
       # Should find all cases with "Safety" in name or content
-      assert search_results =~ "Safety Solutions Ltd"     # Exact match in name
-      assert search_results =~ "Premier Safety Services"  # Partial match in name
-      assert search_results =~ "safety protocol breaches" # Content match
+      # Exact match in name
+      assert search_results =~ "Safety Solutions Ltd"
+      # Partial match in name
+      assert search_results =~ "Premier Safety Services"
+      # Content match
+      assert search_results =~ "safety protocol breaches"
 
       # Check ordering (exact match should come first if ranking is implemented)
-      safety_solutions_pos = case :binary.match(search_results, "Safety Solutions Ltd") do
-        {pos, _} -> pos
-        :nomatch -> 999999
-      end
+      safety_solutions_pos =
+        case :binary.match(search_results, "Safety Solutions Ltd") do
+          {pos, _} -> pos
+          :nomatch -> 999_999
+        end
 
-      premier_safety_pos = case :binary.match(search_results, "Premier Safety Services") do
-        {pos, _} -> pos
-        :nomatch -> 999999
-      end
+      premier_safety_pos =
+        case :binary.match(search_results, "Premier Safety Services") do
+          {pos, _} -> pos
+          :nomatch -> 999_999
+        end
 
       # If ranking is implemented, exact match should appear first
       # If not implemented, this test documents the current behavior
@@ -673,9 +722,12 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
       broad_search_results = render(view)
 
       # Should find all cases mentioning safety
-      assert broad_search_results =~ "HSE-EXACT-001"    # Company name: "Safety Solutions"
-      assert broad_search_results =~ "HSE-PARTIAL-002"  # Company name: "Premier Safety Services"
-      assert broad_search_results =~ "HSE-CONTENT-003"  # Breach content: "safety protocol breaches"
+      # Company name: "Safety Solutions"
+      assert broad_search_results =~ "HSE-EXACT-001"
+      # Company name: "Premier Safety Services"
+      assert broad_search_results =~ "HSE-PARTIAL-002"
+      # Breach content: "safety protocol breaches"
+      assert broad_search_results =~ "HSE-CONTENT-003"
     end
 
     test "handles search result pagination with relevance", %{conn: conn} do
@@ -690,11 +742,13 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
 
       # Should handle pagination if there are many results
       # (This depends on the specific implementation)
-      assert search_results =~ "safety" # Should show results
-      
+      # Should show results
+      assert search_results =~ "safety"
+
       # If pagination is shown
       if search_results =~ "Page" or search_results =~ "Next" do
-        assert search_results =~ "1" # Should show page indicators
+        # Should show page indicators
+        assert search_results =~ "1"
       end
     end
   end
@@ -703,16 +757,17 @@ defmodule EhsEnforcementWeb.CaseSearchTest do
     test "handles malformed search requests gracefully", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/cases")
 
-      log = capture_log(fn ->
-        # Send malformed search data
-        render_change(view, "filter", %{
-          "filters" => %{"search" => nil}
-        })
+      log =
+        capture_log(fn ->
+          # Send malformed search data
+          render_change(view, "filter", %{
+            "filters" => %{"search" => nil}
+          })
 
-        render_change(view, "invalid_event", %{
-          "search" => "test"
-        })
-      end)
+          render_change(view, "invalid_event", %{
+            "search" => "test"
+          })
+        end)
 
       # Should handle gracefully without crashing
       assert Process.alive?(view.pid)

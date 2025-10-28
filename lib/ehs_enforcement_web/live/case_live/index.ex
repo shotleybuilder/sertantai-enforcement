@@ -1,6 +1,6 @@
 defmodule EhsEnforcementWeb.CaseLive.Index do
   use EhsEnforcementWeb, :live_view
-  
+
   require Ash.Query
 
   alias EhsEnforcement.Enforcement
@@ -41,30 +41,36 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   @impl true
   def handle_params(params, _url, socket) do
     page = String.to_integer(params["page"] || "1")
-    
+
     # Handle filter parameters from dashboard navigation
-    filters = case params["filter"] do
-      "recent" ->
-        # Calculate date based on period parameter from dashboard
-        days_ago = case params["period"] do
-          "week" -> 7
-          "month" -> 30
-          "year" -> 365
-          _ -> 30  # default to month
-        end
-        date_from = Date.add(Date.utc_today(), -days_ago)
-        %{date_from: Date.to_iso8601(date_from)}
-      "search" ->
-        # Show advanced search interface activated
-        socket.assigns.filters
-      _ ->
-        socket.assigns.filters
-    end
-    
+    filters =
+      case params["filter"] do
+        "recent" ->
+          # Calculate date based on period parameter from dashboard
+          days_ago =
+            case params["period"] do
+              "week" -> 7
+              "month" -> 30
+              "year" -> 365
+              # default to month
+              _ -> 30
+            end
+
+          date_from = Date.add(Date.utc_today(), -days_ago)
+          %{date_from: Date.to_iso8601(date_from)}
+
+        "search" ->
+          # Show advanced search interface activated
+          socket.assigns.filters
+
+        _ ->
+          socket.assigns.filters
+      end
+
     # Handle search activation from dashboard
     search_active = params["filter"] == "search"
-    
-    {:noreply, 
+
+    {:noreply,
      socket
      |> assign(:page, max(1, page))
      |> assign(:filters, filters)
@@ -75,14 +81,15 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   @impl true
   def handle_event("filter", %{"filters" => filter_params}, socket) do
     filters = atomize_and_clean_filters(filter_params)
-    
+
     # Count records that match the filters in real-time
     socket_with_filters = assign(socket, :filters, filters)
-    
+
     {:noreply,
      socket_with_filters
      |> assign(:page, 1)
-     |> assign(:filters_applied, false)  # Reset applied state
+     # Reset applied state
+     |> assign(:filters_applied, false)
      |> count_filtered_cases()}
   end
 
@@ -93,7 +100,8 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      |> assign(:filters, %{})
      |> assign(:search_query, "")
      |> assign(:page, 1)
-     |> assign(:sort_requested, false)  # Reset sort flag when clearing
+     # Reset sort flag when clearing
+     |> assign(:sort_requested, false)
      |> assign(:filters_applied, false)
      |> assign(:filter_count, 0)
      |> load_cases()}
@@ -105,7 +113,8 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      socket
      |> assign(:search_query, search_query)
      |> assign(:page, 1)
-     |> assign(:filters_applied, false)  # Reset applied state
+     # Reset applied state
+     |> assign(:filters_applied, false)
      |> count_filtered_cases()}
   end
 
@@ -115,7 +124,8 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      socket
      |> assign(:search_query, search_query)
      |> assign(:page, 1)
-     |> assign(:filters_applied, false)  # Reset applied state
+     # Reset applied state
+     |> assign(:filters_applied, false)
      |> count_filtered_cases()}
   end
 
@@ -139,11 +149,12 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   @impl true
   def handle_event("toggle_fuzzy_search", _params, socket) do
     fuzzy_search = !socket.assigns.fuzzy_search
-    
+
     {:noreply,
      socket
      |> assign(:fuzzy_search, fuzzy_search)
-     |> assign(:page, 1)  # Reset to first page when changing search mode
+     # Reset to first page when changing search mode
+     |> assign(:page, 1)
      |> load_cases()}
   end
 
@@ -156,8 +167,10 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
      socket
      |> assign(:sort_by, sort_by)
      |> assign(:sort_dir, sort_dir)
-     |> assign(:page, 1)  # Reset to first page when sorting
-     |> assign(:sort_requested, true)  # Flag to indicate sorting was requested
+     # Reset to first page when sorting
+     |> assign(:page, 1)
+     # Flag to indicate sorting was requested
+     |> assign(:sort_requested, true)
      |> async_load_cases()}
   end
 
@@ -187,10 +200,11 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
         {:noreply,
          socket
          |> assign(:page_size, size)
-         |> assign(:page, 1)  # Reset to first page
+         # Reset to first page
+         |> assign(:page, 1)
          |> push_patch(to: ~p"/cases")
          |> load_cases()}
-      
+
       _ ->
         {:noreply, socket}
     end
@@ -199,11 +213,15 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   @impl true
   def handle_event("export_csv", _params, socket) do
     alias EhsEnforcementWeb.CaseLive.CSVExport
-    
-    case CSVExport.export_cases(socket.assigns.filters, socket.assigns.sort_by, socket.assigns.sort_dir) do
+
+    case CSVExport.export_cases(
+           socket.assigns.filters,
+           socket.assigns.sort_by,
+           socket.assigns.sort_dir
+         ) do
       {:ok, csv_content} ->
         filename = CSVExport.generate_filename(:filtered)
-        
+
         {:noreply,
          socket
          |> push_event("download", %{
@@ -211,7 +229,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
            content: csv_content,
            mime_type: "text/csv"
          })}
-      
+
       {:error, reason} ->
         {:noreply,
          socket
@@ -229,13 +247,13 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
              socket
              |> put_flash(:info, "Case deleted successfully")
              |> load_cases()}
-          
+
           {:error, error} ->
             {:noreply,
              socket
              |> put_flash(:error, "Failed to delete case: #{inspect(error)}")}
         end
-      
+
       {:error, _} ->
         {:noreply,
          socket
@@ -338,6 +356,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     if socket.assigns.count_task_ref == task_ref do
       require Logger
       Logger.warning("Filter count query timed out after 5 seconds")
+
       {:noreply,
        socket
        |> assign(:filter_count, 0)
@@ -353,6 +372,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     if socket.assigns.count_task_ref == task_ref do
       require Logger
       Logger.error("Filter count query failed: #{inspect(error)}")
+
       {:noreply,
        socket
        |> assign(:filter_count, 0)
@@ -366,15 +386,23 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   # Private functions
 
   defp load_cases(socket) do
-    %{filters: filters, search_query: search_query, fuzzy_search: fuzzy_search, 
-      sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size,
-      sort_requested: sort_requested, filters_applied: filters_applied} = socket.assigns
-    
+    %{
+      filters: filters,
+      search_query: search_query,
+      fuzzy_search: fuzzy_search,
+      sort_by: sort_by,
+      sort_dir: sort_dir,
+      page: page,
+      page_size: page_size,
+      sort_requested: sort_requested,
+      filters_applied: filters_applied
+    } = socket.assigns
+
     try do
       # Don't load any cases unless filters have been explicitly applied or sort was requested
       has_filters = map_size(filters) > 0
       has_search = is_binary(search_query) && String.trim(search_query) != ""
-      
+
       if (!has_filters && !has_search && !sort_requested) || (!filters_applied && !sort_requested) do
         socket
         |> assign(:cases, [])
@@ -385,53 +413,62 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
         # Use search_query from assigns or search filter
         actual_search = if has_search, do: search_query, else: filters[:search]
         use_fuzzy = fuzzy_search && is_binary(actual_search) && String.trim(actual_search) != ""
-        
-        {cases, total_cases} = if use_fuzzy do
-        # Use fuzzy search with pg_trgm
-        trimmed_query = String.trim(actual_search)
-        limited_query = if String.length(trimmed_query) > 100 do
-          String.slice(trimmed_query, 0, 100)
-        else
-          trimmed_query
-        end
-        
-        offset = (page - 1) * page_size
-        fuzzy_opts = [
-          limit: page_size,
-          offset: offset,
-          load: [:offender, :agency, :computed_breaches_summary]
-        ]
-        
-        {:ok, fuzzy_results} = Enforcement.fuzzy_search_cases(limited_query, fuzzy_opts)
-        
-        # For fuzzy search, we can't easily get total count, so we estimate
-        # by checking if we got a full page of results
-        estimated_total = if length(fuzzy_results) == page_size do
-          (page * page_size) + 1  # Estimate there's at least one more page
-        else
-          offset + length(fuzzy_results)  # We've reached the end
-        end
-        
-        {fuzzy_results, estimated_total}
-      else
-        # Use regular filtering with optimized indexes
-        query_opts = build_optimized_query_options(filters, sort_by, sort_dir, page, page_size)
-        regular_results = Enforcement.list_cases_with_filters!(query_opts)
-        
-        # Get total count using same optimized filter
-        count_opts = [filter: build_optimized_filter(filters)]
-        regular_total = Enforcement.count_cases!(count_opts)
-        
-          {regular_results, regular_total}
-        end
-        
+
+        {cases, total_cases} =
+          if use_fuzzy do
+            # Use fuzzy search with pg_trgm
+            trimmed_query = String.trim(actual_search)
+
+            limited_query =
+              if String.length(trimmed_query) > 100 do
+                String.slice(trimmed_query, 0, 100)
+              else
+                trimmed_query
+              end
+
+            offset = (page - 1) * page_size
+
+            fuzzy_opts = [
+              limit: page_size,
+              offset: offset,
+              load: [:offender, :agency, :computed_breaches_summary]
+            ]
+
+            {:ok, fuzzy_results} = Enforcement.fuzzy_search_cases(limited_query, fuzzy_opts)
+
+            # For fuzzy search, we can't easily get total count, so we estimate
+            # by checking if we got a full page of results
+            estimated_total =
+              if length(fuzzy_results) == page_size do
+                # Estimate there's at least one more page
+                page * page_size + 1
+              else
+                # We've reached the end
+                offset + length(fuzzy_results)
+              end
+
+            {fuzzy_results, estimated_total}
+          else
+            # Use regular filtering with optimized indexes
+            query_opts =
+              build_optimized_query_options(filters, sort_by, sort_dir, page, page_size)
+
+            regular_results = Enforcement.list_cases_with_filters!(query_opts)
+
+            # Get total count using same optimized filter
+            count_opts = [filter: build_optimized_filter(filters)]
+            regular_total = Enforcement.count_cases!(count_opts)
+
+            {regular_results, regular_total}
+          end
+
         socket
         |> assign(:cases, cases)
         |> assign(:total_cases, total_cases)
         |> assign(:loading, false)
-        |> assign(:sort_requested, false)  # Reset the flag after loading
+        # Reset the flag after loading
+        |> assign(:sort_requested, false)
       end
-      
     rescue
       error ->
         # Log error and show empty state
@@ -499,9 +536,17 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
 
   # Execute the actual search query (extracted from load_cases for reuse)
   defp execute_search_query(params) do
-    %{filters: filters, search_query: search_query, fuzzy_search: fuzzy_search,
-      sort_by: sort_by, sort_dir: sort_dir, page: page, page_size: page_size,
-      sort_requested: sort_requested, filters_applied: filters_applied} = params
+    %{
+      filters: filters,
+      search_query: search_query,
+      fuzzy_search: fuzzy_search,
+      sort_by: sort_by,
+      sort_dir: sort_dir,
+      page: page,
+      page_size: page_size,
+      sort_requested: sort_requested,
+      filters_applied: filters_applied
+    } = params
 
     # Don't load any cases unless filters have been explicitly applied or sort was requested
     has_filters = map_size(filters) > 0
@@ -517,13 +562,16 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
       if use_fuzzy do
         # Use fuzzy search with pg_trgm
         trimmed_query = String.trim(actual_search)
-        limited_query = if String.length(trimmed_query) > 100 do
-          String.slice(trimmed_query, 0, 100)
-        else
-          trimmed_query
-        end
+
+        limited_query =
+          if String.length(trimmed_query) > 100 do
+            String.slice(trimmed_query, 0, 100)
+          else
+            trimmed_query
+          end
 
         offset = (page - 1) * page_size
+
         fuzzy_opts = [
           limit: page_size,
           offset: offset,
@@ -533,11 +581,12 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
         {:ok, fuzzy_results} = Enforcement.fuzzy_search_cases(limited_query, fuzzy_opts)
 
         # For fuzzy search, estimate total count
-        estimated_total = if length(fuzzy_results) == page_size do
-          (page * page_size) + 1
-        else
-          offset + length(fuzzy_results)
-        end
+        estimated_total =
+          if length(fuzzy_results) == page_size do
+            page * page_size + 1
+          else
+            offset + length(fuzzy_results)
+          end
 
         {fuzzy_results, estimated_total}
       else
@@ -571,7 +620,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
 
   defp build_optimized_query_options(filters, sort_by, sort_dir, page, page_size) do
     offset = (page - 1) * page_size
-    
+
     [
       filter: build_optimized_filter(filters),
       sort: build_sort_options(sort_by, sort_dir),
@@ -587,89 +636,104 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     %{}
     |> add_filter_if_present(filters, :agency_id)
     |> add_date_range_filters(filters)
-    |> add_fine_range_filters(filters) 
+    |> add_fine_range_filters(filters)
     |> add_search_filter(filters)
     |> add_filter_if_present(filters, :regulator_id)
   end
-  
+
   defp add_filter_if_present(acc, filters, key) do
     case filters[key] do
       value when is_binary(value) and value != "" -> Map.put(acc, key, value)
       _ -> acc
     end
   end
-  
+
   defp add_date_range_filters(acc, filters) do
     date_conditions = []
-    
-    date_conditions = case filters[:date_from] do
-      date when is_binary(date) and date != "" ->
-        case Date.from_iso8601(date) do
-          {:ok, parsed_date} -> [{:greater_than_or_equal_to, parsed_date} | date_conditions]
-          _ -> date_conditions
-        end
-      _ -> date_conditions
-    end
-    
-    date_conditions = case filters[:date_to] do
-      date when is_binary(date) and date != "" ->
-        case Date.from_iso8601(date) do
-          {:ok, parsed_date} -> [{:less_than_or_equal_to, parsed_date} | date_conditions]
-          _ -> date_conditions
-        end
-      _ -> date_conditions
-    end
-    
+
+    date_conditions =
+      case filters[:date_from] do
+        date when is_binary(date) and date != "" ->
+          case Date.from_iso8601(date) do
+            {:ok, parsed_date} -> [{:greater_than_or_equal_to, parsed_date} | date_conditions]
+            _ -> date_conditions
+          end
+
+        _ ->
+          date_conditions
+      end
+
+    date_conditions =
+      case filters[:date_to] do
+        date when is_binary(date) and date != "" ->
+          case Date.from_iso8601(date) do
+            {:ok, parsed_date} -> [{:less_than_or_equal_to, parsed_date} | date_conditions]
+            _ -> date_conditions
+          end
+
+        _ ->
+          date_conditions
+      end
+
     if date_conditions != [] do
       Map.put(acc, :offence_action_date, date_conditions)
     else
       acc
     end
   end
-  
+
   defp add_fine_range_filters(acc, filters) do
     fine_conditions = []
-    
-    fine_conditions = case filters[:min_fine] do
-      amount when is_binary(amount) and amount != "" ->
-        case Decimal.parse(amount) do
-          {decimal_amount, _} -> [{:greater_than_or_equal_to, decimal_amount} | fine_conditions]
-          :error -> fine_conditions
-        end
-      _ -> fine_conditions
-    end
-    
-    fine_conditions = case filters[:max_fine] do
-      amount when is_binary(amount) and amount != "" ->
-        case Decimal.parse(amount) do
-          {decimal_amount, _} -> [{:less_than_or_equal_to, decimal_amount} | fine_conditions]
-          :error -> fine_conditions
-        end
-      _ -> fine_conditions
-    end
-    
+
+    fine_conditions =
+      case filters[:min_fine] do
+        amount when is_binary(amount) and amount != "" ->
+          case Decimal.parse(amount) do
+            {decimal_amount, _} -> [{:greater_than_or_equal_to, decimal_amount} | fine_conditions]
+            :error -> fine_conditions
+          end
+
+        _ ->
+          fine_conditions
+      end
+
+    fine_conditions =
+      case filters[:max_fine] do
+        amount when is_binary(amount) and amount != "" ->
+          case Decimal.parse(amount) do
+            {decimal_amount, _} -> [{:less_than_or_equal_to, decimal_amount} | fine_conditions]
+            :error -> fine_conditions
+          end
+
+        _ ->
+          fine_conditions
+      end
+
     if fine_conditions != [] do
       Map.put(acc, :offence_fine, fine_conditions)
     else
       acc
     end
   end
-  
+
   defp add_search_filter(acc, filters) do
     case filters[:search] do
       query when is_binary(query) and query != "" ->
         trimmed_query = String.trim(query)
-        
+
         # Limit search term length to prevent database issues
-        limited_query = if String.length(trimmed_query) > 100 do
-          String.slice(trimmed_query, 0, 100)
-        else
-          trimmed_query
-        end
-        
+        limited_query =
+          if String.length(trimmed_query) > 100 do
+            String.slice(trimmed_query, 0, 100)
+          else
+            trimmed_query
+          end
+
         search_pattern = "%#{limited_query}%"
         Map.put(acc, :search, search_pattern)
-      _ -> acc
+
+      _ ->
+        acc
     end
   end
 
@@ -679,19 +743,22 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
       # sorting bug is fixed (KeyError: key :constraints not found)
       # {:offender_name, dir} ->
       #   [offender: [name: dir]]
-      
+
       # Agency sorting removed - not supported
       {:agency_name, _dir} ->
-        [offence_action_date: :desc]  # Fallback to default sort
-      
+        # Fallback to default sort
+        [offence_action_date: :desc]
+
       {:offender_name, _dir} ->
-        [offence_action_date: :desc]  # Fallback to default sort - sorting disabled
-      
+        # Fallback to default sort - sorting disabled
+        [offence_action_date: :desc]
+
       {field, dir} when field in [:offence_action_date, :offence_fine, :regulator_id] ->
         [{field, dir}]
-      
+
       _ ->
-        [offence_action_date: :desc]  # Default sort
+        # Default sort
+        [offence_action_date: :desc]
     end
   end
 
@@ -701,18 +768,20 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
       {key, value}, acc when is_binary(value) ->
         atom_key = String.to_atom(key)
         cleaned_value = String.trim(value)
-        
+
         if cleaned_value != "" do
           Map.put(acc, atom_key, cleaned_value)
         else
           acc
         end
-      
-      _, acc -> acc
+
+      _, acc ->
+        acc
     end)
   end
 
   defp calculate_total_pages(0, _page_size), do: 1
+
   defp calculate_total_pages(total_cases, page_size) do
     ceil(total_cases / page_size)
   end
@@ -732,13 +801,14 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     |> String.split(".")
     |> case do
       [integer_part, decimal_part] ->
-        formatted_integer = integer_part
-        |> String.reverse()
-        |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
-        |> String.reverse()
-        
+        formatted_integer =
+          integer_part
+          |> String.reverse()
+          |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
+          |> String.reverse()
+
         "#{formatted_integer}.#{decimal_part}"
-      
+
       [integer_part] ->
         integer_part
         |> String.reverse()
@@ -769,7 +839,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
   defp page_range(current_page, total_pages, delta \\ 2) do
     start_page = max(1, current_page - delta)
     end_page = min(total_pages, current_page + delta)
-    
+
     Enum.to_list(start_page..end_page)
   end
 
@@ -835,14 +905,15 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
     has_search = is_binary(search_query) && String.trim(search_query) != ""
 
     # Build filter including search_query if present
-    search_aware_filters = if has_search do
-      Map.put(filters, :search, "%#{String.trim(search_query)}%")
-    else
-      filters
-    end
+    search_aware_filters =
+      if has_search do
+        Map.put(filters, :search, "%#{String.trim(search_query)}%")
+      else
+        filters
+      end
 
     filter = build_optimized_filter(search_aware_filters)
-    Enforcement.count_cases!([filter: filter])
+    Enforcement.count_cases!(filter: filter)
   end
 
   defp cancel_previous_count(socket) do

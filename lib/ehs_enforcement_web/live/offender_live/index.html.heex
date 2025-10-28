@@ -10,17 +10,17 @@
               Enforcement Offenders
               <%= cond do %>
                 <% @total_count > 0 -> %>
-                  · <%= @total_count %> offenders loaded
+                  · {@total_count} offenders loaded
                 <% @filters_applied && @total_count == 0 -> %>
                   · No offenders found for current filters
                 <% (map_size(@filters) > 0 || @search_query != "") && !@filters_applied -> %>
-                  · <%= @filter_count %> offenders match current criteria
+                  · {@filter_count} offenders match current criteria
                 <% true -> %>
                   · Apply filters to view offenders. Limited to 1000 records.
               <% end %>
             </p>
           </div>
-          
+
           <div class="flex space-x-3">
             <!-- Back to Admin Button (Admin Users Only) -->
             <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
@@ -29,59 +29,57 @@
                 class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
-                <.icon name="hero-cog-6-tooth" class="h-4 w-4 mr-2" />
-                Admin
+                <.icon name="hero-cog-6-tooth" class="h-4 w-4 mr-2" /> Admin
               </.link>
             <% end %>
             
-            <!-- Back to Dashboard Button -->
+<!-- Back to Dashboard Button -->
             <.link
               navigate={~p"/"}
               class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <.icon name="hero-arrow-left" class="h-4 w-4 mr-1" />
-              <.icon name="hero-home" class="h-4 w-4 mr-2" />
-              Dashboard
+              <.icon name="hero-home" class="h-4 w-4 mr-2" /> Dashboard
             </.link>
             
-            <!-- Export Button (Disabled) -->
+<!-- Export Button (Disabled) -->
             <button
               disabled
               title="Export functionality coming soon"
               class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed opacity-50"
             >
-              <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" />
-              Export CSV
+              <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" /> Export CSV
             </button>
           </div>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- Main Content -->
+  
+<!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-    <!-- Analytics Link -->
+    
+<!-- Analytics Link -->
     <div class="bg-white shadow rounded-lg mb-6">
       <div class="p-4">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-lg leading-6 font-medium text-gray-900">View Detailed Analytics</h3>
-            <p class="mt-1 text-sm text-gray-500">Industry analysis, top offenders, and repeat offender patterns</p>
+            <p class="mt-1 text-sm text-gray-500">
+              Industry analysis, top offenders, and repeat offender patterns
+            </p>
           </div>
-          <.link 
+          <.link
             navigate={~p"/reports/offenders"}
             class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
           >
-            <.icon name="hero-chart-bar" class="w-4 h-4 mr-2" />
-            View Analytics Report
+            <.icon name="hero-chart-bar" class="w-4 h-4 mr-2" /> View Analytics Report
           </.link>
         </div>
       </div>
     </div>
-
-    <!-- Filters -->
+    
+<!-- Filters -->
     <EhsEnforcementWeb.Components.OffenderFilter.filter_form
       filters={@filters}
       search_query={@search_query}
@@ -95,11 +93,12 @@
       filters_applied={@filters_applied}
       target={nil}
     />
-
-    <!-- Loading State -->
+    
+<!-- Loading State -->
     <%= if @loading do %>
       <div class="text-center py-12">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600">
+        </div>
         <p class="mt-2 text-sm text-gray-500">Loading offenders...</p>
       </div>
     <% else %>
@@ -111,13 +110,16 @@
             <div class="flex items-center space-x-4">
               <span class="text-sm text-gray-700">
                 <%= if @total_count > 0 do %>
-                  Showing <%= (@current_page - 1) * @per_page + 1 %>-<%= min(@current_page * @per_page, @total_count) %> of <%= @total_count %> offenders
+                  Showing {(@current_page - 1) * @per_page + 1}-{min(
+                    @current_page * @per_page,
+                    @total_count
+                  )} of {@total_count} offenders
                 <% else %>
                   No offenders to display
                 <% end %>
               </span>
               
-              <!-- Page Size Selector -->
+<!-- Page Size Selector -->
               <div class="flex items-center space-x-2">
                 <label for="page-size" class="text-sm text-gray-700">Show:</label>
                 <select
@@ -135,35 +137,64 @@
               </div>
             </div>
             
-            <!-- Sort Info -->
+<!-- Sort Info -->
             <div class="text-sm text-gray-500">
-              Sorted by 
+              Sorted by
               <%= case @sort_by do %>
-                <% "total_fines" -> %> total fines
-                <% "name" -> %> name
-                <% "total_cases" -> %> total cases
-                <% "total_notices" -> %> total notices
-                <% _ -> %> default
+                <% "total_fines" -> %>
+                  total fines
+                <% "name" -> %>
+                  name
+                <% "total_cases" -> %>
+                  total cases
+                <% "total_notices" -> %>
+                  total notices
+                <% _ -> %>
+                  default
               <% end %>
-              (<%= if @sort_order == "desc", do: "high to low", else: "low to high" %>)
+              ({if @sort_order == "desc", do: "high to low", else: "low to high"})
             </div>
           </div>
 
           <%= if @offenders == [] do %>
             <div class="text-center py-12">
               <%= if !@filters_applied && (map_size(@filters) == 0 && @search_query == "") do %>
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  class="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-gray-900">No filters applied</h3>
-                <p class="mt-1 text-sm text-gray-500">Apply filters or search criteria to view offenders.</p>
+                <p class="mt-1 text-sm text-gray-500">
+                  Apply filters or search criteria to view offenders.
+                </p>
               <% else %>
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg
+                  class="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-gray-900">No offenders found</h3>
-                <p class="mt-1 text-sm text-gray-500">No enforcement data available with the current filters.</p>
-                
+                <p class="mt-1 text-sm text-gray-500">
+                  No enforcement data available with the current filters.
+                </p>
+
                 <%= if map_size(@filters) > 0 or @search_query != "" do %>
                   <div class="mt-4">
                     <button
@@ -184,13 +215,22 @@
                   <table class="min-w-full divide-y divide-gray-300">
                     <thead>
                       <tr>
-                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
+                        <th
+                          scope="col"
+                          class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
+                        >
                           Offender
                         </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                        <th
+                          scope="col"
+                          class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                        >
                           Location & Industry
                         </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                        <th
+                          scope="col"
+                          class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                        >
                           Enforcement Statistics
                         </th>
                         <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
@@ -200,8 +240,8 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                       <%= for offender <- @offenders do %>
-                        <tr 
-                          data-role="offender-row" 
+                        <tr
+                          data-role="offender-row"
                           data-offender-id={offender.id}
                           class="hover:bg-gray-50"
                         >
@@ -209,34 +249,39 @@
                             <div class="flex items-center">
                               <div>
                                 <div class="font-medium text-gray-900">
-                                  <%= offender.name %>
+                                  {offender.name}
                                 </div>
                                 <div class="text-gray-500">
-                                  <%= offender.postcode %>
+                                  {offender.postcode}
                                 </div>
                               </div>
                             </div>
                           </td>
-                          
+
                           <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                             <div class="text-gray-900">
-                              <%= offender.local_authority %>
+                              {offender.local_authority}
                             </div>
                             <div class="text-gray-500">
-                              <%= offender.industry %>
+                              {offender.industry}
                             </div>
                           </td>
-                          
+
                           <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                             <div class="text-gray-900">
-                              <span class="font-medium"><%= offender.total_cases || 0 %> Cases</span>, 
-                              <span class="font-medium"><%= offender.total_notices || 0 %> Notices</span>
+                              <span class="font-medium"><%= offender.total_cases || 0 %> Cases</span>,
+                              <span class="font-medium">
+                                {offender.total_notices || 0} Notices
+                              </span>
                             </div>
                             <div class="text-gray-500">
-                              Total Fines: <span class="font-medium"><%= format_currency(offender.total_fines) %></span>
+                              Total Fines:
+                              <span class="font-medium">
+                                {format_currency(offender.total_fines)}
+                              </span>
                             </div>
                           </td>
-                          
+
                           <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
                             <div class="flex items-center justify-end space-x-2">
                               <.link
@@ -246,7 +291,7 @@
                               >
                                 <.icon name="hero-eye" class="h-4 w-4" />
                               </.link>
-                              
+
                               <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
                                 <.link
                                   navigate={~p"/admin/offenders/#{offender.id}/edit"}
@@ -277,8 +322,8 @@
             </div>
           <% end %>
         </div>
-
-        <!-- Pagination -->
+        
+<!-- Pagination -->
         <%= if @total_count > @per_page do %>
           <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
             <div class="flex flex-1 justify-between sm:hidden">
@@ -290,7 +335,7 @@
                   Previous
                 </button>
               <% end %>
-              
+
               <%= if @current_page < max_pages(@total_count, @per_page) do %>
                 <button
                   phx-click="next_page"
@@ -301,22 +346,23 @@
                 </button>
               <% end %>
             </div>
-            
+
             <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
               <div>
                 <p class="text-sm text-gray-700">
-                  Showing
-                  <span class="font-medium"><%= (@current_page - 1) * @per_page + 1 %></span>
+                  Showing <span class="font-medium">{(@current_page - 1) * @per_page + 1}</span>
                   to
-                  <span class="font-medium"><%= min(@current_page * @per_page, @total_count) %></span>
-                  of
-                  <span class="font-medium"><%= @total_count %></span>
+                  <span class="font-medium">{min(@current_page * @per_page, @total_count)}</span>
+                  of <span class="font-medium">{@total_count}</span>
                   results
                 </p>
               </div>
-              
+
               <div>
-                <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                <nav
+                  class="isolate inline-flex -space-x-px rounded-md shadow-sm"
+                  aria-label="Pagination"
+                >
                   <%= if @current_page > 1 do %>
                     <button
                       phx-click="prev_page"
@@ -326,11 +372,14 @@
                       <.icon name="hero-chevron-left" class="h-5 w-5" />
                     </button>
                   <% end %>
-                  
-                  <span aria-current="page" class="relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                    <%= @current_page %>
+
+                  <span
+                    aria-current="page"
+                    class="relative z-10 inline-flex items-center bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  >
+                    {@current_page}
                   </span>
-                  
+
                   <%= if @current_page < max_pages(@total_count, @per_page) do %>
                     <button
                       phx-click="next_page"

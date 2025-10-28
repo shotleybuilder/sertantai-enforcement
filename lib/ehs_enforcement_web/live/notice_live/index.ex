@@ -45,14 +45,15 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   @impl true
   def handle_event("filter", %{"filters" => filter_params}, socket) do
     filters = parse_filters(filter_params)
-    
+
     # Count records that match the filters in real-time
     socket_with_filters = assign(socket, :filters, filters)
-    
+
     {:noreply,
      socket_with_filters
      |> assign(:page, 1)
-     |> assign(:filters_applied, false)  # Reset applied state
+     # Reset applied state
+     |> assign(:filters_applied, false)
      |> count_filtered_notices()}
   end
 
@@ -63,7 +64,8 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      |> assign(:filters, %{})
      |> assign(:search_query, "")
      |> assign(:page, 1)
-     |> assign(:sort_requested, false)  # Reset sort flag when clearing
+     # Reset sort flag when clearing
+     |> assign(:sort_requested, false)
      |> assign(:filters_applied, false)
      |> assign(:filter_count, 0)
      |> load_notices()}
@@ -75,7 +77,8 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      socket
      |> assign(:search_query, search_query)
      |> assign(:page, 1)
-     |> assign(:filters_applied, false)  # Reset applied state
+     # Reset applied state
+     |> assign(:filters_applied, false)
      |> count_filtered_notices()}
   end
 
@@ -85,7 +88,8 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      socket
      |> assign(:search_query, search_query)
      |> assign(:page, 1)
-     |> assign(:filters_applied, false)  # Reset applied state
+     # Reset applied state
+     |> assign(:filters_applied, false)
      |> count_filtered_notices()}
   end
 
@@ -115,7 +119,8 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
      socket
      |> assign(:sort_by, sort_by)
      |> assign(:sort_order, sort_order)
-     |> assign(:sort_requested, true)  # Flag to indicate sorting was requested
+     # Flag to indicate sorting was requested
+     |> assign(:sort_requested, true)
      |> async_load_notices()}
   end
 
@@ -132,18 +137,19 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   @impl true
   def handle_event("toggle_fuzzy_search", _params, socket) do
     fuzzy_search = !socket.assigns.fuzzy_search
-    
+
     {:noreply,
      socket
      |> assign(:fuzzy_search, fuzzy_search)
-     |> assign(:page, 1)  # Reset to first page when changing search mode
+     # Reset to first page when changing search mode
+     |> assign(:page, 1)
      |> load_notices()}
   end
 
   @impl true
   def handle_event("change_page_size", %{"page_size" => page_size}, socket) do
     size = String.to_integer(page_size)
-    
+
     {:noreply,
      socket
      |> assign(:page_size, size)
@@ -169,13 +175,13 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
              socket
              |> put_flash(:info, "Notice deleted successfully")
              |> load_notices()}
-          
+
           {:error, error} ->
             {:noreply,
              socket
              |> put_flash(:error, "Failed to delete notice: #{inspect(error)}")}
         end
-      
+
       {:error, _} ->
         {:noreply,
          socket
@@ -220,6 +226,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     if socket.assigns.search_task_ref == task_ref do
       require Logger
       Logger.warning("Notice search query timed out after 10 seconds")
+
       {:noreply,
        socket
        |> assign(:loading, false)
@@ -235,6 +242,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     if socket.assigns.search_task_ref == task_ref do
       require Logger
       Logger.error("Notice search query failed: #{inspect(error)}")
+
       {:noreply,
        socket
        |> assign(:notices, [])
@@ -267,6 +275,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     if socket.assigns.count_task_ref == task_ref do
       require Logger
       Logger.warning("Notice filter count query timed out after 5 seconds")
+
       {:noreply,
        socket
        |> assign(:filter_count, 0)
@@ -282,6 +291,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     if socket.assigns.count_task_ref == task_ref do
       require Logger
       Logger.error("Notice filter count query failed: #{inspect(error)}")
+
       {:noreply,
        socket
        |> assign(:filter_count, 0)
@@ -301,15 +311,21 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   # Private functions
 
   defp load_notices(socket) do
-    %{filters: filters, search_query: search_query, fuzzy_search: fuzzy_search, 
-      page: page, page_size: page_size, sort_requested: sort_requested, 
-      filters_applied: filters_applied} = socket.assigns
-    
+    %{
+      filters: filters,
+      search_query: search_query,
+      fuzzy_search: fuzzy_search,
+      page: page,
+      page_size: page_size,
+      sort_requested: sort_requested,
+      filters_applied: filters_applied
+    } = socket.assigns
+
     try do
       # Don't load any notices unless filters have been explicitly applied or sort was requested
       has_filters = map_size(filters) > 0
       has_search = is_binary(search_query) && String.trim(search_query) != ""
-      
+
       if (!has_filters && !has_search && !sort_requested) || (!filters_applied && !sort_requested) do
         socket
         |> assign(:notices, [])
@@ -318,51 +334,59 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
       else
         # Check if fuzzy search is enabled and we have a search query
         use_fuzzy = fuzzy_search && has_search
-        
-        {notices, total_notices} = if use_fuzzy do
-        # Use fuzzy search with pg_trgm
-        trimmed_query = String.trim(search_query)
-        limited_query = if String.length(trimmed_query) > 100 do
-          String.slice(trimmed_query, 0, 100)
-        else
-          trimmed_query
-        end
-        
-        offset = (page - 1) * page_size
-        fuzzy_opts = [
-          limit: page_size,
-          offset: offset,
-          load: [:agency, :offender]
-        ]
-        
-        {:ok, fuzzy_results} = Enforcement.fuzzy_search_notices(limited_query, fuzzy_opts)
-        
-        # For fuzzy search, we can't easily get total count, so we estimate
-        # by checking if we got a full page of results
-        estimated_total = if length(fuzzy_results) == page_size do
-          (page * page_size) + 1  # Estimate there's at least one more page
-        else
-          offset + length(fuzzy_results)  # We've reached the end
-        end
-        
-        {fuzzy_results, estimated_total}
-      else
-        # Use regular filtering with optimized indexes
-        query_opts = build_optimized_query_opts(socket)
-        regular_results = Enforcement.list_notices_with_filters!(query_opts)
-        
-        # Get total count using same optimized filter
-        filter = build_optimized_notice_filter(socket)
-        regular_total = Enforcement.count_notices!([filter: filter])
-        
-        {regular_results, regular_total}
-      end
-      
+
+        {notices, total_notices} =
+          if use_fuzzy do
+            # Use fuzzy search with pg_trgm
+            trimmed_query = String.trim(search_query)
+
+            limited_query =
+              if String.length(trimmed_query) > 100 do
+                String.slice(trimmed_query, 0, 100)
+              else
+                trimmed_query
+              end
+
+            offset = (page - 1) * page_size
+
+            fuzzy_opts = [
+              limit: page_size,
+              offset: offset,
+              load: [:agency, :offender]
+            ]
+
+            {:ok, fuzzy_results} = Enforcement.fuzzy_search_notices(limited_query, fuzzy_opts)
+
+            # For fuzzy search, we can't easily get total count, so we estimate
+            # by checking if we got a full page of results
+            estimated_total =
+              if length(fuzzy_results) == page_size do
+                # Estimate there's at least one more page
+                page * page_size + 1
+              else
+                # We've reached the end
+                offset + length(fuzzy_results)
+              end
+
+            {fuzzy_results, estimated_total}
+          else
+            # Use regular filtering with optimized indexes
+            query_opts = build_optimized_query_opts(socket)
+            regular_results = Enforcement.list_notices_with_filters!(query_opts)
+
+            # Get total count using same optimized filter
+            filter = build_optimized_notice_filter(socket)
+            regular_total = Enforcement.count_notices!(filter: filter)
+
+            {regular_results, regular_total}
+          end
+
         socket
         |> assign(:notices, notices)
         |> assign(:total_notices, total_notices)
         |> assign(:loading, false)
-        |> assign(:sort_requested, false)  # Reset the flag after loading
+        # Reset the flag after loading
+        |> assign(:sort_requested, false)
       end
     rescue
       error ->
@@ -370,17 +394,17 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
         |> assign(:notices, [])
         |> assign(:total_notices, 0)
         |> assign(:loading, false)
-        |> assign(:sort_requested, false)  # Reset flag on error too
+        # Reset flag on error too
+        |> assign(:sort_requested, false)
         |> put_flash(:error, "Failed to load notices: #{inspect(error)}")
     end
   end
 
   defp build_optimized_query_opts(socket) do
-    %{sort_by: sort_by, sort_order: sort_order, 
-      page: page, page_size: page_size} = socket.assigns
-    
+    %{sort_by: sort_by, sort_order: sort_order, page: page, page_size: page_size} = socket.assigns
+
     offset = (page - 1) * page_size
-    
+
     [
       filter: build_optimized_notice_filter(socket),
       sort: [{sort_by, sort_order}],
@@ -393,27 +417,27 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
   defp build_optimized_notice_filter(socket) do
     filters = socket.assigns.filters
     search_query = socket.assigns.search_query
-    
+
     %{}
     |> add_notice_filter_if_present(filters, :agency_id)
     |> add_notice_filter_if_present(filters, :offence_action_type)
     |> add_notice_date_filters(filters)
     |> add_notice_search_filter(search_query)
   end
-  
+
   defp add_notice_filter_if_present(acc, filters, key) do
     case filters[key] do
       value when is_binary(value) and value != "" -> Map.put(acc, key, value)
       _ -> acc
     end
   end
-  
+
   defp add_notice_date_filters(acc, filters) do
     acc
     |> add_date_from_filter(filters)
     |> add_date_to_filter(filters)
   end
-  
+
   defp add_date_from_filter(acc, filters) do
     case filters[:date_from] do
       date when is_binary(date) and date != "" ->
@@ -421,10 +445,12 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
           {:ok, parsed_date} -> Map.put(acc, :date_from, parsed_date)
           _ -> acc
         end
-      _ -> acc
+
+      _ ->
+        acc
     end
   end
-  
+
   defp add_date_to_filter(acc, filters) do
     case filters[:date_to] do
       date when is_binary(date) and date != "" ->
@@ -432,10 +458,12 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
           {:ok, parsed_date} -> Map.put(acc, :date_to, parsed_date)
           _ -> acc
         end
-      _ -> acc
+
+      _ ->
+        acc
     end
   end
-  
+
   defp add_notice_search_filter(acc, search_query) do
     if search_query != "" do
       Map.put(acc, :search, "%#{search_query}%")
@@ -443,8 +471,6 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
       acc
     end
   end
-
-
 
   defp parse_filters(params) do
     %{}
@@ -465,29 +491,35 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
 
   defp apply_params(socket, params) do
     page = String.to_integer(params["page"] || "1")
-    
+
     # Handle filter parameters from dashboard navigation
-    filters = case params["filter"] do
-      "recent" ->
-        # Calculate date based on period parameter from dashboard
-        days_ago = case params["period"] do
-          "week" -> 7
-          "month" -> 30
-          "year" -> 365
-          _ -> 30  # default to month
-        end
-        date_from = Date.add(Date.utc_today(), -days_ago)
-        %{date_from: Date.to_iso8601(date_from)}
-      "search" ->
-        # Show advanced search interface activated
-        socket.assigns.filters
-      _ ->
-        socket.assigns.filters
-    end
-    
+    filters =
+      case params["filter"] do
+        "recent" ->
+          # Calculate date based on period parameter from dashboard
+          days_ago =
+            case params["period"] do
+              "week" -> 7
+              "month" -> 30
+              "year" -> 365
+              # default to month
+              _ -> 30
+            end
+
+          date_from = Date.add(Date.utc_today(), -days_ago)
+          %{date_from: Date.to_iso8601(date_from)}
+
+        "search" ->
+          # Show advanced search interface activated
+          socket.assigns.filters
+
+        _ ->
+          socket.assigns.filters
+      end
+
     # Handle search activation from dashboard
     search_active = params["filter"] == "search"
-    
+
     socket
     |> assign(:page, max(1, page))
     |> assign(:filters, filters)
@@ -505,7 +537,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
 
   defp get_sort_icon(assigns, field) do
     field_atom = String.to_atom(field)
-    
+
     if assigns.sort_by == field_atom do
       if assigns.sort_order == :asc do
         "▲"
@@ -591,7 +623,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
     # Build filter using socket.assigns approach (need to reconstruct socket-like structure)
     socket_like = %{assigns: %{filters: filters, search_query: search_query}}
     filter = build_optimized_notice_filter(socket_like)
-    Enforcement.count_notices!([filter: filter])
+    Enforcement.count_notices!(filter: filter)
   end
 
   defp cancel_previous_count(socket) do
@@ -685,13 +717,16 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
       if use_fuzzy do
         # Use fuzzy search with pg_trgm
         trimmed_query = String.trim(search_query)
-        limited_query = if String.length(trimmed_query) > 100 do
-          String.slice(trimmed_query, 0, 100)
-        else
-          trimmed_query
-        end
+
+        limited_query =
+          if String.length(trimmed_query) > 100 do
+            String.slice(trimmed_query, 0, 100)
+          else
+            trimmed_query
+          end
 
         offset = (page - 1) * page_size
+
         fuzzy_opts = [
           limit: page_size,
           offset: offset,
@@ -702,16 +737,20 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
 
         # For fuzzy search, we can't easily get total count, so we estimate
         # by checking if we got a full page of results
-        estimated_total = if length(fuzzy_results) == page_size do
-          (page * page_size) + 1  # Estimate there's at least one more page
-        else
-          offset + length(fuzzy_results)  # We've reached the end
-        end
+        estimated_total =
+          if length(fuzzy_results) == page_size do
+            # Estimate there's at least one more page
+            page * page_size + 1
+          else
+            # We've reached the end
+            offset + length(fuzzy_results)
+          end
 
         {fuzzy_results, estimated_total}
       else
         # Use regular filtering with optimized indexes
         filter_map = build_notice_filter_from_params(search_params)
+
         query_opts = [
           filter: filter_map,
           sort: [{sort_by, sort_order}],
@@ -723,7 +762,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Index do
         regular_results = Enforcement.list_notices_with_filters!(query_opts)
 
         # Get total count using same optimized filter
-        regular_total = Enforcement.count_notices!([filter: filter_map])
+        regular_total = Enforcement.count_notices!(filter: filter_map)
 
         {regular_results, regular_total}
       end

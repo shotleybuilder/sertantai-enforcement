@@ -2,7 +2,8 @@
   <%= if @loading do %>
     <div class="flex items-center justify-center min-h-screen">
       <div class="text-center">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600">
+        </div>
         <p class="mt-2 text-sm text-gray-500">Loading case details...</p>
       </div>
     </div>
@@ -41,31 +42,40 @@
                       </li>
                       <li>
                         <div class="flex items-center">
-                          <.icon name="hero-chevron-right" class="flex-shrink-0 h-5 w-5 text-gray-400" />
-                          <.link navigate={~p"/cases"} class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                          <.icon
+                            name="hero-chevron-right"
+                            class="flex-shrink-0 h-5 w-5 text-gray-400"
+                          />
+                          <.link
+                            navigate={~p"/cases"}
+                            class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700"
+                          >
                             Cases
                           </.link>
                         </div>
                       </li>
                       <li>
                         <div class="flex items-center">
-                          <.icon name="hero-chevron-right" class="flex-shrink-0 h-5 w-5 text-gray-400" />
+                          <.icon
+                            name="hero-chevron-right"
+                            class="flex-shrink-0 h-5 w-5 text-gray-400"
+                          />
                           <span class="ml-4 text-sm font-medium text-gray-500">
-                            <%= @case.regulator_id %>
+                            {@case.regulator_id}
                           </span>
                         </div>
                       </li>
                     </ol>
                   </nav>
-                  
+
                   <div class="mt-2">
                     <h1 class="text-3xl font-bold text-gray-900">Case Details</h1>
                     <p class="mt-1 text-sm text-gray-500">
-                      Case <%= @case.regulator_id %> · <%= @case.agency.name %>
+                      Case {@case.regulator_id} · {@case.agency.name}
                     </p>
                   </div>
                 </div>
-                
+
                 <div class="flex items-center space-x-3">
                   <!-- Share Button -->
                   <button
@@ -73,44 +83,40 @@
                     phx-value-method="url"
                     class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    <.icon name="hero-share" class="h-4 w-4 mr-2" />
-                    Share
+                    <.icon name="hero-share" class="h-4 w-4 mr-2" /> Share
                   </button>
                   
-                  <!-- Export Button (Disabled) -->
+<!-- Export Button (Disabled) -->
                   <button
                     disabled
                     class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed"
                   >
-                    <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" />
-                    Export
+                    <.icon name="hero-arrow-down-tray" class="h-4 w-4 mr-2" /> Export
                   </button>
                   
-                  <!-- Edit Button -->
+<!-- Edit Button -->
                   <.link
                     navigate={~p"/cases/#{@case.id}/edit"}
                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    <.icon name="hero-pencil" class="h-4 w-4 mr-2" />
-                    Edit
+                    <.icon name="hero-pencil" class="h-4 w-4 mr-2" /> Edit
                   </.link>
                   
-                  <!-- Delete Button -->
+<!-- Delete Button -->
                   <button
                     phx-click="delete_case"
                     data-confirm="Are you sure you want to delete this case? This action cannot be undone."
                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
-                    <.icon name="hero-trash" class="h-4 w-4 mr-2" />
-                    Delete
+                    <.icon name="hero-trash" class="h-4 w-4 mr-2" /> Delete
                   </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Main Content -->
+        
+<!-- Main Content -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Main Case Information -->
@@ -119,119 +125,128 @@
               <div class="bg-white shadow rounded-lg mb-6">
                 <div class="px-6 py-5">
                   <h3 class="text-lg font-medium text-gray-900 mb-4">Case Overview</h3>
-                  
+
                   <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                     <div>
                       <dt class="text-sm font-medium text-gray-500">Case ID</dt>
-                      <dd class="mt-1 text-sm text-gray-900 font-mono"><%= @case.regulator_id %></dd>
+                      <dd class="mt-1 text-sm text-gray-900 font-mono">{@case.regulator_id}</dd>
                     </div>
-                    
+
                     <div>
                       <dt class="text-sm font-medium text-gray-500">Agency</dt>
                       <dd class="mt-1 text-sm text-gray-900">
-                        <%= @case.agency.name %>
-                        <span class="text-gray-500">(<%= String.upcase(to_string(@case.agency.code)) %>)</span>
+                        {@case.agency.name}
+                        <span class="text-gray-500">
+                          ({String.upcase(to_string(@case.agency.code))})
+                        </span>
                       </dd>
                     </div>
-                    
+
                     <div>
                       <dt class="text-sm font-medium text-gray-500">Offence Date</dt>
-                      <dd class="mt-1 text-sm text-gray-900"><%= format_date(@case.offence_action_date) %></dd>
+                      <dd class="mt-1 text-sm text-gray-900">
+                        {format_date(@case.offence_action_date)}
+                      </dd>
                     </div>
-                    
+
                     <div>
                       <dt class="text-sm font-medium text-gray-500">Fine Amount</dt>
-                      <dd class="mt-1 text-lg font-semibold text-gray-900"><%= format_currency(@case.offence_fine) %></dd>
+                      <dd class="mt-1 text-lg font-semibold text-gray-900">
+                        {format_currency(@case.offence_fine)}
+                      </dd>
                     </div>
-                    
+
                     <%= if @case.regulator_url do %>
                       <div class="sm:col-span-2">
                         <dt class="text-sm font-medium text-gray-500">Regulator's Page</dt>
                         <dd class="mt-1">
-                          <a 
-                            href={@case.regulator_url} 
-                            target="_blank" 
+                          <a
+                            href={@case.regulator_url}
+                            target="_blank"
                             rel="noopener noreferrer"
                             class="text-sm text-blue-600 hover:text-blue-500 inline-flex items-center"
                           >
-                            View case on <%= @case.agency.name %> website
+                            View case on {@case.agency.name} website
                             <.icon name="hero-arrow-top-right-on-square" class="ml-1 h-3 w-3" />
                           </a>
                         </dd>
                       </div>
                     <% end %>
-                    
                   </dl>
                 </div>
               </div>
               
-              <!-- Offence Details -->
+<!-- Offence Details -->
               <div class="bg-white shadow rounded-lg mb-6">
                 <div class="px-6 py-5">
                   <h3 class="text-lg font-medium text-gray-900 mb-4">Offence Details</h3>
-                  
+
                   <%= cond do %>
                     <% @case.computed_breaches_summary -> %>
                       <div class="prose max-w-none">
-                        <p class="text-sm text-gray-700 whitespace-pre-wrap"><%= @case.computed_breaches_summary %></p>
+                        <p class="text-sm text-gray-700 whitespace-pre-wrap">
+                          {@case.computed_breaches_summary}
+                        </p>
                       </div>
-                    
                     <% @case.offence_result || @case.offence_action_type -> %>
                       <dl class="space-y-3">
                         <%= if @case.offence_action_type do %>
                           <div>
                             <dt class="text-sm font-medium text-gray-500">Action Type</dt>
-                            <dd class="mt-1 text-sm text-gray-900"><%= @case.offence_action_type %></dd>
+                            <dd class="mt-1 text-sm text-gray-900">
+                              {@case.offence_action_type}
+                            </dd>
                           </div>
                         <% end %>
-                        
+
                         <%= if @case.offence_result do %>
                           <div>
                             <dt class="text-sm font-medium text-gray-500">Result</dt>
-                            <dd class="mt-1 text-sm text-gray-900"><%= @case.offence_result %></dd>
+                            <dd class="mt-1 text-sm text-gray-900">{@case.offence_result}</dd>
                           </div>
                         <% end %>
                       </dl>
-                    
                     <% true -> %>
                       <p class="text-sm text-gray-500 italic">No offence details available</p>
                   <% end %>
                 </div>
               </div>
               
-              <!-- Notices -->
+<!-- Notices -->
               <%= if false do %>
                 <div class="bg-white shadow rounded-lg mb-6">
                   <div class="px-6 py-5">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
-                      Notices (<%= length(@case.notices) %>)
+                      Notices ({length(@case.notices)})
                     </h3>
-                    
+
                     <div class="space-y-4">
                       <%= for notice <- @case.notices do %>
                         <div class="border rounded-lg p-4">
                           <div class="flex items-center justify-between mb-2">
                             <h4 class="text-sm font-medium text-gray-900">
-                              <%= format_notice_type(notice.notice_type) %>
+                              {format_notice_type(notice.notice_type)}
                             </h4>
                             <span class={"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium #{compliance_status_class(notice.compliance_status)}"}>
-                              <%= format_compliance_status(notice.compliance_status) %>
+                              {format_compliance_status(notice.compliance_status)}
                             </span>
                           </div>
-                          
+
                           <div class="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <span class="text-gray-500">Issue Date:</span>
-                              <span class="text-gray-900"><%= format_date(notice.issue_date) %></span>
+                              <span class="text-gray-900">{format_date(notice.issue_date)}</span>
                             </div>
                             <div>
                               <span class="text-gray-500">Compliance Date:</span>
-                              <span class="text-gray-900"><%= format_date(notice.compliance_date) %></span>
+                              <span class="text-gray-900">
+                                {format_date(notice.compliance_date)}
+                              </span>
                             </div>
                           </div>
-                          
+
                           <%= if notice.description do %>
-                            <p class="mt-2 text-sm text-gray-700"><%= notice.description %></p>
+                            <p class="mt-2 text-sm text-gray-700">{notice.description}</p>
                           <% end %>
                         </div>
                       <% end %>
@@ -240,27 +255,27 @@
                 </div>
               <% end %>
               
-              <!-- Regulatory Breaches -->
+<!-- Regulatory Breaches -->
               <%= if false do %>
                 <div class="bg-white shadow rounded-lg mb-6">
                   <div class="px-6 py-5">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
-                      Regulatory Breaches (<%= length(@case.breaches) %>)
+                      Regulatory Breaches ({length(@case.breaches)})
                     </h3>
-                    
+
                     <div class="space-y-4">
                       <%= for breach <- @case.breaches do %>
                         <div class="border rounded-lg p-4">
                           <div class="flex items-center justify-between mb-2">
                             <h4 class="text-sm font-medium text-gray-900">
-                              <%= breach.regulation_section %>
+                              {breach.regulation_section}
                             </h4>
                             <span class={"inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium #{severity_class(breach.severity)}"}>
-                              <%= format_severity(breach.severity) %>
+                              {format_severity(breach.severity)}
                             </span>
                           </div>
-                          
-                          <p class="text-sm text-gray-700"><%= breach.description %></p>
+
+                          <p class="text-sm text-gray-700">{breach.description}</p>
                         </div>
                       <% end %>
                     </div>
@@ -269,60 +284,74 @@
               <% end %>
             </div>
             
-            <!-- Sidebar -->
+<!-- Sidebar -->
             <div class="lg:col-span-1">
               <!-- Offender Information -->
               <div class="bg-white shadow rounded-lg">
                 <div class="px-6 py-5">
                   <h3 class="text-lg font-medium text-gray-900 mb-4">Offender Information</h3>
-                  
+
                   <dl class="space-y-4">
                     <div>
                       <dt class="text-sm font-medium text-gray-500">Company Name</dt>
-                      <dd class="mt-1 text-sm text-gray-900 font-medium"><%= @case.offender.name %></dd>
+                      <dd class="mt-1 text-sm text-gray-900 font-medium">
+                        {@case.offender.name}
+                      </dd>
                     </div>
-                    
+
                     <%= if @case.offender.local_authority do %>
                       <div>
                         <dt class="text-sm font-medium text-gray-500">Local Authority</dt>
-                        <dd class="mt-1 text-sm text-gray-900"><%= @case.offender.local_authority %></dd>
+                        <dd class="mt-1 text-sm text-gray-900">
+                          {@case.offender.local_authority}
+                        </dd>
                       </div>
                     <% end %>
-                    
+
                     <%= if @case.offender.postcode do %>
                       <div>
                         <dt class="text-sm font-medium text-gray-500">Postcode</dt>
-                        <dd class="mt-1 text-sm text-gray-900 font-mono"><%= @case.offender.postcode %></dd>
+                        <dd class="mt-1 text-sm text-gray-900 font-mono">
+                          {@case.offender.postcode}
+                        </dd>
                       </div>
                     <% end %>
-                    
+
                     <%= if @case.offender.company_registration_number do %>
                       <div>
                         <dt class="text-sm font-medium text-gray-500">Company Number</dt>
-                        <dd class="mt-1 text-sm text-gray-900 font-mono"><%= String.replace(@case.offender.company_registration_number, " (opens in new tab)", "") %></dd>
+                        <dd class="mt-1 text-sm text-gray-900 font-mono">
+                          {String.replace(
+                            @case.offender.company_registration_number,
+                            " (opens in new tab)",
+                            ""
+                          )}
+                        </dd>
                       </div>
                     <% end %>
-                    
+
                     <%= if @case.offender.industry do %>
                       <div>
                         <dt class="text-sm font-medium text-gray-500">Industry</dt>
-                        <dd class="mt-1 text-sm text-gray-900"><%= @case.offender.industry %></dd>
+                        <dd class="mt-1 text-sm text-gray-900">{@case.offender.industry}</dd>
                       </div>
                     <% end %>
-                    
+
                     <%= if @case.offender.county do %>
                       <div>
                         <dt class="text-sm font-medium text-gray-500">County</dt>
-                        <dd class="mt-1 text-sm text-gray-900"><%= @case.offender.county %></dd>
+                        <dd class="mt-1 text-sm text-gray-900">{@case.offender.county}</dd>
                       </div>
                     <% end %>
-                    
+
                     <div>
                       <dt class="text-sm font-medium text-gray-500">Total Cases</dt>
-                      <dd class="mt-1 text-sm text-gray-900"><%= max(@case.offender.total_cases || 0, 1) %></dd>
+                      <dd class="mt-1 text-sm text-gray-900">
+                        {max(@case.offender.total_cases || 0, 1)}
+                      </dd>
                     </div>
                   </dl>
-                  
+
                   <div class="mt-6 pt-4 border-t border-gray-200">
                     <.link
                       navigate={~p"/offenders/#{@case.offender.id}"}
@@ -342,31 +371,31 @@
 </div>
 
 <script>
-// Copy to clipboard functionality
-window.addEventListener('phx:copy_to_clipboard', (e) => {
-  navigator.clipboard.writeText(e.detail.text).then(() => {
-    console.log('Copied to clipboard');
-  }).catch(err => {
-    console.error('Failed to copy: ', err);
+  // Copy to clipboard functionality
+  window.addEventListener('phx:copy_to_clipboard', (e) => {
+    navigator.clipboard.writeText(e.detail.text).then(() => {
+      console.log('Copied to clipboard');
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
   });
-});
 
-// Open URL functionality
-window.addEventListener('phx:open_url', (e) => {
-  window.open(e.detail.url, '_blank');
-});
+  // Open URL functionality
+  window.addEventListener('phx:open_url', (e) => {
+    window.open(e.detail.url, '_blank');
+  });
 
-// Download functionality
-window.addEventListener('phx:download', (e) => {
-  const { filename, content, mime_type } = e.detail;
-  const blob = new Blob([content], { type: mime_type });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
-});
+  // Download functionality
+  window.addEventListener('phx:download', (e) => {
+    const { filename, content, mime_type } = e.detail;
+    const blob = new Blob([content], { type: mime_type });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  });
 </script>

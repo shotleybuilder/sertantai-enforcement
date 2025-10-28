@@ -27,21 +27,17 @@ defmodule EhsEnforcement.Integrations.Airtable.AtFields do
     text_EN
   /
 
-  def law_at_fields_as_list, do:
-    Enum.map(String.split(@law_at_fields), fn x -> x end)
+  def law_at_fields_as_list, do: Enum.map(String.split(@law_at_fields), fn x -> x end)
 
-  def article_at_fields_as_list, do:
-    Enum.map(String.split(@article_at_fields), fn x -> x end)
+  def article_at_fields_as_list, do: Enum.map(String.split(@article_at_fields), fn x -> x end)
 
   ["record_id.md", "do_not_display.md", "touched.md", "urls.md"]
 
   def at_fields(%{table_name: "Article"}) do
-    ["faq.md", "answer.md", "off_sch.md" | article_at_fields_as_list() ]
+    ["faq.md", "answer.md", "off_sch.md" | article_at_fields_as_list()]
   end
 
   def at_fields(%{table_name: "UK"}) do
-    ["faq.md", "answer.md", "on_sch.md" | law_at_fields_as_list() ]
+    ["faq.md", "answer.md", "on_sch.md" | law_at_fields_as_list()]
   end
-
-
 end

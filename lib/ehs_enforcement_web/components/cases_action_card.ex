@@ -1,13 +1,13 @@
 defmodule EhsEnforcementWeb.Components.CasesActionCard do
   @moduledoc """
   Cases Management action card component for the dashboard.
-  
+
   Displays cases metrics, provides filtered navigation, and admin-controlled create functionality.
   Implements the cases card specification from the dashboard action cards design document.
   """
-  
+
   use Phoenix.Component
-  
+
   import EhsEnforcementWeb.Components.DashboardActionCard
   alias EhsEnforcement.Enforcement
 
@@ -31,50 +31,54 @@ defmodule EhsEnforcementWeb.Components.CasesActionCard do
       |> assign(:total_cases, Map.get(assigns.stats, :total_cases, 0))
       |> assign(:recent_cases_count, Map.get(assigns.stats, :recent_cases, 0))
       |> assign(:total_recent_fines, Map.get(assigns.stats, :total_fines, Decimal.new(0)))
-    
+
     ~H"""
-    <.dashboard_action_card 
-      title="ENFORCEMENT CASES" 
-      icon="⚖️" 
-      theme="blue" 
+    <.dashboard_action_card
+      title="ENFORCEMENT CASES"
+      icon="⚖️"
+      theme="blue"
       loading={@loading}
       class={@class}
     >
       <:metrics>
-        <.metric_item 
-          label="Total Cases" 
-          value={format_number(@total_cases)} 
+        <.metric_item
+          label="Total Cases"
+          value={format_number(@total_cases)}
         />
-        <.metric_item 
-          label="Recent (Last 30 Days)" 
-          value={format_number(@recent_cases_count)} 
+        <.metric_item
+          label="Recent (Last 30 Days)"
+          value={format_number(@recent_cases_count)}
         />
-        <.metric_item 
-          label="Total Fines" 
-          value={format_currency(@total_recent_fines)} 
+        <.metric_item
+          label="Total Fines"
+          value={format_currency(@total_recent_fines)}
         />
       </:metrics>
-      
+
       <:actions>
         <.card_action_button phx-click="browse_recent_cases">
           <div class="flex items-center justify-between w-full">
             <span>Browse Recent</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </.card_action_button>
-        
+
         <.card_secondary_button phx-click="search_cases">
           <div class="flex items-center justify-between w-full">
             <span>Search</span>
             <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
         </.card_secondary_button>
       </:actions>
-      
     </.dashboard_action_card>
     """
   end

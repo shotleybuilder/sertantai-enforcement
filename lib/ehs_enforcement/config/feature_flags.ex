@@ -1,7 +1,7 @@
 defmodule EhsEnforcement.Config.FeatureFlags do
   @moduledoc """
   Dynamic feature flag system for the EHS Enforcement application.
-  
+
   Supports environment variable configuration, test overrides,
   and provides comprehensive feature flag management.
   """
@@ -18,10 +18,10 @@ defmodule EhsEnforcement.Config.FeatureFlags do
   """
   def enabled?(flag_name) do
     case GenServer.whereis(__MODULE__) do
-      nil -> 
+      nil ->
         # Fallback for when GenServer isn't started (during tests)
         get_flag_value_direct(flag_name)
-      
+
       _pid ->
         GenServer.call(__MODULE__, {:enabled?, flag_name})
     end
@@ -39,7 +39,7 @@ defmodule EhsEnforcement.Config.FeatureFlags do
           manual_sync: get_flag_value_direct(:manual_sync),
           export_enabled: get_flag_value_direct(:export_enabled)
         }
-        
+
       _pid ->
         GenServer.call(__MODULE__, :all_flags)
     end
@@ -50,11 +50,12 @@ defmodule EhsEnforcement.Config.FeatureFlags do
   """
   def enable_for_test(flag_name) do
     case GenServer.whereis(__MODULE__) do
-      nil -> 
+      nil ->
         ensure_test_table_exists()
         :ets.insert(@test_overrides_table, {flag_name, true})
         :ok
-      _pid -> 
+
+      _pid ->
         GenServer.call(__MODULE__, {:enable_for_test, flag_name})
     end
   end
@@ -64,11 +65,12 @@ defmodule EhsEnforcement.Config.FeatureFlags do
   """
   def disable_for_test(flag_name) do
     case GenServer.whereis(__MODULE__) do
-      nil -> 
+      nil ->
         ensure_test_table_exists()
         :ets.insert(@test_overrides_table, {flag_name, false})
         :ok
-      _pid -> 
+
+      _pid ->
         GenServer.call(__MODULE__, {:disable_for_test, flag_name})
     end
   end
@@ -78,11 +80,12 @@ defmodule EhsEnforcement.Config.FeatureFlags do
   """
   def reset_test_overrides do
     case GenServer.whereis(__MODULE__) do
-      nil -> 
+      nil ->
         ensure_test_table_exists()
         :ets.delete_all_objects(@test_overrides_table)
         :ok
-      _pid -> 
+
+      _pid ->
         GenServer.call(__MODULE__, :reset_test_overrides)
     end
   end
@@ -102,7 +105,7 @@ defmodule EhsEnforcement.Config.FeatureFlags do
   """
   def validate_flag_name(flag_name) when is_atom(flag_name) do
     known_flags = [:auto_sync, :manual_sync, :export_enabled]
-    
+
     if flag_name in known_flags do
       :ok
     else
@@ -119,7 +122,8 @@ defmodule EhsEnforcement.Config.FeatureFlags do
   """
   def flag_descriptions do
     %{
-      auto_sync: "Automatically sync data from agencies. Configure with AUTO_SYNC_ENABLED environment variable.",
+      auto_sync:
+        "Automatically sync data from agencies. Configure with AUTO_SYNC_ENABLED environment variable.",
       manual_sync: "Allow manual sync operations. This feature is permanently enabled.",
       export_enabled: "Enable data export functionality. This feature is permanently enabled."
     }
@@ -170,6 +174,7 @@ defmodule EhsEnforcement.Config.FeatureFlags do
       manual_sync: get_flag_value(:manual_sync, state.test_overrides),
       export_enabled: get_flag_value(:export_enabled, state.test_overrides)
     }
+
     {:reply, flags, state}
   end
 
@@ -197,7 +202,7 @@ defmodule EhsEnforcement.Config.FeatureFlags do
   end
 
   # Direct access functions for when GenServer isn't started
-  
+
   defp get_flag_value_direct(flag_name) do
     test_overrides = get_test_overrides_from_ets()
     get_flag_value(flag_name, test_overrides)
@@ -210,7 +215,9 @@ defmodule EhsEnforcement.Config.FeatureFlags do
 
   defp get_test_overrides_from_ets do
     case :ets.whereis(@test_overrides_table) do
-      :undefined -> %{}
+      :undefined ->
+        %{}
+
       _tid ->
         @test_overrides_table
         |> :ets.tab2list()
@@ -222,6 +229,7 @@ defmodule EhsEnforcement.Config.FeatureFlags do
     case :ets.whereis(@test_overrides_table) do
       :undefined ->
         :ets.new(@test_overrides_table, [:named_table, :public, :set])
+
       _tid ->
         :ok
     end
@@ -233,18 +241,21 @@ defmodule EhsEnforcement.Config.FeatureFlags do
     cond do
       Map.has_key?(test_overrides, flag_name) ->
         Map.get(test_overrides, flag_name)
-      
+
       flag_name == :auto_sync ->
         parse_boolean(System.get_env("AUTO_SYNC_ENABLED", "false"))
-      
+
       flag_name == :manual_sync ->
-        true  # Permanently enabled
-      
+        # Permanently enabled
+        true
+
       flag_name == :export_enabled ->
-        true  # Permanently enabled
-      
+        # Permanently enabled
+        true
+
       true ->
-        false  # Unknown flags default to false
+        # Unknown flags default to false
+        false
     end
   end
 
@@ -252,16 +263,16 @@ defmodule EhsEnforcement.Config.FeatureFlags do
     cond do
       Map.has_key?(test_overrides, flag_name) ->
         :test_override
-      
+
       flag_name in [:manual_sync, :export_enabled] ->
         :permanent
-      
+
       flag_name == :auto_sync and System.get_env("AUTO_SYNC_ENABLED") ->
         :environment
-      
+
       flag_name == :auto_sync ->
         :default
-      
+
       true ->
         :unknown
     end

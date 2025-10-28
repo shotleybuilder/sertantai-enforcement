@@ -1,6 +1,6 @@
 defmodule EhsEnforcementWeb.Admin.AgencyLive.Edit do
   use EhsEnforcementWeb, :live_view
-  
+
   alias EhsEnforcement.Enforcement.Agency
 
   @impl true
@@ -8,14 +8,14 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.Edit do
     case Ash.get(Agency, id) do
       {:ok, agency} ->
         form = AshPhoenix.Form.for_update(agency, :update, forms: [auto?: false]) |> to_form()
-        
+
         {:ok,
          socket
          |> assign(:agency, agency)
          |> assign(:form, form)
          |> assign(:page_title, "Edit Agency")
          |> assign(:loading, false)}
-      
+
       {:error, _} ->
         {:ok,
          socket
@@ -43,7 +43,7 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.Edit do
          socket
          |> put_flash(:info, "Agency #{agency.name} updated successfully")
          |> push_navigate(to: ~p"/admin/agencies")}
-      
+
       {:error, form} ->
         {:noreply, assign(socket, :form, form)}
     end
@@ -74,7 +74,6 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.Edit do
       _ -> ""
     end
   end
-
 
   defp field_display_name(field) do
     case field do

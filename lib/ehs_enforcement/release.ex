@@ -12,20 +12,20 @@ defmodule EhsEnforcement.Release do
     for repo <- repos() do
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
     end
-    
+
     # Run Ash migrations
     migrate_ash()
   end
 
   def migrate_ash do
     load_app()
-    
+
     IO.puts("Running Ash migrations...")
-    
+
     # In a release environment, Ash migrations should have already been 
     # generated and converted to standard Ecto migrations.
     # The migrate() function above will handle both Ecto and Ash-generated migrations.
-    
+
     # However, we can still run specific Ash data layer operations if needed
     try do
       # Ensure all Ash domains and resources are loaded
@@ -36,7 +36,7 @@ defmodule EhsEnforcement.Release do
         EhsEnforcement.Events,
         EhsEnforcement.Scraping
       ]
-      
+
       # Load and verify all domains
       for domain <- domains do
         try do
@@ -48,16 +48,18 @@ defmodule EhsEnforcement.Release do
             IO.puts("⚠ Could not load Ash domain #{inspect(domain)}: #{inspect(error)}")
         end
       end
-      
+
       IO.puts("✓ Ash domains loaded successfully")
       IO.puts("Note: Ash resource migrations are handled through standard Ecto migrations")
-      
     rescue
-      error -> 
+      error ->
         IO.puts("Warning: Error during Ash domain loading: #{inspect(error)}")
-        IO.puts("This may not affect the migration if Ecto migrations include Ash-generated migrations")
+
+        IO.puts(
+          "This may not affect the migration if Ecto migrations include Ash-generated migrations"
+        )
     end
-    
+
     :ok
   end
 
@@ -68,11 +70,11 @@ defmodule EhsEnforcement.Release do
 
   def status do
     load_app()
-    
+
     IO.puts("=== EHS Enforcement Release Status ===")
     IO.puts("Application: #{@app}")
     IO.puts("Environment: #{Mix.env()}")
-    
+
     # Check database connectivity
     for repo <- repos() do
       case repo.__adapter__.status(repo) do
@@ -81,25 +83,28 @@ defmodule EhsEnforcement.Release do
         status -> IO.puts("? Database #{inspect(repo)}: #{inspect(status)}")
       end
     end
-    
+
     # Check migration status
     IO.puts("\n=== Migration Status ===")
+
     for repo <- repos() do
-      {:ok, _, _} = Ecto.Migrator.with_repo(repo, fn repo ->
-        try do
-          status = Ecto.Migrator.migrations(repo)
-          IO.puts("Repository: #{inspect(repo)}")
-          for {migration_status, version, description} <- status do
-            indicator = if migration_status == :up, do: "✓", else: "✗"
-            IO.puts("  #{indicator} #{version} #{description}")
+      {:ok, _, _} =
+        Ecto.Migrator.with_repo(repo, fn repo ->
+          try do
+            status = Ecto.Migrator.migrations(repo)
+            IO.puts("Repository: #{inspect(repo)}")
+
+            for {migration_status, version, description} <- status do
+              indicator = if migration_status == :up, do: "✓", else: "✗"
+              IO.puts("  #{indicator} #{version} #{description}")
+            end
+          rescue
+            error ->
+              IO.puts("✗ Could not get migration status for #{inspect(repo)}: #{inspect(error)}")
           end
-        rescue
-          error ->
-            IO.puts("✗ Could not get migration status for #{inspect(repo)}: #{inspect(error)}")
-        end
-      end)
+        end)
     end
-    
+
     :ok
   end
 
@@ -117,16 +122,16 @@ defmodule EhsEnforcement.Release do
 
   def create do
     load_app()
-    
+
     for repo <- repos() do
       case repo.__adapter__.storage_up(repo.config) do
-        :ok -> 
+        :ok ->
           IO.puts("✓ Database created successfully for #{inspect(repo)}")
-        
-        {:error, :already_up} -> 
+
+        {:error, :already_up} ->
           IO.puts("✓ Database already exists for #{inspect(repo)}")
-        
-        {:error, term} -> 
+
+        {:error, term} ->
           IO.puts("✗ Error creating database for #{inspect(repo)}: #{inspect(term)}")
           System.halt(1)
       end
@@ -135,9 +140,9 @@ defmodule EhsEnforcement.Release do
 
   def seed do
     load_app()
-    
+
     seed_file = Path.join([Application.app_dir(@app, "priv"), "repo", "seeds.exs"])
-    
+
     if File.exists?(seed_file) do
       Code.eval_file(seed_file)
       IO.puts("Database seeded successfully")

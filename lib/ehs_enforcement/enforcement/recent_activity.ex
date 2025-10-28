@@ -163,18 +163,22 @@ defmodule EhsEnforcement.Enforcement.RecentActivity do
   Formats fine amount for display.
   """
   def format_fine_amount(nil), do: "N/A"
+
   def format_fine_amount(%Decimal{} = amount) do
     "£#{Decimal.to_string(amount, :normal) |> add_commas()}"
   end
+
   def format_fine_amount(amount) when is_binary(amount) do
     case Decimal.parse(amount) do
       {decimal_amount, ""} -> "£#{Decimal.to_string(decimal_amount, :normal) |> add_commas()}"
       _ -> amount
     end
   end
+
   def format_fine_amount(amount) when is_integer(amount) do
     "£#{Integer.to_string(amount) |> add_commas()}"
   end
+
   def format_fine_amount(amount) when is_float(amount) do
     "£#{Float.to_string(amount) |> add_commas()}"
   end

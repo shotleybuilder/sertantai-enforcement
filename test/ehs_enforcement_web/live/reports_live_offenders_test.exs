@@ -7,36 +7,40 @@ defmodule EhsEnforcementWeb.ReportsLive.OffendersTest do
   describe "ReportsLive.Offenders analytics report" do
     setup do
       # Create agencies
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
       # Create offenders in different industries
-      {:ok, manufacturing1} = Enforcement.create_offender(%{
-        name: "Manufacturing Co 1",
-        industry: "Manufacturing",
-        total_cases: 3,
-        total_notices: 2,
-        total_fines: Decimal.new("150000")
-      })
+      {:ok, manufacturing1} =
+        Enforcement.create_offender(%{
+          name: "Manufacturing Co 1",
+          industry: "Manufacturing",
+          total_cases: 3,
+          total_notices: 2,
+          total_fines: Decimal.new("150000")
+        })
 
-      {:ok, manufacturing2} = Enforcement.create_offender(%{
-        name: "Manufacturing Co 2",
-        industry: "Manufacturing",
-        total_cases: 2,
-        total_notices: 1,
-        total_fines: Decimal.new("80000")
-      })
+      {:ok, manufacturing2} =
+        Enforcement.create_offender(%{
+          name: "Manufacturing Co 2",
+          industry: "Manufacturing",
+          total_cases: 2,
+          total_notices: 1,
+          total_fines: Decimal.new("80000")
+        })
 
-      {:ok, chemical} = Enforcement.create_offender(%{
-        name: "Chemical Corp",
-        industry: "Chemical Processing",
-        total_cases: 4,
-        total_notices: 3,
-        total_fines: Decimal.new("200000")
-      })
+      {:ok, chemical} =
+        Enforcement.create_offender(%{
+          name: "Chemical Corp",
+          industry: "Chemical Processing",
+          total_cases: 4,
+          total_notices: 3,
+          total_fines: Decimal.new("200000")
+        })
 
       %{
         hse_agency: hse_agency,
@@ -59,8 +63,10 @@ defmodule EhsEnforcementWeb.ReportsLive.OffendersTest do
 
       # Should show industry breakdown
       assert html =~ "Industry Analysis"
-      assert html =~ "Manufacturing" # Should appear in industry stats
-      assert html =~ "Chemical Processing" # Should appear in industry stats
+      # Should appear in industry stats
+      assert html =~ "Manufacturing"
+      # Should appear in industry stats
+      assert html =~ "Chemical Processing"
     end
 
     test "identifies top offenders by fine amount", %{conn: conn, chemical: chemical} do
@@ -68,7 +74,7 @@ defmodule EhsEnforcementWeb.ReportsLive.OffendersTest do
 
       # Should show top offenders section
       assert html =~ "Top Offenders"
-      
+
       # Chemical corp should appear in top offenders (£200k)
       assert html =~ chemical.name
     end
@@ -78,7 +84,8 @@ defmodule EhsEnforcementWeb.ReportsLive.OffendersTest do
 
       # Should show repeat offender metrics - all test offenders have >2 enforcement actions
       assert html =~ "Repeat Offenders"
-      assert html =~ "100%" # All 3 offenders have >2 total enforcement actions
+      # All 3 offenders have >2 total enforcement actions
+      assert html =~ "100%"
     end
 
     test "exports analytics data to CSV", %{conn: conn} do
@@ -88,7 +95,7 @@ defmodule EhsEnforcementWeb.ReportsLive.OffendersTest do
       view
       |> element("button", "Export Analytics")
       |> render_click()
-      
+
       # CSV export is handled via JS download event
       assert has_element?(view, "button", "Export Analytics")
     end

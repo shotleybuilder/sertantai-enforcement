@@ -7,39 +7,42 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
 
   describe "OffenderCard component" do
     setup do
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
-      {:ok, repeat_offender} = Enforcement.create_offender(%{
-        name: "Repeat Manufacturing Ltd",
-        local_authority: "Manchester City Council",
-        postcode: "M1 1AA",
-        industry: "Manufacturing",
-        business_type: :limited_company,
-        main_activity: "Metal fabrication and processing",
-        total_cases: 6,
-        total_notices: 9,
-        total_fines: Decimal.new("350000"),
-        first_seen_date: ~D[2020-01-15],
-        last_seen_date: ~D[2024-02-10]
-      })
+      {:ok, repeat_offender} =
+        Enforcement.create_offender(%{
+          name: "Repeat Manufacturing Ltd",
+          local_authority: "Manchester City Council",
+          postcode: "M1 1AA",
+          industry: "Manufacturing",
+          business_type: :limited_company,
+          main_activity: "Metal fabrication and processing",
+          total_cases: 6,
+          total_notices: 9,
+          total_fines: Decimal.new("350000"),
+          first_seen_date: ~D[2020-01-15],
+          last_seen_date: ~D[2024-02-10]
+        })
 
-      {:ok, new_offender} = Enforcement.create_offender(%{
-        name: "New Business Ltd",
-        local_authority: "Leeds City Council",
-        postcode: "LS2 2BB",
-        industry: "Retail",
-        business_type: :limited_company,
-        main_activity: "General retail operations",
-        total_cases: 1,
-        total_notices: 1,
-        total_fines: Decimal.new("12000"),
-        first_seen_date: ~D[2023-11-20],
-        last_seen_date: ~D[2023-11-20]
-      })
+      {:ok, new_offender} =
+        Enforcement.create_offender(%{
+          name: "New Business Ltd",
+          local_authority: "Leeds City Council",
+          postcode: "LS2 2BB",
+          industry: "Retail",
+          business_type: :limited_company,
+          main_activity: "General retail operations",
+          total_cases: 1,
+          total_notices: 1,
+          total_fines: Decimal.new("12000"),
+          first_seen_date: ~D[2023-11-20],
+          last_seen_date: ~D[2023-11-20]
+        })
 
       %{
         hse_agency: hse_agency,
@@ -62,25 +65,32 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
       html = render_component(&OffenderCardComponent.render/1, %{offender: offender})
 
       # Should show enforcement metrics
-      assert html =~ "6" # total_cases
-      assert html =~ "9" # total_notices  
-      assert html =~ "£350.0K" # formatted total_fines (compact format)
-      
+      # total_cases
+      assert html =~ "6"
+      # total_notices  
+      assert html =~ "9"
+      # formatted total_fines (compact format)
+      assert html =~ "£350.0K"
+
       # Should have statistics section
       assert html =~ "Cases"
       assert html =~ "Notices"
       assert html =~ "Total Fines"
     end
 
-    test "shows risk level indicator with appropriate styling", %{repeat_offender: repeat_offender, new_offender: new_offender} do
-      repeat_html = render_component(&OffenderCardComponent.render/1, %{offender: repeat_offender})
-      
+    test "shows risk level indicator with appropriate styling", %{
+      repeat_offender: repeat_offender,
+      new_offender: new_offender
+    } do
+      repeat_html =
+        render_component(&OffenderCardComponent.render/1, %{offender: repeat_offender})
+
       # High risk offender (6+ cases, £350k+ fines)
       assert repeat_html =~ "High Risk"
       assert repeat_html =~ ~r/risk-high|bg-red|text-red/
-      
+
       new_html = render_component(&OffenderCardComponent.render/1, %{offender: new_offender})
-      
+
       # Low risk offender (1 case, £12k fines)  
       assert new_html =~ "Low Risk"
       assert new_html =~ ~r/risk-low|bg-green|text-green/
@@ -101,9 +111,10 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
       html = render_component(&OffenderCardComponent.render/1, %{offender: offender})
 
       # Component only shows last_seen_date at bottom
-      assert html =~ "2024" # last_seen_date year
+      # last_seen_date year
+      assert html =~ "2024"
       assert html =~ "Last activity"
-      
+
       # Component shows "Last activity" in the footer
       assert html =~ "Last activity"
     end
@@ -129,54 +140,64 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
 
       # Should have card styling classes
       assert html =~ ~r/card|border|shadow|rounded/
-      
+
       # Should have layout classes
       assert html =~ ~r/flex|grid|p-|m-/
     end
 
-    test "shows industry-specific indicators", %{repeat_offender: repeat_offender, new_offender: new_offender} do
-      manufacturing_html = render_component(&OffenderCardComponent.render/1, %{offender: repeat_offender})
+    test "shows industry-specific indicators", %{
+      repeat_offender: repeat_offender,
+      new_offender: new_offender
+    } do
+      manufacturing_html =
+        render_component(&OffenderCardComponent.render/1, %{offender: repeat_offender})
+
       retail_html = render_component(&OffenderCardComponent.render/1, %{offender: new_offender})
 
       # Component doesn't use data-industry attributes
       # Just displays the industry name in a span
-      
+
       # Shows industry names
       assert manufacturing_html =~ "Manufacturing"
       assert retail_html =~ "Retail"
     end
 
     test "handles missing optional fields gracefully", %{} do
-      {:ok, minimal_offender} = Enforcement.create_offender(%{
-        name: "Minimal Corp",
-        # Only required fields, no optional ones
-        total_cases: 1,
-        total_notices: 0,
-        total_fines: Decimal.new("5000")
-      })
+      {:ok, minimal_offender} =
+        Enforcement.create_offender(%{
+          name: "Minimal Corp",
+          # Only required fields, no optional ones
+          total_cases: 1,
+          total_notices: 0,
+          total_fines: Decimal.new("5000")
+        })
 
       html = render_component(&OffenderCardComponent.render/1, %{offender: minimal_offender})
 
       # Should still render without crashing
       assert html =~ "Minimal Corp"
-      assert html =~ "1" # total_cases
-      assert html =~ "£5.0K" # total_fines (component formats as compact)
-      
+      # total_cases
+      assert html =~ "1"
+      # total_fines (component formats as compact)
+      assert html =~ "£5.0K"
+
       # Should handle nil fields gracefully
       refute html =~ "null"
       refute html =~ "undefined"
     end
 
     test "supports different card sizes", %{repeat_offender: offender} do
-      compact_html = render_component(&OffenderCardComponent.render/1, %{
-        offender: offender, 
-        size: :compact
-      })
-      
-      full_html = render_component(&OffenderCardComponent.render/1, %{
-        offender: offender,
-        size: :full
-      })
+      compact_html =
+        render_component(&OffenderCardComponent.render/1, %{
+          offender: offender,
+          size: :compact
+        })
+
+      full_html =
+        render_component(&OffenderCardComponent.render/1, %{
+          offender: offender,
+          size: :full
+        })
 
       # Should apply size-appropriate classes
       assert compact_html =~ ~r/compact|small|sm/
@@ -188,7 +209,7 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
 
       # Should show location details
       assert html =~ "Manchester City Council"
-      
+
       # Component shows location info via icon
       assert html =~ "svg"
     end
@@ -221,7 +242,7 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
       # Should show various badges/tags
       assert html =~ "High Risk"
       assert html =~ "Repeat Offender"
-      
+
       # Component uses "rounded-full" for pill/badge styling
       assert html =~ "rounded-full"
     end
@@ -235,12 +256,14 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
     end
 
     test "handles very long company names gracefully", %{} do
-      {:ok, long_name_offender} = Enforcement.create_offender(%{
-        name: "Very Long Company Name That Should Be Truncated Manufacturing and Processing Limited Partnership",
-        total_cases: 1,
-        total_notices: 1,
-        total_fines: Decimal.new("10000")
-      })
+      {:ok, long_name_offender} =
+        Enforcement.create_offender(%{
+          name:
+            "Very Long Company Name That Should Be Truncated Manufacturing and Processing Limited Partnership",
+          total_cases: 1,
+          total_notices: 1,
+          total_fines: Decimal.new("10000")
+        })
 
       html = render_component(&OffenderCardComponent.render/1, %{offender: long_name_offender})
 
@@ -252,26 +275,29 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
 
   describe "OffenderCard component responsive design" do
     setup do
-      {:ok, offender} = Enforcement.create_offender(%{
-        name: "Responsive Corp",
-        local_authority: "Test Council",
-        industry: "Technology",
-        total_cases: 2,
-        total_notices: 3,
-        total_fines: Decimal.new("85000")
-      })
+      {:ok, offender} =
+        Enforcement.create_offender(%{
+          name: "Responsive Corp",
+          local_authority: "Test Council",
+          industry: "Technology",
+          total_cases: 2,
+          total_notices: 3,
+          total_fines: Decimal.new("85000")
+        })
 
       %{offender: offender}
     end
 
     test "adapts layout for mobile screens", %{offender: offender} do
-      html = render_component(&OffenderCardComponent.render/1, %{
-        offender: offender,
-        mobile_optimized: true
-      })
+      html =
+        render_component(&OffenderCardComponent.render/1, %{
+          offender: offender,
+          mobile_optimized: true
+        })
 
       # Should have mobile-friendly classes
-      assert html =~ ~r/sm:|md:|lg:/ # Tailwind responsive prefixes
+      # Tailwind responsive prefixes
+      assert html =~ ~r/sm:|md:|lg:/
     end
 
     test "stacks information vertically on small screens", %{offender: offender} do
@@ -279,7 +305,8 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
 
       # Component uses grid layout for statistics
       assert html =~ "grid"
-      assert html =~ "grid-cols-3" # Statistics grid
+      # Statistics grid
+      assert html =~ "grid-cols-3"
     end
 
     test "adjusts text sizes for readability", %{offender: offender} do
@@ -292,22 +319,24 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
 
   describe "OffenderCard component theming" do
     setup do
-      {:ok, offender} = Enforcement.create_offender(%{
-        name: "Themed Corp",
-        industry: "Construction",
-        total_cases: 3,
-        total_notices: 2,
-        total_fines: Decimal.new("95000")
-      })
+      {:ok, offender} =
+        Enforcement.create_offender(%{
+          name: "Themed Corp",
+          industry: "Construction",
+          total_cases: 3,
+          total_notices: 2,
+          total_fines: Decimal.new("95000")
+        })
 
       %{offender: offender}
     end
 
     test "supports dark mode styling", %{offender: offender} do
-      html = render_component(&OffenderCardComponent.render/1, %{
-        offender: offender,
-        theme: :dark
-      })
+      html =
+        render_component(&OffenderCardComponent.render/1, %{
+          offender: offender,
+          theme: :dark
+        })
 
       # Component doesn't currently support theme parameter
       assert html =~ "Themed Corp"
@@ -321,10 +350,11 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
     end
 
     test "supports custom CSS classes", %{offender: offender} do
-      html = render_component(&OffenderCardComponent.render/1, %{
-        offender: offender,
-        class: "custom-card-class"
-      })
+      html =
+        render_component(&OffenderCardComponent.render/1, %{
+          offender: offender,
+          class: "custom-card-class"
+        })
 
       # Component doesn't support custom classes in current implementation
       # It has fixed styling

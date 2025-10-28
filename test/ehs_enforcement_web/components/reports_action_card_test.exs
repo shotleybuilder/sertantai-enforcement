@@ -6,19 +6,19 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
 
   describe "reports_action_card/1" do
     test "renders reports action card with default state" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Check card structure
       assert html =~ "REPORTS & ANALYTICS"
       assert html =~ "📊"
       assert html =~ "green"
-      
+
       # Check metrics
       assert html =~ "Saved Reports"
       assert html =~ "Last Export"
       assert html =~ "Data Available"
-      
+
       # Check actions
       assert html =~ "Generate"
       assert html =~ "Report"
@@ -29,21 +29,21 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
     end
 
     test "renders with loading state" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{loading: true})
 
       assert html =~ "REPORTS & ANALYTICS"
     end
 
     test "renders with custom CSS class" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{class: "custom-class"})
 
       assert html =~ "REPORTS & ANALYTICS"
     end
 
     test "displays correct theme colors" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Should use green theme
@@ -54,7 +54,7 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
     end
 
     test "includes proper accessibility attributes" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       assert html =~ "aria-label=\"Generate custom report with filtering options\""
@@ -63,19 +63,20 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
 
     test "calculates metrics correctly" do
       # Test that the component renders without crashing (metrics calculation is internal)
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Should display numeric values and proper formatting
-      assert html =~ ~r/\d+/  # Should contain numbers
+      # Should contain numbers
+      assert html =~ ~r/\d+/
       assert html =~ "Saved Reports"
-      assert html =~ "Last Export" 
+      assert html =~ "Last Export"
       assert html =~ "Data Available"
     end
 
     test "handles metric calculation errors gracefully" do
       # Even with calculation errors, component should still render
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Should always show the basic structure
@@ -86,7 +87,7 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
     end
 
     test "formats numbers correctly" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Should format the saved reports count (currently hardcoded to 5)
@@ -94,7 +95,7 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
     end
 
     test "formats time display correctly" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Should show a time-based display for last export
@@ -103,7 +104,7 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
     end
 
     test "formats data size display correctly" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Should show data size with appropriate units
@@ -111,38 +112,38 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
     end
 
     test "renders action buttons with proper styling" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Generate report button (primary green)
       assert html =~ "bg-green-600 hover:bg-green-700 text-white"
-      
+
       # Export data button (secondary gray)
       assert html =~ "bg-gray-600 hover:bg-gray-700 text-white"
     end
 
     test "includes proper button content structure" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Check button text structure
       assert html =~ ~r/Generate.*Report/s
       assert html =~ ~r/Export.*Data/s
-      
+
       # Check that buttons have proper block/inline structure
       assert html =~ "text-sm font-medium"
       assert html =~ "text-xs"
     end
 
     test "includes transition effects" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       assert html =~ "transition-colors duration-200"
     end
 
     test "renders metric items with proper structure" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Check metric item structure
@@ -151,7 +152,7 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
     end
 
     test "uses dashboard action card component correctly" do
-      html = 
+      html =
         render_component(&ReportsActionCard.reports_action_card/1, %{})
 
       # Should delegate to dashboard_action_card with correct props
@@ -161,8 +162,11 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
     end
 
     test "passes through loading and class attributes" do
-      html = 
-        render_component(&ReportsActionCard.reports_action_card/1, %{loading: true, class: "test-class"})
+      html =
+        render_component(&ReportsActionCard.reports_action_card/1, %{
+          loading: true,
+          class: "test-class"
+        })
 
       assert html =~ "REPORTS & ANALYTICS"
     end
@@ -172,7 +176,7 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
     test "gracefully handles missing Enforcement module" do
       # Test that the component doesn't crash if Enforcement module is unavailable
       # This is difficult to test directly, but the component should use try/rescue
-      
+
       # Should not raise an exception
       html = render_component(&ReportsActionCard.reports_action_card/1, %{})
       assert html =~ "REPORTS & ANALYTICS"
@@ -182,7 +186,7 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCardTest do
       # The component should handle errors in metric calculation internally
       # We can only test that it renders without crashing
       html = render_component(&ReportsActionCard.reports_action_card/1, %{})
-      
+
       # Should always show the basic structure even if calculations fail
       assert html =~ "REPORTS & ANALYTICS"
       assert html =~ "Saved Reports"

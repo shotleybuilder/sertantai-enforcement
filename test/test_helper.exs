@@ -7,7 +7,8 @@ ExUnit.start(
   max_cases: 2,
 
   # Increase timeout for heavy operations (metrics refresh, complex queries)
-  timeout: 120_000,  # 2 minutes
+  # 2 minutes
+  timeout: 120_000,
 
   # Exclude slow and integration tests by default for faster development cycles
   # Note: :heavy tests (like dashboard) are INCLUDED by default with limited max_cases

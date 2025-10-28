@@ -12,17 +12,23 @@ defmodule EhsEnforcement.Legislation.Taxa.Options do
   end
 
   def set_workflow_opts(opts) do
-    Map.merge(%{
-      filesave?: false,
-      taxa_workflow: []
-    }, Enum.into(opts, %{}))
+    Map.merge(
+      %{
+        filesave?: false,
+        taxa_workflow: []
+      },
+      Enum.into(opts, %{})
+    )
   end
 
   def patch(opts) do
-    Map.merge(%{
-      base_id: "",
-      table_id: "",
-      patch?: false
-    }, opts)
+    Map.merge(
+      %{
+        base_id: "",
+        table_id: "",
+        patch?: false
+      },
+      opts
+    )
   end
 end

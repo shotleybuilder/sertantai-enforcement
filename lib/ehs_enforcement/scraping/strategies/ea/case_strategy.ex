@@ -47,7 +47,8 @@ defmodule EhsEnforcement.Scraping.Strategies.EA.CaseStrategy do
   def validate_params(params) do
     with {:ok, date_from} <- validate_date_from(params[:date_from] || params["date_from"]),
          {:ok, date_to} <- validate_date_to(params[:date_to] || params["date_to"], date_from),
-         {:ok, action_types} <- validate_action_types(params[:action_types] || params["action_types"]) do
+         {:ok, action_types} <-
+           validate_action_types(params[:action_types] || params["action_types"]) do
       {:ok,
        %{
          date_from: date_from,
@@ -83,7 +84,7 @@ defmodule EhsEnforcement.Scraping.Strategies.EA.CaseStrategy do
     cases_processed = session.cases_processed || 0
 
     if cases_found > 0 do
-      (cases_processed / cases_found) * 100.0
+      cases_processed / cases_found * 100.0
     else
       0.0
     end
@@ -91,7 +92,7 @@ defmodule EhsEnforcement.Scraping.Strategies.EA.CaseStrategy do
 
   @impl true
   def calculate_progress(%{cases_processed: processed, cases_found: found}) when found > 0 do
-    (processed / found) * 100.0
+    processed / found * 100.0
   end
 
   @impl true

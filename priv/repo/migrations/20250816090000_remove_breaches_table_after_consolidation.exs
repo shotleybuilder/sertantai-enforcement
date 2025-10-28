@@ -1,6 +1,6 @@
 defmodule EhsEnforcement.Repo.Migrations.RemoveBreachesTableAfterConsolidation do
   use Ecto.Migration
-  
+
   def up do
     # Check if breaches table exists first
     if table_exists?(:breaches) do
@@ -19,14 +19,24 @@ defmodule EhsEnforcement.Repo.Migrations.RemoveBreachesTableAfterConsolidation d
       add :breach_description, :text
       add :legislation_reference, :text
       add :legislation_type, :text
-      add :inserted_at, :utc_datetime_usec, null: false, default: fragment("(now() AT TIME ZONE 'utc')")
-      
-      add :case_id, references(:cases, column: :id, name: "breaches_case_id_fkey", type: :uuid, prefix: "public"), null: false
+
+      add :inserted_at, :utc_datetime_usec,
+        null: false,
+        default: fragment("(now() AT TIME ZONE 'utc')")
+
+      add :case_id,
+          references(:cases,
+            column: :id,
+            name: "breaches_case_id_fkey",
+            type: :uuid,
+            prefix: "public"
+          ),
+          null: false
     end
-    
+
     IO.puts("⚠️  Breaches table structure recreated for rollback")
   end
-  
+
   defp table_exists?(table_name) do
     query = """
     SELECT EXISTS (
@@ -35,7 +45,7 @@ defmodule EhsEnforcement.Repo.Migrations.RemoveBreachesTableAfterConsolidation d
       AND table_name = '#{table_name}'
     )
     """
-    
+
     case Ecto.Adapters.SQL.query(EhsEnforcement.Repo, query, []) do
       {:ok, %{rows: [[true]]}} -> true
       _ -> false

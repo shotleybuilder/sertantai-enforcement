@@ -4,37 +4,41 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
   import ExUnit.CaptureLog
 
   alias EhsEnforcement.Enforcement
-  
+
   require Ash.Query
   import Ash.Expr
 
   describe "Manual case entry form" do
     setup do
       # Create test agencies for form options
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
-      {:ok, ea_agency} = Enforcement.create_agency(%{
-        code: :ea,
-        name: "Environment Agency",
-        enabled: true
-      })
+      {:ok, ea_agency} =
+        Enforcement.create_agency(%{
+          code: :ea,
+          name: "Environment Agency",
+          enabled: true
+        })
 
-      {:ok, disabled_agency} = Enforcement.create_agency(%{
-        code: :orr,
-        name: "Office of Rail Regulation",
-        enabled: false
-      })
+      {:ok, disabled_agency} =
+        Enforcement.create_agency(%{
+          code: :orr,
+          name: "Office of Rail Regulation",
+          enabled: false
+        })
 
       # Create existing offenders for testing selection
-      {:ok, existing_offender} = Enforcement.create_offender(%{
-        name: "Existing Manufacturing Ltd",
-        local_authority: "Test Council",
-        postcode: "EX1 1ST"
-      })
+      {:ok, existing_offender} =
+        Enforcement.create_offender(%{
+          name: "Existing Manufacturing Ltd",
+          local_authority: "Test Council",
+          postcode: "EX1 1ST"
+        })
 
       %{
         agencies: [hse_agency, ea_agency, disabled_agency],
@@ -50,11 +54,11 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
 
       # Should have case entry form
       assert has_element?(view, "form[phx-submit='save']") or
-             has_element?(view, "form[phx-submit='create_case']")
+               has_element?(view, "form[phx-submit='create_case']")
 
       # Should have form test ID
       assert has_element?(view, "[data-testid='case-form']") or
-             html =~ "case-form"
+               html =~ "case-form"
     end
 
     test "renders all required form fields", %{conn: conn, agencies: agencies} do
@@ -78,16 +82,21 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
 
       # Breaches description
       assert has_element?(view, "textarea[name='case[offence_breaches]']") or
-             has_element?(view, "input[name='case[offence_breaches]']")
+               has_element?(view, "input[name='case[offence_breaches]']")
+
       assert html =~ "Breaches" or html =~ "Violations" or html =~ "Description"
 
       # Submit button
       assert has_element?(view, "button[type='submit']") or
-             has_element?(view, "input[type='submit']")
+               has_element?(view, "input[type='submit']")
+
       assert html =~ "Save" or html =~ "Create" or html =~ "Submit"
     end
 
-    test "populates agency dropdown with enabled agencies only", %{conn: conn, agencies: [hse, ea, disabled]} do
+    test "populates agency dropdown with enabled agencies only", %{
+      conn: conn,
+      agencies: [hse, ea, disabled]
+    } do
       {:ok, view, html} = live(conn, "/cases/new")
 
       # Should show enabled agencies
@@ -105,13 +114,16 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       assert html =~ "Select Agency" or html =~ "Choose Agency" or html =~ "<option value=\"\""
     end
 
-    test "provides offender selection and creation options", %{conn: conn, existing_offender: existing_offender} do
+    test "provides offender selection and creation options", %{
+      conn: conn,
+      existing_offender: existing_offender
+    } do
       {:ok, view, html} = live(conn, "/cases/new")
 
       # Should have option to select existing offender
       assert has_element?(view, "select[name='case[offender_id]']") or
-             has_element?(view, "input[name='offender_search']") or
-             html =~ "Select Offender" or html =~ "Search Offender"
+               has_element?(view, "input[name='offender_search']") or
+               html =~ "Select Offender" or html =~ "Search Offender"
 
       # Should have option to create new offender
       assert html =~ "New Offender" or html =~ "Create Offender" or html =~ "Add New"
@@ -134,36 +146,40 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
 
       # Should show new offender fields
       assert updated_html =~ "Company Name" or updated_html =~ "Offender Name"
+
       assert has_element?(view, "input[name='offender[name]']") or
-             has_element?(view, "input[name='case[offender_name]']")
+               has_element?(view, "input[name='case[offender_name]']")
 
       # Should show location fields
       assert updated_html =~ "Local Authority" or updated_html =~ "Council"
+
       assert has_element?(view, "input[name='offender[local_authority]']") or
-             has_element?(view, "input[name='case[offender_local_authority]']")
+               has_element?(view, "input[name='case[offender_local_authority]']")
 
       # Should show postcode field
       assert updated_html =~ "Postcode" or updated_html =~ "Postal Code"
+
       assert has_element?(view, "input[name='offender[postcode]']") or
-             has_element?(view, "input[name='case[offender_postcode]']")
+               has_element?(view, "input[name='case[offender_postcode]']")
     end
 
     test "validates required fields on submission", %{conn: conn, agencies: [hse_agency | _]} do
       {:ok, view, _html} = live(conn, "/cases/new")
 
       # Submit empty form
-      log = capture_log(fn ->
-        render_submit(view, "save", %{"case" => %{}})
-      end)
+      log =
+        capture_log(fn ->
+          render_submit(view, "save", %{"case" => %{}})
+        end)
 
       # Should show validation errors
       validation_html = render(view)
 
       # Should indicate required fields
-      assert validation_html =~ "required" or 
-             validation_html =~ "can't be blank" or
-             validation_html =~ "is required" or
-             validation_html =~ "error"
+      assert validation_html =~ "required" or
+               validation_html =~ "can't be blank" or
+               validation_html =~ "is required" or
+               validation_html =~ "error"
 
       # Form should still be displayed
       assert has_element?(view, "form")
@@ -184,23 +200,25 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       })
 
       invalid_format_html = render(view)
-      
+
       # Should show format validation error
-      assert invalid_format_html =~ "invalid" or 
-             invalid_format_html =~ "format" or
-             invalid_format_html =~ "pattern"
+      assert invalid_format_html =~ "invalid" or
+               invalid_format_html =~ "format" or
+               invalid_format_html =~ "pattern"
 
       # Create existing case for uniqueness test
       {:ok, existing_offender} = Enforcement.create_offender(%{name: "Test Corp"})
-      {:ok, _existing_case} = Enforcement.create_case(%{
-        regulator_id: "HSE-DUPLICATE-001",
-        agency_id: hse_agency.id,
-        offender_id: existing_offender.id,
-        offence_action_date: ~D[2024-01-01],
-        offence_fine: Decimal.new("1000.00"),
-        offence_breaches: "Existing breach",
-        last_synced_at: DateTime.utc_now()
-      })
+
+      {:ok, _existing_case} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-DUPLICATE-001",
+          agency_id: hse_agency.id,
+          offender_id: existing_offender.id,
+          offence_action_date: ~D[2024-01-01],
+          offence_fine: Decimal.new("1000.00"),
+          offence_breaches: "Existing breach",
+          last_synced_at: DateTime.utc_now()
+        })
 
       # Test duplicate regulator ID
       render_submit(view, "save", %{
@@ -214,11 +232,11 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       })
 
       duplicate_html = render(view)
-      
+
       # Should show uniqueness validation error
-      assert duplicate_html =~ "already exists" or 
-             duplicate_html =~ "duplicate" or
-             duplicate_html =~ "taken"
+      assert duplicate_html =~ "already exists" or
+               duplicate_html =~ "duplicate" or
+               duplicate_html =~ "taken"
     end
 
     test "validates fine amount format and range", %{conn: conn, agencies: [hse_agency | _]} do
@@ -236,7 +254,9 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       })
 
       negative_html = render(view)
-      assert negative_html =~ "must be" or negative_html =~ "positive" or negative_html =~ "greater"
+
+      assert negative_html =~ "must be" or negative_html =~ "positive" or
+               negative_html =~ "greater"
 
       # Test invalid fine format
       render_submit(view, "save", %{
@@ -272,7 +292,7 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
 
       # Test future date
       future_date = Date.add(Date.utc_today(), 30)
-      
+
       render_submit(view, "save", %{
         "case" => %{
           "regulator_id" => "HSE-DATE-001",
@@ -284,11 +304,11 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       })
 
       future_html = render(view)
-      
+
       # Should prevent future dates
-      assert future_html =~ "future" or 
-             future_html =~ "today" or
-             future_html =~ "past"
+      assert future_html =~ "future" or
+               future_html =~ "today" or
+               future_html =~ "past"
 
       # Test invalid date format
       render_submit(view, "save", %{
@@ -328,20 +348,22 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
 
       # Should redirect to case index or show success
       success_html = render(view)
-      
-      assert success_html =~ "created" or 
-             success_html =~ "success" or
-             success_html =~ "saved" or
-             redirected_to(view) =~ "/cases"
+
+      assert success_html =~ "created" or
+               success_html =~ "success" or
+               success_html =~ "saved" or
+               redirected_to(view) =~ "/cases"
 
       # Case should be created in database
       case_count_after = Enforcement.count_cases!()
       assert case_count_after == case_count_before + 1
 
       # Verify case data  
-      {:ok, cases} = EhsEnforcement.Enforcement.Case 
-                     |> Ash.Query.filter(regulator_id == "HSE-MANUAL-001") 
-                     |> Ash.read()
+      {:ok, cases} =
+        EhsEnforcement.Enforcement.Case
+        |> Ash.Query.filter(regulator_id == "HSE-MANUAL-001")
+        |> Ash.read()
+
       created_case = List.first(cases)
       assert created_case != nil
       assert created_case.agency_id == hse_agency.id
@@ -374,23 +396,31 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       assert offender_count_after == offender_count_before + 1
 
       # Verify offender data
-      {:ok, offenders} = EhsEnforcement.Enforcement.Offender 
-                        |> Ash.Query.filter(name == "Brand New Company PLC") 
-                        |> Ash.read()
+      {:ok, offenders} =
+        EhsEnforcement.Enforcement.Offender
+        |> Ash.Query.filter(name == "Brand New Company PLC")
+        |> Ash.read()
+
       created_offender = List.first(offenders)
       assert created_offender != nil
       assert created_offender.local_authority == "New Council"
       assert created_offender.postcode == "BN1 1EW"
 
       # Case should be linked to new offender
-      {:ok, cases} = EhsEnforcement.Enforcement.Case 
-                     |> Ash.Query.filter(regulator_id == "HSE-NEWOFF-001") 
-                     |> Ash.read()
+      {:ok, cases} =
+        EhsEnforcement.Enforcement.Case
+        |> Ash.Query.filter(regulator_id == "HSE-NEWOFF-001")
+        |> Ash.read()
+
       created_case = List.first(cases)
       assert created_case.offender_id == created_offender.id
     end
 
-    test "uses existing offender when selected", %{conn: conn, agencies: [hse_agency | _], existing_offender: existing_offender} do
+    test "uses existing offender when selected", %{
+      conn: conn,
+      agencies: [hse_agency | _],
+      existing_offender: existing_offender
+    } do
       {:ok, view, _html} = live(conn, "/cases/new")
 
       render_submit(view, "save", %{
@@ -405,9 +435,11 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       })
 
       # Should not create new offender
-      {:ok, cases} = EhsEnforcement.Enforcement.Case 
-                     |> Ash.Query.filter(regulator_id == "HSE-EXISTING-001") 
-                     |> Ash.read()
+      {:ok, cases} =
+        EhsEnforcement.Enforcement.Case
+        |> Ash.Query.filter(regulator_id == "HSE-EXISTING-001")
+        |> Ash.read()
+
       created_case = List.first(cases)
       assert created_case.offender_id == existing_offender.id
     end
@@ -417,8 +449,8 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
 
       # Should have cancel button or link
       assert has_element?(view, "a[href='/cases']") or
-             has_element?(view, "button[phx-click='cancel']") or
-             html =~ "Cancel" or html =~ "Back"
+               has_element?(view, "button[phx-click='cancel']") or
+               html =~ "Cancel" or html =~ "Back"
 
       # Clicking cancel should navigate away
       if has_element?(view, "button[phx-click='cancel']") do
@@ -427,7 +459,10 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       end
     end
 
-    test "provides field validation feedback in real-time", %{conn: conn, agencies: [hse_agency | _]} do
+    test "provides field validation feedback in real-time", %{
+      conn: conn,
+      agencies: [hse_agency | _]
+    } do
       {:ok, view, _html} = live(conn, "/cases/new")
 
       # Test real-time validation on blur or change
@@ -450,7 +485,10 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       end
     end
 
-    test "auto-populates fields based on agency selection", %{conn: conn, agencies: [hse_agency, ea_agency]} do
+    test "auto-populates fields based on agency selection", %{
+      conn: conn,
+      agencies: [hse_agency, ea_agency]
+    } do
       {:ok, view, _html} = live(conn, "/cases/new")
 
       # Select HSE agency
@@ -520,18 +558,20 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
     test "handles database constraint violations gracefully", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/cases/new")
 
-      log = capture_log(fn ->
-        # Submit data that might cause constraint violations
-        render_submit(view, "save", %{
-          "case" => %{
-            "regulator_id" => "", # Empty required field
-            "agency_id" => "invalid-uuid",
-            "offence_action_date" => "2024-01-15",
-            "offence_fine" => "1000.00",
-            "offence_breaches" => "Test"
-          }
-        })
-      end)
+      log =
+        capture_log(fn ->
+          # Submit data that might cause constraint violations
+          render_submit(view, "save", %{
+            "case" => %{
+              # Empty required field
+              "regulator_id" => "",
+              "agency_id" => "invalid-uuid",
+              "offence_action_date" => "2024-01-15",
+              "offence_fine" => "1000.00",
+              "offence_breaches" => "Test"
+            }
+          })
+        end)
 
       # Should handle gracefully
       assert Process.alive?(view.pid)
@@ -544,15 +584,16 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
 
       # Should show loading state during submission
       if has_element?(view, "button[type='submit']") do
-        submit_html = render_submit(view, "save", %{
-          "case" => %{
-            "regulator_id" => "HSE-TIMEOUT-001",
-            "agency_id" => "some-id",
-            "offence_action_date" => "2024-01-15",
-            "offence_fine" => "1000.00",
-            "offence_breaches" => "Timeout test"
-          }
-        })
+        submit_html =
+          render_submit(view, "save", %{
+            "case" => %{
+              "regulator_id" => "HSE-TIMEOUT-001",
+              "agency_id" => "some-id",
+              "offence_action_date" => "2024-01-15",
+              "offence_fine" => "1000.00",
+              "offence_breaches" => "Timeout test"
+            }
+          })
 
         # Should handle submission gracefully
         assert Process.alive?(view.pid)
@@ -565,11 +606,16 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       # Submit invalid data
       render_submit(view, "save", %{
         "case" => %{
-          "regulator_id" => "X", # Too short
-          "agency_id" => "",     # Required
-          "offence_action_date" => "2025-12-31", # Future date
-          "offence_fine" => "-100", # Negative
-          "offence_breaches" => "" # Empty
+          # Too short
+          "regulator_id" => "X",
+          # Required
+          "agency_id" => "",
+          # Future date
+          "offence_action_date" => "2025-12-31",
+          # Negative
+          "offence_fine" => "-100",
+          # Empty
+          "offence_breaches" => ""
         }
       })
 
@@ -586,11 +632,16 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       # Submit form with some valid and some invalid data
       render_submit(view, "save", %{
         "case" => %{
-          "regulator_id" => "", # Invalid - empty
-          "agency_id" => hse_agency.id, # Valid
-          "offence_action_date" => "2024-01-15", # Valid
-          "offence_fine" => "1000.00", # Valid
-          "offence_breaches" => "Valid breach description" # Valid
+          # Invalid - empty
+          "regulator_id" => "",
+          # Valid
+          "agency_id" => hse_agency.id,
+          # Valid
+          "offence_action_date" => "2024-01-15",
+          # Valid
+          "offence_fine" => "1000.00",
+          # Valid
+          "offence_breaches" => "Valid breach description"
         }
       })
 
@@ -600,7 +651,7 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       assert preserved_html =~ "2024-01-15"
       assert preserved_html =~ "1000.00"
       assert preserved_html =~ "Valid breach description"
-      
+
       # Agency should still be selected
       assert preserved_html =~ "selected" or preserved_html =~ hse_agency.id
     end
@@ -637,9 +688,9 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       {:ok, view, html} = live(conn, "/cases/new")
 
       # Should have ARIA attributes
-      assert html =~ "aria-label" or 
-             html =~ "aria-describedby" or
-             html =~ "aria-required"
+      assert html =~ "aria-label" or
+               html =~ "aria-describedby" or
+               html =~ "aria-required"
 
       # Error states should be announced
       if html =~ "error" do
@@ -657,7 +708,8 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       assert html =~ "Submit" or html =~ "Save" or html =~ "Create"
 
       # Should have proper form styling
-      assert html =~ "class=" # Should use CSS classes
+      # Should use CSS classes
+      assert html =~ "class="
     end
   end
 
@@ -678,9 +730,9 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       end)
 
       start_time = System.monotonic_time(:millisecond)
-      
+
       {:ok, view, html} = live(conn, "/cases/new")
-      
+
       end_time = System.monotonic_time(:millisecond)
       load_time = end_time - start_time
 
@@ -689,7 +741,8 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
 
       # Should display form properly
       assert html =~ "New Case"
-      assert has_element?(view, "select") # Agency dropdown
+      # Agency dropdown
+      assert has_element?(view, "select")
     end
 
     test "handles form submission efficiently", %{conn: conn, agencies: [hse_agency | _]} do

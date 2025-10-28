@@ -78,10 +78,11 @@ defmodule EhsEnforcementWeb.DashboardLive do
     case load_metrics_for_combination(socket.assigns.time_period, socket.assigns.filter_agency) do
       {:ok, metrics} ->
         # Use materialized recent_activity (top 100 items from metrics)
-        filtered_activity = filter_recent_activity_by_type(
-          metrics.recent_activity,
-          socket.assigns.recent_activity_filter
-        )
+        filtered_activity =
+          filter_recent_activity_by_type(
+            metrics.recent_activity,
+            socket.assigns.recent_activity_filter
+          )
 
         # Apply client-side pagination (100 items max)
         total_count = length(filtered_activity)
@@ -89,9 +90,11 @@ defmodule EhsEnforcementWeb.DashboardLive do
         valid_page = max(1, min(recent_activity_page, max_page))
 
         offset = (valid_page - 1) * socket.assigns.recent_activity_page_size
-        paginated_activity = filtered_activity
-        |> Enum.drop(offset)
-        |> Enum.take(socket.assigns.recent_activity_page_size)
+
+        paginated_activity =
+          filtered_activity
+          |> Enum.drop(offset)
+          |> Enum.take(socket.assigns.recent_activity_page_size)
 
         {:noreply,
          socket
@@ -104,7 +107,10 @@ defmodule EhsEnforcementWeb.DashboardLive do
       {:error, :not_found} ->
         # Graceful degradation - metrics not yet calculated
         require Logger
-        Logger.warning("No cached metrics found for period=#{socket.assigns.time_period}, agency=#{socket.assigns.filter_agency}")
+
+        Logger.warning(
+          "No cached metrics found for period=#{socket.assigns.time_period}, agency=#{socket.assigns.filter_agency}"
+        )
 
         {:noreply,
          socket
@@ -129,8 +135,13 @@ defmodule EhsEnforcementWeb.DashboardLive do
   @impl true
   def handle_event("recent_activity_next_page", _params, socket) do
     current_page = socket.assigns.recent_activity_page
-    max_page = calculate_max_page(socket.assigns.total_recent_cases, socket.assigns.recent_activity_page_size)
-    
+
+    max_page =
+      calculate_max_page(
+        socket.assigns.total_recent_cases,
+        socket.assigns.recent_activity_page_size
+      )
+
     if current_page < max_page do
       next_page = current_page + 1
       {:noreply, push_patch(socket, to: ~p"/dashboard?recent_activity_page=#{next_page}")}
@@ -142,7 +153,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
   @impl true
   def handle_event("recent_activity_prev_page", _params, socket) do
     current_page = socket.assigns.recent_activity_page
-    
+
     if current_page > 1 do
       prev_page = current_page - 1
       {:noreply, push_patch(socket, to: ~p"/dashboard?recent_activity_page=#{prev_page}")}
@@ -172,7 +183,6 @@ defmodule EhsEnforcementWeb.DashboardLive do
      |> push_patch(to: ~p"/dashboard")}
   end
 
-
   @impl true
   def handle_event("browse_recent_cases", _params, socket) do
     # Use current time period for filtering
@@ -184,9 +194,8 @@ defmodule EhsEnforcementWeb.DashboardLive do
   def handle_event("search_cases", _params, socket) do
     # Navigate to cases page with recent filter based on current time period
     time_period = Map.get(socket.assigns, :time_period, "month")
-    {:noreply, push_navigate(socket, to: "/cases?filter=recent&period=#{time_period}")}  
+    {:noreply, push_navigate(socket, to: "/cases?filter=recent&period=#{time_period}")}
   end
-
 
   @impl true
   def handle_event("browse_recent_notices", _params, socket) do
@@ -197,15 +206,13 @@ defmodule EhsEnforcementWeb.DashboardLive do
 
   @impl true
   def handle_event("search_notices", _params, socket) do
-    {:noreply, push_navigate(socket, to: "/notices?filter=search")}  
+    {:noreply, push_navigate(socket, to: "/notices?filter=search")}
   end
-
 
   @impl true
   def handle_event("navigate_to_new_case", _params, socket) do
     {:noreply, push_navigate(socket, to: "/cases/new")}
   end
-
 
   @impl true
   def handle_event("browse_top_offenders", _params, socket) do
@@ -232,16 +239,16 @@ defmodule EhsEnforcementWeb.DashboardLive do
     {:noreply, push_navigate(socket, to: "/legislation?filter=search")}
   end
 
-
   @impl true
   def handle_info({:sync_progress, agency_code, progress}, socket) do
-    sync_status = Map.update(
-      socket.assigns.sync_status,
-      agency_code,
-      %{status: "syncing", progress: progress},
-      fn status -> %{status | progress: progress} end
-    )
-    
+    sync_status =
+      Map.update(
+        socket.assigns.sync_status,
+        agency_code,
+        %{status: "syncing", progress: progress},
+        fn status -> %{status | progress: progress} end
+      )
+
     {:noreply, assign(socket, :sync_status, sync_status)}
   end
 
@@ -254,7 +261,8 @@ defmodule EhsEnforcementWeb.DashboardLive do
   @impl true
   def handle_info({:sync_complete, agency_code}, socket) do
     # Reload data after sync - trigger handle_params via push_patch
-    sync_status = Map.put(socket.assigns.sync_status, agency_code, %{status: "completed", progress: 100})
+    sync_status =
+      Map.put(socket.assigns.sync_status, agency_code, %{status: "completed", progress: 100})
 
     {:noreply,
      socket
@@ -264,8 +272,9 @@ defmodule EhsEnforcementWeb.DashboardLive do
 
   @impl true
   def handle_info({:sync_error, agency_code, error_message}, socket) do
-    sync_status = Map.put(socket.assigns.sync_status, agency_code, %{status: "error", error: error_message})
-    
+    sync_status =
+      Map.put(socket.assigns.sync_status, agency_code, %{status: "error", error: error_message})
+
     {:noreply, assign(socket, :sync_status, sync_status)}
   end
 
@@ -313,15 +322,20 @@ defmodule EhsEnforcementWeb.DashboardLive do
       |> Ash.Query.filter(is_nil(legislation_id))
 
     # Add agency filter
-    query = if filter_agency do
-      Ash.Query.filter(query, agency_id == ^filter_agency)
-    else
-      Ash.Query.filter(query, is_nil(agency_id))
-    end
+    query =
+      if filter_agency do
+        Ash.Query.filter(query, agency_id == ^filter_agency)
+      else
+        Ash.Query.filter(query, is_nil(agency_id))
+      end
 
     case Ash.read(query) do
-      {:ok, [metric]} -> {:ok, metric}
-      {:ok, []} -> {:error, :not_found}
+      {:ok, [metric]} ->
+        {:ok, metric}
+
+      {:ok, []} ->
+        {:error, :not_found}
+
       {:error, error} ->
         require Logger
         Logger.error("Failed to load metrics: #{inspect(error)}")
@@ -337,6 +351,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
       _ -> :month
     end
   end
+
   defp convert_period_to_atom(period) when is_atom(period), do: period
 
   defp filter_recent_activity_by_type(recent_activity, filter) do
@@ -352,15 +367,20 @@ defmodule EhsEnforcementWeb.DashboardLive do
 
   defp parse_activity_dates(activity) when is_map(activity) do
     # Parse date field if it's a string (from JSONB storage)
-    date = case activity["date"] do
-      %Date{} = d -> d
-      date_string when is_binary(date_string) ->
-        case Date.from_iso8601(date_string) do
-          {:ok, d} -> d
-          _ -> nil
-        end
-      _ -> nil
-    end
+    date =
+      case activity["date"] do
+        %Date{} = d ->
+          d
+
+        date_string when is_binary(date_string) ->
+          case Date.from_iso8601(date_string) do
+            {:ok, d} -> d
+            _ -> nil
+          end
+
+        _ ->
+          nil
+      end
 
     Map.put(activity, "date", date)
   end
@@ -391,6 +411,7 @@ defmodule EhsEnforcementWeb.DashboardLive do
     |> Map.values()
     |> Enum.sort_by(& &1["case_count"], :desc)
   end
+
   defp convert_agency_stats_to_list(_), do: []
 
   # ==========================================
@@ -398,8 +419,8 @@ defmodule EhsEnforcementWeb.DashboardLive do
   # ==========================================
 
   defp calculate_max_page(total_items, _page_size) when total_items <= 0, do: 1
+
   defp calculate_max_page(total_items, page_size) do
     ceil(total_items / page_size)
   end
-
 end

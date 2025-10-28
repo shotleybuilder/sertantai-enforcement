@@ -6,9 +6,17 @@ This file provides guidance to Claude Code when working with the scraping featur
 
 This is the **scraping module** for the EHS Enforcement Phoenix/Ash application. It implements a unified, behavior-driven architecture for collecting enforcement data from UK regulatory agencies.
 
-### **Current Module Structure (Post-Standardization Aug 2025)**:
+### **Current Module Structure (Post-Strategy Pattern Refactor Oct 2025)**:
 ```
 lib/ehs_enforcement/scraping/
+├── strategies/                  # Strategy pattern implementations (NEW)
+│   ├── hse/
+│   │   ├── case_strategy.ex    # HSE case scraping strategy
+│   │   └── notice_strategy.ex  # HSE notice scraping strategy
+│   ├── ea/
+│   │   ├── case_strategy.ex    # EA case scraping strategy
+│   │   └── notice_strategy.ex  # EA notice scraping strategy (future)
+│   └── scraping_strategy.ex    # Strategy behavior definition
 ├── agencies/                    # Agency behavior implementations
 │   ├── hse.ex                  # HSE (Health & Safety Executive) behavior
 │   └── ea.ex                   # EA (Environment Agency) behavior
@@ -17,7 +25,7 @@ lib/ehs_enforcement/scraping/
 │   ├── case_processor.ex       # Case processing + Ash integration
 │   ├── notice_scraper.ex       # HTTP scraping for HSE notices
 │   └── notice_processor.ex     # Notice processing + Ash integration
-├── ea/                         # EA scraping and processing  
+├── ea/                         # EA scraping and processing
 │   ├── case_scraper.ex         # HTTP scraping for EA cases
 │   ├── case_processor.ex       # EA case processing + Ash integration
 │   └── historical_scraper.ex   # Historical EA data scraping
@@ -33,21 +41,46 @@ lib/ehs_enforcement/scraping/
 
 ## 🎯 Key Patterns & Conventions
 
-### **1. Agency Behavior Pattern**
+### **1. Strategy Pattern (New Architecture - Oct 2025)**
+The unified admin scraping interface uses strategy pattern for UI form configuration and validation:
+
+```elixir
+defmodule EhsEnforcement.Scraping.Strategies.ScrapingStrategy do
+  @callback strategy_name() :: String.t()
+  @callback default_params() :: map()
+  @callback form_fields() :: list(map())
+  @callback validate_params(map()) :: {:ok, map()} | {:error, String.t()}
+end
+```
+
+**Key Benefits**:
+- Single admin interface (`/admin/scrape`) for all agency/database combinations
+- Dynamic form rendering based on selected strategy
+- Type-safe parameter validation per strategy
+- Extensible for new agencies without UI changes
+
+**Available Strategies**:
+- `EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy` - HSE convictions/appeals
+- `EhsEnforcement.Scraping.Strategies.HSE.NoticeStrategy` - HSE enforcement notices
+- `EhsEnforcement.Scraping.Strategies.EA.CaseStrategy` - EA court cases
+- `EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy` - EA enforcement notices (planned)
+
+### **2. Agency Behavior Pattern**
 All agencies implement the `AgencyBehavior` protocol:
 ```elixir
 @callback validate_params(keyword()) :: {:ok, map()} | {:error, term()}
-@callback start_scraping(map(), map()) :: {:ok, term()} | {:error, term()}  
+@callback start_scraping(map(), map()) :: {:ok, term()} | {:error, term()}
 @callback process_results(term()) :: term()
 ```
 
-### **2. Module Responsibilities**
+### **3. Module Responsibilities**
+- **`scraping/strategies/`**: Strategy pattern implementations for UI form configuration (NEW)
 - **`scraping/agencies/`**: Agency-specific behavior implementations and routing
 - **`scraping/hse/` & `scraping/ea/`**: HTTP scraping, data processing, Ash resource creation
 - **`scraping/resources/`**: Shared Ash resources for session tracking and logging
 - **Helper modules in `lib/ehs_enforcement/agencies/`**: Data transformation and business logic
 
-### **3. Ash Framework Usage**
+### **4. Ash Framework Usage**
 ⚠️ **CRITICAL**: This app uses Ash Framework patterns exclusively:
 - **NEVER use Ecto directly**: Always use `Ash.create/2`, `Ash.update/2`, `Ash.read/2`
 - **All data operations**: Go through Ash resources with proper actor context
@@ -158,7 +191,11 @@ mix test test/ehs_enforcement/scraping/workflows/
 - `lib/ehs_enforcement/agencies/ea/offender_matcher.ex` - EA offender matching
 
 ### **UI Integration**
-- `lib/ehs_enforcement_web/live/admin/case_live/scrape.ex` - Admin scraping interface
+- `lib/ehs_enforcement_web/live/admin/scrape_live.ex` - **Unified admin scraping interface** (NEW)
+  - Single interface for all agencies and database types
+  - Dynamic form rendering using strategy pattern
+  - Real-time progress tracking via PubSub
+  - Route: `/admin/scrape`
 - `lib/ehs_enforcement_web/components/progress_component.ex` - Unified progress display
 
 ### **Configuration**
@@ -207,6 +244,24 @@ end
 6. **Testing**: Comprehensive unit and integration test coverage
 7. **Documentation**: Update architecture docs when adding new features
 
+## 📅 Recent Changes & Migration Notes
+
+### **October 2025: Strategy Pattern Refactor (Phases 1-7)**
+- **New unified admin interface** at `/admin/scrape` replaces separate agency/type interfaces
+- **Strategy pattern** introduced for dynamic form configuration and validation
+- **Parameterized routes removed**: `/admin/cases/scrape/:agency/:database` deprecated
+- **Benefits**: Single interface, extensible architecture, improved maintainability
+- **See**: `.claude/sessions/2025-10-26-refactor-strategy-pattern-plan.md` for complete refactor plan
+- **Implementation**: 7 phases completed (Oct 21-28, 2025)
+
+### **Adding New Scraping Strategies**
+When adding a new agency or database type:
+1. Create strategy module in `scraping/strategies/{agency}/{type}_strategy.ex`
+2. Implement `ScrapingStrategy` behavior callbacks
+3. Add strategy to `Admin.ScrapeLive.determine_strategy/2`
+4. Update documentation (this file)
+5. Add comprehensive tests
+
 ## ⚠️ Important Notes
 
 - **Port Configuration**: This app runs on port 4002 (not 4000 like standard Phoenix apps)
@@ -214,5 +269,6 @@ end
 - **Rate Limiting**: Essential for respectful scraping - never bypass or disable
 - **Session Management**: Always use ScrapeCoordinator for session lifecycle
 - **Cross-Agency**: Maintain consistency between HSE and EA implementations
+- **Unified Interface**: Use `/admin/scrape` for all scraping operations (as of Oct 2025)
 
-When working on scraping features, always consider the impact on both agencies and maintain the unified architecture patterns established in August 2025.
+When working on scraping features, always consider the impact on both agencies and maintain the unified architecture patterns established in August 2025 and enhanced with strategy pattern in October 2025.

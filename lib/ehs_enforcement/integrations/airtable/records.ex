@@ -1,17 +1,17 @@
 defmodule EhsEnforcement.Integrations.Airtable.Records do
   @moduledoc """
   Functions for working on the records retrieved from Airtable.
-  
+
   This module provides a higher-level interface for getting Airtable records
   with automatic pagination handling. Updated to use the new ReqClient.
   """
-  
+
   require Logger
   alias EhsEnforcement.Integrations.Airtable.{ReqClient, Url}
 
   @doc """
   Gets base metadata from Airtable.
-  
+
   ## Examples
       iex> Records.get_bases()
       {:ok, %{"bases" => [...]}}
@@ -60,23 +60,23 @@ defmodule EhsEnforcement.Integrations.Airtable.Records do
       case result do
         %{"records" => records, "offset" => offset} ->
           Logger.debug("Call to Airtable returned #{Enum.count(records)} records with offset")
-          
+
           # Continue pagination
           options = Map.put(params.options, :offset, offset)
           new_params = Map.put(params, :options, options)
-          
+
           # Accumulate results and continue
           json_string = Jason.encode!(data)
           get_records({jsonset ++ [json_string], recordset ++ records}, new_params)
-          
+
         %{"records" => records} ->
           # Final page - no more offset
           Logger.debug("Call to Airtable returned #{Enum.count(records)} records (final page)")
-          
+
           all_records = recordset ++ records
           final_json = Jason.encode!(%{"records" => all_records})
           {:ok, {final_json, all_records}}
-          
+
         {:error, error} ->
           {:error, error}
       end
@@ -89,20 +89,21 @@ defmodule EhsEnforcement.Integrations.Airtable.Records do
 
   @doc """
   Simplified interface to get all records from a table.
-  
+
   This is a convenience function that uses the ReqClient's built-in
   pagination handling.
-  
+
   ## Examples
       iex> Records.get_all_records("appXXX", "tblYYY", %{view: "Grid view"})
       {:ok, [record1, record2, ...]}
   """
   def get_all_records(base, table, options \\ %{}) do
     path = "/#{base}/#{table}"
-    
+
     case ReqClient.get_all_records(path, options) do
       {:ok, %{"records" => records}} ->
         {:ok, records}
+
       {:error, error} ->
         {:error, error}
     end
@@ -110,32 +111,35 @@ defmodule EhsEnforcement.Integrations.Airtable.Records do
 
   @doc """
   Get records as a stream for very large datasets.
-  
+
   This function returns a Stream that yields records in pages,
   allowing for memory-efficient processing of large datasets.
   """
   def get_records_stream(base, table, options \\ %{}) do
     Stream.unfold(nil, fn offset ->
-      current_options = case offset do
-        nil -> options
-        offset -> Map.put(options, :offset, offset)
-      end
-      
+      current_options =
+        case offset do
+          nil -> options
+          offset -> Map.put(options, :offset, offset)
+        end
+
       path = "/#{base}/#{table}"
-      
+
       case ReqClient.get(path, current_options) do
         {:ok, %{"records" => records, "offset" => next_offset}} ->
           {records, next_offset}
-          
+
         {:ok, %{"records" => records}} ->
-          {records, nil}  # Final page
-          
+          # Final page
+          {records, nil}
+
         {:error, _error} ->
-          nil  # End stream on error
+          # End stream on error
+          nil
       end
     end)
     |> Stream.take_while(&(&1 != nil))
-    |> Stream.flat_map(&(&1))
+    |> Stream.flat_map(& &1)
   end
 
   # Internal helper functions
@@ -144,13 +148,15 @@ defmodule EhsEnforcement.Integrations.Airtable.Records do
   defp process_response_data(data, true = _atom_keys?) do
     # Data is already decoded by ReqClient, but we need atom keys
     case Jason.encode(data) do
-      {:ok, json_string} -> 
+      {:ok, json_string} ->
         Jason.decode!(json_string, keys: :atoms)
-      {:error, _} -> 
-        data  # Fallback to original data
+
+      {:error, _} ->
+        # Fallback to original data
+        data
     end
   end
-  
+
   defp process_response_data(data, false = _atom_keys?) do
     # Data is already in the format we want (string keys)
     data
@@ -187,20 +193,21 @@ defmodule EhsEnforcement.Integrations.Airtable.Records do
   end
 
   # Legacy compatibility functions
-  
+
   @doc """
   Legacy get function for backwards compatibility.
-  
+
   This maintains the old interface while using the new ReqClient internally.
   """
   def get(url) when is_binary(url) do
     # Extract path from full URL for ReqClient
     path = String.replace(url, ~r/^https?:\/\/[^\/]+/, "")
-    
+
     case ReqClient.get(path) do
       {:ok, data} ->
         json_string = Jason.encode!(data)
         {:ok, json_string}
+
       {:error, error} ->
         {:error, error}
     end

@@ -18,8 +18,10 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
       }
 
       assert {:ok, offender} = Enforcement.create_offender(attrs)
-      assert offender.name == "Acme Construction Ltd"  # original name preserved
-      assert offender.normalized_name == "acme construction limited"  # normalized version
+      # original name preserved
+      assert offender.name == "Acme Construction Ltd"
+      # normalized version
+      assert offender.normalized_name == "acme construction limited"
       assert offender.local_authority == "Manchester"
       assert offender.postcode == "M1 1AA"
       assert offender.business_type == :limited_company
@@ -35,7 +37,8 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
       }
 
       assert {:ok, offender} = Enforcement.create_offender(attrs)
-      assert offender.name == "Test Company Ltd."  # original preserved
+      # original preserved
+      assert offender.name == "Test Company Ltd."
       assert offender.normalized_name == "test company limited"
     end
 
@@ -46,7 +49,8 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
       }
 
       assert {:ok, offender} = Enforcement.create_offender(attrs)
-      assert offender.name == "Big Corp P.L.C."  # original preserved
+      # original preserved
+      assert offender.name == "Big Corp P.L.C."
       assert offender.normalized_name == "big corp plc"
     end
 
@@ -95,10 +99,12 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
       assert {:ok, offender} = Enforcement.create_offender(attrs)
 
       fine_amount = Decimal.new("5000.00")
-      assert {:ok, updated_offender} = Enforcement.update_offender_statistics(
-        offender, 
-        %{fine_amount: fine_amount}
-      )
+
+      assert {:ok, updated_offender} =
+               Enforcement.update_offender_statistics(
+                 offender,
+                 %{fine_amount: fine_amount}
+               )
 
       assert updated_offender.total_cases == 1
       assert updated_offender.total_notices == 1
@@ -111,15 +117,18 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
       }
 
       assert {:ok, offender} = Enforcement.create_offender(attrs)
-      
+
       # Update statistics separately using the update_statistics action
-      assert {:ok, updated_offender} = Enforcement.update_offender_statistics(
-        offender, 
-        %{fine_amount: Decimal.new("1000")}
-      )
-      
+      assert {:ok, updated_offender} =
+               Enforcement.update_offender_statistics(
+                 offender,
+                 %{fine_amount: Decimal.new("1000")}
+               )
+
       # Load with calculation - should be total_cases + total_notices
-      offender_with_calc = Enforcement.get_offender!(updated_offender.id, load: [:enforcement_count])
+      offender_with_calc =
+        Enforcement.get_offender!(updated_offender.id, load: [:enforcement_count])
+
       # After one update_statistics call, total_cases = 1, total_notices = 1
       assert offender_with_calc.enforcement_count == 2
     end
@@ -135,8 +144,10 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
       }
 
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
-      assert offender.name == "New Company Ltd"  # original preserved
-      assert offender.normalized_name == "new company limited"  # normalized version
+      # original preserved
+      assert offender.name == "New Company Ltd"
+      # normalized version
+      assert offender.normalized_name == "new company limited"
       assert offender.postcode == "M1 1AA"
       assert offender.business_type == :limited_company
     end
@@ -147,32 +158,39 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         name: "Existing Company Ltd",
         postcode: "M2 2BB"
       }
+
       {:ok, existing_offender} = Enforcement.create_offender(existing_attrs)
 
       # Try to find with same normalized data
       search_attrs = %{
-        name: "Existing Company Ltd.",  # Different format but normalizes to same
+        # Different format but normalizes to same
+        name: "Existing Company Ltd.",
         postcode: "M2 2BB",
-        local_authority: "Different Authority"  # Additional data should be ignored for matching
+        # Additional data should be ignored for matching
+        local_authority: "Different Authority"
       }
 
       assert {:ok, found_offender} = Offender.find_or_create_offender(search_attrs)
       assert found_offender.id == existing_offender.id
-      assert found_offender.name == "Existing Company Ltd"  # Original name preserved
-      assert found_offender.normalized_name == "existing company limited"  # Normalized for matching
+      # Original name preserved
+      assert found_offender.name == "Existing Company Ltd"
+      # Normalized for matching
+      assert found_offender.normalized_name == "existing company limited"
     end
 
     test "creates new offender when postcode differs" do
       # Create existing offender
-      {:ok, _existing} = Enforcement.create_offender(%{
-        name: "Same Name Ltd",
-        postcode: "M1 1AA"
-      })
+      {:ok, _existing} =
+        Enforcement.create_offender(%{
+          name: "Same Name Ltd",
+          postcode: "M1 1AA"
+        })
 
       # Try with same name but different postcode
       attrs = %{
         name: "Same Name Ltd",
-        postcode: "M3 3CC"  # Different postcode
+        # Different postcode
+        postcode: "M3 3CC"
       }
 
       assert {:ok, new_offender} = Offender.find_or_create_offender(attrs)
@@ -180,20 +198,25 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
 
       # Should have 2 offenders with same name but different postcodes
       {:ok, all_offenders} = Enforcement.list_offenders()
-      same_name_offenders = Enum.filter(all_offenders, &(&1.normalized_name == "same name limited"))
+
+      same_name_offenders =
+        Enum.filter(all_offenders, &(&1.normalized_name == "same name limited"))
+
       assert length(same_name_offenders) == 2
     end
 
     test "performs fuzzy search when exact match fails" do
       # Create offender with slight name variation
-      {:ok, existing_offender} = Enforcement.create_offender(%{
-        name: "ABC Construction Limited",
-        postcode: "M4 4DD"
-      })
+      {:ok, existing_offender} =
+        Enforcement.create_offender(%{
+          name: "ABC Construction Limited",
+          postcode: "M4 4DD"
+        })
 
       # Search with slightly different name
       search_attrs = %{
-        name: "A.B.C. Construction Ltd",  # Should fuzzy match to existing
+        # Should fuzzy match to existing
+        name: "A.B.C. Construction Ltd",
         postcode: "M4 4DD"
       }
 
@@ -203,10 +226,11 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
 
     test "creates new offender when fuzzy match confidence is too low" do
       # Create offender
-      {:ok, _existing} = Enforcement.create_offender(%{
-        name: "Completely Different Company Ltd",
-        postcode: "M5 5EE"
-      })
+      {:ok, _existing} =
+        Enforcement.create_offender(%{
+          name: "Completely Different Company Ltd",
+          postcode: "M5 5EE"
+        })
 
       # Search with very different name
       search_attrs = %{
@@ -215,8 +239,10 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
       }
 
       assert {:ok, new_offender} = Offender.find_or_create_offender(search_attrs)
-      assert new_offender.name == "Totally Unrelated Business Ltd"  # Original preserved
-      assert new_offender.normalized_name == "totally unrelated business limited"  # Normalized version
+      # Original preserved
+      assert new_offender.name == "Totally Unrelated Business Ltd"
+      # Normalized version
+      assert new_offender.normalized_name == "totally unrelated business limited"
       assert new_offender.postcode == "M6 6FF"
 
       # Should have 2 different offenders
@@ -226,31 +252,38 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
 
     test "handles multiple fuzzy matches by selecting best one" do
       # Create similar offenders
-      {:ok, offender1} = Enforcement.create_offender(%{
-        name: "ABC Construction Ltd",
-        postcode: "M7 7GG"
-      })
-      
-      {:ok, _offender2} = Enforcement.create_offender(%{
-        name: "ABC Building Ltd", 
-        postcode: "M8 8HH"
-      })
+      {:ok, offender1} =
+        Enforcement.create_offender(%{
+          name: "ABC Construction Ltd",
+          postcode: "M7 7GG"
+        })
+
+      {:ok, _offender2} =
+        Enforcement.create_offender(%{
+          name: "ABC Building Ltd",
+          postcode: "M8 8HH"
+        })
 
       # Search with name that could match either
       search_attrs = %{
-        name: "ABC Construction Limited",  # Closer to first one
-        postcode: "M7 7GG"  # Exact postcode match with first
+        # Closer to first one
+        name: "ABC Construction Limited",
+        # Exact postcode match with first
+        postcode: "M7 7GG"
       }
 
       assert {:ok, matched_offender} = Offender.find_or_create_offender(search_attrs)
-      assert matched_offender.id == offender1.id  # Should pick the better match
+      # Should pick the better match
+      assert matched_offender.id == offender1.id
     end
 
     test "normalizes company name variations correctly" do
       attrs = %{name: "Company Ltd.", postcode: "TEST"}
       {:ok, offender} = Offender.find_or_create_offender(attrs)
-      assert offender.name == "Company Ltd."  # Original preserved
-      assert offender.normalized_name == "company limited"  # Normalized version
+      # Original preserved
+      assert offender.name == "Company Ltd."
+      # Normalized version
+      assert offender.normalized_name == "company limited"
     end
 
     test "handles missing postcode gracefully" do
@@ -260,14 +293,17 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
       }
 
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
-      assert offender.name == "No Postcode Company Ltd"  # Original preserved
-      assert offender.normalized_name == "no postcode company limited"  # Normalized version
+      # Original preserved
+      assert offender.name == "No Postcode Company Ltd"
+      # Normalized version
+      assert offender.normalized_name == "no postcode company limited"
       assert offender.postcode == nil
     end
 
     test "handles empty or whitespace-only names" do
       attrs = %{
-        name: "   ",  # Whitespace only
+        # Whitespace only
+        name: "   ",
         postcode: "M9 9II"
       }
 
@@ -276,14 +312,17 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
     end
 
     test "finds offender when postcode case differs" do
-      {:ok, existing} = Enforcement.create_offender(%{
-        name: "Case Test Ltd",
-        postcode: "m10 10jj"  # lowercase
-      })
+      {:ok, existing} =
+        Enforcement.create_offender(%{
+          name: "Case Test Ltd",
+          # lowercase
+          postcode: "m10 10jj"
+        })
 
       search_attrs = %{
         name: "Case Test Ltd",
-        postcode: "M10 10JJ"  # uppercase
+        # uppercase
+        postcode: "M10 10JJ"
       }
 
       assert {:ok, found_offender} = Offender.find_or_create_offender(search_attrs)
@@ -302,7 +341,8 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
 
       # This should find the existing one instead of failing on constraint
       assert {:ok, found_offender} = Offender.find_or_create_offender(attrs)
-      assert found_offender.name == "Race Condition Ltd"  # Original name preserved
+      # Original name preserved
+      assert found_offender.name == "Race Condition Ltd"
     end
 
     test "preserves additional attributes when creating new offender" do
@@ -325,10 +365,11 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
     test "performance with large dataset" do
       # Create many offenders
       Enum.each(1..100, fn i ->
-        {:ok, _} = Enforcement.create_offender(%{
-          name: "Performance Test Company #{i} Ltd",
-          postcode: "PT#{i} #{i}XX"
-        })
+        {:ok, _} =
+          Enforcement.create_offender(%{
+            name: "Performance Test Company #{i} Ltd",
+            postcode: "PT#{i} #{i}XX"
+          })
       end)
 
       # Search should still be fast
@@ -337,12 +378,13 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         postcode: "PT50 50XX"
       }
 
-      {duration_us, result} = :timer.tc(fn ->
-        Offender.find_or_create_offender(attrs)
-      end)
+      {duration_us, result} =
+        :timer.tc(fn ->
+          Offender.find_or_create_offender(attrs)
+        end)
 
       assert {:ok, _offender} = result
-      
+
       # Should complete in under 100ms even with 100 existing records
       duration_ms = duration_us / 1000
       assert duration_ms < 100
@@ -361,7 +403,9 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
 
     test "handles extra whitespace" do
       assert Offender.normalize_company_name("  Test Company  Ltd  ") == "test company limited"
-      assert Offender.normalize_company_name("Multiple   Spaces   Ltd") == "multiple spaces limited"
+
+      assert Offender.normalize_company_name("Multiple   Spaces   Ltd") ==
+               "multiple spaces limited"
     end
 
     test "handles empty strings" do
@@ -373,10 +417,11 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
   describe "real-world data patterns" do
     test "handles extremely long company names" do
       attrs = %{
-        name: "Very Long International Multi-National Construction Services Engineering and Building Solutions Limited Partnership with Additional Subsidiaries Company Name That Exceeds Normal Lengths",
+        name:
+          "Very Long International Multi-National Construction Services Engineering and Building Solutions Limited Partnership with Additional Subsidiaries Company Name That Exceeds Normal Lengths",
         postcode: "M1 1AA"
       }
-      
+
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
       assert offender.name == attrs.name
     end
@@ -386,7 +431,7 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         name: "O'Malley & Sons (Construction) Ltd. - Est. 1985",
         postcode: "M2 2BB"
       }
-      
+
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
       assert offender.name == attrs.name
     end
@@ -396,7 +441,7 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         name: "Müller & Sønstruction Façade Ltd",
         postcode: "M3 3CC"
       }
-      
+
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
       assert offender.name == attrs.name
     end
@@ -410,7 +455,7 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         business_type: nil,
         industry: ""
       }
-      
+
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
       assert offender.name == "Test Company"
       assert offender.postcode == nil
@@ -421,17 +466,18 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         name: "Bad Postcode Ltd",
         postcode: "invalid_postcode_format"
       }
-      
+
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
       assert offender.postcode == "INVALID_POSTCODE_FORMAT"
     end
 
     test "handles very short names" do
       attrs = %{
-        name: "AB",  # Very short name
+        # Very short name
+        name: "AB",
         postcode: "M4 4DD"
       }
-      
+
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
       assert offender.name == "AB"
     end
@@ -441,7 +487,7 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         name: "123456 Ltd",
         postcode: "M5 5EE"
       }
-      
+
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
       assert offender.name == "123456 Ltd"
     end
@@ -451,13 +497,13 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         name: "Duplicate Test Ltd",
         postcode: "M6 6FF"
       }
-      
+
       # First creation
       assert {:ok, offender1} = Offender.find_or_create_offender(attrs)
-      
+
       # Second attempt with identical data should find existing
       assert {:ok, offender2} = Offender.find_or_create_offender(attrs)
-      
+
       assert offender1.id == offender2.id
     end
 
@@ -468,21 +514,22 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         business_type: :limited_company,
         postcode: "M7 7GG"
       }
-      
+
       assert {:ok, offender1} = Offender.find_or_create_offender(attrs1)
       assert offender1.business_type == :limited_company
-      
+
       # Test with invalid business type (should be filtered out)
       attrs2 = %{
         name: "Invalid Type Test",
         business_type: :invalid_type,
         postcode: "M8 8HH"
       }
-      
+
       # Should succeed but invalid business_type should be filtered out
       assert {:ok, offender2} = Offender.find_or_create_offender(attrs2)
       assert offender2.name == "Invalid Type Test"
-      assert offender2.business_type == nil  # Invalid type filtered out
+      # Invalid type filtered out
+      assert offender2.business_type == nil
     end
 
     test "handles mixed case and spacing in names" do
@@ -491,44 +538,46 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         name: "mixed   case    company    ltd",
         postcode: "M9 9II"
       }
-      
+
       assert {:ok, offender1} = Offender.find_or_create_offender(attrs1)
-      
+
       # Try to find with different spacing/case
       attrs2 = %{
         name: "Mixed Case Company Ltd",
         postcode: "M9 9II"
       }
-      
+
       assert {:ok, offender2} = Offender.find_or_create_offender(attrs2)
-      
+
       # Should find the same offender due to normalization
       assert offender1.id == offender2.id
     end
 
     test "stress test with many similar names" do
       base_name = "Construction Company"
-      
+
       # Create many similar offenders
-      offenders = Enum.map(1..10, fn i ->
-        attrs = %{
-          name: "#{base_name} #{i} Ltd",
-          postcode: "ST#{i} #{i}XX"
-        }
-        {:ok, offender} = Offender.find_or_create_offender(attrs)
-        offender
-      end)
-      
+      offenders =
+        Enum.map(1..10, fn i ->
+          attrs = %{
+            name: "#{base_name} #{i} Ltd",
+            postcode: "ST#{i} #{i}XX"
+          }
+
+          {:ok, offender} = Offender.find_or_create_offender(attrs)
+          offender
+        end)
+
       # All should be unique
       unique_ids = offenders |> Enum.map(& &1.id) |> Enum.uniq()
       assert length(unique_ids) == 10
-      
+
       # Test fuzzy search doesn't match too broadly
       search_attrs = %{
         name: "#{base_name} Services Ltd",
         postcode: "NEW 1AA"
       }
-      
+
       assert {:ok, new_offender} = Offender.find_or_create_offender(search_attrs)
       refute Enum.any?(offenders, fn o -> o.id == new_offender.id end)
     end
@@ -540,7 +589,7 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         name: "Long Postcode Test",
         postcode: "THIS IS A VERY LONG INVALID POSTCODE THAT EXCEEDS NORMAL LENGTH LIMITS"
       }
-      
+
       # Should normalize and truncate appropriately
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
       assert is_binary(offender.postcode)
@@ -551,7 +600,7 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         name: "   Whitespace Test Ltd   ",
         postcode: "  M10 10JJ  "
       }
-      
+
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
       assert String.trim(offender.name) == offender.name
       assert String.trim(offender.postcode) == offender.postcode
@@ -562,7 +611,7 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         name: "",
         postcode: "M11 11KK"
       }
-      
+
       # Should fail validation
       assert {:error, %Ash.Error.Invalid{}} = Offender.find_or_create_offender(attrs)
     end
@@ -573,7 +622,7 @@ defmodule EhsEnforcement.Enforcement.OffenderTest do
         "postcode" => "M12 12LL",
         "local_authority" => "Test Authority"
       }
-      
+
       assert {:ok, offender} = Offender.find_or_create_offender(attrs)
       assert offender.name == "String Key Test Ltd"
     end

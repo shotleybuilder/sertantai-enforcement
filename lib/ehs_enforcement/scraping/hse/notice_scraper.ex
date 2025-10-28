@@ -2,13 +2,13 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeScraper do
   @moduledoc """
   HSE notice scraper module.
   Handles scraping of HSE enforcement notice data from the HSE website with rate limiting.
-  
+
   The `get_hse_notices/2` function retrieves a list of HSE notices based on the specified page number and country.
 
   The `get_notice_details/1` function retrieves the details of a specific HSE notice based on the notice number.
 
   The `get_notice_breaches/1` function retrieves the breaches associated with a specific HSE notice based on the notice number.
-  
+
   All functions include ethical rate limiting to respect HSE website resources.
   """
 
@@ -17,11 +17,13 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeScraper do
 
   def get_hse_notices(page_number: page_number, country: country) do
     base_url = ~s|https://resources.hse.gov.uk|
-    
+
     # URL encode the country parameter to handle spaces
     encoded_country = URI.encode_www_form(country)
 
-    url = base_url <> ~s|/notices/notices/notice_list.asp?PN=#{page_number}&ST=N&CO=,AND&SN=F&EO==&SF=CTR&SV=#{encoded_country}&SO=DNIS|
+    url =
+      base_url <>
+        ~s|/notices/notices/notice_list.asp?PN=#{page_number}&ST=N&CO=,AND&SN=F&EO==&SF=CTR&SV=#{encoded_country}&SO=DNIS|
 
     Logger.debug("Fetching HSE notices for #{country}, page #{page_number}")
 
@@ -33,7 +35,10 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeScraper do
         |> extract_notices(country)
 
       {:error, reason} ->
-        Logger.error("Failed to fetch HSE notices for #{country}, page #{page_number}: #{inspect(reason)}")
+        Logger.error(
+          "Failed to fetch HSE notices for #{country}, page #{page_number}: #{inspect(reason)}"
+        )
+
         {:error, reason}
     end
   end
@@ -56,7 +61,8 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeScraper do
 
       {:error, reason} ->
         Logger.warning("Failed to fetch details for notice #{notice_number}: #{inspect(reason)}")
-        %{}  # Return empty map on error to avoid breaking the pipeline
+        # Return empty map on error to avoid breaking the pipeline
+        %{}
     end
   end
 
@@ -65,7 +71,10 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeScraper do
   def get_notice_breaches(notice_number) do
     base_url = ~s|https://resources.hse.gov.uk|
     encoded_notice_number = URI.encode_www_form(notice_number)
-    url = base_url <> ~s|/notices/breach/breach_list.asp?ST=B&SN=F&EO==&SF=NN&SV=#{encoded_notice_number}|
+
+    url =
+      base_url <>
+        ~s|/notices/breach/breach_list.asp?ST=B&SN=F&EO==&SF=NN&SV=#{encoded_notice_number}|
 
     Logger.debug("Fetching breaches for HSE notice #{notice_number}")
 
@@ -78,7 +87,8 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeScraper do
 
       {:error, reason} ->
         Logger.warning("Failed to fetch breaches for notice #{notice_number}: #{inspect(reason)}")
-        %{offence_breaches: []}  # Return empty breaches on error
+        # Return empty breaches on error
+        %{offence_breaches: []}
     end
   end
 
@@ -218,5 +228,4 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeScraper do
     end)
     |> (&Map.put(%{}, :offence_breaches, &1)).()
   end
-
 end

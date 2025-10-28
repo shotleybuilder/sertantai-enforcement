@@ -10,44 +10,43 @@
               Review and manage duplicate records across cases, notices, and offenders
             </p>
           </div>
-          
+
           <div class="flex space-x-3">
             <!-- Back to Admin Button -->
             <.link
               navigate={~p"/admin"}
               class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <.icon name="hero-arrow-left" class="h-4 w-4 mr-2" />
-              Admin
+              <.icon name="hero-arrow-left" class="h-4 w-4 mr-2" /> Admin
             </.link>
             
-            <!-- Refresh Button -->
+<!-- Refresh Button -->
             <button
               type="button"
               phx-click="refresh_duplicates"
               class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <.icon name="hero-arrow-path" class="h-4 w-4 mr-2" />
-              Refresh
+              <.icon name="hero-arrow-path" class="h-4 w-4 mr-2" /> Refresh
             </button>
           </div>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- Main Content -->
+  
+<!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
-    <!-- Loading State -->
+<!-- Loading State -->
     <%= if @loading do %>
       <div class="text-center py-12">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600">
+        </div>
         <p class="mt-2 text-sm text-gray-500">Loading duplicate analysis...</p>
       </div>
     <% else %>
-    
-      <!-- Tab Navigation -->
+      
+<!-- Tab Navigation -->
       <div class="bg-white shadow rounded-lg mb-6">
         <div class="border-b border-gray-200">
           <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
@@ -59,40 +58,45 @@
                   "whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm",
                   if(@active_tab == tab,
                     do: "border-blue-500 text-blue-600",
-                    else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    else:
+                      "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   )
                 ]}
                 aria-current={if @active_tab == tab, do: "page", else: false}
               >
-                <%= label %>
+                {label}
                 <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  <%= length(get_current_duplicates(assigns)) %>
+                  {length(get_current_duplicates(assigns))}
                 </span>
               </button>
             <% end %>
           </nav>
         </div>
         
-        <!-- Tab Content -->
+<!-- Tab Content -->
         <div class="p-6">
           <%= if length(get_current_duplicates(assigns)) == 0 do %>
             <div class="text-center py-8">
               <.icon name="hero-check-circle" class="h-12 w-12 text-green-500 mx-auto mb-4" />
               <h3 class="text-lg font-medium text-gray-900 mb-2">No Duplicates Found</h3>
-              <p class="text-gray-500">Great! No duplicate <%= String.downcase(Atom.to_string(@active_tab)) %> were detected.</p>
+              <p class="text-gray-500">
+                Great! No duplicate {String.downcase(Atom.to_string(@active_tab))} were detected.
+              </p>
             </div>
           <% else %>
             <!-- Group Navigation -->
             <div class="flex items-center justify-between mb-6">
               <div class="flex items-center space-x-4">
                 <h3 class="text-lg font-medium text-gray-900">
-                  Duplicate Group <%= @current_group_index + 1 %> of <%= length(get_current_duplicates(assigns)) %>
+                  Duplicate Group {@current_group_index + 1} of {length(
+                    get_current_duplicates(assigns)
+                  )}
                 </h3>
                 <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                  <%= length(get_current_group(assigns)) %> duplicates
+                  {length(get_current_group(assigns))} duplicates
                 </span>
               </div>
-              
+
               <div class="flex space-x-2">
                 <button
                   type="button"
@@ -101,8 +105,7 @@
                   disabled={@current_group_index == 0}
                   class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <.icon name="hero-chevron-left" class="h-4 w-4 mr-1" />
-                  Previous
+                  <.icon name="hero-chevron-left" class="h-4 w-4 mr-1" /> Previous
                 </button>
                 <button
                   type="button"
@@ -111,13 +114,12 @@
                   disabled={@current_group_index >= length(get_current_duplicates(assigns)) - 1}
                   class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Next
-                  <.icon name="hero-chevron-right" class="h-4 w-4 ml-1" />
+                  Next <.icon name="hero-chevron-right" class="h-4 w-4 ml-1" />
                 </button>
               </div>
             </div>
             
-            <!-- Record Comparison -->
+<!-- Record Comparison -->
             <div class="space-y-4">
               <%= for {record, index} <- Enum.with_index(get_current_group(assigns)) do %>
                 <div class={[
@@ -136,16 +138,16 @@
                         checked={MapSet.member?(@selected_records, record.id)}
                         class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                      
+
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between mb-2">
                           <div class="flex items-center space-x-2">
                             <h4 class="text-lg font-medium text-gray-900">
-                              Record #<%= index + 1 %>
+                              Record #{index + 1}
                             </h4>
                             <%= if record.id do %>
                               <span class="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                ID: <%= String.slice(record.id, 0, 8) %>...
+                                ID: {String.slice(record.id, 0, 8)}...
                               </span>
                             <% end %>
                           </div>
@@ -162,19 +164,21 @@
                           <% end %>
                         </div>
                         
-                        <!-- Record Details based on type -->
+<!-- Record Details based on type -->
                         <%= case @active_tab do %>
                           <% :cases -> %>
                             <dl class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Regulator ID</dt>
-                                <dd class="text-sm text-gray-900"><%= record.regulator_id || "—" %></dd>
+                                <dd class="text-sm text-gray-900">
+                                  {record.regulator_id || "—"}
+                                </dd>
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Action Date</dt>
                                 <dd class="text-sm text-gray-900">
                                   <%= if record.offence_action_date do %>
-                                    <%= Calendar.strftime(record.offence_action_date, "%Y-%m-%d") %>
+                                    {Calendar.strftime(record.offence_action_date, "%Y-%m-%d")}
                                   <% else %>
                                     —
                                   <% end %>
@@ -184,7 +188,7 @@
                                 <dt class="text-sm font-medium text-gray-500">Offender</dt>
                                 <dd class="text-sm text-gray-900">
                                   <%= if record.offender do %>
-                                    <%= record.offender.name %>
+                                    {record.offender.name}
                                   <% else %>
                                     Unknown
                                   <% end %>
@@ -202,7 +206,7 @@
                                         _ -> "bg-gray-100 text-gray-800"
                                       end
                                     ]}>
-                                      <%= record.agency.name %>
+                                      {record.agency.name}
                                     </span>
                                   <% else %>
                                     —
@@ -213,7 +217,7 @@
                                 <dt class="text-sm font-medium text-gray-500">Fine</dt>
                                 <dd class="text-sm text-gray-900">
                                   <%= if record.offence_fine do %>
-                                    £<%= :erlang.float_to_binary(record.offence_fine, decimals: 2) %>
+                                    £{:erlang.float_to_binary(record.offence_fine, decimals: 2)}
                                   <% else %>
                                     —
                                   <% end %>
@@ -222,23 +226,25 @@
                               <div class="sm:col-span-2">
                                 <dt class="text-sm font-medium text-gray-500">Breaches</dt>
                                 <dd class="text-sm text-gray-900">
-                                  <%= String.slice(record.offence_breaches || "—", 0, 100) %>
-                                  <%= if String.length(record.offence_breaches || "") > 100, do: "..." %>
+                                  {String.slice(record.offence_breaches || "—", 0, 100)}
+                                  {if String.length(record.offence_breaches || "") > 100,
+                                    do: "..."}
                                 </dd>
                               </div>
                             </dl>
-                          
                           <% :notices -> %>
                             <dl class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Regulator ID</dt>
-                                <dd class="text-sm text-gray-900"><%= record.regulator_id || "—" %></dd>
+                                <dd class="text-sm text-gray-900">
+                                  {record.regulator_id || "—"}
+                                </dd>
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Notice Date</dt>
                                 <dd class="text-sm text-gray-900">
                                   <%= if record.notice_date do %>
-                                    <%= Calendar.strftime(record.notice_date, "%Y-%m-%d") %>
+                                    {Calendar.strftime(record.notice_date, "%Y-%m-%d")}
                                   <% else %>
                                     —
                                   <% end %>
@@ -248,7 +254,7 @@
                                 <dt class="text-sm font-medium text-gray-500">Offender</dt>
                                 <dd class="text-sm text-gray-900">
                                   <%= if record.offender do %>
-                                    <%= record.offender.name %>
+                                    {record.offender.name}
                                   <% else %>
                                     Unknown
                                   <% end %>
@@ -266,7 +272,7 @@
                                         _ -> "bg-gray-100 text-gray-800"
                                       end
                                     ]}>
-                                      <%= record.agency.name %>
+                                      {record.agency.name}
                                     </span>
                                   <% else %>
                                     —
@@ -275,38 +281,43 @@
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Action Type</dt>
-                                <dd class="text-sm text-gray-900"><%= record.offence_action_type || "—" %></dd>
+                                <dd class="text-sm text-gray-900">
+                                  {record.offence_action_type || "—"}
+                                </dd>
                               </div>
                               <div class="sm:col-span-2">
                                 <dt class="text-sm font-medium text-gray-500">Notice Body</dt>
                                 <dd class="text-sm text-gray-900">
-                                  <%= String.slice(record.notice_body || "—", 0, 100) %>
-                                  <%= if String.length(record.notice_body || "") > 100, do: "..." %>
+                                  {String.slice(record.notice_body || "—", 0, 100)}
+                                  {if String.length(record.notice_body || "") > 100, do: "..."}
                                 </dd>
                               </div>
                             </dl>
-                          
                           <% :offenders -> %>
                             <dl class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
                               <div class="sm:col-span-2">
                                 <dt class="text-sm font-medium text-gray-500">Name</dt>
-                                <dd class="text-lg font-medium text-gray-900"><%= record.name || "—" %></dd>
+                                <dd class="text-lg font-medium text-gray-900">
+                                  {record.name || "—"}
+                                </dd>
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Type</dt>
-                                <dd class="text-sm text-gray-900"><%= record.offender_type || "—" %></dd>
+                                <dd class="text-sm text-gray-900">
+                                  {record.offender_type || "—"}
+                                </dd>
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Location</dt>
-                                <dd class="text-sm text-gray-900"><%= record.location || "—" %></dd>
+                                <dd class="text-sm text-gray-900">{record.location || "—"}</dd>
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Total Cases</dt>
-                                <dd class="text-sm text-gray-900"><%= record.total_cases || 0 %></dd>
+                                <dd class="text-sm text-gray-900">{record.total_cases || 0}</dd>
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Total Notices</dt>
-                                <dd class="text-sm text-gray-900"><%= record.total_notices || 0 %></dd>
+                                <dd class="text-sm text-gray-900">{record.total_notices || 0}</dd>
                               </div>
                               <%= if record.agencies && length(record.agencies) > 0 do %>
                                 <div class="sm:col-span-2">
@@ -315,7 +326,7 @@
                                     <div class="flex flex-wrap gap-1 mt-1">
                                       <%= for agency <- record.agencies do %>
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                          <%= agency %>
+                                          {agency}
                                         </span>
                                       <% end %>
                                     </div>
@@ -327,25 +338,40 @@
                       </div>
                     </div>
                     
-                    <!-- Action Links -->
+<!-- Action Links -->
                     <div class="flex flex-col space-y-2">
                       <%= case @active_tab do %>
                         <% :cases -> %>
-                          <.link navigate={~p"/cases/#{record.id}"} class="text-blue-600 hover:text-blue-800 text-sm">
+                          <.link
+                            navigate={~p"/cases/#{record.id}"}
+                            class="text-blue-600 hover:text-blue-800 text-sm"
+                          >
                             View Case
                           </.link>
-                          <.link navigate={~p"/admin/cases/#{record.id}/edit"} class="text-blue-600 hover:text-blue-800 text-sm">
+                          <.link
+                            navigate={~p"/admin/cases/#{record.id}/edit"}
+                            class="text-blue-600 hover:text-blue-800 text-sm"
+                          >
                             Edit Case
                           </.link>
                         <% :notices -> %>
-                          <.link navigate={~p"/notices/#{record.id}"} class="text-blue-600 hover:text-blue-800 text-sm">
+                          <.link
+                            navigate={~p"/notices/#{record.id}"}
+                            class="text-blue-600 hover:text-blue-800 text-sm"
+                          >
                             View Notice
                           </.link>
-                          <.link navigate={~p"/admin/notices/#{record.id}/edit"} class="text-blue-600 hover:text-blue-800 text-sm">
+                          <.link
+                            navigate={~p"/admin/notices/#{record.id}/edit"}
+                            class="text-blue-600 hover:text-blue-800 text-sm"
+                          >
                             Edit Notice
                           </.link>
                         <% :offenders -> %>
-                          <.link navigate={~p"/offenders/#{record.id}"} class="text-blue-600 hover:text-blue-800 text-sm">
+                          <.link
+                            navigate={~p"/offenders/#{record.id}"}
+                            class="text-blue-600 hover:text-blue-800 text-sm"
+                          >
                             View Offender
                           </.link>
                       <% end %>
@@ -355,14 +381,14 @@
               <% end %>
             </div>
             
-            <!-- Action Buttons -->
+<!-- Action Buttons -->
             <%= if MapSet.size(@selected_records) > 0 do %>
               <div class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-gray-700">
-                    <%= MapSet.size(@selected_records) %> record(s) selected
+                    {MapSet.size(@selected_records)} record(s) selected
                   </span>
-                  
+
                   <div class="flex space-x-3">
                     <button
                       type="button"
@@ -370,10 +396,9 @@
                       phx-value-action="delete"
                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
-                      <.icon name="hero-trash" class="h-4 w-4 mr-2" />
-                      Delete Selected
+                      <.icon name="hero-trash" class="h-4 w-4 mr-2" /> Delete Selected
                     </button>
-                    
+
                     <button
                       type="button"
                       phx-click="confirm_action"
@@ -382,8 +407,7 @@
                       class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed"
                       title="Merge functionality coming soon"
                     >
-                      <.icon name="hero-arrows-pointing-in" class="h-4 w-4 mr-2" />
-                      Merge Selected
+                      <.icon name="hero-arrows-pointing-in" class="h-4 w-4 mr-2" /> Merge Selected
                     </button>
                   </div>
                 </div>
@@ -395,7 +419,7 @@
     <% end %>
   </div>
   
-  <!-- Confirmation Modal -->
+<!-- Confirmation Modal -->
   <%= if @action_confirmation do %>
     <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -404,8 +428,8 @@
           <h3 class="text-lg font-medium text-gray-900">Confirm Action</h3>
           <div class="mt-2 px-7 py-3">
             <p class="text-sm text-gray-500">
-              Are you sure you want to <%= @action_confirmation.action %> 
-              <%= @action_confirmation.count %> record(s)?
+              Are you sure you want to {@action_confirmation.action}
+              {@action_confirmation.count} record(s)?
               <%= if @action_confirmation.action == "delete" do %>
                 <strong class="text-red-600">This action cannot be undone.</strong>
               <% end %>
@@ -431,7 +455,7 @@
                   )
                 ]}
               >
-                <%= String.capitalize(@action_confirmation.action) %>
+                {String.capitalize(@action_confirmation.action)}
               </button>
             </div>
           </div>
@@ -440,4 +464,3 @@
     </div>
   <% end %>
 </div>
-

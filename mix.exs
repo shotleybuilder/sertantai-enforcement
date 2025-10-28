@@ -11,7 +11,7 @@ defmodule EhsEnforcement.MixProject do
       aliases: aliases(),
       deps: deps(),
       listeners: [Phoenix.CodeReloader],
-      
+
       # ExDoc configuration
       docs: [
         main: "EhsEnforcement",
@@ -29,16 +29,16 @@ defmodule EhsEnforcement.MixProject do
             ~r/EhsEnforcement.Integrations/,
             ~r/EhsEnforcement.Sync/
           ],
-          "Configuration": [
+          Configuration: [
             ~r/EhsEnforcement.Configuration/
           ],
           "Web Interface": [
             ~r/EhsEnforcementWeb/
           ],
-          "Authentication": [
+          Authentication: [
             ~r/EhsEnforcement.Accounts/
           ],
-          "Utilities": [
+          Utilities: [
             ~r/EhsEnforcement.Logger/,
             ~r/EhsEnforcement.Telemetry/,
             ~r/EhsEnforcement.Utility/

@@ -1,11 +1,11 @@
 defmodule EhsEnforcement.Enforcement.Legislation do
   @moduledoc """
   Represents legislation that can be referenced in enforcement actions.
-  
+
   This is a lookup/reference table for normalizing legislation data across
   cases, notices, and offences. Contains core legislation information like
   Acts, Regulations, and Orders.
-  
+
   Examples:
   - Health and Safety at Work etc. Act 1974
   - The Construction (Design and Management) Regulations 2015
@@ -17,51 +17,52 @@ defmodule EhsEnforcement.Enforcement.Legislation do
     data_layer: AshPostgres.DataLayer
 
   postgres do
-    table "legislation"
-    repo EhsEnforcement.Repo
+    table("legislation")
+    repo(EhsEnforcement.Repo)
 
     custom_indexes do
       # Unique constraint for legislation identification
-      index [:legislation_title, :legislation_year, :legislation_number], 
-        name: "legislation_title_year_number_unique", 
+      index([:legislation_title, :legislation_year, :legislation_number],
+        name: "legislation_title_year_number_unique",
         unique: true
+      )
 
       # Performance indexes for filtering and search
-      index [:legislation_type], name: "legislation_type_index"
-      index [:legislation_year], name: "legislation_year_index"
-      
+      index([:legislation_type], name: "legislation_type_index")
+      index([:legislation_year], name: "legislation_year_index")
+
       # pg_trgm GIN index for fuzzy text search on legislation titles
-      index [:legislation_title], name: "legislation_title_gin_trgm", using: "GIN"
+      index([:legislation_title], name: "legislation_title_gin_trgm", using: "GIN")
     end
   end
 
   attributes do
-    uuid_primary_key :id
+    uuid_primary_key(:id)
 
     attribute :legislation_title, :string do
-      allow_nil? false
+      allow_nil?(false)
       description "Full title of the legislation (e.g., 'Health and Safety at Work etc. Act')"
     end
 
     attribute :legislation_year, :integer do
       description "Year the legislation was enacted (e.g., 1974)"
-      constraints [min: 1800, max: 2100]
+      constraints(min: 1800, max: 2100)
     end
 
     attribute :legislation_number, :integer do
       description "Official number/chapter of the legislation (e.g., 33)"
-      constraints [min: 1]
+      constraints(min: 1)
     end
 
     attribute :legislation_type, :atom do
-      allow_nil? false
+      allow_nil?(false)
       description "Type of legislation"
-      constraints [one_of: [:act, :regulation, :order, :acop]]
-      default :act
+      constraints(one_of: [:act, :regulation, :order, :acop])
+      default(:act)
     end
 
-    create_timestamp :created_at
-    update_timestamp :updated_at
+    create_timestamp(:created_at)
+    update_timestamp(:updated_at)
   end
 
   relationships do
@@ -71,128 +72,155 @@ defmodule EhsEnforcement.Enforcement.Legislation do
   identities do
     # Prevent duplicates even with nil values  
     identity :unique_legislation, [:legislation_title, :legislation_year, :legislation_number] do
-      nils_distinct? false  # Treat multiple nil values as duplicates
+      # Treat multiple nil values as duplicates
+      nils_distinct?(false)
     end
-    
+
     # Secondary identity for title + year only (useful for fuzzy matching)
     identity :unique_title_year, [:legislation_title, :legislation_year] do
-      nils_distinct? false
+      nils_distinct?(false)
     end
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults([:read, :destroy])
 
     create :create do
-      primary? true
-      accept [:legislation_title, :legislation_year, :legislation_number, :legislation_type]
+      primary?(true)
+      accept([:legislation_title, :legislation_year, :legislation_number, :legislation_type])
 
-      validate present(:legislation_title)
-      validate present(:legislation_type)
-      
+      validate(present(:legislation_title))
+      validate(present(:legislation_type))
+
       # Normalize title before creation
-      change fn changeset, _context ->
+      change(fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :legislation_title) do
-          nil -> changeset
+          nil ->
+            changeset
+
           title ->
             normalized_title = EhsEnforcement.Utility.normalize_legislation_title(title)
             Ash.Changeset.force_change_attribute(changeset, :legislation_title, normalized_title)
         end
-      end
-      
+      end)
+
       # Auto-determine type if not provided
-      change fn changeset, _context ->
+      change(fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :legislation_type) do
           nil ->
             title = Ash.Changeset.get_attribute(changeset, :legislation_title)
+
             if title do
               auto_type = EhsEnforcement.Utility.determine_legislation_type(title)
               Ash.Changeset.force_change_attribute(changeset, :legislation_type, auto_type)
             else
               changeset
             end
-          _type -> changeset
+
+          _type ->
+            changeset
         end
-      end
-      
+      end)
+
       # Validate year range if provided
-      validate fn changeset, _context ->
+      validate(fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :legislation_year) do
-          nil -> :ok
-          year when year >= 1800 and year <= 2100 -> :ok
-          invalid_year -> 
-            {:error, field: :legislation_year, message: "Year must be between 1800 and 2100, got: #{invalid_year}"}
+          nil ->
+            :ok
+
+          year when year >= 1800 and year <= 2100 ->
+            :ok
+
+          invalid_year ->
+            {:error,
+             field: :legislation_year,
+             message: "Year must be between 1800 and 2100, got: #{invalid_year}"}
         end
-      end
-      
+      end)
+
       # Validate number if provided
-      validate fn changeset, _context ->
+      validate(fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :legislation_number) do
-          nil -> :ok
-          number when is_integer(number) and number > 0 -> :ok
-          invalid_number -> 
-            {:error, field: :legislation_number, message: "Number must be a positive integer, got: #{invalid_number}"}
+          nil ->
+            :ok
+
+          number when is_integer(number) and number > 0 ->
+            :ok
+
+          invalid_number ->
+            {:error,
+             field: :legislation_number,
+             message: "Number must be a positive integer, got: #{invalid_number}"}
         end
-      end
+      end)
     end
 
     update :update do
-      primary? true
-      accept [:legislation_title, :legislation_year, :legislation_number, :legislation_type]
-      require_atomic? false
-      
+      primary?(true)
+      accept([:legislation_title, :legislation_year, :legislation_number, :legislation_type])
+      require_atomic?(false)
+
       # Normalize title on update as well
-      change fn changeset, _context ->
+      change(fn changeset, _context ->
         case Ash.Changeset.get_attribute(changeset, :legislation_title) do
-          nil -> changeset
+          nil ->
+            changeset
+
           title ->
             normalized_title = EhsEnforcement.Utility.normalize_legislation_title(title)
             Ash.Changeset.force_change_attribute(changeset, :legislation_title, normalized_title)
         end
-      end
+      end)
     end
 
     read :by_type do
-      argument :legislation_type, :atom, allow_nil?: false
-      filter expr(legislation_type == ^arg(:legislation_type))
+      argument(:legislation_type, :atom, allow_nil?: false)
+      filter(expr(legislation_type == ^arg(:legislation_type)))
     end
 
     read :by_year_range do
-      argument :start_year, :integer, allow_nil?: false
-      argument :end_year, :integer, allow_nil?: false
-      
-      filter expr(legislation_year >= ^arg(:start_year) and legislation_year <= ^arg(:end_year))
+      argument(:start_year, :integer, allow_nil?: false)
+      argument(:end_year, :integer, allow_nil?: false)
+
+      filter(expr(legislation_year >= ^arg(:start_year) and legislation_year <= ^arg(:end_year)))
     end
 
     read :search_title do
-      argument :search_term, :string, allow_nil?: false
-      
-      filter expr(fragment("? % ?", legislation_title, ^arg(:search_term)))
+      argument(:search_term, :string, allow_nil?: false)
+
+      filter(expr(fragment("? % ?", legislation_title, ^arg(:search_term))))
     end
   end
 
   calculations do
     calculate :full_reference, :string do
       description "Complete legislation reference including year and number"
-      calculation expr(
-        cond do
-          is_nil(legislation_year) and is_nil(legislation_number) ->
-            legislation_title
-          is_nil(legislation_number) ->
-            legislation_title <> " " <> to_string(legislation_year)
-          is_nil(legislation_year) ->
-            legislation_title <> " No. " <> to_string(legislation_number)
-          true ->
-            legislation_title <> " " <> to_string(legislation_year) <> " No. " <> to_string(legislation_number)
-        end
+
+      calculation(
+        expr(
+          cond do
+            is_nil(legislation_year) and is_nil(legislation_number) ->
+              legislation_title
+
+            is_nil(legislation_number) ->
+              legislation_title <> " " <> to_string(legislation_year)
+
+            is_nil(legislation_year) ->
+              legislation_title <> " No. " <> to_string(legislation_number)
+
+            true ->
+              legislation_title <>
+                " " <> to_string(legislation_year) <> " No. " <> to_string(legislation_number)
+          end
+        )
       )
     end
   end
 
   code_interface do
-    define :create
-    define :by_type
-    define :by_year_range
-    define :search_title
+    define(:create)
+    define(:by_type)
+    define(:by_year_range)
+    define(:search_title)
   end
 end

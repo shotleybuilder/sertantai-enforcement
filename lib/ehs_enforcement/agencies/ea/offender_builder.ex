@@ -97,7 +97,8 @@ defmodule EhsEnforcement.Agencies.Ea.OffenderBuilder do
     base_attrs = %{
       name: ea_record.offender_name,
       address: build_full_address(ea_record),
-      local_authority: ea_record.county,  # Use county as local authority
+      # Use county as local authority
+      local_authority: ea_record.county,
       postcode: ea_record.postcode,
       main_activity: ea_record.industry_sector,
       industry: map_ea_industry_to_hse_category(ea_record.industry_sector),
@@ -109,8 +110,9 @@ defmodule EhsEnforcement.Agencies.Ea.OffenderBuilder do
     }
 
     # Add business type detection
-    enhanced_attrs = base_attrs
-    |> Map.put(:business_type, determine_and_normalize_business_type(ea_record.offender_name))
+    enhanced_attrs =
+      base_attrs
+      |> Map.put(:business_type, determine_and_normalize_business_type(ea_record.offender_name))
 
     # Remove nil values to keep attrs clean
     enhanced_attrs
@@ -121,28 +123,34 @@ defmodule EhsEnforcement.Agencies.Ea.OffenderBuilder do
   defp build_notice_offender_attrs(ea_detail_record) do
     # Build offender attributes map from EA detail record
     # Clean up company registration number (remove "(opens in new tab)" text)
-    company_reg = case Map.get(ea_detail_record, :company_registration_number) do
-      nil -> nil
-      reg when is_binary(reg) ->
-        reg
-        |> String.replace(~r/\s*\(opens in new tab\)/, "")
-        |> String.trim()
-        |> case do
-          "" -> nil
-          cleaned -> cleaned
-        end
-      _ -> nil
-    end
+    company_reg =
+      case Map.get(ea_detail_record, :company_registration_number) do
+        nil ->
+          nil
+
+        reg when is_binary(reg) ->
+          reg
+          |> String.replace(~r/\s*\(opens in new tab\)/, "")
+          |> String.trim()
+          |> case do
+            "" -> nil
+            cleaned -> cleaned
+          end
+
+        _ ->
+          nil
+      end
 
     # Build address string from components
-    address_parts = [
-      Map.get(ea_detail_record, :address),
-      Map.get(ea_detail_record, :town),
-      Map.get(ea_detail_record, :county),
-      Map.get(ea_detail_record, :postcode)
-    ]
-    |> Enum.filter(&(&1 != nil && &1 != ""))
-    |> Enum.join(", ")
+    address_parts =
+      [
+        Map.get(ea_detail_record, :address),
+        Map.get(ea_detail_record, :town),
+        Map.get(ea_detail_record, :county),
+        Map.get(ea_detail_record, :postcode)
+      ]
+      |> Enum.filter(&(&1 != nil && &1 != ""))
+      |> Enum.join(", ")
 
     offender_address = if address_parts == "", do: nil, else: address_parts
 
@@ -161,16 +169,28 @@ defmodule EhsEnforcement.Agencies.Ea.OffenderBuilder do
   end
 
   defp map_ea_industry_to_hse_category(nil), do: "Unknown"
+
   defp map_ea_industry_to_hse_category(ea_industry) when is_binary(ea_industry) do
     ea_lower = String.downcase(ea_industry)
 
     cond do
-      String.contains?(ea_lower, "manufacturing") -> "Manufacturing"
-      String.contains?(ea_lower, "construction") -> "Construction"
-      String.contains?(ea_lower, ["water", "supply", "utility"]) -> "Extractive and utility supply industries"
-      String.contains?(ea_lower, ["agriculture", "farming", "forestry", "fishing"]) -> "Agriculture hunting forestry and fishing"
-      String.contains?(ea_lower, ["service", "management", "transport", "retail"]) -> "Total service industries"
-      true -> "Unknown"
+      String.contains?(ea_lower, "manufacturing") ->
+        "Manufacturing"
+
+      String.contains?(ea_lower, "construction") ->
+        "Construction"
+
+      String.contains?(ea_lower, ["water", "supply", "utility"]) ->
+        "Extractive and utility supply industries"
+
+      String.contains?(ea_lower, ["agriculture", "farming", "forestry", "fishing"]) ->
+        "Agriculture hunting forestry and fishing"
+
+      String.contains?(ea_lower, ["service", "management", "transport", "retail"]) ->
+        "Total service industries"
+
+      true ->
+        "Unknown"
     end
   end
 

@@ -8,37 +8,41 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCardTest do
   describe "offenders_action_card/1" do
     setup do
       # Create test offenders with various statistics
-      {:ok, low_offender} = Enforcement.create_offender(%{
-        name: "Low Risk Corp",
-        postcode: "SW1A 1AA",
-        total_cases: 1,
-        total_notices: 0,
-        total_fines: Decimal.new("1000.00")
-      })
+      {:ok, low_offender} =
+        Enforcement.create_offender(%{
+          name: "Low Risk Corp",
+          postcode: "SW1A 1AA",
+          total_cases: 1,
+          total_notices: 0,
+          total_fines: Decimal.new("1000.00")
+        })
 
-      {:ok, repeat_offender} = Enforcement.create_offender(%{
-        name: "Repeat Offender Ltd",
-        postcode: "M1 1AA", 
-        total_cases: 3,
-        total_notices: 2,
-        total_fines: Decimal.new("50000.00")
-      })
+      {:ok, repeat_offender} =
+        Enforcement.create_offender(%{
+          name: "Repeat Offender Ltd",
+          postcode: "M1 1AA",
+          total_cases: 3,
+          total_notices: 2,
+          total_fines: Decimal.new("50000.00")
+        })
 
-      {:ok, high_fine_offender} = Enforcement.create_offender(%{
-        name: "High Fine Industries",
-        postcode: "B1 1AA",
-        total_cases: 2,
-        total_notices: 1,
-        total_fines: Decimal.new("250000.00")
-      })
+      {:ok, high_fine_offender} =
+        Enforcement.create_offender(%{
+          name: "High Fine Industries",
+          postcode: "B1 1AA",
+          total_cases: 2,
+          total_notices: 1,
+          total_fines: Decimal.new("250000.00")
+        })
 
-      {:ok, no_fines_offender} = Enforcement.create_offender(%{
-        name: "Notice Only Company",
-        postcode: "L1 1AA",
-        total_cases: 0,
-        total_notices: 1,
-        total_fines: Decimal.new("0.00")
-      })
+      {:ok, no_fines_offender} =
+        Enforcement.create_offender(%{
+          name: "Notice Only Company",
+          postcode: "L1 1AA",
+          total_cases: 0,
+          total_notices: 1,
+          total_fines: Decimal.new("0.00")
+        })
 
       %{
         low_offender: low_offender,
@@ -70,26 +74,26 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCardTest do
 
     test "calculates repeat offenders correctly" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       # Should show 3 repeat offenders (those with more than 1 total enforcement action)
       # - repeat_offender: 3 cases + 2 notices = 5 total (repeat)
       # - high_fine_offender: 2 cases + 1 notice = 3 total (repeat)  
       # - low_offender: 1 case + 0 notices = 1 total (not repeat)
       # - no_fines_offender: 0 cases + 1 notice = 1 total (not repeat)
-      
+
       # Total offenders: 4, Repeat offenders: 2, Percentage: 50%
       assert html =~ "2 (50"
     end
 
     test "calculates average fine correctly" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       # Offenders with fines:
       # - low_offender: £1,000.00
       # - repeat_offender: £50,000.00
       # - high_fine_offender: £250,000.00
       # - no_fines_offender: £0.00 (excluded from average)
-      
+
       # Average = (1000 + 50000 + 250000) / 3 = 301000 / 3 = £100,333.33
       assert html =~ "£100,333.33"
     end
@@ -106,62 +110,63 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCardTest do
 
     test "formats numbers with commas" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       # Should have currency formatting (£ symbol)
       assert html =~ "£"
-      
+
       # Should display numerical values formatted properly
       assert html =~ ~r/\d+/
     end
 
     test "renders with loading state" do
       html = render_component(&offenders_action_card/1, %{loading: true})
-      
+
       assert html =~ "animate-spin"
     end
 
     test "applies custom CSS class" do
       html = render_component(&offenders_action_card/1, %{class: "custom-class"})
-      
+
       assert html =~ "custom-class"
     end
 
     test "uses purple theme" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       assert html =~ "bg-purple-50"
       assert html =~ "border-purple-200"
     end
 
     test "action buttons have correct styling and icons" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       # Browse Top 50 button should be primary action
       assert html =~ "bg-indigo-600"
       assert html =~ "text-white"
-      
+
       # Search button should be secondary
       assert html =~ "bg-white"
       assert html =~ "text-gray-700"
       assert html =~ "border-gray-300"
-      
+
       # Check for arrow icons
-      assert html =~ "M9 5l7 7-7 7"  # Browse arrow
-      assert html =~ "M21 21l-6-6"   # Search icon
+      # Browse arrow
+      assert html =~ "M9 5l7 7-7 7"
+      # Search icon
+      assert html =~ "M21 21l-6-6"
     end
 
     test "handles metric calculation errors gracefully" do
       # Mock Enforcement.list_offenders! to raise an error
       original_fun = &Enforcement.list_offenders!/1
-      
+
       try do
         # This would require mocking library in real implementation
         # For now, test that error handling exists in the code
         html = render_component(&offenders_action_card/1, %{})
-        
+
         # Should render without crashing
         assert html =~ "OFFENDER DATABASE"
-        
       after
         # Restore original function if we had mocking
         :ok
@@ -172,16 +177,18 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCardTest do
   describe "integration with real data" do
     test "displays formatted numbers in rendered output" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       # Check that numbers are properly formatted with commas in the output
       # This tests the formatting indirectly through the rendered component
-      assert html =~ ~r/\d{1,3}(,\d{3})*/  # Pattern for comma-separated numbers
-      assert html =~ "£"  # Currency formatting
+      # Pattern for comma-separated numbers
+      assert html =~ ~r/\d{1,3}(,\d{3})*/
+      # Currency formatting
+      assert html =~ "£"
     end
 
     test "shows percentage calculations in output" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       # Should show percentage with decimal
       assert html =~ ~r/\d+\.\d+%/
     end
@@ -190,11 +197,11 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCardTest do
   describe "accessibility" do
     test "has proper ARIA labels and structure" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       # Check for accessibility attributes
       assert html =~ "role=\"article\""
       assert html =~ "aria-labelledby"
-      
+
       # Check button accessibility
       assert html =~ "button"
       # Icons should be properly labeled or hidden
@@ -203,7 +210,7 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCardTest do
 
     test "has proper heading structure" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       # Title should be in appropriate heading level
       assert html =~ "<h3"
       assert html =~ "OFFENDER DATABASE"
@@ -213,7 +220,7 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCardTest do
   describe "responsive behavior" do
     test "has responsive classes" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       # Should have responsive grid and layout classes
       assert html =~ "min-h-[180px]"
       assert html =~ "flex"
@@ -222,7 +229,7 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCardTest do
 
     test "metrics have responsive alignment" do
       html = render_component(&offenders_action_card/1, %{})
-      
+
       # Metrics should be center on mobile, left on larger screens
       assert html =~ "text-center lg:text-left"
     end

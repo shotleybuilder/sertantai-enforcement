@@ -7,8 +7,8 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
   def mount(_params, _session, socket) do
     # Subscribe to real-time updates for this case
     Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case_updates")
-    
-    {:ok, 
+
+    {:ok,
      socket
      |> assign(:case, nil)
      |> assign(:loading, true)
@@ -20,17 +20,16 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
     try do
       # Load case with all related data
       case = Enforcement.get_case!(id, load: [:offender, :agency, :computed_breaches_summary])
-      
+
       # Subscribe to updates for this specific case
       Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:#{id}")
-      
+
       {:noreply,
        socket
        |> assign(:case, case)
        |> assign(:loading, false)
        |> assign(:error, nil)
        |> assign(:page_title, "Case #{case.regulator_id}")}
-      
     rescue
       Ash.Error.Query.NotFound ->
         {:noreply,
@@ -38,11 +37,11 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
          |> assign(:loading, false)
          |> assign(:error, :not_found)
          |> put_flash(:error, "Case not found")}
-      
+
       error ->
         require Logger
         Logger.error("Failed to load case #{id}: #{inspect(error)}")
-        
+
         {:noreply,
          socket
          |> assign(:loading, false)
@@ -56,21 +55,20 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
     case socket.assigns.case do
       nil ->
         {:noreply, socket}
-      
+
       case_record ->
         try do
           Enforcement.destroy_case!(case_record)
-          
+
           {:noreply,
            socket
            |> put_flash(:info, "Case deleted successfully")
            |> push_navigate(to: ~p"/cases")}
-          
         rescue
           error ->
             require Logger
             Logger.error("Failed to delete case: #{inspect(error)}")
-            
+
             {:noreply,
              socket
              |> put_flash(:error, "Unable to delete case")}
@@ -83,12 +81,12 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
     case socket.assigns.case do
       nil ->
         {:noreply, socket}
-      
+
       case_record ->
         # Generate CSV data for single case
         csv_data = generate_case_csv(case_record)
         filename = "case_#{case_record.regulator_id}_#{Date.to_string(Date.utc_today())}.csv"
-        
+
         {:noreply,
          socket
          |> push_event("download", %{
@@ -104,26 +102,26 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
     case socket.assigns.case do
       nil ->
         {:noreply, socket}
-      
+
       case_record ->
         case method do
           "url" ->
             case_url = url(socket, ~p"/cases/#{case_record.id}")
-            
+
             {:noreply,
              socket
              |> push_event("copy_to_clipboard", %{text: case_url})
              |> put_flash(:info, "Case URL copied to clipboard")}
-          
+
           "email" ->
             subject = "EHS Enforcement Case: #{case_record.regulator_id}"
             body = generate_case_summary(case_record)
             mailto_url = "mailto:?subject=#{URI.encode(subject)}&body=#{URI.encode(body)}"
-            
+
             {:noreply,
              socket
              |> push_event("open_url", %{url: mailto_url})}
-          
+
           _ ->
             {:noreply, socket}
         end
@@ -136,7 +134,11 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
     if socket.assigns.case && socket.assigns.case.id == updated_case.id do
       # Reload the case with full associations
       try do
-        refreshed_case = Enforcement.get_case!(updated_case.id, load: [:offender, :agency, :computed_breaches_summary])
+        refreshed_case =
+          Enforcement.get_case!(updated_case.id,
+            load: [:offender, :agency, :computed_breaches_summary]
+          )
+
         {:noreply, assign(socket, :case, refreshed_case)}
       rescue
         _ ->
@@ -173,7 +175,7 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
     headers = [
       "Regulator ID",
       "Agency",
-      "Offender Name", 
+      "Offender Name",
       "Local Authority",
       "Postcode",
       "Offense Date",
@@ -193,7 +195,8 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
       format_date(case_record.offence_action_date),
       format_currency_for_csv(case_record.offence_fine),
       escape_csv_field(case_record.offence_breaches || ""),
-      0, # notice count (no direct case-notice relationship)
+      # notice count (no direct case-notice relationship)
+      0,
       length(case_record.breaches || []),
       format_datetime(case_record.last_synced_at)
     ]
@@ -206,16 +209,16 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
   defp generate_case_summary(case_record) do
     """
     EHS Enforcement Case Summary
-    
+
     Case ID: #{case_record.regulator_id}
     Agency: #{case_record.agency.name}
     Offender: #{case_record.offender.name}
     Date: #{format_date(case_record.offence_action_date)}
     Fine: #{format_currency(case_record.offence_fine)}
-    
+
     Offense Details:
     #{case_record.offence_breaches || "N/A"}
-    
+
     View full details: #{url(~p"/cases/#{case_record.id}")}
     """
   end
@@ -243,13 +246,14 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
     |> String.split(".")
     |> case do
       [integer_part, decimal_part] ->
-        formatted_integer = integer_part
-        |> String.reverse()
-        |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
-        |> String.reverse()
-        
+        formatted_integer =
+          integer_part
+          |> String.reverse()
+          |> String.replace(~r/(\d{3})(?=\d)/, "\\1,")
+          |> String.reverse()
+
         "#{formatted_integer}.#{decimal_part}"
-      
+
       [integer_part] ->
         integer_part
         |> String.reverse()
@@ -309,46 +313,59 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
 
   defp build_case_timeline(case_record) do
     events = []
-    
+
     # Add case creation event
-    events = [%{
-      type: :case_created,
-      date: case_record.offence_action_date,
-      title: "Enforcement Action",
-      description: "Case #{case_record.regulator_id} created",
-      icon: "gavel"
-    } | events]
-    
-    # Add hearing date event if present
-    events = if case_record.offence_hearing_date do
-      [%{
-        type: :hearing_scheduled,
-        date: case_record.offence_hearing_date,
-        title: "Court Hearing",
-        description: "Hearing scheduled for #{case_record.regulator_id}",
-        icon: "calendar"
-      } | events]
-    else
-      events
-    end
-    
-    # Add breach events from loaded breaches
-    breach_events = (case_record.breaches || [])
-    |> Enum.map(fn breach ->
+    events = [
       %{
-        type: :breach_identified,
-        date: case_record.offence_action_date, # Use case date as breach discovery date
-        title: "Breach Identified",
-        description: breach.breach_description,
-        icon: "exclamation-triangle"
+        type: :case_created,
+        date: case_record.offence_action_date,
+        title: "Enforcement Action",
+        description: "Case #{case_record.regulator_id} created",
+        icon: "gavel"
       }
-    end)
-    
+      | events
+    ]
+
+    # Add hearing date event if present
+    events =
+      if case_record.offence_hearing_date do
+        [
+          %{
+            type: :hearing_scheduled,
+            date: case_record.offence_hearing_date,
+            title: "Court Hearing",
+            description: "Hearing scheduled for #{case_record.regulator_id}",
+            icon: "calendar"
+          }
+          | events
+        ]
+      else
+        events
+      end
+
+    # Add breach events from loaded breaches
+    breach_events =
+      (case_record.breaches || [])
+      |> Enum.map(fn breach ->
+        %{
+          type: :breach_identified,
+          # Use case date as breach discovery date
+          date: case_record.offence_action_date,
+          title: "Breach Identified",
+          description: breach.breach_description,
+          icon: "exclamation-triangle"
+        }
+      end)
+
     events = events ++ breach_events
-    
+
     # Sort by date descending (handle nil dates)
-    Enum.sort_by(events, fn event -> 
-      event.date || ~D[1900-01-01]
-    end, {:desc, Date})
+    Enum.sort_by(
+      events,
+      fn event ->
+        event.date || ~D[1900-01-01]
+      end,
+      {:desc, Date}
+    )
   end
 end

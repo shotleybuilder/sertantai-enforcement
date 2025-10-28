@@ -1,7 +1,7 @@
 defmodule EhsEnforcement.Logger do
   @moduledoc """
   Structured logging system for the EHS Enforcement application.
-  
+
   Provides comprehensive logging with metadata enrichment, security auditing,
   performance monitoring, and PII sanitization capabilities.
   """
@@ -44,7 +44,7 @@ defmodule EhsEnforcement.Logger do
     sanitized_metadata = sanitize_metadata(metadata)
     enriched_metadata = enrich_metadata(sanitized_metadata, :info)
     formatted_message = format_message_with_metadata(message, enriched_metadata)
-    
+
     Logger.info(formatted_message)
     record_log_metric(:info)
     :ok
@@ -55,14 +55,17 @@ defmodule EhsEnforcement.Logger do
   """
   def error(message, error, stacktrace, metadata \\ %{}) do
     sanitized_metadata = sanitize_metadata(metadata)
-    error_metadata = Map.merge(sanitized_metadata, %{
-      error_type: error.__struct__,
-      error_message: Exception.message(error),
-      stacktrace: format_stacktrace(stacktrace)
-    })
+
+    error_metadata =
+      Map.merge(sanitized_metadata, %{
+        error_type: error.__struct__,
+        error_message: Exception.message(error),
+        stacktrace: format_stacktrace(stacktrace)
+      })
+
     enriched_metadata = enrich_metadata(error_metadata, :error)
     formatted_message = format_message_with_metadata(message, enriched_metadata)
-    
+
     Logger.error(formatted_message)
     record_log_metric(:error)
     record_error_metric(error)
@@ -76,7 +79,7 @@ defmodule EhsEnforcement.Logger do
     sanitized_metadata = sanitize_metadata(metadata)
     enriched_metadata = enrich_metadata(sanitized_metadata, :warn)
     formatted_message = format_message_with_metadata(message, enriched_metadata)
-    
+
     Logger.warning(formatted_message)
     record_log_metric(:warn)
     :ok
@@ -89,7 +92,7 @@ defmodule EhsEnforcement.Logger do
     sanitized_metadata = sanitize_metadata(metadata)
     enriched_metadata = enrich_metadata(sanitized_metadata, :debug)
     formatted_message = format_message_with_metadata(message, enriched_metadata)
-    
+
     Logger.debug(formatted_message)
     record_log_metric(:debug)
     :ok
@@ -198,7 +201,7 @@ defmodule EhsEnforcement.Logger do
       env: Application.get_env(:ehs_enforcement, :environment, :dev),
       node: Node.self()
     }
-    
+
     Jason.encode!(log_entry)
   end
 
@@ -219,7 +222,7 @@ defmodule EhsEnforcement.Logger do
   """
   def get_log_metrics do
     ensure_metrics_tables_exist()
-    
+
     %{
       info_count: get_metric_count(:info),
       error_count: get_metric_count(:error),
@@ -233,15 +236,15 @@ defmodule EhsEnforcement.Logger do
   """
   def get_error_metrics do
     ensure_metrics_tables_exist()
-    
-    error_counts = 
+
+    error_counts =
       @error_metrics_table
       |> :ets.tab2list()
       |> Enum.reduce(%{}, fn {error_type, count}, acc ->
         Map.update(acc, error_type, count, &(&1 + count))
       end)
       |> Enum.sort_by(fn {_type, count} -> count end, :desc)
-    
+
     %{
       most_frequent_errors: error_counts
     }
@@ -253,13 +256,15 @@ defmodule EhsEnforcement.Logger do
   def generate_summary_report do
     metrics = get_log_metrics()
     error_metrics = get_error_metrics()
-    
-    total_logs = metrics.info_count + metrics.error_count + metrics.warn_count + metrics.debug_count
+
+    total_logs =
+      metrics.info_count + metrics.error_count + metrics.warn_count + metrics.debug_count
+
     error_rate = if total_logs > 0, do: metrics.error_count / total_logs, else: 0.0
-    
+
     # Get top operations from metadata (simplified for test)
     top_operations = ["test_op"]
-    
+
     %{
       total_logs: total_logs,
       error_rate: error_rate,
@@ -273,13 +278,13 @@ defmodule EhsEnforcement.Logger do
 
   defp format_message_with_metadata(message, metadata) when is_map(metadata) do
     # Filter out our own enriched metadata for cleaner logs
-    filtered_metadata = 
+    filtered_metadata =
       metadata
       |> Map.drop([:app, :env, :node, :pid, :timestamp, :level])
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
       |> Enum.map(fn {k, v} -> "#{k}=#{format_value(v)}" end)
       |> Enum.join(" ")
-    
+
     if filtered_metadata == "" do
       message
     else
@@ -300,7 +305,7 @@ defmodule EhsEnforcement.Logger do
 
   defp sanitize_value(key, value) when is_binary(value) do
     key_str = to_string(key)
-    
+
     cond do
       is_sensitive_field?(key_str) -> "***REDACTED***"
       is_pii_field?(key_str) -> "***REDACTED***"
@@ -331,22 +336,23 @@ defmodule EhsEnforcement.Logger do
       timestamp: DateTime.utc_now() |> DateTime.to_iso8601(),
       level: level
     }
-    
+
     Map.merge(base_metadata, metadata)
   end
 
   defp format_stacktrace(stacktrace) when is_list(stacktrace) do
     stacktrace
-    |> Enum.take(5)  # Limit stacktrace depth
+    # Limit stacktrace depth
+    |> Enum.take(5)
     |> Enum.map(fn
       {module, function, arity, location} when is_list(location) ->
         file = Keyword.get(location, :file, "unknown")
         line = Keyword.get(location, :line, 0)
         "#{module}.#{function}/#{arity} (#{file}:#{line})"
-      
+
       {module, function, arity} ->
         "#{module}.#{function}/#{arity}"
-        
+
       entry ->
         inspect(entry)
     end)
@@ -357,10 +363,11 @@ defmodule EhsEnforcement.Logger do
 
   defp record_log_metric(level) do
     ensure_metrics_tables_exist()
-    
+
     case :ets.lookup(@metrics_table, level) do
       [{^level, count}] ->
         :ets.insert(@metrics_table, {level, count + 1})
+
       [] ->
         :ets.insert(@metrics_table, {level, 1})
     end
@@ -369,10 +376,11 @@ defmodule EhsEnforcement.Logger do
   defp record_error_metric(error) do
     ensure_metrics_tables_exist()
     error_type = error.__struct__ |> to_string() |> String.replace("Elixir.", "")
-    
+
     case :ets.lookup(@error_metrics_table, error_type) do
       [{^error_type, count}] ->
         :ets.insert(@error_metrics_table, {error_type, count + 1})
+
       [] ->
         :ets.insert(@error_metrics_table, {error_type, 1})
     end
@@ -389,7 +397,7 @@ defmodule EhsEnforcement.Logger do
     unless :ets.whereis(@metrics_table) != :undefined do
       :ets.new(@metrics_table, [:named_table, :public, :set])
     end
-    
+
     unless :ets.whereis(@error_metrics_table) != :undefined do
       :ets.new(@error_metrics_table, [:named_table, :public, :set])
     end

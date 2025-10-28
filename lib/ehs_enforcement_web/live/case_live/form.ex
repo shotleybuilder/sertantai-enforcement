@@ -6,16 +6,20 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
   @impl true
   def mount(_params, _session, socket) do
     # For new case forms, create an AshPhoenix.Form for creation
-    form = AshPhoenix.Form.for_create(EhsEnforcement.Enforcement.Case, :create, forms: [auto?: false]) |> to_form()
-    
+    form =
+      AshPhoenix.Form.for_create(EhsEnforcement.Enforcement.Case, :create, forms: [auto?: false])
+      |> to_form()
+
     {:ok,
      socket
      |> assign(:form, form)
-     |> assign(:case, nil)  # Explicitly set case to nil for new cases
+     # Explicitly set case to nil for new cases
+     |> assign(:case, nil)
      |> assign(:agencies, Enforcement.list_agencies!())
      |> assign(:existing_offenders, [])
      |> assign(:selected_offender, nil)
-     |> assign(:offender_mode, :select)  # :select or :create
+     # :select or :create
+     |> assign(:offender_mode, :select)
      |> assign(:offender_search_results, [])
      |> assign(:loading, false)
      |> assign(:page_title, "New Case")}
@@ -27,14 +31,13 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
     try do
       case_record = Enforcement.get_case!(id, load: [:offender, :agency])
       form = AshPhoenix.Form.for_update(case_record, :update, forms: [auto?: false]) |> to_form()
-      
+
       {:noreply,
        socket
        |> assign(:form, form)
        |> assign(:case, case_record)
        |> assign(:selected_offender, case_record.offender)
        |> assign(:page_title, "Edit Case #{case_record.regulator_id}")}
-       
     rescue
       Ash.Error.Query.NotFound ->
         {:noreply,
@@ -62,9 +65,15 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
       {:ok, case_record} ->
         {:noreply,
          socket
-         |> put_flash(:info, if(socket.assigns[:case], do: "Case updated successfully", else: "Case created successfully"))
+         |> put_flash(
+           :info,
+           if(socket.assigns[:case],
+             do: "Case updated successfully",
+             else: "Case created successfully"
+           )
+         )
          |> push_navigate(to: ~p"/cases/#{case_record.id}")}
-      
+
       {:error, form} ->
         {:noreply, assign(socket, :form, to_form(form))}
     end
@@ -74,7 +83,7 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
   def handle_event("search_offenders", %{"query" => query}, socket) do
     if String.length(query) >= 2 do
       search_results = search_offenders(query)
-      
+
       {:noreply,
        socket
        |> assign(:offender_search_results, search_results)
@@ -91,12 +100,11 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
   def handle_event("select_offender", %{"offender_id" => offender_id}, socket) do
     try do
       offender = Enforcement.get_offender!(offender_id)
-      
+
       {:noreply,
        socket
        |> assign(:selected_offender, offender)
        |> assign(:offender_mode, :select)}
-       
     rescue
       _ ->
         {:noreply, socket}
@@ -105,17 +113,23 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
 
   @impl true
   def handle_event("toggle_offender_mode", %{"mode" => mode}, socket) do
-    offender_mode = case mode do
-      "select" -> :select
-      "create" -> :create
-      "new" -> :create  # Legacy test compatibility
-      _ -> :select  # Default fallback for any unexpected input
-    end
-    
+    offender_mode =
+      case mode do
+        "select" -> :select
+        "create" -> :create
+        # Legacy test compatibility
+        "new" -> :create
+        # Default fallback for any unexpected input
+        _ -> :select
+      end
+
     {:noreply,
      socket
      |> assign(:offender_mode, offender_mode)
-     |> assign(:selected_offender, if(offender_mode == :create, do: nil, else: socket.assigns.selected_offender))}
+     |> assign(
+       :selected_offender,
+       if(offender_mode == :create, do: nil, else: socket.assigns.selected_offender)
+     )}
   end
 
   @impl true
@@ -126,8 +140,10 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
   @impl true
   def handle_event("reset_form", _params, socket) do
     # Reset to a new create form
-    form = AshPhoenix.Form.for_create(EhsEnforcement.Enforcement.Case, :create, forms: [auto?: false]) |> to_form()
-    
+    form =
+      AshPhoenix.Form.for_create(EhsEnforcement.Enforcement.Case, :create, forms: [auto?: false])
+      |> to_form()
+
     {:noreply,
      socket
      |> assign(:form, form)
@@ -139,22 +155,17 @@ defmodule EhsEnforcementWeb.CaseLive.Form do
 
   # Private functions
 
-
-
   defp search_offenders(query) do
     try do
-      Enforcement.list_offenders!([
+      Enforcement.list_offenders!(
         filter: [name: [ilike: "%#{query}%"]],
         sort: [name: :asc],
         page: [limit: 10]
-      ])
+      )
     rescue
       _ -> []
     end
   end
-
-
-
 
   # Unused functions commented out:
   # defp format_currency_input(amount) when is_struct(amount, Decimal) do

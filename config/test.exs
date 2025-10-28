@@ -1,7 +1,9 @@
 import Config
-config :ehs_enforcement, Oban, 
+
+config :ehs_enforcement, Oban,
   testing: :manual,
-  plugins: []  # Disable all plugins including Cron in test environment
+  # Disable all plugins including Cron in test environment
+  plugins: []
 
 # Set the environment
 config :ehs_enforcement, :environment, :test
@@ -27,8 +29,10 @@ config :ehs_enforcement, EhsEnforcement.Repo,
   # Increased from * 2 to * 4 for concurrent test stability
   pool_size: System.schedulers_online() * 4,
   # Connection queue management for better reuse under load
-  queue_target: 5000,    # Log warning if checkout takes > 5s
-  queue_interval: 1000   # Check queue every 1s
+  # Log warning if checkout takes > 5s
+  queue_target: 5000,
+  # Check queue every 1s
+  queue_interval: 1000
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
@@ -57,4 +61,6 @@ config :phoenix_live_view,
 config :ehs_enforcement, :airtable_client, EhsEnforcement.Test.MockAirtableClient
 
 # Configure JWT signing secret for AshAuthentication tokens
-config :ehs_enforcement, :token_signing_secret, "test-jwt-signing-secret-for-authentication-tokens"
+config :ehs_enforcement,
+       :token_signing_secret,
+       "test-jwt-signing-secret-for-authentication-tokens"

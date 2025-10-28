@@ -9,7 +9,10 @@
               <ol class="flex items-center space-x-4">
                 <li>
                   <div>
-                    <.link navigate={~p"/admin/agencies"} class="text-gray-400 hover:text-gray-500">
+                    <.link
+                      navigate={~p"/admin/agencies"}
+                      class="text-gray-400 hover:text-gray-500"
+                    >
                       <.icon name="hero-building-office" class="flex-shrink-0 h-5 w-5" />
                       <span class="sr-only">Agencies</span>
                     </.link>
@@ -18,7 +21,10 @@
                 <li>
                   <div class="flex items-center">
                     <.icon name="hero-chevron-right" class="flex-shrink-0 h-5 w-5 text-gray-400" />
-                    <.link navigate={~p"/admin/agencies"} class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">
+                    <.link
+                      navigate={~p"/admin/agencies"}
+                      class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700"
+                    >
                       Agencies
                     </.link>
                   </div>
@@ -35,10 +41,10 @@
             </nav>
             <h1 class="mt-2 text-3xl font-bold text-gray-900">Edit Agency</h1>
             <p class="mt-1 text-sm text-gray-500">
-              <%= @agency.name %> (<%= String.upcase(to_string(@agency.code)) %>)
+              {@agency.name} ({String.upcase(to_string(@agency.code))})
             </p>
           </div>
-          
+
           <div class="flex space-x-3">
             <button
               type="button"
@@ -52,8 +58,8 @@
       </div>
     </div>
   </div>
-
-  <!-- Main Content -->
+  
+<!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="bg-white shadow overflow-hidden sm:rounded-lg">
       <.simple_form
@@ -65,7 +71,7 @@
         <div class="px-4 py-5 sm:p-6">
           <h3 class="text-lg leading-6 font-medium text-gray-900 mb-6">Agency Details</h3>
           
-          <!-- Three-column layout table -->
+<!-- Three-column layout table -->
           <div class="overflow-hidden">
             <table class="min-w-full">
               <thead class="bg-gray-50">
@@ -85,39 +91,41 @@
                 <!-- ID Field -->
                 <tr>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:id) %>
+                    {field_display_name(:id)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:id) %>
+                    {field_description(:id)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-900">
-                    <span class="font-mono text-gray-500"><%= String.slice(@agency.id, 0, 8) %>...</span>
+                    <span class="font-mono text-gray-500">
+                      {String.slice(@agency.id, 0, 8)}...
+                    </span>
                   </td>
                 </tr>
-
-                <!-- Code Field -->
+                
+<!-- Code Field -->
                 <tr class="bg-gray-50">
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:code) %>
+                    {field_display_name(:code)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:code) %>
+                    {field_description(:code)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-900">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      <%= String.upcase(to_string(@agency.code)) %>
+                      {String.upcase(to_string(@agency.code))}
                     </span>
                     <span class="ml-2 text-xs text-gray-500">(Read-only)</span>
                   </td>
                 </tr>
-
-                <!-- Name Field -->
+                
+<!-- Name Field -->
                 <tr>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:name) %>
+                    {field_display_name(:name)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:name) %>
+                    {field_description(:name)}
                   </td>
                   <td class="px-6 py-4">
                     <.input
@@ -128,14 +136,14 @@
                     />
                   </td>
                 </tr>
-
-                <!-- Base URL Field -->
+                
+<!-- Base URL Field -->
                 <tr class="bg-gray-50">
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:base_url) %>
+                    {field_display_name(:base_url)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:base_url) %>
+                    {field_description(:base_url)}
                   </td>
                   <td class="px-6 py-4">
                     <.input
@@ -146,14 +154,14 @@
                     />
                   </td>
                 </tr>
-
-                <!-- Enabled Field -->
+                
+<!-- Enabled Field -->
                 <tr>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:enabled) %>
+                    {field_display_name(:enabled)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:enabled) %>
+                    {field_description(:enabled)}
                   </td>
                   <td class="px-6 py-4">
                     <div class="flex items-center">
@@ -168,31 +176,31 @@
                     </div>
                   </td>
                 </tr>
-
-                <!-- Inserted At Field -->
+                
+<!-- Inserted At Field -->
                 <tr class="bg-gray-50">
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:inserted_at) %>
+                    {field_display_name(:inserted_at)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:inserted_at) %>
+                    {field_description(:inserted_at)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= format_datetime(@agency.inserted_at) %>
+                    {format_datetime(@agency.inserted_at)}
                     <span class="ml-2 text-xs text-gray-400">(Read-only)</span>
                   </td>
                 </tr>
-
-                <!-- Updated At Field -->
+                
+<!-- Updated At Field -->
                 <tr>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <%= field_display_name(:updated_at) %>
+                    {field_display_name(:updated_at)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= field_description(:updated_at) %>
+                    {field_description(:updated_at)}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-500">
-                    <%= format_datetime(@agency.updated_at) %>
+                    {format_datetime(@agency.updated_at)}
                     <span class="ml-2 text-xs text-gray-400">(Read-only)</span>
                   </td>
                 </tr>
@@ -200,8 +208,8 @@
             </table>
           </div>
         </div>
-
-        <!-- Action Buttons -->
+        
+<!-- Action Buttons -->
         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <button
             type="submit"

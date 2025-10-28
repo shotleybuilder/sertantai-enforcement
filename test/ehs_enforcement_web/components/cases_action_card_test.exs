@@ -1,6 +1,6 @@
 defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
   use EhsEnforcementWeb.ConnCase, async: true
-  
+
   import Phoenix.LiveViewTest
   import EhsEnforcementWeb.Components.CasesActionCard
 
@@ -9,7 +9,7 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
   describe "cases_action_card/1" do
     test "renders with default metrics when no cases exist" do
       html = render_component(&cases_action_card/1, %{current_user: nil})
-      
+
       assert html =~ "ENFORCEMENT CASES"
       assert html =~ "📁"
       assert html =~ "Total Cases"
@@ -21,14 +21,14 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
 
     test "renders Browse Recent button" do
       html = render_component(&cases_action_card/1, %{current_user: nil})
-      
+
       assert html =~ "Browse Recent"
       assert html =~ "phx-click=\"browse_recent_cases\""
     end
 
     test "renders Search Recent Cases button" do
       html = render_component(&cases_action_card/1, %{current_user: nil})
-      
+
       assert html =~ "Search Recent Cases"
       assert html =~ "phx-click=\"search_cases\""
     end
@@ -36,7 +36,7 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
     test "shows admin actions for admin users" do
       admin_user = %{id: 1, is_admin: true, name: "Admin User"}
       html = render_component(&cases_action_card/1, %{current_user: admin_user})
-      
+
       assert html =~ "Scrape Cases"
       assert html =~ "phx-click=\"scrape_cases\""
       assert html =~ "ADMIN"
@@ -45,25 +45,25 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
     test "hides admin actions for non-admin users" do
       regular_user = %{id: 2, is_admin: false, name: "Regular User"}
       html = render_component(&cases_action_card/1, %{current_user: regular_user})
-      
+
       refute html =~ "Scrape Cases"
     end
 
     test "hides admin actions for nil user" do
       html = render_component(&cases_action_card/1, %{current_user: nil})
-      
+
       refute html =~ "Scrape Cases"
     end
 
     test "displays loading state" do
       html = render_component(&cases_action_card/1, %{current_user: nil, loading: true})
-      
+
       assert html =~ "animate-spin"
     end
 
     test "applies custom CSS classes" do
       html = render_component(&cases_action_card/1, %{current_user: nil, class: "custom-class"})
-      
+
       assert html =~ "custom-class"
     end
 
@@ -78,7 +78,7 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
     test "formats currency correctly" do
       decimal_amount = Decimal.new("1234.56")
       formatted = format_currency_for_test(decimal_amount)
-      
+
       assert formatted == "£1,234.56"
     end
 
@@ -114,10 +114,11 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
       # Mock a scenario where Enforcement.list_cases! raises an error
       # In a real test, you'd use mocks or fixtures
       html = render_component(&cases_action_card/1, %{current_user: nil})
-      
+
       # Should still render without crashing
       assert html =~ "ENFORCEMENT CASES"
-      assert html =~ "0" # Default values
+      # Default values
+      assert html =~ "0"
     end
   end
 
@@ -156,13 +157,14 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
     EhsEnforcementWeb.Components.CasesActionCard.__info__(:functions)
     |> Enum.find(fn {name, _arity} -> name == :is_admin? end)
     |> case do
-      nil -> 
+      nil ->
         # Implement the logic directly for testing
         case user do
           %{is_admin: true} -> true
           _ -> false
         end
-      _ -> 
+
+      _ ->
         apply(EhsEnforcementWeb.Components.CasesActionCard, :is_admin?, [user])
     end
   end

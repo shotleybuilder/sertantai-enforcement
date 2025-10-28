@@ -12,92 +12,100 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
   describe "OffenderLive.Index mount" do
     setup do
       # Create test agencies
-      {:ok, hse_agency} = Enforcement.create_agency(%{
-        code: :hse,
-        name: "Health and Safety Executive",
-        enabled: true
-      })
+      {:ok, hse_agency} =
+        Enforcement.create_agency(%{
+          code: :hse,
+          name: "Health and Safety Executive",
+          enabled: true
+        })
 
-      {:ok, ea_agency} = Enforcement.create_agency(%{
-        code: :ea,
-        name: "Environment Agency",
-        enabled: true
-      })
+      {:ok, ea_agency} =
+        Enforcement.create_agency(%{
+          code: :ea,
+          name: "Environment Agency",
+          enabled: true
+        })
 
       # Create test offenders with varied enforcement history
       base_date = ~D[2024-01-15]
 
-      {:ok, repeat_offender} = Enforcement.create_offender(%{
-        name: "Acme Manufacturing Ltd",
-        local_authority: "Manchester City Council",
-        postcode: "M1 1AA",
-        industry: "Manufacturing",
-        business_type: :limited_company,
-        total_cases: 5,
-        total_notices: 8,
-        total_fines: Decimal.new("250000"),
-        first_seen_date: ~D[2020-06-15],
-        last_seen_date: ~D[2024-03-20]
-      })
+      {:ok, repeat_offender} =
+        Enforcement.create_offender(%{
+          name: "Acme Manufacturing Ltd",
+          local_authority: "Manchester City Council",
+          postcode: "M1 1AA",
+          industry: "Manufacturing",
+          business_type: :limited_company,
+          total_cases: 5,
+          total_notices: 8,
+          total_fines: Decimal.new("250000"),
+          first_seen_date: ~D[2020-06-15],
+          last_seen_date: ~D[2024-03-20]
+        })
 
-      {:ok, moderate_offender} = Enforcement.create_offender(%{
-        name: "Industrial Corp",
-        local_authority: "Birmingham City Council",
-        postcode: "B2 2BB",
-        industry: "Chemical Processing",
-        business_type: :plc,
-        total_cases: 2,
-        total_notices: 3,
-        total_fines: Decimal.new("75000"),
-        first_seen_date: ~D[2022-03-10],
-        last_seen_date: ~D[2023-11-15]
-      })
+      {:ok, moderate_offender} =
+        Enforcement.create_offender(%{
+          name: "Industrial Corp",
+          local_authority: "Birmingham City Council",
+          postcode: "B2 2BB",
+          industry: "Chemical Processing",
+          business_type: :plc,
+          total_cases: 2,
+          total_notices: 3,
+          total_fines: Decimal.new("75000"),
+          first_seen_date: ~D[2022-03-10],
+          last_seen_date: ~D[2023-11-15]
+        })
 
-      {:ok, minor_offender} = Enforcement.create_offender(%{
-        name: "Small Business Ltd",
-        local_authority: "Leeds City Council",
-        postcode: "LS3 3CC",
-        industry: "Retail",
-        business_type: :limited_company,
-        total_cases: 1,
-        total_notices: 1,
-        total_fines: Decimal.new("5000"),
-        first_seen_date: ~D[2023-08-05],
-        last_seen_date: ~D[2023-08-05]
-      })
+      {:ok, minor_offender} =
+        Enforcement.create_offender(%{
+          name: "Small Business Ltd",
+          local_authority: "Leeds City Council",
+          postcode: "LS3 3CC",
+          industry: "Retail",
+          business_type: :limited_company,
+          total_cases: 1,
+          total_notices: 1,
+          total_fines: Decimal.new("5000"),
+          first_seen_date: ~D[2023-08-05],
+          last_seen_date: ~D[2023-08-05]
+        })
 
       # Create some enforcement cases for context
-      {:ok, case1} = Enforcement.create_case(%{
-        regulator_id: "HSE-2024-001",
-        agency_id: hse_agency.id,
-        offender_id: repeat_offender.id,
-        offence_action_date: base_date,
-        offence_fine: Decimal.new("50000"),
-        offence_breaches: "Health and Safety at Work Act 1974 - Section 2(1)",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, case1} =
+        Enforcement.create_case(%{
+          regulator_id: "HSE-2024-001",
+          agency_id: hse_agency.id,
+          offender_id: repeat_offender.id,
+          offence_action_date: base_date,
+          offence_fine: Decimal.new("50000"),
+          offence_breaches: "Health and Safety at Work Act 1974 - Section 2(1)",
+          last_synced_at: DateTime.utc_now()
+        })
 
-      {:ok, case2} = Enforcement.create_case(%{
-        regulator_id: "EA-2023-045",
-        agency_id: ea_agency.id,
-        offender_id: moderate_offender.id,
-        offence_action_date: Date.add(base_date, -30),
-        offence_fine: Decimal.new("25000"),
-        offence_breaches: "Environmental Protection Act 1990 - Section 33(1)(a)",
-        last_synced_at: DateTime.utc_now()
-      })
+      {:ok, case2} =
+        Enforcement.create_case(%{
+          regulator_id: "EA-2023-045",
+          agency_id: ea_agency.id,
+          offender_id: moderate_offender.id,
+          offence_action_date: Date.add(base_date, -30),
+          offence_fine: Decimal.new("25000"),
+          offence_breaches: "Environmental Protection Act 1990 - Section 33(1)(a)",
+          last_synced_at: DateTime.utc_now()
+        })
 
       # Create some notices
-      {:ok, notice1} = Enforcement.create_notice(%{
-        regulator_id: "HSE-N-2024-001",
-        agency_id: hse_agency.id,
-        offender_id: repeat_offender.id,
-        offence_action_type: "improvement_notice",
-        notice_date: base_date,
-        operative_date: Date.add(base_date, 7),
-        compliance_date: Date.add(base_date, 30),
-        notice_body: "Improve safety procedures within 30 days"
-      })
+      {:ok, notice1} =
+        Enforcement.create_notice(%{
+          regulator_id: "HSE-N-2024-001",
+          agency_id: hse_agency.id,
+          offender_id: repeat_offender.id,
+          offence_action_type: "improvement_notice",
+          notice_date: base_date,
+          operative_date: Date.add(base_date, 7),
+          compliance_date: Date.add(base_date, 30),
+          notice_body: "Improve safety procedures within 30 days"
+        })
 
       %{
         hse_agency: hse_agency,
@@ -118,7 +126,11 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       assert html =~ "Enforcement Offenders"
     end
 
-    test "displays offender list with enforcement statistics", %{conn: conn, repeat_offender: repeat_offender, moderate_offender: moderate_offender} do
+    test "displays offender list with enforcement statistics", %{
+      conn: conn,
+      repeat_offender: repeat_offender,
+      moderate_offender: moderate_offender
+    } do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Should show offender names
@@ -126,15 +138,23 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       assert html =~ moderate_offender.name
 
       # Should show enforcement statistics
-      assert html =~ "5 Cases" # repeat_offender total_cases
-      assert html =~ "8 Notices" # repeat_offender total_notices
-      assert html =~ "£250,000" # repeat_offender total_fines
+      # repeat_offender total_cases
+      assert html =~ "5 Cases"
+      # repeat_offender total_notices
+      assert html =~ "8 Notices"
+      # repeat_offender total_fines
+      assert html =~ "£250,000"
 
-      assert html =~ "2 Cases" # moderate_offender total_cases
-      assert html =~ "3 Notices" # moderate_offender total_notices
+      # moderate_offender total_cases
+      assert html =~ "2 Cases"
+      # moderate_offender total_notices
+      assert html =~ "3 Notices"
     end
 
-    test "identifies repeat offenders with visual indicators", %{conn: conn, repeat_offender: repeat_offender} do
+    test "identifies repeat offenders with visual indicators", %{
+      conn: conn,
+      repeat_offender: repeat_offender
+    } do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Should have repeat offender indicator for offenders with multiple cases
@@ -143,7 +163,11 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       assert has_element?(view, "[data-offender-id='#{repeat_offender.id}']")
     end
 
-    test "filters offenders by industry", %{conn: conn, repeat_offender: repeat_offender, moderate_offender: moderate_offender} do
+    test "filters offenders by industry", %{
+      conn: conn,
+      repeat_offender: repeat_offender,
+      moderate_offender: moderate_offender
+    } do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Filter by Manufacturing industry
@@ -157,7 +181,11 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       refute render(view) =~ moderate_offender.name
     end
 
-    test "filters offenders by local authority", %{conn: conn, repeat_offender: repeat_offender, moderate_offender: moderate_offender} do
+    test "filters offenders by local authority", %{
+      conn: conn,
+      repeat_offender: repeat_offender,
+      moderate_offender: moderate_offender
+    } do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Filter by Manchester
@@ -171,7 +199,11 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       refute render(view) =~ moderate_offender.name
     end
 
-    test "filters offenders by business type", %{conn: conn, repeat_offender: repeat_offender, moderate_offender: moderate_offender} do
+    test "filters offenders by business type", %{
+      conn: conn,
+      repeat_offender: repeat_offender,
+      moderate_offender: moderate_offender
+    } do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Filter by limited company
@@ -185,7 +217,11 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       refute render(view) =~ moderate_offender.name
     end
 
-    test "filters repeat offenders only", %{conn: conn, repeat_offender: repeat_offender, minor_offender: minor_offender} do
+    test "filters repeat offenders only", %{
+      conn: conn,
+      repeat_offender: repeat_offender,
+      minor_offender: minor_offender
+    } do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Filter for repeat offenders only (multiple cases/notices)
@@ -200,7 +236,11 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       refute render(view) =~ minor_offender.name
     end
 
-    test "sorts offenders by total fines descending", %{conn: conn, repeat_offender: repeat_offender, moderate_offender: moderate_offender} do
+    test "sorts offenders by total fines descending", %{
+      conn: conn,
+      repeat_offender: repeat_offender,
+      moderate_offender: moderate_offender
+    } do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Sort by total fines descending
@@ -209,15 +249,19 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       |> render_change()
 
       rendered_html = render(view)
-      
+
       # Repeat offender (£250k) should appear before moderate offender (£75k)
       repeat_pos = :binary.match(rendered_html, repeat_offender.name) |> elem(0)
       moderate_pos = :binary.match(rendered_html, moderate_offender.name) |> elem(0)
-      
+
       assert repeat_pos < moderate_pos
     end
 
-    test "sorts offenders by enforcement count descending", %{conn: conn, repeat_offender: repeat_offender, minor_offender: minor_offender} do
+    test "sorts offenders by enforcement count descending", %{
+      conn: conn,
+      repeat_offender: repeat_offender,
+      minor_offender: minor_offender
+    } do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Sort by total cases descending
@@ -226,15 +270,19 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       |> render_change()
 
       rendered_html = render(view)
-      
+
       # Repeat offender (5 cases) should appear before minor offender (1 case)
       repeat_pos = :binary.match(rendered_html, repeat_offender.name) |> elem(0)
       minor_pos = :binary.match(rendered_html, minor_offender.name) |> elem(0)
-      
+
       assert repeat_pos < minor_pos
     end
 
-    test "searches offenders by name", %{conn: conn, repeat_offender: repeat_offender, moderate_offender: moderate_offender} do
+    test "searches offenders by name", %{
+      conn: conn,
+      repeat_offender: repeat_offender,
+      moderate_offender: moderate_offender
+    } do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Search for "Acme" - search is handled through the filter form
@@ -248,7 +296,11 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       refute render(view) =~ moderate_offender.name
     end
 
-    test "searches offenders by postcode", %{conn: conn, repeat_offender: repeat_offender, moderate_offender: moderate_offender} do
+    test "searches offenders by postcode", %{
+      conn: conn,
+      repeat_offender: repeat_offender,
+      moderate_offender: moderate_offender
+    } do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Search by postcode - search is handled through the filter form
@@ -265,14 +317,15 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
     test "implements pagination for large offender lists", %{conn: conn} do
       # Create additional offenders to test pagination
       for i <- 1..25 do
-        {:ok, _offender} = Enforcement.create_offender(%{
-          name: "Test Company #{i} Ltd",
-          local_authority: "Test Council #{i}",
-          postcode: "T#{i} #{i}AA",
-          total_cases: 1,
-          total_notices: 1,
-          total_fines: Decimal.new("1000")
-        })
+        {:ok, _offender} =
+          Enforcement.create_offender(%{
+            name: "Test Company #{i} Ltd",
+            local_authority: "Test Council #{i}",
+            postcode: "T#{i} #{i}AA",
+            total_cases: 1,
+            total_notices: 1,
+            total_fines: Decimal.new("1000")
+          })
       end
 
       {:ok, view, html} = live(conn, "/offenders")
@@ -280,11 +333,11 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       # Should show pagination controls when there are many results
       rendered_html = render(view)
       offender_rows = view |> render() |> Floki.find("[data-role='offender-row']")
-      
+
       # With 25 additional + existing test data, should have pagination
       # Check if we have results showing
       assert length(offender_rows) > 0
-      
+
       # If showing 20 results, likely has pagination
       if length(offender_rows) == 20 do
         # Should have some indication of more pages if total > per_page
@@ -297,7 +350,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       {:ok, view, html} = live(conn, "/offenders")
 
       # Click on offender row
-      {:ok, show_view, _html} = 
+      {:ok, show_view, _html} =
         view
         |> element("[data-offender-id='#{repeat_offender.id}'] a")
         |> render_click()
@@ -337,7 +390,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       view
       |> element("button", "Export CSV")
       |> render_click()
-      
+
       # CSV export is handled via JS download event, so we can't directly test content
       # Just verify the button exists and is clickable
       assert has_element?(view, "button", "Export CSV")
@@ -360,13 +413,14 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
 
   describe "OffenderLive.Index accessibility" do
     setup do
-      {:ok, offender} = Enforcement.create_offender(%{
-        name: "Accessible Corp",
-        local_authority: "Test Council",
-        total_cases: 1,
-        total_notices: 1,
-        total_fines: Decimal.new("5000")
-      })
+      {:ok, offender} =
+        Enforcement.create_offender(%{
+          name: "Accessible Corp",
+          local_authority: "Test Council",
+          total_cases: 1,
+          total_notices: 1,
+          total_fines: Decimal.new("5000")
+        })
 
       %{offender: offender}
     end
@@ -376,7 +430,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
 
       # Should have proper ARIA attributes for accessibility
       assert html =~ ~r/aria-label="[^"]*"/
-      
+
       # Table should have proper structure
       assert has_element?(view, "table")
       assert has_element?(view, "thead")
@@ -397,7 +451,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       # This would require mocking the database layer
       # For now, just ensure the page doesn't crash
       {:ok, view, html} = live(conn, "/offenders")
-      
+
       assert view.module == EhsEnforcementWeb.OffenderLive.Index
     end
 

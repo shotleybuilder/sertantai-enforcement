@@ -475,10 +475,10 @@ defmodule EhsEnforcement.Utility do
 
   @doc """
   Normalizes legislation titles to prevent duplicates.
-  
+
   Converts to proper title case with exceptions for small joining words.
   Works for both HSE and EA legislation parsing.
-  
+
   ## Examples
       iex> normalize_legislation_title("HEALTH AND SAFETY AT WORK ACT")
       "Health and Safety at Work Act"
@@ -504,7 +504,8 @@ defmodule EhsEnforcement.Utility do
   # Words that should remain lowercase in title case (except at start)
   @small_words ~w[at of and the in on for with to by under from etc]
 
-  defp title_case_word(word, 0), do: String.capitalize(word)  # Always capitalize first word
+  # Always capitalize first word
+  defp title_case_word(word, 0), do: String.capitalize(word)
   defp title_case_word(word, _index) when word in @small_words, do: word
   defp title_case_word(word, _index), do: String.capitalize(word)
 
@@ -531,7 +532,7 @@ defmodule EhsEnforcement.Utility do
 
   @doc """
   Determines legislation type from title and context.
-  
+
   ## Examples
       iex> determine_legislation_type("Health and Safety at Work etc. Act")
       :act
@@ -542,19 +543,30 @@ defmodule EhsEnforcement.Utility do
   @spec determine_legislation_type(String.t()) :: atom()
   def determine_legislation_type(title) when is_binary(title) do
     title_lower = String.downcase(title)
-    
+
     cond do
-      String.contains?(title_lower, "acop") or String.contains?(title_lower, "approved code of practice") -> :acop
-      String.contains?(title_lower, "regulation") -> :regulation
-      String.contains?(title_lower, "order") -> :order
-      String.contains?(title_lower, "act") -> :act
-      true -> :act  # Default to act
+      String.contains?(title_lower, "acop") or
+          String.contains?(title_lower, "approved code of practice") ->
+        :acop
+
+      String.contains?(title_lower, "regulation") ->
+        :regulation
+
+      String.contains?(title_lower, "order") ->
+        :order
+
+      String.contains?(title_lower, "act") ->
+        :act
+
+      # Default to act
+      true ->
+        :act
     end
   end
 
   @doc """
   Extracts year from legislation title if present.
-  
+
   ## Examples
       iex> extract_year_from_title("Health and Safety at Work Act 1974")
       1974
@@ -575,38 +587,43 @@ defmodule EhsEnforcement.Utility do
 
   @doc """
   Extracts legislation number from title or context.
-  
+
   For HSE: Usually not present in title, comes from lookup table
   For EA: May be present in structured data
   """
   @spec extract_number_from_context(String.t(), map()) :: integer() | nil
   def extract_number_from_context(_title, %{number: number}) when is_integer(number), do: number
-  def extract_number_from_context(_title, %{"number" => number}) when is_integer(number), do: number
+
+  def extract_number_from_context(_title, %{"number" => number}) when is_integer(number),
+    do: number
+
   def extract_number_from_context(_title, %{"number" => number}) when is_binary(number) do
     case Integer.parse(number) do
       {num, _} -> num
       :error -> nil
     end
   end
+
   def extract_number_from_context(_title, _context), do: nil
 
   @doc """
   Validates legislation data completeness.
-  
+
   Returns {:ok, normalized_data} or {:error, reason}
   """
   @spec validate_legislation_data(map()) :: {:ok, map()} | {:error, String.t()}
   def validate_legislation_data(%{title: title} = data) when is_binary(title) and title != "" do
     normalized_title = normalize_legislation_title(title)
     legislation_type = determine_legislation_type(normalized_title)
-    
+
     validated_data = %{
       legislation_title: normalized_title,
       legislation_type: legislation_type,
       legislation_year: data[:year] || data["year"] || extract_year_from_title(title),
-      legislation_number: data[:number] || data["number"] || extract_number_from_context(title, data)
+      legislation_number:
+        data[:number] || data["number"] || extract_number_from_context(title, data)
     }
-    
+
     {:ok, validated_data}
   end
 
@@ -627,7 +644,7 @@ defmodule EhsEnforcement.Utility do
     # Normalize both titles for comparison
     norm1 = normalize_legislation_title(title1)
     norm2 = normalize_legislation_title(title2)
-    
+
     # Simple Jaro-Winkler approximation for similarity
     String.jaro_distance(norm1, norm2)
   end

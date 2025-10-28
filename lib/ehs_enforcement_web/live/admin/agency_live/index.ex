@@ -1,6 +1,6 @@
 defmodule EhsEnforcementWeb.Admin.AgencyLive.Index do
   use EhsEnforcementWeb, :live_view
-  
+
   alias EhsEnforcement.Enforcement
 
   @impl true
@@ -27,13 +27,13 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.Index do
              socket
              |> put_flash(:info, "Agency #{agency.name} deleted successfully")
              |> load_agencies()}
-          
+
           {:error, error} ->
             {:noreply,
              socket
              |> put_flash(:error, "Failed to delete agency: #{inspect(error)}")}
         end
-      
+
       {:error, _} ->
         {:noreply,
          socket
@@ -46,17 +46,16 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.Index do
   defp load_agencies(socket) do
     try do
       agencies = Enforcement.list_agencies!()
-      
+
       socket
       |> assign(:agencies, agencies)
       |> assign(:total_agencies, length(agencies))
       |> assign(:loading, false)
-      
     rescue
       error ->
         require Logger
         Logger.error("Failed to load agencies: #{inspect(error)}")
-        
+
         socket
         |> assign(:agencies, [])
         |> assign(:total_agencies, 0)
@@ -70,5 +69,4 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.Index do
   end
 
   defp format_datetime(_), do: ""
-
 end

@@ -8,6 +8,6 @@ defmodule EhsEnforcement.Events do
     validate_config_inclusion?: false
 
   resources do
-    resource EhsEnforcement.Events.Event
+    resource(EhsEnforcement.Events.Event)
   end
 end

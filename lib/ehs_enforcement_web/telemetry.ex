@@ -95,12 +95,12 @@ defmodule EhsEnforcementWeb.Telemetry do
       summary("ehs_enforcement.auth.login.duration", unit: {:native, :millisecond}),
       counter("ehs_enforcement.auth.login.success"),
       counter("ehs_enforcement.auth.login.failure"),
-      
+
       # Health check metrics
       counter("ehs_enforcement.health_check.requests"),
       counter("ehs_enforcement.health_check.success"),
       counter("ehs_enforcement.health_check.failure"),
-      
+
       # Database connection metrics
       last_value("ehs_enforcement.database.connected")
     ]
@@ -125,6 +125,7 @@ defmodule EhsEnforcementWeb.Telemetry do
     case EhsEnforcement.Repo.query("SELECT 1", []) do
       {:ok, _} ->
         :telemetry.execute([:ehs_enforcement, :database], %{connected: 1}, %{})
+
       {:error, _} ->
         :telemetry.execute([:ehs_enforcement, :database], %{connected: 0}, %{})
     end

@@ -7,6 +7,7 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
   """
   def filter_form(assigns) do
     assigns = assign_new(assigns, :fuzzy_search, fn -> false end)
+
     ~H"""
     <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -19,7 +20,7 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
           Clear All
         </button>
       </div>
-      
+
       <.form for={%{}} phx-change="filter" phx-target={@target} data-testid="case-filters">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <!-- Agency Filter -->
@@ -37,18 +38,18 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
               <%= for agency <- @agencies do %>
                 <%= if agency.enabled do %>
                   <option value={agency.id} selected={@filters[:agency_id] == agency.id}>
-                    <%= agency.name %>
+                    {agency.name}
                   </option>
                 <% else %>
                   <option value={agency.id} disabled selected={@filters[:agency_id] == agency.id}>
-                    <%= agency.name %> (Disabled)
+                    {agency.name} (Disabled)
                   </option>
                 <% end %>
               <% end %>
             </select>
           </div>
-
-          <!-- Search Input -->
+          
+    <!-- Search Input -->
           <div class="space-y-1">
             <label for="search-filter" class="block text-sm font-medium text-gray-700">
               Search Cases
@@ -67,7 +68,7 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
               </div>
             </div>
             
-            <!-- Fuzzy Search Toggle -->
+    <!-- Fuzzy Search Toggle -->
             <div class="mt-2 flex items-center">
               <input
                 id="fuzzy-search-toggle"
@@ -85,8 +86,8 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
               <% end %>
             </div>
           </div>
-
-          <!-- Date From -->
+          
+    <!-- Date From -->
           <div class="space-y-1">
             <label for="date-from-filter" class="block text-sm font-medium text-gray-700">
               Date From
@@ -99,8 +100,8 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
-
-          <!-- Date To -->
+          
+    <!-- Date To -->
           <div class="space-y-1">
             <label for="date-to-filter" class="block text-sm font-medium text-gray-700">
               Date To
@@ -113,8 +114,8 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
-
-          <!-- Min Fine -->
+          
+    <!-- Min Fine -->
           <div class="space-y-1">
             <label for="min-fine-filter" class="block text-sm font-medium text-gray-700">
               Min Fine (£)
@@ -130,8 +131,8 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             />
           </div>
-
-          <!-- Max Fine -->
+          
+    <!-- Max Fine -->
           <div class="space-y-1">
             <label for="max-fine-filter" class="block text-sm font-medium text-gray-700">
               Max Fine (£)
@@ -148,24 +149,23 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
             />
           </div>
         </div>
-
-        <!-- Filter Actions -->
+        
+    <!-- Filter Actions -->
         <div class="mt-4 flex justify-between items-center">
           <div class="text-sm text-gray-500">
             <%= if map_size(@filters) > 0 do %>
-              <%= Enum.count(Map.keys(@filters)) %> filter<%= if Enum.count(Map.keys(@filters)) != 1, do: "s" %> applied
+              {Enum.count(Map.keys(@filters))} filter{if Enum.count(Map.keys(@filters)) != 1, do: "s"} applied
             <% else %>
               No filters applied
             <% end %>
           </div>
-          
+
           <div class="flex space-x-2">
             <button
               type="submit"
               class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <.icon name="hero-funnel" class="h-4 w-4 mr-1" />
-              Apply Filters
+              <.icon name="hero-funnel" class="h-4 w-4 mr-1" /> Apply Filters
             </button>
             <!-- Clear button removed - use Clear All link in header -->
           </div>
@@ -198,7 +198,7 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
   def filter_tag(assigns) do
     ~H"""
     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-      <%= format_filter_label(@key) %>: <%= format_filter_value(@key, @value) %>
+      {format_filter_label(@key)}: {format_filter_value(@key, @value)}
       <button
         type="button"
         phx-click="remove_filter"
@@ -229,6 +229,7 @@ defmodule EhsEnforcementWeb.Components.CaseFilter do
 
   defp format_filter_value(:min_fine, value), do: "£#{value}"
   defp format_filter_value(:max_fine, value), do: "£#{value}"
+
   defp format_filter_value(_key, value) when is_binary(value) do
     if String.length(value) > 20 do
       String.slice(value, 0, 17) <> "..."
