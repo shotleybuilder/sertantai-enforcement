@@ -123,13 +123,11 @@ EhsEnforcementWeb.Admin.AgencyLive.Edit.html
 EhsEnforcementWeb.Admin.AgencyLive.Index.html
 EhsEnforcementWeb.Admin.AgencyLive.New.html
 EhsEnforcementWeb.Admin.CaseLive.Edit.html
-EhsEnforcementWeb.Admin.CaseLive.Scrape.html
 EhsEnforcementWeb.Admin.ConfigLive.Index.html
 EhsEnforcementWeb.Admin.ConfigLive.Scraping.html
 EhsEnforcementWeb.Admin.DashboardLive.html
 EhsEnforcementWeb.Admin.DuplicatesLive.html
 EhsEnforcementWeb.Admin.NoticeLive.Edit.html
-EhsEnforcementWeb.Admin.NoticeLive.Scrape.html
 EhsEnforcementWeb.Admin.OffenderLive.Edit.html
 EhsEnforcementWeb.Admin.ScrapeLive.html
 EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive.html
@@ -201,8 +199,8 @@ dist/lato-latin-700-normal-2XVSBPG4.woff2
 dist/lato-latin-ext-400-normal-N27NCBWW.woff2
 dist/lato-latin-ext-700-normal-Q2L5DVMW.woff2
 dist/remixicon-QPNJX265.woff2
-dist/search_data-61E099F4.js
-dist/sidebar_items-F4492E82.js
+dist/search_data-70149A35.js
+dist/sidebar_items-E067AF28.js
 index.html
 readme.html
 search.html
