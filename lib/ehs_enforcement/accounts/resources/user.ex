@@ -104,7 +104,9 @@ defmodule EhsEnforcement.Accounts.User do
         :github_login,
         :github_url,
         :primary_provider,
-        :last_login_at
+        :last_login_at,
+        :is_admin,
+        :admin_checked_at
       ])
 
       change(AshAuthentication.Strategy.OAuth2.IdentityChange)
@@ -112,16 +114,24 @@ defmodule EhsEnforcement.Accounts.User do
 
       change(fn changeset, _context ->
         user_info = Ash.Changeset.get_argument(changeset, :user_info)
+        github_login = user_info["login"]
+
+        # Check if user should be admin based on GITHUB_ALLOWED_USERS
+        config = Application.get_env(:ehs_enforcement, :github_admin, %{})
+        allowed_users = Keyword.get(config, :allowed_users, [])
+        is_admin = is_list(allowed_users) and length(allowed_users) > 0 and github_login in allowed_users
 
         changeset
         |> Ash.Changeset.change_attribute(:email, downcase_email(user_info["email"]))
         |> Ash.Changeset.change_attribute(:github_id, to_string(user_info["id"]))
-        |> Ash.Changeset.change_attribute(:github_login, user_info["login"])
+        |> Ash.Changeset.change_attribute(:github_login, github_login)
         |> Ash.Changeset.change_attribute(:name, user_info["name"])
         |> Ash.Changeset.change_attribute(:avatar_url, user_info["avatar_url"])
         |> Ash.Changeset.change_attribute(:github_url, user_info["html_url"])
         |> Ash.Changeset.change_attribute(:primary_provider, "github")
         |> Ash.Changeset.change_attribute(:last_login_at, DateTime.utc_now())
+        |> Ash.Changeset.change_attribute(:is_admin, is_admin)
+        |> Ash.Changeset.change_attribute(:admin_checked_at, DateTime.utc_now())
       end)
     end
 
