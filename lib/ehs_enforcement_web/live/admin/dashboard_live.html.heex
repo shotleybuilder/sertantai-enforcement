@@ -296,15 +296,14 @@
             </div>
           </div>
           <div class="mt-6 space-y-3">
-            <button
-              phx-click="navigate_to_scraping"
-              phx-value-type="cases"
-              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
+            <a
+              href={~p"/admin/scrape"}
+              class="w-full text-left bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 px-4 py-3 rounded-md transition-colors block border border-blue-200"
             >
               <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-gray-900">Scrape Cases</span>
+                <span class="text-sm font-semibold text-gray-900">Scraping Interface</span>
                 <svg
-                  class="w-4 h-4 text-gray-400"
+                  class="w-4 h-4 text-blue-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -317,51 +316,10 @@
                   />
                 </svg>
               </div>
-            </button>
-            <button
-              phx-click="navigate_to_scraping"
-              phx-value-type="notices"
-              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
-            >
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-gray-900">Scrape Notices</span>
-                <svg
-                  class="w-4 h-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </div>
-            </button>
-            <button
-              phx-click="navigate_to_scraping"
-              phx-value-type="all"
-              class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"
-            >
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-gray-900">All Scraping</span>
-                <svg
-                  class="w-4 h-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </div>
-            </button>
+              <p class="mt-1 text-xs text-gray-600">
+                Unified interface for all agencies and types
+              </p>
+            </a>
             <a
               href={~p"/admin/scrape-sessions"}
               class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors block"

@@ -127,12 +127,12 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base,
     # Allow WebSocket connections from production domain
-    # This is CRITICAL for WebSocket connections to work behind proxies like Render
+    # This is CRITICAL for WebSocket connections to work behind proxies
     check_origin: [
-      "//legal.sertantai.com",
-      "//www.legal.sertantai.com",
-      "https://legal.sertantai.com",
-      "https://www.legal.sertantai.com"
+      "//ehs-enforcement.sertantai.com",
+      "//www.ehs-enforcement.sertantai.com",
+      "https://ehs-enforcement.sertantai.com",
+      "https://www.ehs-enforcement.sertantai.com"
     ]
 
   # GitHub OAuth configuration for production

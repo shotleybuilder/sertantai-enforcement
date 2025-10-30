@@ -83,7 +83,8 @@ if [ $? -eq 0 ]; then
 
     echo -e "${BLUE}Next steps:${NC}"
     echo -e "  ${GREEN}→${NC} Deploy to production: ${YELLOW}./scripts/deployment/deploy-prod.sh${NC}"
-    echo -e "  ${GREEN}→${NC} Or SSH manually:      ${YELLOW}ssh sertantai${NC}"
+    echo -e "  ${GREEN}→${NC} Or SSH manually:      ${YELLOW}ssh sertantai-hz${NC} (or ${YELLOW}ssh hetzner${NC})"
+    echo -e "  ${YELLOW}    Note:${NC} Digital Ocean (ssh sertantai-do) deprecated - closing in 1 month"
     echo ""
 else
     echo ""

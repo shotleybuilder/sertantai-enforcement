@@ -2,7 +2,7 @@
 #
 # deploy-prod.sh - Deploy EHS Enforcement to production server
 #
-# This script connects to the production server (sertantai) and deploys
+# This script connects to the production server (sertantai-hz on Hetzner) and deploys
 # the latest Docker image from GHCR. It handles pulling the image,
 # checking for migrations, and restarting the container.
 #
@@ -15,13 +15,13 @@
 #   --logs         Follow logs after deployment
 #
 # Prerequisites:
-#   - SSH access to sertantai server configured
+#   - SSH access to sertantai-hz server configured
 #   - Image pushed to GHCR: ./scripts/push.sh
 #
 # Production server details:
-#   - Server: sertantai (Digital Ocean droplet)
+#   - Server: sertantai-hz (Hetzner dedicated server)
 #   - Path: ~/infrastructure/docker
-#   - URL: https://legal.sertantai.com
+#   - URL: https://ehs-enforcement.sertantai.com
 #
 
 set -e  # Exit on any error
@@ -34,7 +34,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-SERVER="sertantai"
+SERVER="sertantai-hz"
 DEPLOY_PATH="~/infrastructure/docker"
 SERVICE_NAME="ehs-enforcement"
 
@@ -77,12 +77,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}  EHS Enforcement - Production Deployment${NC}"
+echo -e "${BLUE}  EHS Enforcement - Production Deployment (Hetzner)${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo -e "${YELLOW}Server:${NC} ${SERVER}"
 echo -e "${YELLOW}Service:${NC} ${SERVICE_NAME}"
-echo -e "${YELLOW}URL:${NC} https://legal.sertantai.com"
+echo -e "${YELLOW}URL:${NC} https://ehs-enforcement.sertantai.com"
 echo ""
 
 # Check SSH connectivity
@@ -183,8 +183,8 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo -e "${GREEN}✓ Deployment complete!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo -e "${YELLOW}Application:${NC} https://legal.sertantai.com"
-echo -e "${YELLOW}Health:${NC} https://legal.sertantai.com/health"
+echo -e "${YELLOW}Application:${NC} https://ehs-enforcement.sertantai.com"
+echo -e "${YELLOW}Health:${NC} https://ehs-enforcement.sertantai.com/health"
 echo ""
 
 # Show recent logs

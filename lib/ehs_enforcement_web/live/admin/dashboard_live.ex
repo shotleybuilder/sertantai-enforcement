@@ -89,18 +89,6 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
   end
 
   @impl true
-  def handle_event("navigate_to_scraping", %{"type" => type}, socket) do
-    path =
-      case type do
-        "cases" -> "/admin/cases/scrape"
-        "notices" -> "/admin/notices/scrape"
-        _ -> "/admin/scrape-sessions/monitor"
-      end
-
-    {:noreply, push_navigate(socket, to: path)}
-  end
-
-  @impl true
   def handle_event("navigate_to_config", _params, socket) do
     {:noreply, push_navigate(socket, to: "/admin/config")}
   end
