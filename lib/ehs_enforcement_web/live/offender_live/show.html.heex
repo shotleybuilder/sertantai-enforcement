@@ -32,7 +32,7 @@
         <div class="mt-4">
           <h1 class="text-3xl font-bold text-gray-900">
             {@offender.name}
-            <%= if is_repeat_offender?(@offender) do %>
+            <%= if repeat_offender?(@offender) do %>
               <span
                 data-repeat-offender="true"
                 class="ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800"

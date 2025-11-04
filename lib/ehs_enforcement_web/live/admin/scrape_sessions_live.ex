@@ -96,6 +96,105 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsLive do
     {:noreply, socket}
   end
 
+  @impl true
+  def handle_event("kill_session", %{"session_id" => session_id}, socket) do
+    case Ash.get(ScrapeSession, session_id, actor: socket.assigns.current_user) do
+      {:ok, session} ->
+        case Ash.update(session, %{}, action: :mark_stopped, actor: socket.assigns.current_user) do
+          {:ok, _updated_session} ->
+            # Reload sessions to reflect the change
+            sessions =
+              load_sessions(
+                socket.assigns.filter_status,
+                socket.assigns.filter_database,
+                socket.assigns.current_user
+              )
+
+            socket =
+              socket
+              |> put_flash(:info, "Session #{String.slice(session_id, 0..7)} has been stopped")
+              |> assign(all_sessions: sessions, last_update: System.monotonic_time(:millisecond))
+
+            {:noreply, socket}
+
+          {:error, error} ->
+            Logger.error("Failed to stop session #{session_id}: #{inspect(error)}")
+
+            socket =
+              put_flash(
+                socket,
+                :error,
+                "Failed to stop session: #{inspect(error)}"
+              )
+
+            {:noreply, socket}
+        end
+
+      {:error, error} ->
+        Logger.error("Failed to find session #{session_id}: #{inspect(error)}")
+
+        socket =
+          put_flash(
+            socket,
+            :error,
+            "Session not found: #{inspect(error)}"
+          )
+
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("kill_all_running", _params, socket) do
+    # Query all active sessions (pending or running)
+    active_query =
+      ScrapeSession
+      |> Ash.Query.filter(status in [:pending, :running])
+
+    case Ash.read(active_query, actor: socket.assigns.current_user) do
+      {:ok, active_sessions} ->
+        # Stop each active session
+        results =
+          Enum.map(active_sessions, fn session ->
+            Ash.update(session, %{}, action: :mark_stopped, actor: socket.assigns.current_user)
+          end)
+
+        # Count successes
+        success_count = Enum.count(results, fn result -> match?({:ok, _}, result) end)
+        error_count = Enum.count(results, fn result -> match?({:error, _}, result) end)
+
+        # Reload sessions to reflect the changes
+        sessions =
+          load_sessions(
+            socket.assigns.filter_status,
+            socket.assigns.filter_database,
+            socket.assigns.current_user
+          )
+
+        socket =
+          socket
+          |> put_flash(
+            :info,
+            "Stopped #{success_count} session(s)#{if error_count > 0, do: " (#{error_count} failed)", else: ""}"
+          )
+          |> assign(all_sessions: sessions, last_update: System.monotonic_time(:millisecond))
+
+        {:noreply, socket}
+
+      {:error, error} ->
+        Logger.error("Failed to query active sessions: #{inspect(error)}")
+
+        socket =
+          put_flash(
+            socket,
+            :error,
+            "Failed to query active sessions: #{inspect(error)}"
+          )
+
+        {:noreply, socket}
+    end
+  end
+
   # Handle scrape session updates
   @impl true
   def handle_info(

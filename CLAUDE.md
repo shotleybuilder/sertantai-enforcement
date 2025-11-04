@@ -24,6 +24,12 @@ When working within an active development session:
 When completing major builds or milestones without an active session:
 - **SAVE** build summaries to `~/Desktop/claude_build_summaries/[title].md`
 
+**⚠️ CRITICAL: Git and Session Files**
+- **NEVER** use `git add -f` to force-add files in `.gitignore`
+- Session files in `.claude/sessions/` are gitignored for good reason (local development only)
+- **NEVER** commit session files or `.current-session` to the repository
+- Respect all `.gitignore` settings - they exist for security and project hygiene
+
 ## ⚠️ CRITICAL ASH FRAMEWORK RULES
 
 **🚫 NEVER USE STANDARD ECTO/PHOENIX PATTERNS - ALWAYS USE ASH PATTERNS**
