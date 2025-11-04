@@ -133,7 +133,8 @@ defmodule EhsEnforcement.MixProject do
       # Code quality tools
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ash_cookie_consent, only: [:dev, :test], path: "../ash_cookie_consent"}
+      # Cookie consent management
+      {:ash_cookie_consent, github: "shotleybuilder/ash_cookie_consent", branch: "main"}
     ]
   end
 
