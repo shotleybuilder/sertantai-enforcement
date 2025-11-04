@@ -7,6 +7,8 @@ defmodule EhsEnforcementWeb.Router do
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
+    plug :fetch_cookies
+    plug AshCookieConsent.Plug
     plug :fetch_live_flash
     plug :put_root_layout, html: {EhsEnforcementWeb.Layouts, :root}
     plug :protect_from_forgery
@@ -91,6 +93,9 @@ defmodule EhsEnforcementWeb.Router do
     get "/cases/export.csv", CaseController, :export_csv
     get "/cases/export.xlsx", CaseController, :export_excel
     get "/cases/export_detailed.csv", CaseController, :export_detailed_csv
+
+    # Cookie consent route
+    post "/consent", ConsentController, :create
   end
 
   # Admin-only routes - require authentication and admin privileges

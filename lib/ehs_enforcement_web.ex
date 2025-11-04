@@ -55,6 +55,8 @@ defmodule EhsEnforcementWeb do
       use Phoenix.LiveView,
         layout: {EhsEnforcementWeb.Layouts, :app}
 
+      on_mount {AshCookieConsent.LiveView.Hook, :load_consent}
+
       # Import AshPhoenix utilities for LiveView
       import AshPhoenix.LiveView
       alias AshPhoenix.Form
@@ -99,6 +101,9 @@ defmodule EhsEnforcementWeb do
       alias EhsEnforcementWeb.OffenderTableComponent
       alias EhsEnforcementWeb.OffenderCardComponent
       alias EhsEnforcementWeb.EnforcementTimelineComponent
+
+      # Cookie consent components
+      import AshCookieConsent.Components.ConsentModal
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

@@ -10,9 +10,10 @@ module.exports = {
     "./js/**/*.js",
     "../lib/ehs_enforcement_web.ex",
     "../lib/ehs_enforcement_web/**/*.ex",
-    "../lib/ehs_enforcement_web/**/*.exs", 
+    "../lib/ehs_enforcement_web/**/*.exs",
     "../lib/ehs_enforcement_web/**/*.heex",
-    "../lib/ehs_enforcement_web/**/*.html.heex"
+    "../lib/ehs_enforcement_web/**/*.html.heex",
+    "../deps/ash_cookie_consent/lib/**/*.ex"
   ],
   safelist: [
     'bg-white', 'bg-gray-50', 'bg-red-50', 'bg-blue-50', 'bg-green-50', 'bg-yellow-50',

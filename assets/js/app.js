@@ -22,6 +22,11 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
+// Import and initialize AlpineJS for cookie consent modal
+import Alpine from "../vendor/alpine"
+window.Alpine = Alpine
+Alpine.start()
+
 // Safely get CSRF token with error handling
 let csrfToken = null
 const csrfMeta = document.querySelector("meta[name='csrf-token']")

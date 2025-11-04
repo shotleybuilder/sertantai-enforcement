@@ -13,5 +13,19 @@
   </head>
   <body class="bg-white">
     {@inner_content}
+
+    <!-- Cookie Consent Modal -->
+    <.consent_modal
+      current_consent={assigns[:consent]}
+      cookie_groups={AshCookieConsent.cookie_groups()}
+      privacy_url="/privacy"
+    />
+
+    <!-- Cookie Update Handler Script -->
+    <script>
+      window.addEventListener('phx:update_cookie', (event) => {
+        document.cookie = event.detail.cookie;
+      });
+    </script>
   </body>
 </html>

@@ -97,13 +97,13 @@ defmodule EhsEnforcement.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       # Ash framework dependencies
-      {:ash, "~> 3.5"},
-      {:ash_phoenix, "~> 2.1"},
+      {:ash, "~> 3.7"},
+      {:ash_phoenix, "~> 2.3"},
       {:ash_postgres, "~> 2.6"},
-      {:ash_graphql, "~> 1.3"},
+      {:ash_graphql, "~> 1.8"},
       {:ash_json_api, "~> 1.4"},
-      {:ash_admin, "~> 0.11"},
-      {:ash_rate_limiter, "~> 0.1"},
+      {:ash_admin, "~> 0.13"},
+      {:ash_rate_limiter, "~> 0.2"},
       {:hammer, "~> 7.0"},
       # Additional dependencies from original project
       {:req, "~> 0.5"},
@@ -115,17 +115,17 @@ defmodule EhsEnforcement.MixProject do
       {:dotenv, "~> 3.1.0", only: [:dev, :test]},
       {:lazy_html, ">= 0.1.0", only: :test},
       # Ash Authentication
-      {:ash_authentication, "~> 4.0"},
-      {:ash_authentication_phoenix, "~> 2.0"},
+      {:ash_authentication, "~> 4.12"},
+      {:ash_authentication_phoenix, "~> 2.12"},
       # SAT solver for Ash policies - PicoSAT for optimal performance
       {:picosat_elixir, "~> 0.2"},
       # Backup pure Elixir SAT solver (can be removed if PicoSAT works)
       {:simple_sat, "~> 0.1"},
       # Background job processing for Ash
-      {:ash_oban, "~> 0.2"},
-      {:oban, "~> 2.17"},
+      {:ash_oban, "~> 0.5"},
+      {:oban, "~> 2.20"},
       # Event tracking for Ash
-      {:ash_events, "~> 0.1"},
+      {:ash_events, "~> 0.5"},
       # Documentation generation
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       # Diagram generation for Ash resources (dev-only, brings in ex_cmd ~> 0.16.0)
