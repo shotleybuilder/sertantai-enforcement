@@ -661,8 +661,8 @@ defmodule EhsEnforcement.Enforcement.Metrics do
     agency_stats
   end
 
-  # Helper: Fetch recent activity as JSONB (top 100 items)
-  defp fetch_recent_activity_json(cutoff_date, agency_id, record_type, opts \\ []) do
+  # Helper: Fetch recent activity as JSONB (top N items specified by opts)
+  defp fetch_recent_activity_json(cutoff_date, agency_id, record_type, opts) do
     limit = Keyword.get(opts, :limit, 100)
 
     # Build filters

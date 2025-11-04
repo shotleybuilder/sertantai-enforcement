@@ -125,7 +125,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessorTest do
       assert results.stats.created_count == 2
       assert results.stats.error_count == 0
       assert length(results.created) == 2
-      assert length(results.errors) == 0
+      assert results.errors == []
     end
 
     test "prevents duplicate cases from being created" do

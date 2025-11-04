@@ -67,12 +67,6 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.Edit do
 
   defp format_datetime(_), do: "—"
 
-  defp format_date(date) when is_struct(date, Date) do
-    Calendar.strftime(date, "%Y-%m-%d")
-  end
-
-  defp format_date(_), do: ""
-
   defp field_description(field) do
     case field do
       :id -> "Unique identifier for this case (system generated)"

@@ -23,7 +23,6 @@ defmodule EhsEnforcement.Agencies.Hse.NoticesTest do
 
     notices
     |> Breaches.enum_breaches()
-    |> IO.inspect()
     |> Enum.each(fn notice ->
       assert is_map(notice)
       assert Map.has_key?(notice, :offence_breaches)

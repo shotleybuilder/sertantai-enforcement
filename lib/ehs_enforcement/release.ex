@@ -111,7 +111,7 @@ defmodule EhsEnforcement.Release do
   def eval(code_string) do
     load_app()
     {result, _binding} = Code.eval_string(code_string)
-    IO.inspect(result)
+    result
   end
 
   def setup do

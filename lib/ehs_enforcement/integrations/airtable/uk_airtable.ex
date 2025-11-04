@@ -50,11 +50,14 @@ defmodule EhsEnforcement.Integrations.Airtable.UkAirtable do
       # IO.inspect(params),
       {:ok, {_, recordset}} <- Records.get_records({[], []}, params)
     ) do
-      IO.puts("\n#{Enum.count(recordset)} Records returned from Airtable")
+      require Logger
+      Logger.info("#{Enum.count(recordset)} records returned from Airtable")
       {:ok, recordset}
     else
       {:error, error} ->
-        IO.inspect(error)
+        require Logger
+        Logger.error("Airtable error: #{inspect(error)}")
+        {:error, error}
     end
   end
 
@@ -73,11 +76,14 @@ defmodule EhsEnforcement.Integrations.Airtable.UkAirtable do
       # IO.inspect(params),
       {:ok, {_, recordset}} <- Records.get_records({[], []}, params)
     ) do
-      IO.puts("\n#{Enum.count(recordset)} Records returned from Airtable")
+      require Logger
+      Logger.info("#{Enum.count(recordset)} records returned from Airtable")
       {:ok, recordset}
     else
       {:error, error} ->
-        IO.inspect(error)
+        require Logger
+        Logger.error("Airtable error: #{inspect(error)}")
+        {:error, error}
     end
   end
 

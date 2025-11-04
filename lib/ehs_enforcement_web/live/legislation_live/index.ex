@@ -2,7 +2,6 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
   use EhsEnforcementWeb, :live_view
 
   require Ash.Query
-  import Ash.Expr
 
   alias EhsEnforcement.Enforcement
 
@@ -604,13 +603,6 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
   defp format_legislation_type(:acop), do: "ACOP"
   defp format_legislation_type(type) when is_atom(type), do: String.capitalize(to_string(type))
   defp format_legislation_type(_), do: "Unknown"
-
-  defp page_range(current_page, total_pages, delta \\ 2) do
-    start_page = max(1, current_page - delta)
-    end_page = min(total_pages, current_page + delta)
-
-    Enum.to_list(start_page..end_page)
-  end
 
   defp total_pages(total_count, page_size) do
     ceil(total_count / page_size)

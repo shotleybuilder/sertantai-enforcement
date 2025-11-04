@@ -253,41 +253,6 @@ defmodule EhsEnforcement.Agencies.Ea.DataTransformer do
   defp build_legal_reference(act, _) when is_binary(act), do: String.trim(act)
   defp build_legal_reference(_, _), do: nil
 
-  defp generate_regulator_id_from_detail(%EaDetailRecord{} = ea_record) do
-    # Generate EA-style regulator ID from EaDetailRecord
-    date_part =
-      case ea_record.action_date do
-        %Date{} = date -> date |> Date.to_string() |> String.replace("-", "")
-        _ -> "00000000"
-      end
-
-    action_code =
-      case ea_record.action_type do
-        :court_case -> "CC"
-        :caution -> "CA"
-        :enforcement_notice -> "EN"
-        _ -> "XX"
-      end
-
-    record_id_part = String.slice(ea_record.ea_record_id || "0000", 0, 4)
-    "EA-#{date_part}-#{action_code}-#{record_id_part}"
-  end
-
-  defp generate_regulator_id(data) do
-    # Generate EA-style regulator ID similar to HSE format
-    date_part = data.action_date |> Date.to_string() |> String.replace("-", "")
-
-    action_code =
-      case data.action_type do
-        :court_case -> "CC"
-        :caution -> "CA"
-        :enforcement_notice -> "EN"
-        _ -> "XX"
-      end
-
-    "EA-#{date_part}-#{action_code}-#{String.slice(data.ea_record_id, 0, 4)}"
-  end
-
   defp map_to_hse_action_type(ea_action_type) do
     # Map EA action types to existing HSE action type taxonomy
     case ea_action_type do

@@ -94,7 +94,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
 
   @impl true
   def handle_event("navigate_to_scraping", _params, socket) do
-    {:noreply, push_navigate(socket, to: ~p"/admin/cases/scrape")}
+    {:noreply, push_navigate(socket, to: ~p"/admin/scrape")}
   end
 
   # PubSub Event Handling

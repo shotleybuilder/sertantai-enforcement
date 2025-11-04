@@ -181,28 +181,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
     end
   end
 
-  defp status_badge_class(status) do
-    case status do
-      :pending -> "bg-yellow-100 text-yellow-800"
-      :running -> "bg-blue-100 text-blue-800"
-      :completed -> "bg-green-100 text-green-800"
-      :failed -> "bg-red-100 text-red-800"
-      :stopped -> "bg-gray-100 text-gray-800"
-      _ -> "bg-gray-100 text-gray-800"
-    end
-  end
-
-  defp format_status(status) do
-    case status do
-      :pending -> "Pending"
-      :running -> "Running"
-      :completed -> "Completed"
-      :failed -> "Failed"
-      :stopped -> "Stopped"
-      _ -> "Unknown"
-    end
-  end
-
   defp format_date_range(nil, nil), do: "N/A"
   defp format_date_range(date_from, nil), do: "From #{format_date(date_from)}"
   defp format_date_range(nil, date_to), do: "Until #{format_date(date_to)}"

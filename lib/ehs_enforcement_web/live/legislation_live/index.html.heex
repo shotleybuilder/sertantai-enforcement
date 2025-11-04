@@ -400,13 +400,14 @@
                           </.link>
 
                           <%= if assigns[:current_user] && assigns.current_user.is_admin do %>
-                            <.link
-                              patch={~p"/legislation/#{legislation.id}/edit"}
+                            <%!-- TODO: Implement admin legislation edit functionality --%>
+                            <%!-- <.link
+                              navigate={~p"/admin/legislation/#{legislation.id}/edit"}
                               class="text-green-600 hover:text-green-900"
                               title="Edit legislation"
                             >
                               <.icon name="hero-pencil" class="h-4 w-4" />
-                            </.link>
+                            </.link> --%>
                             <button
                               type="button"
                               phx-click="delete_legislation"

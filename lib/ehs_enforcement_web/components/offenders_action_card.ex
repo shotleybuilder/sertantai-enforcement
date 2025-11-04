@@ -10,7 +10,6 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCard do
   use Phoenix.Component
 
   import EhsEnforcementWeb.Components.DashboardActionCard
-  alias EhsEnforcement.Enforcement
 
   @doc """
   Renders the Offenders Database action card with live metrics and actions.

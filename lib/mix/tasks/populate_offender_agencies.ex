@@ -58,7 +58,7 @@ defmodule Mix.Tasks.PopulateOffenderAgencies do
       {:ok, offenders} ->
         total_count = length(offenders)
         # Filter for offenders with empty agencies
-        empty_agencies_offenders = Enum.filter(offenders, &(length(&1.agencies) == 0))
+        empty_agencies_offenders = Enum.filter(offenders, &(&1.agencies == []))
         empty_count = length(empty_agencies_offenders)
 
         Logger.info(

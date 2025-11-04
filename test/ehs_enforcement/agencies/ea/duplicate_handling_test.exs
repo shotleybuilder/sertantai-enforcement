@@ -129,18 +129,13 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
       # Same record
       assert second_result.id == first_case.id
 
-      # Debug: Check if update actually happened
-      IO.inspect(original_updated_at, label: "Original updated_at")
-      IO.inspect(second_result.updated_at, label: "Second result updated_at")
-
       # The updated_at should be UNCHANGED (no update was needed)
       case DateTime.compare(second_result.updated_at, original_updated_at) do
         :eq ->
-          IO.puts("✅ GOOD: No update happened (timestamps identical)")
+          # Good: No update happened (timestamps identical)
+          :ok
 
-        diff ->
-          IO.puts("❌ BAD: Update happened unnecessarily (timestamp diff: #{diff})")
-
+        _diff ->
           flunk(
             "updated_at should be unchanged when no fields change. Original: #{original_updated_at}, Second: #{second_result.updated_at}"
           )
@@ -166,8 +161,6 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
       # Test that duplicate returns proper status for UI display
       duplicate_result =
         CaseProcessor.process_and_create_case_with_status(transformed_data, admin_user)
-
-      IO.inspect(duplicate_result, label: "CaseProcessor result for duplicate")
 
       # This should return :existing status for proper UI display
       assert {:ok, _case, :existing} = duplicate_result

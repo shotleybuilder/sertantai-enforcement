@@ -319,73 +319,6 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
     )
   end
 
-  defp normalize_environmental_impact(nil), do: "none"
-  defp normalize_environmental_impact(""), do: "none"
-
-  defp normalize_environmental_impact(impact) when is_binary(impact) do
-    impact
-    |> String.downcase()
-    |> String.trim()
-    |> case do
-      impact when impact in ["major", "significant", "high"] -> "major"
-      impact when impact in ["minor", "low", "minimal"] -> "minor"
-      impact when impact in ["none", "nil", "no impact"] -> "none"
-      _ -> "unknown"
-    end
-  end
-
-  defp normalize_environmental_impact(_), do: "unknown"
-
-  defp normalize_environmental_receptor(nil), do: nil
-  defp normalize_environmental_receptor(""), do: nil
-
-  defp normalize_environmental_receptor(receptor) when is_binary(receptor) do
-    cleaned_receptor =
-      receptor
-      |> String.downcase()
-      |> String.trim()
-
-    cond do
-      String.contains?(cleaned_receptor, "water") -> "water"
-      String.contains?(cleaned_receptor, "land") -> "land"
-      String.contains?(cleaned_receptor, "air") -> "air"
-      String.contains?(cleaned_receptor, "soil") -> "land"
-      String.contains?(cleaned_receptor, "groundwater") -> "water"
-      true -> cleaned_receptor
-    end
-  end
-
-  defp normalize_environmental_receptor(_), do: nil
-
-  defp extract_legal_act(ea_detail_record) do
-    # EA records may have legal framework in various fields
-    legal_framework =
-      Map.get(ea_detail_record, :legal_framework) ||
-        Map.get(ea_detail_record, :regulation_act) ||
-        Map.get(ea_detail_record, :offence_legislation)
-
-    case legal_framework do
-      nil ->
-        nil
-
-      "" ->
-        nil
-
-      framework when is_binary(framework) ->
-        # Extract act name (everything before "section" or "regulation")
-        case Regex.run(
-               ~r/^([^,]+?)(?:\s+(?:section|regulation|s\.|reg\.)).*$/i,
-               String.trim(framework)
-             ) do
-          [_, act] -> String.trim(act)
-          _ -> String.trim(framework)
-        end
-
-      _ ->
-        nil
-    end
-  end
-
   @doc """
   Process EA notice with legislation deduplication.
 
@@ -597,34 +530,6 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
     }
 
     EhsEnforcement.Enforcement.create_offence(offence_attrs)
-  end
-
-  defp extract_legal_section(ea_detail_record) do
-    legal_framework =
-      Map.get(ea_detail_record, :legal_framework) ||
-        Map.get(ea_detail_record, :regulation_act) ||
-        Map.get(ea_detail_record, :offence_legislation)
-
-    case legal_framework do
-      nil ->
-        nil
-
-      "" ->
-        nil
-
-      framework when is_binary(framework) ->
-        # Extract section/regulation number
-        case Regex.run(
-               ~r/(?:section|regulation|s\.|reg\.)\s*(\d+[a-z]?)/i,
-               String.trim(framework)
-             ) do
-          [_, section] -> String.trim(section)
-          _ -> nil
-        end
-
-      _ ->
-        nil
-    end
   end
 
   defp parse_operative_date(_ea_detail_record) do

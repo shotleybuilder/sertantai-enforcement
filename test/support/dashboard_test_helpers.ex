@@ -272,10 +272,10 @@ defmodule EhsEnforcementWeb.DashboardTestHelpers do
       |> Enum.map(fn case_id ->
         case :binary.match(timeline, case_id) do
           {pos, _} -> {case_id, pos}
-          :nomatch -> {case_id, 99999}
+          :nomatch -> {case_id, 99_999}
         end
       end)
-      |> Enum.filter(fn {_, pos} -> pos < 99999 end)
+      |> Enum.filter(fn {_, pos} -> pos < 99_999 end)
       |> Enum.sort_by(fn {_, pos} -> pos end)
 
     actual_order = Enum.map(positions, fn {id, _} -> id end)
@@ -512,7 +512,7 @@ defmodule EhsEnforcementWeb.DashboardTestHelpers do
         offender_id: edge_offender.id,
         offence_action_date: ~D[2024-01-01],
         # Very large fine
-        offence_fine: Decimal.new("999999.99"),
+        offence_fine: Decimal.new("99_9999.99"),
         offence_breaches:
           "This is a very long breach description that might cause display issues when rendered in the user interface. It contains multiple sentences and detailed information about the violation that occurred.",
         last_synced_at: DateTime.utc_now()

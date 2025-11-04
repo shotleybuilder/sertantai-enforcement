@@ -96,7 +96,7 @@ defmodule EhsEnforcement.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      # Ash framework dependencies  
+      # Ash framework dependencies
       {:ash, "~> 3.5"},
       {:ash_phoenix, "~> 2.1"},
       {:ash_postgres, "~> 2.6"},
@@ -129,7 +129,11 @@ defmodule EhsEnforcement.MixProject do
       # Documentation generation
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       # Diagram generation for Ash resources (dev-only, brings in ex_cmd ~> 0.16.0)
-      {:ash_diagram, "~> 0.1.0", only: :dev, runtime: false}
+      {:ash_diagram, "~> 0.1.0", only: :dev, runtime: false},
+      # Code quality tools
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:ash_cookie_consent, only: [:dev, :test], path: "../ash_cookie_consent"}
     ]
   end
 

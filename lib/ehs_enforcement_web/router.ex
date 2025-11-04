@@ -112,9 +112,10 @@ defmodule EhsEnforcementWeb.Router do
       live "/admin/offenders/:id/edit", Admin.OffenderLive.Edit, :edit
 
       # Admin Legislation Management Routes
-      live "/admin/legislation", Admin.LegislationLive.Index, :index
-      live "/admin/legislation/new", Admin.LegislationLive.New, :new
-      live "/admin/legislation/:id/edit", Admin.LegislationLive.Edit, :edit
+      # TODO: Implement Admin.LegislationLive modules
+      # live "/admin/legislation", Admin.LegislationLive.Index, :index
+      # live "/admin/legislation/new", Admin.LegislationLive.New, :new
+      # live "/admin/legislation/:id/edit", Admin.LegislationLive.Edit, :edit
 
       # Admin Dashboard
       live "/admin", Admin.DashboardLive, :index

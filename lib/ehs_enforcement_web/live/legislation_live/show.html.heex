@@ -154,13 +154,14 @@
                   </button>
                 </div>
 
-                <%= if @current_user do %>
-                  <.link
-                    patch={~p"/legislation/#{@legislation.id}/edit"}
+                <%= if @current_user && @current_user.is_admin do %>
+                  <%!-- TODO: Implement admin legislation edit functionality --%>
+                  <%!-- <.link
+                    navigate={~p"/admin/legislation/#{@legislation.id}/edit"}
                     class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
                     Edit
-                  </.link>
+                  </.link> --%>
 
                   <button
                     phx-click="delete_legislation"

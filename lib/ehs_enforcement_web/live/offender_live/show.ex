@@ -490,11 +490,6 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
     load_offender_data(socket)
   end
 
-  defp is_repeat_offender?(offender) do
-    total_enforcement = (offender.total_cases || 0) + (offender.total_notices || 0)
-    total_enforcement > 2
-  end
-
   defp format_currency(nil), do: "£0"
 
   defp format_currency(amount) when is_binary(amount) do

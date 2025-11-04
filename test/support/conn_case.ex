@@ -84,7 +84,7 @@ defmodule EhsEnforcementWeb.ConnCase do
       "email" => email,
       "name" => name,
       "login" => github_login,
-      "id" => 12345,
+      "id" => 12_345,
       "avatar_url" => "https://github.com/images/avatars/#{github_login}",
       "html_url" => "https://github.com/#{github_login}"
     }

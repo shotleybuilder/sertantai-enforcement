@@ -298,7 +298,7 @@ defmodule EhsEnforcementWeb.Components.NoticesActionCardTest do
     end
   end
 
-  describe "is_admin?/1" do
+  describe "admin?/1" do
     test "returns true for admin users" do
       admin_user = %{is_admin: true}
       html = render_component(&notices_action_card/1, %{current_user: admin_user})

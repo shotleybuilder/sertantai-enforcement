@@ -109,10 +109,11 @@ defmodule EhsEnforcement.Legislation.Taxa.LATTaxa do
         api_update_lat_taxa(opts)
 
       names when is_list(names) ->
-        IO.inspect(names)
+        require Logger
+        Logger.debug("Processing LAT taxa names: #{inspect(names)}")
 
         Enum.each(names, fn name ->
-          IO.puts(~s/\n______________\nNAME: #{name}\n/)
+          Logger.debug("Processing LAT taxa name: #{name}")
 
           api_update_lat_taxa(
             Name: name,

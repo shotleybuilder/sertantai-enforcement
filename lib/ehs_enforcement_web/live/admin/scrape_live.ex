@@ -30,9 +30,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   require Logger
   require Ash.Query
 
-  alias EhsEnforcement.Scraping.StrategyRegistry
   alias EhsEnforcement.Scraping.ScrapeCoordinator
-  alias EhsEnforcement.Scraping.ScrapeSession
   alias EhsEnforcement.Enforcement.Notice
   alias EhsEnforcement.Enforcement.Case
   alias Phoenix.PubSub
@@ -210,12 +208,26 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   def handle_event("validate_params", params, socket) do
     strategy = socket.assigns.strategy
 
+    # CRITICAL: Update form_params with user input to maintain form state
+    # Merge params into existing form_params to preserve user edits
+    updated_form_params = Map.merge(socket.assigns.form_params, params)
+
     case strategy.validate_params(params) do
       {:ok, _validated} ->
-        {:noreply, assign(socket, :validation_errors, %{})}
+        socket =
+          socket
+          |> assign(:form_params, updated_form_params)
+          |> assign(:validation_errors, %{})
+
+        {:noreply, socket}
 
       {:error, reason} ->
-        {:noreply, assign(socket, :validation_errors, %{general: reason})}
+        socket =
+          socket
+          |> assign(:form_params, updated_form_params)
+          |> assign(:validation_errors, %{general: reason})
+
+        {:noreply, socket}
     end
   end
 
@@ -712,9 +724,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     {:noreply, socket}
   end
 
-  # Ignore other PubSub events
-  @impl true
-  # Handle Task completion
+  # Ignore other PubSub events and handle Task completion
   @impl true
   def handle_info({ref, {:ok, _session_id}}, socket) when is_reference(ref) do
     # Task completed successfully
@@ -820,7 +830,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Scraping Configuration</h2>
 
-            <.form for={%{}} phx-submit="start_scraping" phx-change="validate_params">
+            <.form for={%{}} phx-submit="start_scraping" phx-change="validate_params" phx-debounce="500">
               <!-- Agency Selection -->
               <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Agency</label>
@@ -992,16 +1002,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     socket
   end
 
-  defp parse_agency("hse"), do: {:ok, :hse}
-  defp parse_agency("ea"), do: {:ok, :ea}
-  # Support long form URL
-  defp parse_agency("environment_agency"), do: {:ok, :ea}
-  defp parse_agency(_), do: {:error, :invalid_agency}
-
-  defp parse_type("case"), do: {:ok, :case}
-  defp parse_type("notice"), do: {:ok, :notice}
-  defp parse_type(_), do: {:error, :invalid_type}
-
   # Strategy determination based on agency and database selection
   defp determine_strategy(:hse, "convictions"),
     do: EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy
@@ -1167,101 +1167,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     strategy.calculate_progress(session)
   end
 
-  defp agency_display_name(:hse), do: "Health & Safety Executive (HSE)"
-  defp agency_display_name(:ea), do: "Environment Agency (EA)"
-  defp agency_display_name(agency), do: to_string(agency)
-
   defp type_display_name(:case), do: "Cases"
   defp type_display_name(:notice), do: "Notices"
   defp type_display_name(type), do: to_string(type)
-
-  # Recent Records Rendering
-
-  defp render_recent_records(%{enforcement_type: :notice} = assigns) do
-    ~H"""
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-700/50">
-          <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Offender
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Agency
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Notice Type
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Date
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          <%= for notice <- @recent_records do %>
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                {notice.offender.name}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {notice.agency.name}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {notice.offence_action_type || "N/A"}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {Calendar.strftime(notice.inserted_at, "%Y-%m-%d")}
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-    """
-  end
-
-  defp render_recent_records(%{enforcement_type: :case} = assigns) do
-    ~H"""
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-700/50">
-          <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Offender
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Agency
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Offences
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Date
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          <%= for case <- @recent_records do %>
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                {case.offender.name}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {case.agency.name}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {length(case.offences)} offences
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                {Calendar.strftime(case.inserted_at, "%Y-%m-%d")}
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-    """
-  end
 
   # Scraped Records Rendering (Live session updates)
 
@@ -1443,69 +1351,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     """
   end
 
-  defp render_session_results(assigns) do
-    ~H"""
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-700/50">
-          <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Started
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Status
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Records
-            </th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Duration
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          <%= for session <- @session_results do %>
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                {Calendar.strftime(session.inserted_at, "%Y-%m-%d %H:%M")}
-              </td>
-              <td class="px-4 py-3 text-sm">
-                {render_status_badge(session.status)}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                <%= if session.cases_created do %>
-                  {session.cases_created} cases
-                <% else %>
-                  {session.notices_created || 0} notices
-                <% end %>
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                <%= if session.updated_at && session.status == :completed do %>
-                  {format_duration(session.inserted_at, session.updated_at)}
-                <% else %>
-                  In progress...
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-    """
-  end
-
-  defp format_duration(started_at, completed_at) do
-    duration_seconds = DateTime.diff(completed_at, started_at)
-    minutes = div(duration_seconds, 60)
-    seconds = rem(duration_seconds, 60)
-
-    if minutes > 0 do
-      "#{minutes}m #{seconds}s"
-    else
-      "#{seconds}s"
-    end
-  end
-
   # Form Rendering
 
   defp render_form_fields(%{agency: :hse} = assigns) do
@@ -1624,74 +1469,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     <ProgressComponent.unified_progress_component agency={@agency} progress={@progress} />
     """
   end
-
-  defp render_stat_card(label, value, icon) do
-    assigns = %{label: label, value: value, icon: icon}
-
-    ~H"""
-    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-      <div class="flex items-center">
-        <.icon name={@icon} class="h-5 w-5 text-gray-400 dark:text-gray-500 mr-2" />
-        <div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{@label}</p>
-          <p class="text-lg font-semibold text-gray-900 dark:text-white">{@value}</p>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  defp render_status_badge(:idle) do
-    assigns = %{}
-
-    ~H"""
-    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-      Idle
-    </span>
-    """
-  end
-
-  defp render_status_badge(:running) do
-    assigns = %{}
-
-    ~H"""
-    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-      <.icon name="hero-arrow-path" class="animate-spin mr-1 h-3 w-3" /> Running
-    </span>
-    """
-  end
-
-  defp render_status_badge(:completed) do
-    assigns = %{}
-
-    ~H"""
-    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-      <.icon name="hero-check" class="mr-1 h-3 w-3" /> Completed
-    </span>
-    """
-  end
-
-  defp render_status_badge(:failed) do
-    assigns = %{}
-
-    ~H"""
-    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
-      <.icon name="hero-x-mark" class="mr-1 h-3 w-3" /> Failed
-    </span>
-    """
-  end
-
-  defp render_status_badge(status) when is_atom(status) do
-    assigns = %{status: status}
-
-    ~H"""
-    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-      {String.capitalize(to_string(@status))}
-    </span>
-    """
-  end
-
-  defp render_status_badge(_), do: render_status_badge(:idle)
 
   # Load notices from ProcessingLog scraped_items
   defp load_notices_from_scraped_items(scraped_items, actor) do

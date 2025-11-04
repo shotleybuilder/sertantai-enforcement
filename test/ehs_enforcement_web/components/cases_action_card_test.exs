@@ -89,23 +89,23 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
   end
 
   describe "admin privilege checking" do
-    test "is_admin?/1 returns true for admin users" do
+    test "admin?/1 returns true for admin users" do
       admin_user = %{is_admin: true}
-      assert is_admin?(admin_user) == true
+      assert admin?(admin_user) == true
     end
 
-    test "is_admin?/1 returns false for non-admin users" do
+    test "admin?/1 returns false for non-admin users" do
       regular_user = %{is_admin: false}
-      assert is_admin?(regular_user) == false
+      assert admin?(regular_user) == false
     end
 
-    test "is_admin?/1 returns false for nil user" do
-      assert is_admin?(nil) == false
+    test "admin?/1 returns false for nil user" do
+      assert admin?(nil) == false
     end
 
-    test "is_admin?/1 returns false for users without is_admin field" do
+    test "admin?/1 returns false for users without is_admin field" do
       user_without_admin = %{id: 1, name: "User"}
-      assert is_admin?(user_without_admin) == false
+      assert admin?(user_without_admin) == false
     end
   end
 
@@ -153,9 +153,9 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
     end
   end
 
-  defp is_admin?(user) do
+  defp admin?(user) do
     EhsEnforcementWeb.Components.CasesActionCard.__info__(:functions)
-    |> Enum.find(fn {name, _arity} -> name == :is_admin? end)
+    |> Enum.find(fn {name, _arity} -> name == :admin? end)
     |> case do
       nil ->
         # Implement the logic directly for testing
@@ -165,7 +165,7 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
         end
 
       _ ->
-        apply(EhsEnforcementWeb.Components.CasesActionCard, :is_admin?, [user])
+        apply(EhsEnforcementWeb.Components.CasesActionCard, :admin?, [user])
     end
   end
 end

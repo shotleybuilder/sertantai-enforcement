@@ -9,7 +9,6 @@ defmodule EhsEnforcementWeb.Components.NoticesActionCard do
   use Phoenix.Component
 
   import EhsEnforcementWeb.Components.DashboardActionCard
-  alias EhsEnforcement.Enforcement
 
   @doc """
   Renders the Notices Management action card with live metrics and actions.

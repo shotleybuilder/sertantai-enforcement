@@ -357,7 +357,7 @@ defmodule EhsEnforcementWeb.DashboardUnitTest do
         |> Ash.read!()
 
       # No EA cases created
-      assert length(ea_cases) == 0
+      assert ea_cases == []
     end
 
     test "supports date range filtering" do

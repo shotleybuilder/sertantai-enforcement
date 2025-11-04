@@ -42,7 +42,7 @@ defmodule EhsEnforcementWeb.OffenderTableComponent do
             <tr
               data-role="offender-row"
               data-offender-id={offender.id}
-              data-repeat-offender={is_repeat_offender?(offender)}
+              data-repeat-offender={repeat_offender?(offender)}
               class="hover:bg-gray-50"
             >
               <td class="px-6 py-4 whitespace-nowrap">
@@ -50,7 +50,7 @@ defmodule EhsEnforcementWeb.OffenderTableComponent do
                   <div>
                     <div class="text-sm font-medium text-gray-900">
                       {offender.name}
-                      <%= if is_repeat_offender?(offender) do %>
+                      <%= if repeat_offender?(offender) do %>
                         <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                           Repeat Offender
                         </span>
@@ -104,7 +104,7 @@ defmodule EhsEnforcementWeb.OffenderTableComponent do
     """
   end
 
-  defp is_repeat_offender?(offender) do
+  defp repeat_offender?(offender) do
     total_enforcement = (offender.total_cases || 0) + (offender.total_notices || 0)
     total_enforcement > 2
   end
