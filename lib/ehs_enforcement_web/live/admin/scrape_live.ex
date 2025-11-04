@@ -153,18 +153,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   end
 
   @impl true
-  def handle_event("stop_scraping", _params, socket) do
-    # TODO: Implement stop scraping functionality
-    # For now, just update state
-    socket =
-      socket
-      |> assign(:scraping_active, false)
-      |> put_flash(:info, "Scraping stopped")
-
-    {:noreply, socket}
-  end
-
-  @impl true
   def handle_event("clear_session", _params, socket) do
     socket =
       socket
