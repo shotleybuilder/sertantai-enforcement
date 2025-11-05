@@ -22,6 +22,10 @@ EhsEnforcement.Config.Validator.html
 EhsEnforcement.Configuration.ScrapingConfig.html
 EhsEnforcement.Configuration.Validations.html
 EhsEnforcement.Configuration.html
+EhsEnforcement.Consent.ConsentSettings.html
+EhsEnforcement.Consent.Plug.html
+EhsEnforcement.Consent.Storage.html
+EhsEnforcement.Consent.html
 EhsEnforcement.Enforcement.Agency.html
 EhsEnforcement.Enforcement.Case.AshOban.Scheduler.ScheduledScrapeEa.html
 EhsEnforcement.Enforcement.Case.AshOban.Scheduler.ScheduledScrapeHse.html
@@ -200,8 +204,8 @@ dist/lato-latin-700-normal-2XVSBPG4.woff2
 dist/lato-latin-ext-400-normal-N27NCBWW.woff2
 dist/lato-latin-ext-700-normal-Q2L5DVMW.woff2
 dist/remixicon-QPNJX265.woff2
-dist/search_data-DEC01D94.js
-dist/sidebar_items-6C01B79C.js
+dist/search_data-F02F3A8D.js
+dist/sidebar_items-5DA06801.js
 index.html
 readme.html
 search.html
