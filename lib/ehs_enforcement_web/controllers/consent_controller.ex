@@ -3,7 +3,7 @@ defmodule EhsEnforcementWeb.ConsentController do
   Handles cookie consent form submissions.
   """
   use EhsEnforcementWeb, :controller
-  alias AshCookieConsent.Storage
+  alias EhsEnforcement.Consent.Storage
 
   @doc """
   Handles consent form submission from the consent modal.
@@ -17,8 +17,12 @@ defmodule EhsEnforcementWeb.ConsentController do
     # Build consent data with expiration
     consent = build_consent(groups, params)
 
-    # Save to cookie and session (no resource needed for Phase 1)
-    conn = Storage.put_consent(conn, consent)
+    # Save to cookie and database (for authenticated users)
+    storage_opts = [
+      resource: EhsEnforcement.Consent.ConsentSettings,
+      user_id_key: :current_user
+    ]
+    conn = Storage.put_consent(conn, consent, storage_opts)
 
     # Redirect back to the referring page or home
     redirect_url = get_redirect_url(conn, params)

@@ -8,12 +8,15 @@ defmodule EhsEnforcementWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_cookies
-    plug AshCookieConsent.Plug
     plug :fetch_live_flash
     plug :put_root_layout, html: {EhsEnforcementWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :load_current_user
+    plug EhsEnforcement.Consent.Plug,
+      resource: EhsEnforcement.Consent.ConsentSettings,
+      user_id_key: :current_user,
+      skip_session_cache: true
   end
 
   pipeline :auth_required do
@@ -103,7 +106,10 @@ defmodule EhsEnforcementWeb.Router do
     pipe_through [:browser, :admin_required]
 
     live_session :admin,
-      on_mount: AshAuthentication.Phoenix.LiveSession,
+      on_mount: [
+        AshAuthentication.Phoenix.LiveSession,
+        {AshCookieConsent.LiveView.Hook, :load_consent}
+      ],
       session: {AshAuthentication.Phoenix.LiveSession, :generate_session, []} do
       # Admin Case Management Routes  
       # Redirect /admin/cases to the main cases page since we removed the separate admin index
