@@ -138,7 +138,8 @@ defmodule EhsEnforcementWeb.ConnCase do
       }
       |> Map.merge(attrs)
 
-    {:ok, user} = Ash.create(EhsEnforcement.Accounts.User, user_attrs)
+    # Use Ash.Seed for testing (bypasses action requirement)
+    user = Ash.Seed.seed!(EhsEnforcement.Accounts.User, user_attrs)
     Ash.load!(user, [:display_name])
   end
 

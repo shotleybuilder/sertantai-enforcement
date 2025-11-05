@@ -3,8 +3,8 @@ defmodule EhsEnforcement.Consent.StorageTest do
 
   alias EhsEnforcement.Consent.Storage
   alias EhsEnforcement.Consent.ConsentSettings
+  import EhsEnforcementWeb.ConnCase, only: [create_test_user: 1]
   require Ash.Query
-  import Ash.Expr
 
   describe "get_consent/2" do
     test "returns nil when no consent exists" do
@@ -16,7 +16,9 @@ defmodule EhsEnforcement.Consent.StorageTest do
 
     test "loads consent from database for authenticated user" do
       # Create a user
-      {:ok, user} = create_test_user()
+      user = create_test_user(%{
+        email: "test-consent-#{System.unique_integer([:positive])}@example.com"
+      })
 
       # Create consent record in database
       consent_params = %{
@@ -51,7 +53,9 @@ defmodule EhsEnforcement.Consent.StorageTest do
     end
 
     test "prefers newer database consent over older cookie consent" do
-      {:ok, user} = create_test_user()
+      user = create_test_user(%{
+        email: "test-newer-#{System.unique_integer([:positive])}@example.com"
+      })
 
       # Old cookie consent (30 days ago)
       old_time = DateTime.utc_now() |> DateTime.add(-30, :day) |> DateTime.truncate(:second)
@@ -87,7 +91,9 @@ defmodule EhsEnforcement.Consent.StorageTest do
 
   describe "put_consent/3" do
     test "saves consent to database for authenticated user" do
-      {:ok, user} = create_test_user()
+      user = create_test_user(%{
+        email: "test-save-#{System.unique_integer([:positive])}@example.com"
+      })
 
       consent = %{
         "terms" => "v1.0",
@@ -136,7 +142,9 @@ defmodule EhsEnforcement.Consent.StorageTest do
     end
 
     test "creates new consent record each time (audit trail)" do
-      {:ok, user} = create_test_user()
+      user = create_test_user(%{
+        email: "test-audit-#{System.unique_integer([:positive])}@example.com"
+      })
 
       # First consent
       consent1 = %{
@@ -178,7 +186,9 @@ defmodule EhsEnforcement.Consent.StorageTest do
 
   describe "delete_consent/2" do
     test "deletes all consent records for authenticated user" do
-      {:ok, user} = create_test_user()
+      user = create_test_user(%{
+        email: "test-delete-#{System.unique_integer([:positive])}@example.com"
+      })
 
       # Create multiple consent records
       for groups <- [["essential"], ["essential", "analytics"]] do
@@ -219,16 +229,5 @@ defmodule EhsEnforcement.Consent.StorageTest do
       # Should not raise error
       assert Storage.delete_consent(conn, opts)
     end
-  end
-
-  # Helper to create a test user
-  defp create_test_user do
-    EhsEnforcement.Accounts.User
-    |> Ash.Changeset.for_create(:register_with_password, %{
-      email: "test-#{System.unique_integer([:positive])}@example.com",
-      password: "Test123!@#",
-      password_confirmation: "Test123!@#"
-    })
-    |> Ash.create()
   end
 end
