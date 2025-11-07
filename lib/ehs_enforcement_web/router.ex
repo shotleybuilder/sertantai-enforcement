@@ -55,7 +55,10 @@ defmodule EhsEnforcementWeb.Router do
     get "/home", PageController, :home
 
     live_session :public,
-      on_mount: AshAuthentication.Phoenix.LiveSession,
+      on_mount: [
+        AshAuthentication.Phoenix.LiveSession,
+        {AshCookieConsent.LiveView.Hook, :load_consent}
+      ],
       session: {AshAuthentication.Phoenix.LiveSession, :generate_session, []} do
       live "/", DashboardLive, :index
       live "/dashboard", DashboardLive, :index
