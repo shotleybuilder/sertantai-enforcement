@@ -79,7 +79,8 @@ defmodule EhsEnforcement.Agencies.Hse.Notices do
           Post.post(@base, @table, notices)
         end)
 
-      [] ->
+      :ok ->
+        # No pages selected by user
         :ok
 
       _ ->

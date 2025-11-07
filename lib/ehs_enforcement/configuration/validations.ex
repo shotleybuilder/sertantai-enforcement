@@ -34,11 +34,11 @@ defmodule EhsEnforcement.Configuration.Validations do
             changeset
 
           {:error, message} ->
-            Ash.Changeset.add_error(changeset, attribute, message)
+            Ash.Changeset.add_error(changeset, field: attribute, message: message)
         end
 
       _ ->
-        Ash.Changeset.add_error(changeset, attribute, "must be a string")
+        Ash.Changeset.add_error(changeset, field: attribute, message: "must be a string")
     end
   end
 

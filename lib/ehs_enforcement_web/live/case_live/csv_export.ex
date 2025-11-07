@@ -167,7 +167,7 @@ defmodule EhsEnforcementWeb.CaseLive.CSVExport do
       # Also include as Regulator ID
       escape_csv_field(case_record.regulator_id || ""),
       escape_csv_field(case_record.agency.name || ""),
-      escape_csv_field(to_string(case_record.agency.code) || ""),
+      escape_csv_field(to_string(case_record.agency.code)),
       escape_csv_field(case_record.offender.name || ""),
       escape_csv_field(case_record.offender.local_authority || ""),
       escape_csv_field(case_record.offender.postcode || ""),
@@ -232,7 +232,7 @@ defmodule EhsEnforcementWeb.CaseLive.CSVExport do
       # Also include as Regulator ID
       escape_csv_field(case_record.regulator_id || ""),
       escape_csv_field(case_record.agency.name || ""),
-      escape_csv_field(to_string(case_record.agency.code) || ""),
+      escape_csv_field(to_string(case_record.agency.code)),
       escape_csv_field(case_record.offender.name || ""),
       escape_csv_field(case_record.offender.local_authority || ""),
       escape_csv_field(case_record.offender.postcode || ""),
