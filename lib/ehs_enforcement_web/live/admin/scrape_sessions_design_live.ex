@@ -33,7 +33,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
         filter_status: "all",
         filter_agency: "all",
 
-        # Sessions data - initialize as empty, will be populated by handle_continue
+        # Sessions data - initialize as empty, will be populated by handle_params
         all_sessions: [],
 
         # UI state
@@ -46,21 +46,26 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
       Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
     end
 
-    # Load sessions data AFTER hooks run (when current_user is available)
-    {:ok, socket, {:continue, :load_initial_sessions}}
+    {:ok, socket}
   end
 
   @impl true
-  def handle_continue(:load_initial_sessions, socket) do
-    # Now current_user is available from the authentication hook
-    sessions =
-      load_sessions(
-        socket.assigns.filter_status,
-        socket.assigns.filter_agency,
-        socket.assigns.current_user
-      )
+  def handle_params(_params, _uri, socket) do
+    # Only load sessions if WebSocket is connected (current_user is available)
+    if connected?(socket) do
+      sessions =
+        load_sessions(
+          socket.assigns.filter_status,
+          socket.assigns.filter_agency,
+          socket.assigns.current_user
+        )
 
-    {:noreply, assign(socket, all_sessions: sessions)}
+      {:noreply, assign(socket, all_sessions: sessions)}
+    else
+      # During initial HTTP request, just return the socket
+      # Sessions will be loaded after WebSocket connects
+      {:noreply, socket}
+    end
   end
 
   @impl true

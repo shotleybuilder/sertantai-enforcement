@@ -13,6 +13,7 @@ defmodule EhsEnforcementWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :load_current_user
+
     plug EhsEnforcement.Consent.Plug,
       resource: EhsEnforcement.Consent.ConsentSettings,
       user_id_key: :current_user,
@@ -42,10 +43,10 @@ defmodule EhsEnforcementWeb.Router do
   scope "/", EhsEnforcementWeb do
     pipe_through :browser
 
-    sign_in_route()
+    sign_in_route(auth_routes_prefix: "/auth")
     sign_out_route(AuthController)
-    auth_routes_for(EhsEnforcement.Accounts.User, to: AuthController)
-    reset_route([])
+    auth_routes(AuthController, EhsEnforcement.Accounts.User, path: "/auth")
+    reset_route(auth_routes_prefix: "/auth")
   end
 
   # Public routes - no authentication required  
