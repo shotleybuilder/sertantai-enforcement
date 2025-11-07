@@ -173,7 +173,7 @@ defmodule EhsEnforcement.RetryLogic do
   Initializes circuit breaker with configuration.
   """
   def init_circuit_breaker(circuit_name, opts \\ []) do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     config = %{
       failure_threshold: Keyword.get(opts, :failure_threshold, 5),
@@ -187,7 +187,7 @@ defmodule EhsEnforcement.RetryLogic do
       blocked_calls: 0
     }
 
-    :ets.insert(@circuit_breakers_table, {circuit_name, config})
+    true = :ets.insert(@circuit_breakers_table, {circuit_name, config})
     :ok
   end
 
@@ -195,7 +195,7 @@ defmodule EhsEnforcement.RetryLogic do
   Executes function with circuit breaker protection.
   """
   def call_with_circuit_breaker(circuit_name, fun) do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     case :ets.lookup(@circuit_breakers_table, circuit_name) do
       [{^circuit_name, config}] ->
@@ -207,10 +207,10 @@ defmodule EhsEnforcement.RetryLogic do
             if should_attempt_reset?(config) do
               # Transition to half-open
               new_config = %{config | state: :half_open}
-              :ets.insert(@circuit_breakers_table, {circuit_name, new_config})
+              true = :ets.insert(@circuit_breakers_table, {circuit_name, new_config})
               execute_with_circuit_breaker(circuit_name, new_config, fun)
             else
-              update_blocked_calls(circuit_name, config)
+              true = update_blocked_calls(circuit_name, config)
               {:error, :circuit_open}
             end
 
@@ -220,7 +220,7 @@ defmodule EhsEnforcement.RetryLogic do
 
       [] ->
         # Initialize circuit breaker if not found
-        init_circuit_breaker(circuit_name)
+        :ok = init_circuit_breaker(circuit_name)
         call_with_circuit_breaker(circuit_name, fun)
     end
   end
@@ -229,12 +229,12 @@ defmodule EhsEnforcement.RetryLogic do
   Resets circuit breaker to closed state.
   """
   def reset_circuit_breaker(circuit_name) do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     case :ets.lookup(@circuit_breakers_table, circuit_name) do
       [{^circuit_name, config}] ->
         reset_config = %{config | state: :closed, failure_count: 0, last_failure_time: nil}
-        :ets.insert(@circuit_breakers_table, {circuit_name, reset_config})
+        true = :ets.insert(@circuit_breakers_table, {circuit_name, reset_config})
         :ok
 
       [] ->
@@ -287,7 +287,7 @@ defmodule EhsEnforcement.RetryLogic do
   Initializes rate limiter.
   """
   def init_rate_limiter(limiter_name, opts \\ []) do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     config = %{
       max_requests: Keyword.get(opts, :max_requests, 10),
@@ -296,7 +296,7 @@ defmodule EhsEnforcement.RetryLogic do
       created_at: System.monotonic_time(:millisecond)
     }
 
-    :ets.insert(@rate_limiters_table, {limiter_name, config})
+    true = :ets.insert(@rate_limiters_table, {limiter_name, config})
     :ok
   end
 
@@ -321,8 +321,8 @@ defmodule EhsEnforcement.RetryLogic do
   Cleans up rate limiter.
   """
   def cleanup_rate_limiter(limiter_name) do
-    ensure_tables_exist()
-    :ets.delete(@rate_limiters_table, limiter_name)
+    :ok = ensure_tables_exist()
+    true = :ets.delete(@rate_limiters_table, limiter_name)
     :ok
   end
 
@@ -408,8 +408,8 @@ defmodule EhsEnforcement.RetryLogic do
   Resets retry metrics.
   """
   def reset_metrics do
-    ensure_tables_exist()
-    :ets.delete_all_objects(@retry_metrics_table)
+    :ok = ensure_tables_exist()
+    true = :ets.delete_all_objects(@retry_metrics_table)
     :ok
   end
 
@@ -417,7 +417,7 @@ defmodule EhsEnforcement.RetryLogic do
   Gets comprehensive retry metrics.
   """
   def get_retry_metrics do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     metrics_data = :ets.tab2list(@retry_metrics_table)
 
@@ -655,7 +655,7 @@ defmodule EhsEnforcement.RetryLogic do
   end
 
   defp record_operation_outcome(operation, outcome, attempts) do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     operation_data = %{
       operation: operation,
@@ -665,28 +665,32 @@ defmodule EhsEnforcement.RetryLogic do
     }
 
     operation_id = :crypto.strong_rand_bytes(8) |> Base.encode16() |> String.downcase()
-    :ets.insert(@retry_metrics_table, {operation_id, operation_data})
+    true = :ets.insert(@retry_metrics_table, {operation_id, operation_data})
+    :ok
   end
 
   defp log_retry_attempt(operation, attempt) do
-    Logger.info("Retry attempt #{attempt} for operation: #{operation}",
-      operation: operation,
-      attempt: attempt,
-      retry_event: true
-    )
+    _ =
+      Logger.info("Retry attempt #{attempt} for operation: #{operation}",
+        operation: operation,
+        attempt: attempt,
+        retry_event: true
+      )
+
+    :ok
   end
 
   defp ensure_tables_exist do
     unless :ets.whereis(@retry_metrics_table) != :undefined do
-      :ets.new(@retry_metrics_table, [:named_table, :public, :set])
+      _ = :ets.new(@retry_metrics_table, [:named_table, :public, :set])
     end
 
     unless :ets.whereis(@circuit_breakers_table) != :undefined do
-      :ets.new(@circuit_breakers_table, [:named_table, :public, :set])
+      _ = :ets.new(@circuit_breakers_table, [:named_table, :public, :set])
     end
 
     unless :ets.whereis(@rate_limiters_table) != :undefined do
-      :ets.new(@rate_limiters_table, [:named_table, :public, :set])
+      _ = :ets.new(@rate_limiters_table, [:named_table, :public, :set])
     end
   end
 end

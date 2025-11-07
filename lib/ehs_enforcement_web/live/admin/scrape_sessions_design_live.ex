@@ -176,7 +176,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
       :hse -> "bg-blue-100 text-blue-800"
       :environment_agency -> "bg-green-100 text-green-800"
       :ea -> "bg-green-100 text-green-800"
-      _ -> "bg-gray-100 text-gray-800"
     end
   end
 
@@ -185,7 +184,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
       :hse -> "HSE"
       :environment_agency -> "EA"
       :ea -> "EA"
-      _ -> "Unknown"
     end
   end
 

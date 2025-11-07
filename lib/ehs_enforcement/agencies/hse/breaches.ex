@@ -452,7 +452,7 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
   Process a single HSE breach string into structured legislation data.
   """
   @spec process_single_breach_with_deduplication(String.t(), integer(), keyword()) ::
-          {:ok, map()} | {:error, term()}
+          {:error, term()}
   def process_single_breach_with_deduplication(breach_text, sequence, _opts \\ []) do
     try do
       # Parse the breach text into components
@@ -494,7 +494,9 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
   - "Health and Safety at Work Act 1974 / Section 2(1)"
   - "Construction (Design and Management) Regulations 2015 / Regulation 13"
   """
-  @spec parse_hse_breach_components(String.t()) :: {:ok, map()} | {:error, term()}
+  @spec parse_hse_breach_components(String.t()) ::
+          {:ok, %{section: nil | String.t(), title: String.t(), year: term()}}
+          | {:error, {:parse_error, Exception.t()}}
   def parse_hse_breach_components(breach_text) when is_binary(breach_text) do
     try do
       components =
@@ -556,9 +558,6 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
 
           year when is_binary(year) ->
             %{title: cleaned_title, year: String.to_integer(year)}
-
-          year when is_integer(year) ->
-            %{title: cleaned_title, year: year}
         end
     end
   end
@@ -607,7 +606,9 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
   @doc """
   Find or create HSE legislation using the new deduplication system.
   """
-  @spec find_or_create_hse_legislation(map()) :: {:ok, struct()} | {:error, term()}
+  @spec find_or_create_hse_legislation(%{title: binary(), year: term()}) ::
+          {:ok, struct()}
+          | {:error, binary() | struct()}
   def find_or_create_hse_legislation(%{title: title, year: year} = components) do
     # First check the static lookup table for known HSE legislation
     lookup_key = build_lookup_key(title, year)

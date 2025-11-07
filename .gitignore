@@ -116,3 +116,4 @@ hse_enforcement_data.ex
 /sessions
 /claude-sessions
 .claude/sessions
+/priv/plts/

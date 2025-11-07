@@ -163,9 +163,6 @@ defmodule EhsEnforcement.Agencies.Ea.IndustryClassifier do
 
       :no_match ->
         "No clear pattern matches found"
-
-      _ ->
-        "Classified using #{method} method"
     end
   end
 

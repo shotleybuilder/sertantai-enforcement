@@ -145,7 +145,7 @@ defmodule EhsEnforcement.Utility do
 
   def save_structs_as_json(_, _), do: :ok
 
-  @spec save_structs_as_json_returning(list(), path :: binary(), map()) :: list()
+  @spec save_structs_as_json_returning([map()], path :: String.t(), %{filesave?: true}) :: [map()]
   def save_structs_as_json_returning(records, path, %{filesave?: true} = _opts) do
     save_structs_as_json(records, path)
     records
@@ -248,7 +248,9 @@ defmodule EhsEnforcement.Utility do
     end
   end
 
-  @spec split_name(String.t()) :: tuple()
+  @spec split_name(String.t()) ::
+          {:error, String.t()}
+          | {String.t() | {integer(), integer()}, String.t() | {integer(), integer()}, String.t() | {integer(), integer()}}
   def split_name(name) do
     # UK_TLA_type-code_year_number
     case Regex.run(~r/([a-z]*?)_(\d{4})_(.*)$/, name) do
@@ -540,7 +542,7 @@ defmodule EhsEnforcement.Utility do
       iex> determine_legislation_type("Control of Substances Hazardous to Health Regulations")
       :regulation
   """
-  @spec determine_legislation_type(String.t()) :: atom()
+  @spec determine_legislation_type(String.t()) :: :acop | :act | :order | :regulation
   def determine_legislation_type(title) when is_binary(title) do
     title_lower = String.downcase(title)
 

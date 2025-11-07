@@ -19,7 +19,25 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
   # 1 second
   @retry_base_delay 1000
 
-  @type response :: {:ok, map()} | {:error, map()}
+  @type response ::
+          {:ok, map()}
+          | {:error,
+             %{
+               code: String.t(),
+               details: term(),
+               message: String.t(),
+               type:
+                 :bad_request
+                 | :forbidden
+                 | :network_error
+                 | :not_found
+                 | :rate_limit
+                 | :server_error
+                 | :timeout
+                 | :unauthorized
+                 | :unknown_error
+                 | :validation_error
+             }}
   @type http_method :: :get | :post | :patch | :delete
 
   @doc """
@@ -240,7 +258,14 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
      }}
   end
 
-  @spec handle_error(term()) :: response()
+  @spec handle_error(term()) ::
+          {:error,
+           %{
+             code: String.t(),
+             details: %{original_error: map(), timeout: 30000},
+             message: String.t(),
+             type: :network_error | :timeout
+           }}
   defp handle_error(%{reason: :timeout}) do
     {:error,
      %{
@@ -281,13 +306,13 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
      }}
   end
 
-  @spec should_retry?(term(), integer()) :: boolean()
+  @spec should_retry?(Exception.t(), 1 | 2) :: boolean()
   defp should_retry?(%{reason: :timeout}, _attempt), do: true
   defp should_retry?(%{reason: :econnrefused}, _attempt), do: true
   defp should_retry?(%{reason: :nxdomain}, _attempt), do: false
   defp should_retry?(_, _), do: false
 
-  @spec calculate_retry_delay(integer()) :: integer()
+  @spec calculate_retry_delay(1 | 2) :: integer()
   defp calculate_retry_delay(attempt) do
     # Exponential backoff: 1s, 2s, 4s, 8s...
     (@retry_base_delay * :math.pow(2, attempt - 1)) |> round()

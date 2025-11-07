@@ -211,9 +211,9 @@ defmodule EhsEnforcement.Logger do
   Resets log metrics counters.
   """
   def reset_metrics do
-    ensure_metrics_tables_exist()
-    :ets.delete_all_objects(@metrics_table)
-    :ets.delete_all_objects(@error_metrics_table)
+    :ok = ensure_metrics_tables_exist()
+    true = :ets.delete_all_objects(@metrics_table)
+    true = :ets.delete_all_objects(@error_metrics_table)
     :ok
   end
 
@@ -221,7 +221,7 @@ defmodule EhsEnforcement.Logger do
   Gets current log metrics.
   """
   def get_log_metrics do
-    ensure_metrics_tables_exist()
+    :ok = ensure_metrics_tables_exist()
 
     %{
       info_count: get_metric_count(:info),
@@ -235,7 +235,7 @@ defmodule EhsEnforcement.Logger do
   Gets error metrics and most frequent error types.
   """
   def get_error_metrics do
-    ensure_metrics_tables_exist()
+    :ok = ensure_metrics_tables_exist()
 
     error_counts =
       @error_metrics_table
@@ -362,28 +362,32 @@ defmodule EhsEnforcement.Logger do
   defp format_stacktrace(_), do: "No stacktrace available"
 
   defp record_log_metric(level) do
-    ensure_metrics_tables_exist()
+    :ok = ensure_metrics_tables_exist()
 
     case :ets.lookup(@metrics_table, level) do
       [{^level, count}] ->
-        :ets.insert(@metrics_table, {level, count + 1})
+        true = :ets.insert(@metrics_table, {level, count + 1})
 
       [] ->
-        :ets.insert(@metrics_table, {level, 1})
+        true = :ets.insert(@metrics_table, {level, 1})
     end
+
+    :ok
   end
 
   defp record_error_metric(error) do
-    ensure_metrics_tables_exist()
+    :ok = ensure_metrics_tables_exist()
     error_type = error.__struct__ |> to_string() |> String.replace("Elixir.", "")
 
     case :ets.lookup(@error_metrics_table, error_type) do
       [{^error_type, count}] ->
-        :ets.insert(@error_metrics_table, {error_type, count + 1})
+        true = :ets.insert(@error_metrics_table, {error_type, count + 1})
 
       [] ->
-        :ets.insert(@error_metrics_table, {error_type, 1})
+        true = :ets.insert(@error_metrics_table, {error_type, 1})
     end
+
+    :ok
   end
 
   defp get_metric_count(level) do
@@ -395,11 +399,13 @@ defmodule EhsEnforcement.Logger do
 
   defp ensure_metrics_tables_exist do
     unless :ets.whereis(@metrics_table) != :undefined do
-      :ets.new(@metrics_table, [:named_table, :public, :set])
+      _ = :ets.new(@metrics_table, [:named_table, :public, :set])
     end
 
     unless :ets.whereis(@error_metrics_table) != :undefined do
-      :ets.new(@error_metrics_table, [:named_table, :public, :set])
+      _ = :ets.new(@error_metrics_table, [:named_table, :public, :set])
     end
+
+    :ok
   end
 end

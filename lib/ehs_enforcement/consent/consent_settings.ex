@@ -59,6 +59,7 @@ defmodule EhsEnforcement.Consent.ConsentSettings do
 
     update :update do
       primary?(true)
+      require_atomic?(false)
       accept([:terms, :groups, :expires_at])
     end
 
@@ -76,6 +77,8 @@ defmodule EhsEnforcement.Consent.ConsentSettings do
     end
 
     update :revoke_consent do
+      require_atomic?(false)
+
       change(fn changeset, _context ->
         Ash.Changeset.change_attribute(changeset, :groups, [])
       end)

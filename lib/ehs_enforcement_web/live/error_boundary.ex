@@ -28,6 +28,7 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
       """
     end
 
+    @spec handle_event(String.t(), map(), Phoenix.LiveView.Socket.t()) :: no_return()
     def handle_event("trigger_error", _params, _socket) do
       raise RuntimeError, "Simulated component crash"
     end

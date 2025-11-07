@@ -10,7 +10,7 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "legislation_updates")
+    :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "legislation_updates")
 
     {:ok,
      socket
@@ -331,26 +331,27 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
       parent_pid = self()
 
       # Spawn async task for count query
-      Task.start(fn ->
-        # Set timeout for the count query (5 seconds)
-        timeout_ref = Process.send_after(parent_pid, {:count_timeout, task_ref}, 5_000)
+      {:ok, _pid} =
+        Task.start(fn ->
+          # Set timeout for the count query (5 seconds)
+          timeout_ref = Process.send_after(parent_pid, {:count_timeout, task_ref}, 5_000)
 
-        try do
-          # Execute the count query
-          count = execute_legislation_count_query(count_params)
+          try do
+            # Execute the count query
+            count = execute_legislation_count_query(count_params)
 
-          # Cancel timeout if we completed successfully
-          Process.cancel_timer(timeout_ref)
+            # Cancel timeout if we completed successfully
+            _ = Process.cancel_timer(timeout_ref)
 
-          # Send result back to LiveView
-          send(parent_pid, {:count_complete, task_ref, count})
-        rescue
-          error ->
-            # Cancel timeout and send error
-            Process.cancel_timer(timeout_ref)
-            send(parent_pid, {:count_error, task_ref, error})
-        end
-      end)
+            # Send result back to LiveView
+            send(parent_pid, {:count_complete, task_ref, count})
+          rescue
+            error ->
+              # Cancel timeout and send error
+              _ = Process.cancel_timer(timeout_ref)
+              send(parent_pid, {:count_error, task_ref, error})
+          end
+        end)
 
       # Return socket with counting state and task reference
       socket
@@ -649,26 +650,27 @@ defmodule EhsEnforcementWeb.LegislationLive.Index do
     parent_pid = self()
 
     # Spawn async task for database query
-    Task.start(fn ->
-      # Set timeout for the query (10 seconds)
-      timeout_ref = Process.send_after(parent_pid, {:search_timeout, task_ref}, 10_000)
+    {:ok, _pid} =
+      Task.start(fn ->
+        # Set timeout for the query (10 seconds)
+        timeout_ref = Process.send_after(parent_pid, {:search_timeout, task_ref}, 10_000)
 
-      try do
-        # Execute the search query
-        result = execute_search_query(search_params)
+        try do
+          # Execute the search query
+          result = execute_search_query(search_params)
 
-        # Cancel timeout if we completed successfully
-        Process.cancel_timer(timeout_ref)
+          # Cancel timeout if we completed successfully
+          _ = Process.cancel_timer(timeout_ref)
 
-        # Send results back to LiveView
-        send(parent_pid, {:search_complete, task_ref, result})
-      rescue
-        error ->
-          # Cancel timeout and send error
-          Process.cancel_timer(timeout_ref)
-          send(parent_pid, {:search_error, task_ref, error})
-      end
-    end)
+          # Send results back to LiveView
+          send(parent_pid, {:search_complete, task_ref, result})
+        rescue
+          error ->
+            # Cancel timeout and send error
+            _ = Process.cancel_timer(timeout_ref)
+            send(parent_pid, {:search_error, task_ref, error})
+        end
+      end)
 
     # Return socket with loading state and task reference
     socket

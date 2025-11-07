@@ -71,7 +71,6 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.Edit do
       :enabled -> "Whether this agency is currently active in the system"
       :inserted_at -> "When this agency record was created (system managed)"
       :updated_at -> "When this agency record was last modified (system managed)"
-      _ -> ""
     end
   end
 
@@ -84,7 +83,6 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.Edit do
       :enabled -> "Enabled"
       :inserted_at -> "Created At"
       :updated_at -> "Updated At"
-      _ -> to_string(field)
     end
   end
 end

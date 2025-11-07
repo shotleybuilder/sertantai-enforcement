@@ -68,7 +68,24 @@ defmodule EhsEnforcement.Integrations.Airtable.Post do
 
   This function logs the data being sent for debugging purposes.
   """
-  @spec post_debug(String.t(), String.t(), map() | list()) :: {:ok, list()} | {:error, map()}
+  @spec post_debug(String.t(), String.t(), map() | list()) ::
+          {:ok, list()}
+          | {:error,
+             %{
+               details: term(),
+               message: String.t(),
+               type:
+                 :bad_request
+                 | :forbidden
+                 | :network_error
+                 | :not_found
+                 | :rate_limit
+                 | :server_error
+                 | :timeout
+                 | :unauthorized
+                 | :unexpected_format
+                 | :unknown_error
+             }}
   def post_debug(base, table, data) do
     formatted_data = make_airtable_dataset(data)
     Logger.debug("POST DATA: #{inspect(formatted_data)}")

@@ -354,7 +354,7 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
   EA notices include legal framework information that needs to be
   processed into structured legislation records.
   """
-  @spec process_ea_legislation(ProcessedEaNotice.t()) :: {:ok, map()} | {:error, term()}
+  @spec process_ea_legislation(ProcessedEaNotice.t()) :: {:ok, map() | nil} | {:error, term()}
   def process_ea_legislation(%ProcessedEaNotice{} = processed_notice) do
     if processed_notice.legal_act do
       try do
@@ -434,7 +434,9 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
   @doc """
   Find or create EA legislation using the new deduplication system.
   """
-  @spec find_or_create_ea_legislation(map()) :: {:ok, struct()} | {:error, term()}
+  @spec find_or_create_ea_legislation(%{title: binary(), year: nil | integer()}) ::
+          {:ok, struct()}
+          | {:error, binary() | struct()}
   def find_or_create_ea_legislation(%{title: title, year: year} = components) do
     Logger.debug("Processing EA legislation: #{title}")
 

@@ -103,8 +103,6 @@ defmodule EhsEnforcement.Config.Settings do
     end
   end
 
-  defp parse_sync_interval(_), do: 60
-
   defp parse_boolean("true"), do: true
   defp parse_boolean("TRUE"), do: true
   defp parse_boolean("True"), do: true
@@ -122,9 +120,6 @@ defmodule EhsEnforcement.Config.Settings do
       _ -> 10
     end
   end
-
-  defp parse_integer(value) when is_integer(value), do: value
-  defp parse_integer(_), do: 10
 
   defp validate_required_env_vars do
     required_vars = ["AT_UK_E_API_KEY", "DATABASE_URL"]

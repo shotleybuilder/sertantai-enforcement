@@ -320,10 +320,10 @@ defmodule EhsEnforcement.ErrorHandler do
   Resets error metrics.
   """
   def reset_metrics do
-    ensure_tables_exist()
-    :ets.delete_all_objects(error_metrics_table())
-    :ets.delete_all_objects(resolution_metrics_table())
-    :ets.delete_all_objects(circuit_breakers_table())
+    :ok = ensure_tables_exist()
+    true = :ets.delete_all_objects(error_metrics_table())
+    true = :ets.delete_all_objects(resolution_metrics_table())
+    true = :ets.delete_all_objects(circuit_breakers_table())
     :ok
   end
 
@@ -331,15 +331,15 @@ defmodule EhsEnforcement.ErrorHandler do
   Records error occurrence for metrics tracking.
   """
   def record_error(error, context) do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     {error_type, _} = categorize_error(error)
     operation = context[:operation] || "unknown"
     error_id = generate_error_id()
 
     # Update error type metrics
-    update_error_type_count(error_type)
-    update_operation_error_count(operation)
+    true = update_error_type_count(error_type)
+    true = update_operation_error_count(operation)
 
     # Store error details
     error_data = %{
@@ -349,7 +349,7 @@ defmodule EhsEnforcement.ErrorHandler do
       timestamp: DateTime.utc_now()
     }
 
-    :ets.insert(error_metrics_table(), {error_id, error_data})
+    true = :ets.insert(error_metrics_table(), {error_id, error_data})
 
     error_id
   end
@@ -358,7 +358,7 @@ defmodule EhsEnforcement.ErrorHandler do
   Records error resolution outcome.
   """
   def record_resolution(error_id, outcome, metadata) do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     resolution_data = %{
       error_id: error_id,
@@ -367,7 +367,7 @@ defmodule EhsEnforcement.ErrorHandler do
       timestamp: DateTime.utc_now()
     }
 
-    :ets.insert(resolution_metrics_table(), {error_id, resolution_data})
+    true = :ets.insert(resolution_metrics_table(), {error_id, resolution_data})
     :ok
   end
 
@@ -375,7 +375,7 @@ defmodule EhsEnforcement.ErrorHandler do
   Gets comprehensive error metrics.
   """
   def get_error_metrics do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     error_data = :ets.tab2list(error_metrics_table())
 
@@ -406,7 +406,7 @@ defmodule EhsEnforcement.ErrorHandler do
   Gets error resolution metrics.
   """
   def get_resolution_metrics do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     resolution_data = :ets.tab2list(resolution_metrics_table())
 
@@ -444,15 +444,15 @@ defmodule EhsEnforcement.ErrorHandler do
   Records error with timestamp for trend analysis.
   """
   def record_error_with_timestamp(error, context, timestamp) do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     {error_type, _} = categorize_error(error)
     operation = context[:operation] || "unknown"
     error_id = generate_error_id()
 
     # Update error type metrics
-    update_error_type_count(error_type)
-    update_operation_error_count(operation)
+    true = update_error_type_count(error_type)
+    true = update_operation_error_count(operation)
 
     # Store error details
     error_data = %{
@@ -462,7 +462,7 @@ defmodule EhsEnforcement.ErrorHandler do
       timestamp: timestamp
     }
 
-    :ets.insert(error_metrics_table(), {error_id, error_data})
+    true = :ets.insert(error_metrics_table(), {error_id, error_data})
 
     error_id
   end
@@ -471,7 +471,7 @@ defmodule EhsEnforcement.ErrorHandler do
   Analyzes error trends over time.
   """
   def analyze_error_trends do
-    ensure_tables_exist()
+    :ok = ensure_tables_exist()
 
     all_data = :ets.tab2list(error_metrics_table())
 
@@ -570,7 +570,7 @@ defmodule EhsEnforcement.ErrorHandler do
         result
 
       nil ->
-        Task.shutdown(task, :brutal_kill)
+        _ = Task.shutdown(task, :brutal_kill)
         {:error, :timeout}
     end
   end
@@ -636,7 +636,6 @@ defmodule EhsEnforcement.ErrorHandler do
   defp determine_severity(:validation_error), do: :low
   defp determine_severity(:business_error), do: :medium
   defp determine_severity(:application_error), do: :medium
-  defp determine_severity(_), do: :low
 
   defp generate_notification_title(error, context) do
     operation = context[:operation] || "Unknown operation"
@@ -761,15 +760,17 @@ defmodule EhsEnforcement.ErrorHandler do
 
   defp ensure_tables_exist do
     unless :ets.whereis(error_metrics_table()) != :undefined do
-      :ets.new(error_metrics_table(), [:named_table, :public, :bag])
+      _ = :ets.new(error_metrics_table(), [:named_table, :public, :bag])
     end
 
     unless :ets.whereis(resolution_metrics_table()) != :undefined do
-      :ets.new(resolution_metrics_table(), [:named_table, :public, :set])
+      _ = :ets.new(resolution_metrics_table(), [:named_table, :public, :set])
     end
 
     unless :ets.whereis(circuit_breakers_table()) != :undefined do
-      :ets.new(circuit_breakers_table(), [:named_table, :public, :set])
+      _ = :ets.new(circuit_breakers_table(), [:named_table, :public, :set])
     end
+
+    :ok
   end
 end

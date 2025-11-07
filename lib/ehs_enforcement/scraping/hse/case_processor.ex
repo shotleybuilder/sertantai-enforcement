@@ -458,17 +458,6 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
     }
   end
 
-  defp process_breaches_locally(breach) when is_binary(breach) do
-    %{
-      offence_breaches: breach,
-      offence_breaches_clean: String.trim(breach),
-      offence_lrt: nil
-    }
-  end
-
-  defp process_breaches_locally(_),
-    do: %{offence_breaches: nil, offence_breaches_clean: nil, offence_lrt: nil}
-
   defp is_duplicate_error?(%Ash.Error.Invalid{errors: errors}) do
     Enum.any?(errors, fn
       %{field: :regulator_id, message: message} ->

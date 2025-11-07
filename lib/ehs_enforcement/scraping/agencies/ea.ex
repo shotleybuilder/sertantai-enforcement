@@ -692,17 +692,14 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
       case record_type do
         :notice -> "notice:scraped"
         :case -> "case:scraped"
-        _ -> nil
       end
 
-    if topic do
-      Phoenix.PubSub.broadcast(
-        EhsEnforcement.PubSub,
-        topic,
-        {:record_scraped, %{record: record, status: status, type: record_type}}
-      )
+    Phoenix.PubSub.broadcast(
+      EhsEnforcement.PubSub,
+      topic,
+      {:record_scraped, %{record: record, status: status, type: record_type}}
+    )
 
-      Logger.debug("Broadcast #{topic}: #{record.regulator_id} (status: #{status})")
-    end
+    Logger.debug("Broadcast #{topic}: #{record.regulator_id} (status: #{status})")
   end
 end

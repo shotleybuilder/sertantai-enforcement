@@ -65,25 +65,25 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     # Add reactive data loading when connected
     if connected?(socket) do
       # Subscribe to PubSub events for progress tracking
-      PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:created")
-      PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
+      :ok = PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:created")
+      :ok = PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
 
       # Subscribe to ProcessingLog for scraped record display (batch updates)
       # ProcessingLog fires for ALL records (created, updated, existing) at end of batch
-      PubSub.subscribe(EhsEnforcement.PubSub, "processing_log:created")
+      :ok = PubSub.subscribe(EhsEnforcement.PubSub, "processing_log:created")
 
       # Subscribe to real-time individual record scraping events
       # These fire immediately after each record is processed (every 3 seconds for EA)
       case enforcement_type do
         :notice ->
-          PubSub.subscribe(EhsEnforcement.PubSub, "notice:scraped")
-          PubSub.subscribe(EhsEnforcement.PubSub, "notice:created")
-          PubSub.subscribe(EhsEnforcement.PubSub, "notice:updated")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "notice:scraped")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "notice:created")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "notice:updated")
 
         :case ->
-          PubSub.subscribe(EhsEnforcement.PubSub, "case:scraped")
-          PubSub.subscribe(EhsEnforcement.PubSub, "case:created")
-          PubSub.subscribe(EhsEnforcement.PubSub, "case:updated")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "case:scraped")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "case:created")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "case:updated")
       end
 
       # Add reactive data loading with keep_live
@@ -180,7 +180,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   def handle_event("stop_scraping", _params, socket) do
     # Kill the background scraping task if it exists
     if socket.assigns[:scraping_task] do
-      Task.shutdown(socket.assigns.scraping_task, :brutal_kill)
+      _ = Task.shutdown(socket.assigns.scraping_task, :brutal_kill)
     end
 
     socket =
@@ -269,27 +269,27 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
       # Unsubscribe from old topics
       case old_enforcement_type do
         :notice ->
-          PubSub.unsubscribe(EhsEnforcement.PubSub, "notice:scraped")
-          PubSub.unsubscribe(EhsEnforcement.PubSub, "notice:created")
-          PubSub.unsubscribe(EhsEnforcement.PubSub, "notice:updated")
+          :ok = PubSub.unsubscribe(EhsEnforcement.PubSub, "notice:scraped")
+          :ok = PubSub.unsubscribe(EhsEnforcement.PubSub, "notice:created")
+          :ok = PubSub.unsubscribe(EhsEnforcement.PubSub, "notice:updated")
 
         :case ->
-          PubSub.unsubscribe(EhsEnforcement.PubSub, "case:scraped")
-          PubSub.unsubscribe(EhsEnforcement.PubSub, "case:created")
-          PubSub.unsubscribe(EhsEnforcement.PubSub, "case:updated")
+          :ok = PubSub.unsubscribe(EhsEnforcement.PubSub, "case:scraped")
+          :ok = PubSub.unsubscribe(EhsEnforcement.PubSub, "case:created")
+          :ok = PubSub.unsubscribe(EhsEnforcement.PubSub, "case:updated")
       end
 
       # Subscribe to new topics
       case enforcement_type do
         :notice ->
-          PubSub.subscribe(EhsEnforcement.PubSub, "notice:scraped")
-          PubSub.subscribe(EhsEnforcement.PubSub, "notice:created")
-          PubSub.subscribe(EhsEnforcement.PubSub, "notice:updated")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "notice:scraped")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "notice:created")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "notice:updated")
 
         :case ->
-          PubSub.subscribe(EhsEnforcement.PubSub, "case:scraped")
-          PubSub.subscribe(EhsEnforcement.PubSub, "case:created")
-          PubSub.subscribe(EhsEnforcement.PubSub, "case:updated")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "case:scraped")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "case:created")
+          :ok = PubSub.subscribe(EhsEnforcement.PubSub, "case:updated")
       end
     end
 

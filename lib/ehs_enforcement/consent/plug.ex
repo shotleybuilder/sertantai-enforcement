@@ -104,6 +104,4 @@ defmodule EhsEnforcement.Consent.Plug do
   defp get_field(consent, field) when is_map(consent) do
     Map.get(consent, field) || Map.get(consent, String.to_atom(field))
   end
-
-  defp get_field(_, _), do: nil
 end

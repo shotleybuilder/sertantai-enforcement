@@ -36,6 +36,7 @@ defmodule Mix.Tasks.ValidateEnv do
   ]
 
   @impl Mix.Task
+  @spec run(list()) :: no_return()
   def run(_args) do
     IO.puts("\n🔍 Validating Environment Configuration...\n")
 

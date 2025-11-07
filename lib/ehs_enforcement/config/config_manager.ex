@@ -293,8 +293,6 @@ defmodule EhsEnforcement.Config.ConfigManager do
     end)
   end
 
-  defp mask_sensitive_config(config), do: config
-
   defp merge_runtime_config(base, runtime) do
     Map.merge(base, runtime, fn
       _key, base_val, runtime_val when is_map(base_val) and is_map(runtime_val) ->

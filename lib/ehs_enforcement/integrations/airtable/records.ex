@@ -162,7 +162,7 @@ defmodule EhsEnforcement.Integrations.Airtable.Records do
     data
   end
 
-  @spec set_params(map(), map()) :: map() | {:error, term()}
+  @spec set_params(map(), map()) :: %{required(String.t()) => term()} | {:error, term()}
   defp set_params(%{records: records, offset: offset}, _original) do
     %{"records" => records, "offset" => offset}
   end

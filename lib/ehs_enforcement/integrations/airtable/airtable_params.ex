@@ -60,10 +60,6 @@ defmodule EhsEnforcement.Integrations.Airtable.AirtableParams do
 
           {:error, error} ->
             {:error, error}
-
-          _ ->
-            {:error, "Client app has not been configured with the plan name:
-            #{params["table_name"]}"}
         end
 
       Map.has_key?(params, "table") == false ->

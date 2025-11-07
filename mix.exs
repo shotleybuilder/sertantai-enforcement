@@ -5,12 +5,21 @@ defmodule EhsEnforcement.MixProject do
     [
       app: :ehs_enforcement,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
       listeners: [Phoenix.CodeReloader],
+
+      # Dialyzer configuration
+      dialyzer: [
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+        plt_add_apps: [:ex_unit, :mix],
+        flags: [:error_handling, :underspecs, :unmatched_returns],
+        ignore_warnings: ".dialyzer_ignore.exs",
+        list_unused_filters: true
+      ],
 
       # ExDoc configuration
       docs: [
@@ -134,7 +143,7 @@ defmodule EhsEnforcement.MixProject do
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       # Cookie consent management
-      {:ash_cookie_consent, github: "shotleybuilder/ash_cookie_consent", branch: "main"}
+      {:ash_cookie_consent, "~> 0.1.0"}
     ]
   end
 

@@ -670,8 +670,6 @@ defmodule EhsEnforcement.Scraping.Ea.CaseScraper do
       nil
   end
 
-  defp parse_ea_date(_), do: nil
-
   @doc """
   Public function to collect summary records for a single action type.
   Used by individual processing workflow for real-time feedback.

@@ -44,7 +44,7 @@ defmodule EhsEnforcement.Integrations.Airtable.UkAirtable do
   @doc """
 
   """
-  @spec get_records_from_at({:params, opts()}) :: {:ok, list()} | :ok
+  @spec get_records_from_at({:params, opts()}) :: {:ok, list()} | {:error, term()}
   def get_records_from_at({:params, params}) do
     with(
       # IO.inspect(params),
@@ -61,7 +61,7 @@ defmodule EhsEnforcement.Integrations.Airtable.UkAirtable do
     end
   end
 
-  @spec get_records_from_at(opts()) :: {:ok, list()} | :ok
+  @spec get_records_from_at(opts()) :: {:ok, list()} | {:error, term()}
   def get_records_from_at(%{base_id: _} = opts) do
     with(
       params = %{

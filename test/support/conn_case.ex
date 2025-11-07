@@ -157,4 +157,13 @@ defmodule EhsEnforcementWeb.ConnCase do
 
     create_test_user(admin_attrs)
   end
+
+  @doc """
+  Logs in an existing user by storing them in the session.
+  """
+  def log_in_user(conn, user) do
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> AshAuthentication.Plug.Helpers.store_in_session(user)
+  end
 end

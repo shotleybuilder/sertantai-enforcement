@@ -6,7 +6,7 @@ defmodule EhsEnforcement.Release do
   @app :ehs_enforcement
 
   def migrate do
-    load_app()
+    _ = load_app()
 
     # Run standard Ecto migrations first
     for repo <- repos() do
@@ -14,15 +14,15 @@ defmodule EhsEnforcement.Release do
     end
 
     # Run Ash migrations
-    migrate_ash()
+    :ok = migrate_ash()
   end
 
   def migrate_ash do
-    load_app()
+    _ = load_app()
 
-    IO.puts("Running Ash migrations...")
+    _ = IO.puts("Running Ash migrations...")
 
-    # In a release environment, Ash migrations should have already been 
+    # In a release environment, Ash migrations should have already been
     # generated and converted to standard Ecto migrations.
     # The migrate() function above will handle both Ecto and Ash-generated migrations.
 
@@ -41,66 +41,70 @@ defmodule EhsEnforcement.Release do
       for domain <- domains do
         try do
           # Just ensure the domain is loaded - migrations should be handled by Ecto
-          Code.ensure_loaded(domain)
-          IO.puts("✓ Loaded Ash domain: #{inspect(domain)}")
+          {:module, _} = Code.ensure_loaded(domain)
+          _ = IO.puts("✓ Loaded Ash domain: #{inspect(domain)}")
         rescue
           error ->
-            IO.puts("⚠ Could not load Ash domain #{inspect(domain)}: #{inspect(error)}")
+            _ = IO.puts("⚠ Could not load Ash domain #{inspect(domain)}: #{inspect(error)}")
         end
       end
 
-      IO.puts("✓ Ash domains loaded successfully")
-      IO.puts("Note: Ash resource migrations are handled through standard Ecto migrations")
+      _ = IO.puts("✓ Ash domains loaded successfully")
+      _ = IO.puts("Note: Ash resource migrations are handled through standard Ecto migrations")
     rescue
       error ->
-        IO.puts("Warning: Error during Ash domain loading: #{inspect(error)}")
+        _ = IO.puts("Warning: Error during Ash domain loading: #{inspect(error)}")
 
-        IO.puts(
-          "This may not affect the migration if Ecto migrations include Ash-generated migrations"
-        )
+        _ =
+          IO.puts(
+            "This may not affect the migration if Ecto migrations include Ash-generated migrations"
+          )
     end
 
     :ok
   end
 
   def rollback(repo, version) do
-    load_app()
+    _ = load_app()
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
   end
 
   def status do
-    load_app()
+    _ = load_app()
 
-    IO.puts("=== EHS Enforcement Release Status ===")
-    IO.puts("Application: #{@app}")
-    IO.puts("Environment: #{Mix.env()}")
+    _ = IO.puts("=== EHS Enforcement Release Status ===")
+    _ = IO.puts("Application: #{@app}")
+    _ = IO.puts("Environment: #{Mix.env()}")
 
     # Check database connectivity
     for repo <- repos() do
       case repo.__adapter__.status(repo) do
-        :up -> IO.puts("✓ Database #{inspect(repo)}: Connected")
-        :down -> IO.puts("✗ Database #{inspect(repo)}: Disconnected")
-        status -> IO.puts("? Database #{inspect(repo)}: #{inspect(status)}")
+        :up -> _ = IO.puts("✓ Database #{inspect(repo)}: Connected")
+        :down -> _ = IO.puts("✗ Database #{inspect(repo)}: Disconnected")
+        status -> _ = IO.puts("? Database #{inspect(repo)}: #{inspect(status)}")
       end
     end
 
     # Check migration status
-    IO.puts("\n=== Migration Status ===")
+    _ = IO.puts("\n=== Migration Status ===")
 
     for repo <- repos() do
       {:ok, _, _} =
         Ecto.Migrator.with_repo(repo, fn repo ->
           try do
             status = Ecto.Migrator.migrations(repo)
-            IO.puts("Repository: #{inspect(repo)}")
+            _ = IO.puts("Repository: #{inspect(repo)}")
 
             for {migration_status, version, description} <- status do
               indicator = if migration_status == :up, do: "✓", else: "✗"
-              IO.puts("  #{indicator} #{version} #{description}")
+              _ = IO.puts("  #{indicator} #{version} #{description}")
             end
           rescue
             error ->
-              IO.puts("✗ Could not get migration status for #{inspect(repo)}: #{inspect(error)}")
+              _ =
+                IO.puts(
+                  "✗ Could not get migration status for #{inspect(repo)}: #{inspect(error)}"
+                )
           end
         end)
     end
@@ -109,46 +113,50 @@ defmodule EhsEnforcement.Release do
   end
 
   def eval(code_string) do
-    load_app()
+    _ = load_app()
     {result, _binding} = Code.eval_string(code_string)
     result
   end
 
   def setup do
-    create()
-    migrate()
-    seed()
+    :ok = create()
+    :ok = migrate()
+    :ok = seed()
   end
 
   def create do
-    load_app()
+    _ = load_app()
 
     for repo <- repos() do
       case repo.__adapter__.storage_up(repo.config) do
         :ok ->
-          IO.puts("✓ Database created successfully for #{inspect(repo)}")
+          _ = IO.puts("✓ Database created successfully for #{inspect(repo)}")
 
         {:error, :already_up} ->
-          IO.puts("✓ Database already exists for #{inspect(repo)}")
+          _ = IO.puts("✓ Database already exists for #{inspect(repo)}")
 
         {:error, term} ->
-          IO.puts("✗ Error creating database for #{inspect(repo)}: #{inspect(term)}")
+          _ = IO.puts("✗ Error creating database for #{inspect(repo)}: #{inspect(term)}")
           System.halt(1)
       end
     end
+
+    :ok
   end
 
   def seed do
-    load_app()
+    _ = load_app()
 
     seed_file = Path.join([Application.app_dir(@app, "priv"), "repo", "seeds.exs"])
 
     if File.exists?(seed_file) do
-      Code.eval_file(seed_file)
-      IO.puts("Database seeded successfully")
+      {_result, _binding} = Code.eval_file(seed_file)
+      _ = IO.puts("Database seeded successfully")
     else
-      IO.puts("No seed file found, skipping...")
+      _ = IO.puts("No seed file found, skipping...")
     end
+
+    :ok
   end
 
   defp repos do

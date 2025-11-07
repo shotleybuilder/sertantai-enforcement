@@ -52,7 +52,6 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.New do
       :name -> "Display name for this enforcement agency"
       :base_url -> "Base URL for this agency's enforcement data source"
       :enabled -> "Whether this agency should be active in the system"
-      _ -> ""
     end
   end
 
@@ -62,7 +61,6 @@ defmodule EhsEnforcementWeb.Admin.AgencyLive.New do
       :name -> "Name"
       :base_url -> "Base URL"
       :enabled -> "Enabled"
-      _ -> to_string(field)
     end
   end
 end
