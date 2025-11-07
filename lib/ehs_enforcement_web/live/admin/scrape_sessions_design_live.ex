@@ -42,8 +42,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
 
     if connected?(socket) do
       # Subscribe to scrape session events for real-time updates
-      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:created")
-      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
+      :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:created")
+      :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
     end
 
     {:ok, socket}

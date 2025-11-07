@@ -28,7 +28,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   def mount(_params, _session, socket) do
     # Subscribe to scraping events for real-time updates
     if connected?(socket) do
-      PubSub.subscribe(EhsEnforcement.PubSub, @pubsub_topic)
+      :ok = PubSub.subscribe(EhsEnforcement.PubSub, @pubsub_topic)
     end
 
     socket =
@@ -168,7 +168,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   # Private Functions
 
   defp load_scraping_data(socket) do
-    Task.start_link(fn ->
+    {:ok, _pid} = Task.start_link(fn ->
       try do
         # Load recent cases using proper Ash query syntax
         recent_cases =
@@ -200,7 +200,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   end
 
   defp load_filtered_cases(socket, agency_filter) do
-    Task.start_link(fn ->
+    {:ok, _pid} = Task.start_link(fn ->
       try do
         # Build query with agency filter
         cases_query =

@@ -250,7 +250,7 @@ defmodule EhsEnforcement.Telemetry do
       start_time: start_time
     }
 
-    :ets.insert(@operations_table, {operation_id, operation_data})
+    true = :ets.insert(@operations_table, {operation_id, operation_data})
     operation_id
   end
 
@@ -302,7 +302,7 @@ defmodule EhsEnforcement.Telemetry do
   Generates comprehensive performance report.
   """
   def generate_performance_report do
-    ensure_tables_exist()
+    _ = ensure_tables_exist()
 
     # Get metrics from ETS table
     sync_metrics = get_metrics_by_type(:sync)
@@ -339,13 +339,17 @@ defmodule EhsEnforcement.Telemetry do
   end
 
   defp ensure_tables_exist do
-    unless :ets.whereis(@operations_table) != :undefined do
-      :ets.new(@operations_table, [:named_table, :public, :set])
-    end
+    _ =
+      if :ets.whereis(@operations_table) == :undefined do
+        :ets.new(@operations_table, [:named_table, :public, :set])
+      end
 
-    unless :ets.whereis(@metrics_table) != :undefined do
-      :ets.new(@metrics_table, [:named_table, :public, :bag])
-    end
+    _ =
+      if :ets.whereis(@metrics_table) == :undefined do
+        :ets.new(@metrics_table, [:named_table, :public, :bag])
+      end
+
+    :ok
   end
 
   defp get_metrics_by_type(type) do

@@ -398,13 +398,15 @@ defmodule EhsEnforcement.Logger do
   end
 
   defp ensure_metrics_tables_exist do
-    unless :ets.whereis(@metrics_table) != :undefined do
-      _ = :ets.new(@metrics_table, [:named_table, :public, :set])
-    end
+    _ =
+      if :ets.whereis(@metrics_table) == :undefined do
+        :ets.new(@metrics_table, [:named_table, :public, :set])
+      end
 
-    unless :ets.whereis(@error_metrics_table) != :undefined do
-      _ = :ets.new(@error_metrics_table, [:named_table, :public, :set])
-    end
+    _ =
+      if :ets.whereis(@error_metrics_table) == :undefined do
+        :ets.new(@error_metrics_table, [:named_table, :public, :set])
+      end
 
     :ok
   end

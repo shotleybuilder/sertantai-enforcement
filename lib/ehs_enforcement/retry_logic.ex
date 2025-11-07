@@ -681,13 +681,15 @@ defmodule EhsEnforcement.RetryLogic do
   end
 
   defp ensure_tables_exist do
-    unless :ets.whereis(@retry_metrics_table) != :undefined do
-      _ = :ets.new(@retry_metrics_table, [:named_table, :public, :set])
-    end
+    _ =
+      if :ets.whereis(@retry_metrics_table) == :undefined do
+        :ets.new(@retry_metrics_table, [:named_table, :public, :set])
+      end
 
-    unless :ets.whereis(@circuit_breakers_table) != :undefined do
-      _ = :ets.new(@circuit_breakers_table, [:named_table, :public, :set])
-    end
+    _ =
+      if :ets.whereis(@circuit_breakers_table) == :undefined do
+        :ets.new(@circuit_breakers_table, [:named_table, :public, :set])
+      end
 
     unless :ets.whereis(@rate_limiters_table) != :undefined do
       _ = :ets.new(@rate_limiters_table, [:named_table, :public, :set])

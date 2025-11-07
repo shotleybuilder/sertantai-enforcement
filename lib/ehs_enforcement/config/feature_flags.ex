@@ -51,8 +51,8 @@ defmodule EhsEnforcement.Config.FeatureFlags do
   def enable_for_test(flag_name) do
     case GenServer.whereis(__MODULE__) do
       nil ->
-        ensure_test_table_exists()
-        :ets.insert(@test_overrides_table, {flag_name, true})
+        _ = ensure_test_table_exists()
+        true = :ets.insert(@test_overrides_table, {flag_name, true})
         :ok
 
       _pid ->
@@ -66,8 +66,8 @@ defmodule EhsEnforcement.Config.FeatureFlags do
   def disable_for_test(flag_name) do
     case GenServer.whereis(__MODULE__) do
       nil ->
-        ensure_test_table_exists()
-        :ets.insert(@test_overrides_table, {flag_name, false})
+        _ = ensure_test_table_exists()
+        true = :ets.insert(@test_overrides_table, {flag_name, false})
         :ok
 
       _pid ->
@@ -81,8 +81,8 @@ defmodule EhsEnforcement.Config.FeatureFlags do
   def reset_test_overrides do
     case GenServer.whereis(__MODULE__) do
       nil ->
-        ensure_test_table_exists()
-        :ets.delete_all_objects(@test_overrides_table)
+        _ = ensure_test_table_exists()
+        true = :ets.delete_all_objects(@test_overrides_table)
         :ok
 
       _pid ->

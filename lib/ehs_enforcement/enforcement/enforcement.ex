@@ -835,7 +835,7 @@ defmodule EhsEnforcement.Enforcement do
 
       :miss ->
         result = list_cases_with_filters!(opts)
-        put_in_cache(cache_key, result)
+        _ = put_in_cache(cache_key, result)
         result
     end
   end
@@ -852,7 +852,7 @@ defmodule EhsEnforcement.Enforcement do
 
       :miss ->
         result = list_notices_with_filters!(opts)
-        put_in_cache(cache_key, result)
+        _ = put_in_cache(cache_key, result)
         result
     end
   end
@@ -869,7 +869,7 @@ defmodule EhsEnforcement.Enforcement do
 
       :miss ->
         result = count_cases!(opts)
-        put_in_cache(cache_key, result)
+        _ = put_in_cache(cache_key, result)
         result
     end
   end
@@ -883,7 +883,7 @@ defmodule EhsEnforcement.Enforcement do
 
       :miss ->
         result = count_notices!(opts)
-        put_in_cache(cache_key, result)
+        _ = put_in_cache(cache_key, result)
         result
     end
   end
@@ -900,7 +900,7 @@ defmodule EhsEnforcement.Enforcement do
 
       :miss ->
         result = list_offenders_with_filters!(opts)
-        put_in_cache(cache_key, result)
+        _ = put_in_cache(cache_key, result)
         result
     end
   end
@@ -914,7 +914,7 @@ defmodule EhsEnforcement.Enforcement do
 
       :miss ->
         result = count_offenders!(opts)
-        put_in_cache(cache_key, result)
+        _ = put_in_cache(cache_key, result)
         result
     end
   end
@@ -1059,7 +1059,7 @@ defmodule EhsEnforcement.Enforcement do
   def init_cache do
     case :ets.whereis(@cache_name) do
       :undefined ->
-        :ets.new(@cache_name, [:set, :public, :named_table])
+        _ = :ets.new(@cache_name, [:set, :public, :named_table])
         :ok
 
       _pid ->

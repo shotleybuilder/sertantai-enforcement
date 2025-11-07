@@ -759,17 +759,20 @@ defmodule EhsEnforcement.ErrorHandler do
   end
 
   defp ensure_tables_exist do
-    unless :ets.whereis(error_metrics_table()) != :undefined do
-      _ = :ets.new(error_metrics_table(), [:named_table, :public, :bag])
-    end
+    _ =
+      if :ets.whereis(error_metrics_table()) == :undefined do
+        :ets.new(error_metrics_table(), [:named_table, :public, :bag])
+      end
 
-    unless :ets.whereis(resolution_metrics_table()) != :undefined do
-      _ = :ets.new(resolution_metrics_table(), [:named_table, :public, :set])
-    end
+    _ =
+      if :ets.whereis(resolution_metrics_table()) == :undefined do
+        :ets.new(resolution_metrics_table(), [:named_table, :public, :set])
+      end
 
-    unless :ets.whereis(circuit_breakers_table()) != :undefined do
-      _ = :ets.new(circuit_breakers_table(), [:named_table, :public, :set])
-    end
+    _ =
+      if :ets.whereis(circuit_breakers_table()) == :undefined do
+        :ets.new(circuit_breakers_table(), [:named_table, :public, :set])
+      end
 
     :ok
   end

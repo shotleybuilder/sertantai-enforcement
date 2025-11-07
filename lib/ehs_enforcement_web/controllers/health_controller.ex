@@ -39,7 +39,7 @@ defmodule EhsEnforcementWeb.HealthController do
 
   defp check_database do
     try do
-      EhsEnforcement.Repo.query!("SELECT 1", [])
+      _ = EhsEnforcement.Repo.query!("SELECT 1", [])
       :ok
     rescue
       error -> {:error, error}

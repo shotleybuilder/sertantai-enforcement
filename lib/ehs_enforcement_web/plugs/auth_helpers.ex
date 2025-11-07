@@ -78,10 +78,11 @@ defmodule EhsEnforcementWeb.Plugs.AuthHelpers do
       is_nil(user.admin_checked_at) or
         DateTime.diff(DateTime.utc_now(), user.admin_checked_at, :second) > 3600
 
-    if needs_refresh do
-      # Refresh admin status in the background
-      Task.start(fn -> refresh_user_admin_status(user) end)
-    end
+    _ =
+      if needs_refresh do
+        # Refresh admin status in the background
+        Task.start(fn -> refresh_user_admin_status(user) end)
+      end
 
     conn
   end

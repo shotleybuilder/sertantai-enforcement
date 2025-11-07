@@ -360,11 +360,12 @@ defmodule EhsEnforcement.Enforcement.Metrics do
     Logger.info("Metrics refresh complete: #{total_generated} combinations generated")
 
     # Broadcast refresh event via Phoenix PubSub
-    Phoenix.PubSub.broadcast(
-      EhsEnforcement.PubSub,
-      "metrics:refreshed",
-      {:metrics_refreshed, total_generated}
-    )
+    _ =
+      Phoenix.PubSub.broadcast(
+        EhsEnforcement.PubSub,
+        "metrics:refreshed",
+        {:metrics_refreshed, total_generated}
+      )
 
     {:ok, tier1_results ++ tier2_results}
   end

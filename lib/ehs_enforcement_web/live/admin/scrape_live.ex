@@ -179,9 +179,10 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   @impl true
   def handle_event("stop_scraping", _params, socket) do
     # Kill the background scraping task if it exists
-    if socket.assigns[:scraping_task] do
-      _ = Task.shutdown(socket.assigns.scraping_task, :brutal_kill)
-    end
+    _ =
+      if socket.assigns[:scraping_task] do
+        Task.shutdown(socket.assigns.scraping_task, :brutal_kill)
+      end
 
     socket =
       socket

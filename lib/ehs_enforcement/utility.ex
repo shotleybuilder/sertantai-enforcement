@@ -68,8 +68,8 @@ defmodule EhsEnforcement.Utility do
       |> Path.absname()
       |> File.open([:utf8, :append])
 
-    IO.puts(file, binary)
-    File.close(file)
+    :ok = IO.puts(file, binary)
+    :ok = File.close(file)
     :ok
   end
 
@@ -79,8 +79,8 @@ defmodule EhsEnforcement.Utility do
       |> Path.absname()
       |> File.open([:utf8, :write])
 
-    IO.puts(file, binary)
-    File.close(file)
+    :ok = IO.puts(file, binary)
+    :ok = File.close(file)
     :ok
   end
 
@@ -90,8 +90,8 @@ defmodule EhsEnforcement.Utility do
       |> Path.absname()
       |> File.open([:utf8, :write])
 
-    IO.puts(file, binary)
-    File.close(file)
+    :ok = IO.puts(file, binary)
+    :ok = File.close(file)
     :ok
   end
 
@@ -160,12 +160,12 @@ defmodule EhsEnforcement.Utility do
   def save_at_records_to_file(records, path) when is_list(records) do
     case File.open(path |> Path.absname(), [:utf8, :write]) do
       {:ok, file} ->
-        IO.puts(file, inspect(records, limit: :infinity))
-        File.close(file)
+        :ok = IO.puts(file, inspect(records, limit: :infinity))
+        :ok = File.close(file)
         :ok
 
       {:error, :enoent} ->
-        IO.puts("ERROR: :enoent #{path}")
+        :ok = IO.puts("ERROR: :enoent #{path}")
         :ok
     end
   end
@@ -173,12 +173,12 @@ defmodule EhsEnforcement.Utility do
   def save_at_records_to_file(records, path) when is_binary(records) do
     case File.open(path |> Path.absname(), [:utf8, :write]) do
       {:ok, file} ->
-        IO.puts(file, records)
-        File.close(file)
+        :ok = IO.puts(file, records)
+        :ok = File.close(file)
         :ok
 
       {:error, :enoent} ->
-        IO.puts("ERROR: :enoent #{path}")
+        :ok = IO.puts("ERROR: :enoent #{path}")
         :ok
     end
   end
@@ -189,8 +189,8 @@ defmodule EhsEnforcement.Utility do
       |> Path.absname()
       |> File.open([:utf8, :append])
 
-    IO.puts(file, records)
-    File.close(file)
+    :ok = IO.puts(file, records)
+    :ok = File.close(file)
     :ok
   end
 

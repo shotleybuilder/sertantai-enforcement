@@ -12,7 +12,7 @@ defmodule EhsEnforcementWeb.NoticeLive.Show do
   @impl true
   def handle_params(%{"id" => id}, _url, socket) do
     if connected?(socket) do
-      PubSub.subscribe(EhsEnforcement.PubSub, "notice:#{id}")
+      :ok = PubSub.subscribe(EhsEnforcement.PubSub, "notice:#{id}")
     end
 
     case Enforcement.get_notice(id, load: [:agency, :offender]) do

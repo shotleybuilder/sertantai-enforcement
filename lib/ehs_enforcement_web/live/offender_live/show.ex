@@ -10,9 +10,9 @@ defmodule EhsEnforcementWeb.OffenderLive.Show do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     # Subscribe to real-time updates for this offender
-    Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "offender:#{id}")
-    Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case_created")
-    Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "notice_created")
+    :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "offender:#{id}")
+    :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case_created")
+    :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "notice_created")
 
     socket =
       socket

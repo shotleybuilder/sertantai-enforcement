@@ -6,7 +6,7 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
   @impl true
   def mount(_params, _session, socket) do
     # Subscribe to real-time updates for this case
-    Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case_updates")
+    :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case_updates")
 
     {:ok,
      socket
@@ -22,7 +22,7 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
       case = Enforcement.get_case!(id, load: [:offender, :agency, :computed_breaches_summary])
 
       # Subscribe to updates for this specific case
-      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:#{id}")
+      :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "case:#{id}")
 
       {:noreply,
        socket
@@ -58,7 +58,7 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
 
       case_record ->
         try do
-          Enforcement.destroy_case!(case_record)
+          :ok = Enforcement.destroy_case!(case_record)
 
           {:noreply,
            socket

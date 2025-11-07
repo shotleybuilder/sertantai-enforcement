@@ -17,8 +17,8 @@ defmodule EhsEnforcementWeb.AgencyLive do
   @impl true
   def mount(_params, _session, socket) do
     # Subscribe to real-time updates
-    PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
-    PubSub.subscribe(EhsEnforcement.PubSub, "agency:updates")
+    :ok = PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
+    :ok = PubSub.subscribe(EhsEnforcement.PubSub, "agency:updates")
 
     # Load agency data
     agencies = Enforcement.list_agencies!()

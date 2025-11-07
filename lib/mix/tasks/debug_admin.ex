@@ -11,7 +11,7 @@ defmodule Mix.Tasks.DebugAdmin do
 
   @impl Mix.Task
   def run(args) do
-    Application.ensure_all_started(:ehs_enforcement)
+    {:ok, _apps} = Application.ensure_all_started(:ehs_enforcement)
 
     github_login = List.first(args)
 

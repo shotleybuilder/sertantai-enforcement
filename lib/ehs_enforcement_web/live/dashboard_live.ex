@@ -22,9 +22,9 @@ defmodule EhsEnforcementWeb.DashboardLive do
     # CRITICAL: Assign current_user to nil if not present to prevent undefined errors
 
     # Subscribe to real-time updates
-    PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
-    PubSub.subscribe(EhsEnforcement.PubSub, "agency:updates")
-    PubSub.subscribe(EhsEnforcement.PubSub, "metrics:refreshed")
+    :ok = PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
+    :ok = PubSub.subscribe(EhsEnforcement.PubSub, "agency:updates")
+    :ok = PubSub.subscribe(EhsEnforcement.PubSub, "metrics:refreshed")
 
     # Load initial data
     agencies = Enforcement.list_agencies!()

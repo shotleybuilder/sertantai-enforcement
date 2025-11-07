@@ -80,7 +80,7 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   ## LiveView Implementation
 
   def mount(_params, session, socket) do
-    ensure_tables_exist()
+    _ = ensure_tables_exist()
 
     # Initialize error boundary state
     error_state = session["error_state"]
@@ -225,7 +225,7 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   end
 
   def get_error_history(view_id) do
-    ensure_tables_exist()
+    _ = ensure_tables_exist()
 
     case :ets.lookup(@error_history_table, view_id) do
       [{^view_id, history}] -> history
@@ -242,7 +242,7 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   end
 
   def get_error_state(view_id) do
-    ensure_tables_exist()
+    _ = ensure_tables_exist()
 
     case :ets.lookup(@error_state_table, view_id) do
       [{^view_id, state}] -> state
@@ -469,7 +469,7 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   defp create_simulated_error(_), do: %RuntimeError{message: "Generic error"}
 
   defp record_error_in_history(view_id, error_state) do
-    ensure_tables_exist()
+    _ = ensure_tables_exist()
 
     current_history = get_error_history(view_id)
     max_history = Application.get_env(:ehs_enforcement, :max_error_history, 100)
@@ -485,12 +485,12 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
       [new_error | current_history]
       |> Enum.take(max_history)
 
-    :ets.insert(@error_history_table, {view_id, updated_history})
+    true = :ets.insert(@error_history_table, {view_id, updated_history})
   end
 
   defp clear_error_state(view_id) do
-    ensure_tables_exist()
-    :ets.delete(@error_state_table, view_id)
+    _ = ensure_tables_exist()
+    true = :ets.delete(@error_state_table, view_id)
   end
 
   defp extract_error_type(%Req.TransportError{reason: _reason}), do: "timeout"
@@ -528,12 +528,16 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   end
 
   defp ensure_tables_exist do
-    unless :ets.whereis(@error_history_table) != :undefined do
-      :ets.new(@error_history_table, [:named_table, :public, :set])
-    end
+    _ =
+      if :ets.whereis(@error_history_table) == :undefined do
+        :ets.new(@error_history_table, [:named_table, :public, :set])
+      end
 
-    unless :ets.whereis(@error_state_table) != :undefined do
-      :ets.new(@error_state_table, [:named_table, :public, :set])
-    end
+    _ =
+      if :ets.whereis(@error_state_table) == :undefined do
+        :ets.new(@error_state_table, [:named_table, :public, :set])
+      end
+
+    :ok
   end
 end

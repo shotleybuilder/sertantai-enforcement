@@ -8,7 +8,7 @@ defmodule EhsEnforcementWeb.LegislationLive.Show do
 
   @impl true
   def mount(_params, _session, socket) do
-    Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "legislation_updates")
+    :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "legislation_updates")
 
     {:ok,
      socket
@@ -38,7 +38,7 @@ defmodule EhsEnforcementWeb.LegislationLive.Show do
             )
 
           # Subscribe to updates for this specific legislation
-          Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "legislation:#{id}")
+          :ok = Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "legislation:#{id}")
 
           {:noreply,
            socket

@@ -86,14 +86,15 @@ defmodule EhsEnforcement.Enforcement.UnifiedCaseProcessor do
             metadata: %{processing_status: :existing}
           }
 
-          Phoenix.PubSub.broadcast(
-            EhsEnforcement.PubSub,
-            "case:scraped:updated",
-            %Phoenix.Socket.Broadcast{
-              topic: "case:scraped:updated",
-              event: "scraped:updated",
-              payload: notification
-            }
+          _ =
+            Phoenix.PubSub.broadcast(
+              EhsEnforcement.PubSub,
+              "case:scraped:updated",
+              %Phoenix.Socket.Broadcast{
+                topic: "case:scraped:updated",
+                event: "scraped:updated",
+                payload: notification
+              }
           )
 
           Logger.info(

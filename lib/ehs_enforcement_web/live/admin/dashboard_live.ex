@@ -12,9 +12,9 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
     # If we got here, the user is authenticated and is admin
 
     # Subscribe to admin-relevant updates
-    PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
-    PubSub.subscribe(EhsEnforcement.PubSub, "metrics:refreshed")
-    PubSub.subscribe(EhsEnforcement.PubSub, "admin:updates")
+    :ok = PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
+    :ok = PubSub.subscribe(EhsEnforcement.PubSub, "metrics:refreshed")
+    :ok = PubSub.subscribe(EhsEnforcement.PubSub, "admin:updates")
 
     # Load initial admin data
     agencies = Enforcement.list_agencies!()
@@ -61,20 +61,22 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
   @impl true
   def handle_event("refresh_metrics", _params, socket) do
     # Refresh metrics in the background
-    Task.start(fn ->
-      EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:admin)
+    {:ok, _pid} =
+      Task.start(fn ->
+        {:ok, _results} = EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:admin)
 
-      # Broadcast to all dashboards that metrics are refreshed
-      Phoenix.PubSub.broadcast(
-        EhsEnforcement.PubSub,
-        "metrics:refreshed",
-        %Phoenix.Socket.Broadcast{
-          topic: "metrics:refreshed",
-          event: "refresh",
-          payload: %{triggered_by: :manual_admin}
-        }
-      )
-    end)
+        # Broadcast to all dashboards that metrics are refreshed
+        _ =
+          Phoenix.PubSub.broadcast(
+            EhsEnforcement.PubSub,
+            "metrics:refreshed",
+            %Phoenix.Socket.Broadcast{
+              topic: "metrics:refreshed",
+              event: "refresh",
+              payload: %{triggered_by: :manual_admin}
+            }
+          )
+      end)
 
     {:noreply,
      put_flash(

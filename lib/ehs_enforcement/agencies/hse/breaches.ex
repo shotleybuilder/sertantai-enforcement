@@ -129,7 +129,7 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
       |> Enum.reduce({[], []}, fn breach, acc ->
         case get_linked_airtable_record_id(breach) do
           {record_id, title, _type_code, year, number} ->
-            {record_id, title, year, number}
+            _ = {record_id, title, year, number}
 
             breach_clean =
               case breach do

@@ -326,7 +326,7 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   # Private functions
 
   defp load_scraping_configurations(socket) do
-    Task.start_link(fn ->
+    {:ok, _pid} = Task.start_link(fn ->
       try do
         # Load all configurations - handle case where current_user might be nil
         actor = socket.assigns[:current_user]
