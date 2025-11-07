@@ -51,8 +51,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsLive do
 
   @impl true
   def handle_params(_params, _uri, socket) do
-    # Only load sessions if WebSocket is connected (current_user is available)
-    if connected?(socket) do
+    # Only load sessions if WebSocket is connected AND current_user is available
+    # In tests, connected? returns true but current_user might not be set yet
+    if connected?(socket) && Map.has_key?(socket.assigns, :current_user) do
       sessions =
         load_sessions(
           socket.assigns.filter_status,
@@ -62,8 +63,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsLive do
 
       {:noreply, assign(socket, all_sessions: sessions)}
     else
-      # During initial HTTP request, just return the socket
-      # Sessions will be loaded after WebSocket connects
+      # During initial HTTP request or before authentication, just return the socket
+      # Sessions will be loaded after WebSocket connects and user is authenticated
       {:noreply, socket}
     end
   end

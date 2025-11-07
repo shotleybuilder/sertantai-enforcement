@@ -34,30 +34,50 @@
 
 ## 2. Common Pitfalls & Solutions
 
-### ❌ Pitfall 1: Only Using `store_in_session`
+### ❌ Pitfall 1: Using `session: generate_session` with JTI Session Identifiers
+
+**CRITICAL DISCOVERY (2025-11-07):** When your User resource is configured with `session_identifier(:jti)`, the `session: {AshAuthentication.Phoenix.LiveSession, :generate_session, []}` callback is **incompatible** with OAuth authentication!
 
 ```elixir
-# WRONG - This doesn't set conn.assigns.current_user
-conn =
-  conn
-  |> Phoenix.ConnTest.init_test_session(%{})
-  |> AshAuthentication.Plug.Helpers.store_in_session(user)
+# BROKEN ROUTER CONFIGURATION
+live_session :admin,
+  on_mount: [AshAuthentication.Phoenix.LiveSession],
+  session: {AshAuthentication.Phoenix.LiveSession, :generate_session, []} do  # ← BREAKS JTI AUTH!
 ```
 
 **Why it fails:**
-- `store_in_session` puts user in Plug session storage
-- `generate_session/3` reads from `conn.assigns`, not Plug session
-- LiveView session never gets user data
-- Result: `KeyError: key :current_user not found in socket.assigns`
+1. OAuth creates user with JWT token containing JTI claim
+2. `store_in_session` correctly formats session as `"jti:subject"` (e.g., `"31qrgh...:user?id=123"`)
+3. But `generate_session` callback reads `conn.assigns.current_user` and calls `user_to_subject`
+4. `user_to_subject` returns `"user?id=123"` (NO JTI PREFIX)
+5. Phoenix LiveView merges sessions with callback result **OVERRIDING** the Plug session
+6. `on_mount` hook tries to parse session expecting JTI format → FAILS
+7. Result: `current_user` never gets set → `KeyError: key :current_user not found in socket.assigns`
 
-**✅ Correct Pattern:**
+**✅ Correct Pattern for OAuth with JTI:**
 ```elixir
+# FIXED ROUTER CONFIGURATION
+live_session :admin,
+  on_mount: [AshAuthentication.Phoenix.LiveSession] do  # ← NO session: callback!
+  # Routes...
+end
+
+# TEST SETUP
 conn =
   conn
   |> Phoenix.ConnTest.init_test_session(%{})
-  |> assign(:current_user, user)  # ← CRITICAL: For generate_session
-  |> AshAuthentication.Plug.Helpers.store_in_session(user)  # For Plug session
+  |> AshAuthentication.Plug.Helpers.store_in_session(user)  # ← Correctly formats with JTI
+  # DO NOT add assign(:current_user) when using JTI!
 ```
+
+**When to use each approach:**
+
+| Session Identifier | Router Config | Test Setup |
+|-------------------|---------------|------------|
+| `session_identifier(:unsafe)` | Include `session: generate_session` | `assign(:current_user) + store_in_session` |
+| `session_identifier(:jti)` | **NO** `session:` callback | `store_in_session` ONLY |
+
+**See:** `.claude/sessions/2025-11-07-fix-admin-auth-cookie-consent-conflict.md` for full root cause analysis.
 
 ### ❌ Pitfall 2: Global Hooks Applied Everywhere
 
@@ -136,34 +156,64 @@ defmodule MyAppWeb.Admin.SomeLiveTest do
 end
 ```
 
-**Requirements for `register_and_log_in_admin` helper:**
+**Requirements for `register_and_log_in_admin` helper (JTI Session Identifiers):**
 ```elixir
-def register_and_log_in_admin(%{conn: conn}) do
-  # 1. Create admin user
-  admin = create_admin_user()
+def register_and_log_in_admin(%{conn: conn} = context) do
+  # 1. Create admin user with OAuth action (generates JWT token with JTI)
+  user_info = %{
+    "email" => "admin@example.com",
+    "name" => "Admin User",
+    "login" => "adminuser",
+    "id" => 12_345
+  }
 
-  # 2. Configure conn properly
-  conn =
+  oauth_tokens = %{
+    "access_token" => "test_access_token",
+    "token_type" => "Bearer"
+  }
+
+  {:ok, user} = Ash.create(
+    EhsEnforcement.Accounts.User,
+    %{user_info: user_info, oauth_tokens: oauth_tokens},
+    action: :register_with_github
+  )
+
+  # 2. Update to admin status
+  {:ok, admin_user} = Ash.update(
+    user,
+    %{is_admin: true, admin_checked_at: DateTime.utc_now()},
+    action: :update_admin_status,
+    actor: user
+  )
+
+  # 3. Configure conn - store_in_session will format with JTI
+  new_conn =
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
-    |> assign(:current_user, admin)  # ← For generate_session
-    |> AshAuthentication.Plug.Helpers.store_in_session(admin)
+    |> AshAuthentication.Plug.Helpers.store_in_session(admin_user)
+    # DO NOT add assign(:current_user) - it breaks JTI session format!
 
-  %{conn: conn, user: admin}
+  %{context | conn: new_conn} |> Map.put(:user, admin_user)
 end
 ```
 
-### Pattern B: Manual Setup (For Specific Tests)
+### Pattern B: Manual Setup (For Specific Tests with JTI)
 
 ```elixir
 describe "Specific scenario" do
   setup %{conn: conn} do
-    user = create_user(%{email: "test@example.com"})
+    # Create user through OAuth action to get JWT token
+    {:ok, user} = Ash.create(
+      User,
+      %{user_info: %{...}, oauth_tokens: %{...}},
+      action: :register_with_github
+    )
 
     conn =
       conn
       |> Phoenix.ConnTest.init_test_session(%{})
-      |> assign(:current_user, user)
+      |> AshAuthentication.Plug.Helpers.store_in_session(user)
+      # NO assign(:current_user) for JTI!
 
     %{conn: conn, user: user}
   end
@@ -466,20 +516,26 @@ end
 
 ## Summary
 
-**Golden Rules:**
-1. Always set `conn.assigns.current_user` in test setup
-2. Apply hooks conditionally at router level, not globally
-3. Use keyword list `[]` as default for config, not map `%{}`
-4. Use `Ash.Seed.seed!` to bypass OAuth requirements in tests
-5. Authentication hooks should run BEFORE feature hooks
+**Golden Rules (Updated 2025-11-07):**
+1. **NEVER** use `session: {AshAuthentication.Phoenix.LiveSession, :generate_session, []}` with JTI session identifiers
+2. For JTI: Use ONLY `store_in_session(user)` in tests (NO `assign(:current_user)`)
+3. For JTI: Remove `session:` callback from live_session in router
+4. Apply hooks conditionally at router level, not globally
+5. Use keyword list `[]` as default for config, not map `%{}`
+6. Create users through OAuth actions to get JWT tokens with JTI
+7. Authentication hooks should run BEFORE feature hooks
 
-**When tests fail with KeyError:**
-- Check `conn.assigns.current_user` is set
+**When tests fail with KeyError (JTI users):**
+- Check router does NOT have `session: generate_session` callback
+- Check test uses `store_in_session` WITHOUT `assign(:current_user)`
+- Check user was created through OAuth action (has `__metadata__.token`)
 - Check hooks are applied in correct order
 - Check no global hooks interfering with auth
 
-**When creating test helpers:**
-- Set both `conn.assigns.current_user` AND Plug session
+**When creating test helpers (JTI):**
+- Create users through OAuth actions (`:register_with_github`, etc.)
+- Use ONLY `store_in_session(user)` to configure conn
+- Do NOT use `assign(:current_user)` - it breaks JTI format
 - Use unique identifiers to avoid conflicts
 - Return both `conn` and `user` from setup
 

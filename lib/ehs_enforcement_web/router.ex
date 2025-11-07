@@ -59,8 +59,7 @@ defmodule EhsEnforcementWeb.Router do
       on_mount: [
         AshAuthentication.Phoenix.LiveSession,
         {AshCookieConsent.LiveView.Hook, :load_consent}
-      ],
-      session: {AshAuthentication.Phoenix.LiveSession, :generate_session, []} do
+      ] do
       live "/", DashboardLive, :index
       live "/dashboard", DashboardLive, :index
 
@@ -112,8 +111,7 @@ defmodule EhsEnforcementWeb.Router do
     live_session :admin,
       on_mount: [
         AshAuthentication.Phoenix.LiveSession
-      ],
-      session: {AshAuthentication.Phoenix.LiveSession, :generate_session, []} do
+      ] do
       # Admin Case Management Routes  
       # Redirect /admin/cases to the main cases page since we removed the separate admin index
       get "/admin/cases", PageController, :redirect_to_cases

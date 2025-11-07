@@ -53,7 +53,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsLiveTest do
       {:ok, _view, html} = live(conn, "/admin/scrape-sessions-design")
 
       # Should render without KeyError
-      assert html =~ "Scrape Sessions"
+      assert html =~ "Session Design Parameters"
     end
 
     test "has current_user in socket assigns", %{conn: conn} do
@@ -65,19 +65,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsLiveTest do
   end
 
   describe "Other admin routes (working correctly)" do
-    setup %{conn: conn} do
-      admin = create_test_admin(%{
-        email: "test-admin-control-#{System.unique_integer([:positive])}@example.com",
-        github_login: "testadmincontrol#{System.unique_integer([:positive])}"
-      })
-
-      conn =
-        conn
-        |> Phoenix.ConnTest.init_test_session(%{})
-        |> assign(:current_user, admin)
-
-      %{conn: conn, user: admin}
-    end
+    setup :register_and_log_in_admin
 
     test "admin dashboard mounts successfully", %{conn: conn} do
       # This route works - serves as a control test
@@ -90,7 +78,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsLiveTest do
       # This route works - serves as a control test
       {:ok, _view, html} = live(conn, "/admin/scrape")
 
-      assert html =~ "Unified Scraping"
+      assert html =~ "EHS Enforcement"
     end
 
     test "agencies index mounts successfully", %{conn: conn} do

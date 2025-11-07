@@ -61,8 +61,6 @@ defmodule EhsEnforcementWeb.ConnCase do
         admin_checked_at: DateTime.utc_now()
       })
 
-    # For OAuth2 strategies, we don't use password authentication
-    # Instead, we directly store the user in the session
     new_conn =
       conn
       |> Phoenix.ConnTest.init_test_session(%{})
