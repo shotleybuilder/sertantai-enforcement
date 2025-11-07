@@ -23,9 +23,8 @@ import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
 // Import and initialize AlpineJS for cookie consent modal
-import Alpine from "../vendor/alpine"
-window.Alpine = Alpine
-Alpine.start()
+// The vendor alpine.js file is an IIFE that automatically sets window.Alpine and calls start()
+import "../vendor/alpine"
 
 // Safely get CSRF token with error handling
 let csrfToken = null
