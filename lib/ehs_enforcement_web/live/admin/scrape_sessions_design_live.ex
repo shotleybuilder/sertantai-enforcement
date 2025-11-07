@@ -33,14 +33,26 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
         filter_status: "all",
         filter_agency: "all",
 
-        # Sessions data
+        # Sessions data - initialize as empty, will be populated by handle_continue
         all_sessions: [],
 
         # UI state
         last_update: System.monotonic_time(:millisecond)
       )
 
-    # Load initial sessions data
+    if connected?(socket) do
+      # Subscribe to scrape session events for real-time updates
+      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:created")
+      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
+    end
+
+    # Load sessions data AFTER hooks run (when current_user is available)
+    {:ok, socket, {:continue, :load_initial_sessions}}
+  end
+
+  @impl true
+  def handle_continue(:load_initial_sessions, socket) do
+    # Now current_user is available from the authentication hook
     sessions =
       load_sessions(
         socket.assigns.filter_status,
@@ -48,16 +60,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeSessionsDesignLive do
         socket.assigns.current_user
       )
 
-    socket = assign(socket, all_sessions: sessions)
-
-    if connected?(socket) do
-      # Subscribe to scrape session events for real-time updates
-      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:created")
-      Phoenix.PubSub.subscribe(EhsEnforcement.PubSub, "scrape_session:updated")
-      {:ok, socket}
-    else
-      {:ok, socket}
-    end
+    {:noreply, assign(socket, all_sessions: sessions)}
   end
 
   @impl true
