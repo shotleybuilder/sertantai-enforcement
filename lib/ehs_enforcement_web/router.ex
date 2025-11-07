@@ -107,8 +107,7 @@ defmodule EhsEnforcementWeb.Router do
 
     live_session :admin,
       on_mount: [
-        AshAuthentication.Phoenix.LiveSession,
-        {AshCookieConsent.LiveView.Hook, :load_consent}
+        AshAuthentication.Phoenix.LiveSession
       ],
       session: {AshAuthentication.Phoenix.LiveSession, :generate_session, []} do
       # Admin Case Management Routes  
