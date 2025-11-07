@@ -15,7 +15,7 @@ defmodule EhsEnforcement.MixProject do
       # ExDoc configuration
       docs: [
         main: "EhsEnforcement",
-        output: "docs_dev/exdoc",
+        output: "docs-dev/exdoc",
         extras: ["README.md"],
         groups_for_modules: [
           "Enforcement Domain": [

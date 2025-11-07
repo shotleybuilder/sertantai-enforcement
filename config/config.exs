@@ -94,6 +94,7 @@ config :ehs_enforcement,
   ash_domains: [
     EhsEnforcement.Enforcement,
     EhsEnforcement.Accounts,
+    EhsEnforcement.Consent,
     EhsEnforcement.Events,
     EhsEnforcement.Configuration,
     EhsEnforcement.Scraping

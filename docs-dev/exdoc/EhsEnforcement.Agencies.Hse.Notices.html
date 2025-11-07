@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-736236C6.js"></script>
+    <script defer src="dist/sidebar_items-B0639F27.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -84,8 +84,7 @@ ehs_enforcement
 
 
     <section id="moduledoc">
-<p>HSE notices processing module.
-Handles fetching, processing, and storing HSE enforcement notice data.</p>
+<p>DEPRECATED: Legacy HSE notices processing module.</p><p>This module is deprecated in favor of the standardized architecture:</p><ul><li>Use <a href="EhsEnforcement.Scraping.Hse.NoticeScraper.html"><code class="inline">EhsEnforcement.Scraping.Hse.NoticeScraper</code></a> for HTTP scraping</li><li>Use <a href="EhsEnforcement.Scraping.Hse.NoticeProcessor.html"><code class="inline">EhsEnforcement.Scraping.Hse.NoticeProcessor</code></a> for processing and Ash integration</li></ul><p>This module will be removed in a future version.</p>
     </section>
 
 </div>
@@ -105,6 +104,8 @@ Handles fetching, processing, and storing HSE enforcement notice data.</p>
     <div class="summary-row">
       <div class="summary-signature">
         <a href="#api_get_hse_notices/1" data-no-tooltip="" translate="no">api_get_hse_notices(opts \\ [])</a>
+
+          <span class="deprecated" title="Use EhsEnforcement.Scraping.Hse.NoticeProcessor instead">deprecated</span>
 
       </div>
 
@@ -137,6 +138,10 @@ Handles fetching, processing, and storing HSE enforcement notice data.</p>
 
     </div>
   </div>
+
+    <div class="deprecated">
+      This function is deprecated. Use EhsEnforcement.Scraping.Hse.NoticeProcessor instead.
+    </div>
 
   <section class="docstring">
 

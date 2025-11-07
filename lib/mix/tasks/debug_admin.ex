@@ -25,7 +25,7 @@ defmodule Mix.Tasks.DebugAdmin do
     IO.puts(String.duplicate("=", 60))
 
     # Get the admin config
-    config = Application.get_env(:ehs_enforcement, :github_admin, %{})
+    config = Application.get_env(:ehs_enforcement, :github_admin, [])
 
     IO.puts("\n📋 Configuration Type: #{inspect(is_list(config))}")
 

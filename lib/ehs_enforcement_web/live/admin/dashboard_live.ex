@@ -8,29 +8,25 @@ defmodule EhsEnforcementWeb.Admin.DashboardLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    # Ensure user is admin (additional check beyond router)
-    current_user = socket.assigns[:current_user]
+    # The admin check is already handled by the :admin_required pipeline in the router
+    # If we got here, the user is authenticated and is admin
 
-    unless current_user && current_user.is_admin do
-      {:ok, socket |> put_flash(:error, "Admin access required") |> redirect(to: "/")}
-    else
-      # Subscribe to admin-relevant updates
-      PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
-      PubSub.subscribe(EhsEnforcement.PubSub, "metrics:refreshed")
-      PubSub.subscribe(EhsEnforcement.PubSub, "admin:updates")
+    # Subscribe to admin-relevant updates
+    PubSub.subscribe(EhsEnforcement.PubSub, "sync:updates")
+    PubSub.subscribe(EhsEnforcement.PubSub, "metrics:refreshed")
+    PubSub.subscribe(EhsEnforcement.PubSub, "admin:updates")
 
-      # Load initial admin data
-      agencies = Enforcement.list_agencies!()
+    # Load initial admin data
+    agencies = Enforcement.list_agencies!()
 
-      {:ok,
-       socket
-       |> assign(:agencies, agencies)
-       |> assign(:stats, %{})
-       |> assign(:loading, false)
-       |> assign(:sync_status, %{})
-       |> assign(:time_period, "month")
-       |> assign(:page_title, "Admin Dashboard")}
-    end
+    {:ok,
+     socket
+     |> assign(:agencies, agencies)
+     |> assign(:stats, %{})
+     |> assign(:loading, false)
+     |> assign(:sync_status, %{})
+     |> assign(:time_period, "month")
+     |> assign(:page_title, "Admin Dashboard")}
   end
 
   @impl true

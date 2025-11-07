@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-736236C6.js"></script>
+    <script defer src="dist/sidebar_items-B0639F27.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -104,9 +104,29 @@ Handles parsing and linking of HSE breach data to legislation records.</p>
 
     <div class="summary-row">
       <div class="summary-signature">
+        <a href="#create_hse_offences/3" data-no-tooltip="" translate="no">create_hse_offences(case_id, breach_texts, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Convert HSE breaches to offence records using the new system.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
         <a href="#enum_breaches/1" data-no-tooltip="" translate="no">enum_breaches(notices)</a>
 
       </div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#find_or_create_hse_legislation/1" data-no-tooltip="" translate="no">find_or_create_hse_legislation(components)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Find or create HSE legislation using the new deduplication system.</p></div>
 
     </div>
 
@@ -126,6 +146,36 @@ Handles parsing and linking of HSE breach data to legislation records.</p>
 
     </div>
 
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#parse_hse_breach_components/1" data-no-tooltip="" translate="no">parse_hse_breach_components(breach_text)</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Parse HSE breach text into structured components.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#process_breaches_with_deduplication/2" data-no-tooltip="" translate="no">process_breaches_with_deduplication(breaches, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Process HSE breaches with improved legislation deduplication.</p></div>
+
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-signature">
+        <a href="#process_single_breach_with_deduplication/3" data-no-tooltip="" translate="no">process_single_breach_with_deduplication(breach_text, sequence, opts \\ [])</a>
+
+      </div>
+
+        <div class="summary-synopsis"><p>Process a single HSE breach string into structured legislation data.</p></div>
+
+    </div>
+
 </div>
 
   </section>
@@ -139,6 +189,33 @@ Handles parsing and linking of HSE breach data to legislation records.</p>
       <span class="text">Functions</span>
     </h1>
     <div class="functions-list">
+<section class="detail" id="create_hse_offences/3">
+
+    <span id="create_hse_offences/2"></span>
+
+  <div class="detail-header">
+    <a href="#create_hse_offences/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">create_hse_offences(case_id, breach_texts, opts \\ [])</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> create_hse_offences(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), [<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()], <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()]} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Convert HSE breaches to offence records using the new system.</p><p>This function creates offence records that link to the deduplicated legislation.</p>
+  </section>
+</section>
 <section class="detail" id="enum_breaches/1">
 
   <div class="detail-header">
@@ -155,6 +232,30 @@ Handles parsing and linking of HSE breach data to legislation records.</p>
   <section class="docstring">
 
 
+  </section>
+</section>
+<section class="detail" id="find_or_create_hse_legislation/1">
+
+  <div class="detail-header">
+    <a href="#find_or_create_hse_legislation/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">find_or_create_hse_legislation(components)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> find_or_create_hse_legislation(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Find or create HSE legislation using the new deduplication system.</p>
   </section>
 </section>
 <section class="detail" id="get_linked_airtable_record/1">
@@ -191,6 +292,87 @@ Handles parsing and linking of HSE breach data to legislation records.</p>
   <section class="docstring">
 
 
+  </section>
+</section>
+<section class="detail" id="parse_hse_breach_components/1">
+
+  <div class="detail-header">
+    <a href="#parse_hse_breach_components/1" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">parse_hse_breach_components(breach_text)</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> parse_hse_breach_components(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Parse HSE breach text into structured components.</p><p>HSE breach format: &quot;Act/Regulation Title / Section Reference&quot;
+Examples:</p><ul><li>&quot;Health and Safety at Work Act 1974 / Section 2(1)&quot;</li><li>&quot;Construction (Design and Management) Regulations 2015 / Regulation 13&quot;</li></ul>
+  </section>
+</section>
+<section class="detail" id="process_breaches_with_deduplication/2">
+
+    <span id="process_breaches_with_deduplication/1"></span>
+
+  <div class="detail-header">
+    <a href="#process_breaches_with_deduplication/2" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">process_breaches_with_deduplication(breaches, opts \\ [])</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> process_breaches_with_deduplication(
+  [<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()],
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) :: {:ok, [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()]} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Process HSE breaches with improved legislation deduplication.</p><p>This function replaces the legacy breach processing with a new approach that:</p><ol><li>Uses normalized legislation titles</li><li>Prevents duplicate legislation records</li><li>Works with the find_or_create_legislation system</li></ol><h2 id="process_breaches_with_deduplication/2-parameters" class="section-heading"><a href="#process_breaches_with_deduplication/2-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Parameters</span></h2><ul><li><code class="inline">breaches</code> - List of breach strings from HSE data</li><li><code class="inline">opts</code> - Processing options</li></ul><h2 id="process_breaches_with_deduplication/2-returns" class="section-heading"><a href="#process_breaches_with_deduplication/2-returns" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">Returns</span></h2><ul><li><code class="inline">{:ok, processed_breaches}</code> - List of processed breach data with legislation IDs</li><li><code class="inline">{:error, reason}</code> - Processing error</li></ul>
+  </section>
+</section>
+<section class="detail" id="process_single_breach_with_deduplication/3">
+
+    <span id="process_single_breach_with_deduplication/2"></span>
+
+  <div class="detail-header">
+    <a href="#process_single_breach_with_deduplication/3" class="detail-link" data-no-tooltip="" aria-label="Link to this function">
+      <i class="ri-link-m" aria-hidden="true"></i>
+    </a>
+    <div class="heading-with-actions">
+      <h1 class="signature" translate="no">process_single_breach_with_deduplication(breach_text, sequence, opts \\ [])</h1>
+
+
+    </div>
+  </div>
+
+  <section class="docstring">
+
+      <div class="specs">
+
+          <pre translate="no"><span class="attribute">@spec</span> process_single_breach_with_deduplication(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">integer</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Process a single HSE breach string into structured legislation data.</p>
   </section>
 </section>
 

@@ -117,7 +117,7 @@ defmodule EhsEnforcement.Accounts.User do
         github_login = user_info["login"]
 
         # Check if user should be admin based on GITHUB_ALLOWED_USERS
-        config = Application.get_env(:ehs_enforcement, :github_admin, %{})
+        config = Application.get_env(:ehs_enforcement, :github_admin, [])
         allowed_users = Keyword.get(config, :allowed_users, [])
         is_admin = is_list(allowed_users) and length(allowed_users) > 0 and github_login in allowed_users
 

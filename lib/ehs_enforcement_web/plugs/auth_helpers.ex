@@ -14,8 +14,14 @@ defmodule EhsEnforcementWeb.Plugs.AuthHelpers do
   def call(conn, opts), do: load_current_user(conn, opts)
 
   def load_current_user(conn, _opts) do
+    require Logger
+
     # retrieve_from_session loads users and stores them in assigns with current_ prefix
     conn = AshAuthentication.Plug.Helpers.retrieve_from_session(conn, :ehs_enforcement)
+
+    # Debug logging
+    Logger.debug("load_current_user: current_user = #{inspect(conn.assigns[:current_user])}")
+    Logger.debug("load_current_user: session keys = #{inspect(Map.keys(Plug.Conn.get_session(conn)))}")
 
     # The user should now be in conn.assigns.current_user
     case conn.assigns[:current_user] do
@@ -43,13 +49,19 @@ defmodule EhsEnforcementWeb.Plugs.AuthHelpers do
   end
 
   def require_admin_user(conn, _opts) do
+    require Logger
     user = conn.assigns[:current_user]
+
+    Logger.debug("require_admin_user: user = #{inspect(user)}")
+    Logger.debug("require_admin_user: is_admin = #{inspect(user && Map.get(user, :is_admin))}")
 
     case user do
       %{is_admin: true} ->
+        Logger.debug("require_admin_user: PASSED - user is admin")
         conn
 
       _ ->
+        Logger.debug("require_admin_user: FAILED - redirecting to /")
         conn
         |> put_status(:forbidden)
         |> put_flash(:error, "Admin privileges required")
@@ -88,7 +100,7 @@ defmodule EhsEnforcementWeb.Plugs.AuthHelpers do
   end
 
   defp check_github_repository_permissions(user) do
-    config = Application.get_env(:ehs_enforcement, :github_admin, %{})
+    config = Application.get_env(:ehs_enforcement, :github_admin, [])
 
     case config do
       config when is_list(config) ->
