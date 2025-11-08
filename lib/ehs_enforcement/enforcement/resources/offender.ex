@@ -249,10 +249,9 @@ defmodule EhsEnforcement.Enforcement.Offender do
 
                 Logger.info("Companies House validation: similarity=#{similarity}")
 
-                # Temporarily lowered threshold to 0.7 for dev data cleanup
-                # TODO: Restore to 0.9 for production or make this configurable
-                if similarity < 0.7 do
-                  raise "Companies House validation failed: name similarity #{similarity} below 0.7 threshold"
+                # Production threshold: 0.9 (high confidence required)
+                if similarity < 0.9 do
+                  raise "Companies House validation failed: name similarity #{similarity} below 0.9 threshold"
                 end
 
                 # Extract address components
