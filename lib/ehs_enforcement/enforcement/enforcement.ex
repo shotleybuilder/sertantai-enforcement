@@ -697,6 +697,82 @@ defmodule EhsEnforcement.Enforcement do
     )
   end
 
+  @doc """
+  Check which notice regulator_ids already exist in the database.
+
+  Used for pre-filtering during EA enforcement notice scraping to skip
+  existing records and only process new ones.
+
+  ## Parameters
+  - `regulator_ids` - List of regulator_id strings to check
+  - `agency_code` - Agency code atom (e.g., :environment_agency)
+  - `actor` - Optional actor for authorization (default: nil)
+
+  ## Returns
+  Map with existing and new regulator_id lists plus counts:
+  - `:existing` - List of regulator_ids that already exist
+  - `:new` - List of regulator_ids that don't exist yet
+  - `:total` - Total count of regulator_ids checked
+  - `:existing_count` - Count of existing records
+  - `:new_count` - Count of new records
+
+  ## Examples
+      iex> check_existing_notice_regulator_ids(["EA-123", "EA-456", "EA-789"], :environment_agency)
+      %{
+        existing: ["EA-123", "EA-456"],
+        new: ["EA-789"],
+        total: 3,
+        existing_count: 2,
+        new_count: 1
+      }
+  """
+  def check_existing_notice_regulator_ids(regulator_ids, agency_code, actor \\ nil)
+      when is_list(regulator_ids) and is_atom(agency_code) do
+    require Logger
+
+    # Performance warning for very large batches
+    if length(regulator_ids) > 500 do
+      Logger.warning(
+        "Large batch pre-filter query: #{length(regulator_ids)} regulator_ids - consider refining date range",
+        count: length(regulator_ids),
+        agency: agency_code
+      )
+    end
+
+    query_opts = if actor, do: [actor: actor], else: []
+
+    # Single efficient query to check which regulator_ids exist
+    existing_notices =
+      EhsEnforcement.Enforcement.Notice
+      |> Ash.Query.filter(
+        regulator_id in ^regulator_ids and
+          agency.code == ^agency_code
+      )
+      |> Ash.Query.select([:regulator_id])
+      |> Ash.read!(query_opts)
+
+    existing_ids = Enum.map(existing_notices, & &1.regulator_id)
+    new_ids = regulator_ids -- existing_ids
+
+    %{
+      existing: existing_ids,
+      new: new_ids,
+      total: length(regulator_ids),
+      existing_count: length(existing_ids),
+      new_count: length(new_ids)
+    }
+  rescue
+    error ->
+      Logger.error(
+        "Failed to check existing notice regulator_ids: #{inspect(error)}",
+        error: error,
+        count: length(regulator_ids),
+        agency: agency_code
+      )
+
+      {:error, error}
+  end
+
   # Fuzzy search functions using pg_trgm trigram similarity
 
   @doc """

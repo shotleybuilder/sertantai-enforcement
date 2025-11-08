@@ -50,6 +50,9 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
       actor: actor,
       scrape_type: Keyword.get(opts, :scrape_type, :manual),
 
+      # Pre-filtering configuration (default: false = skip existing records)
+      process_all_records: Keyword.get(opts, :process_all_records, false),
+
       # EA-specific defaults
       # EA only has "1 page" since it's all results
       start_page: 1,
@@ -298,9 +301,14 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
         total_cases_for_action = length(summary_records)
         Logger.info("EA: Found #{total_cases_for_action} summary records for #{action_type}")
 
-        # Update session with total expected cases for this action type
+        # Apply pre-filtering BEFORE updating cases_found
+        # This ensures progress bar reflects actual records to process
+        {filtered_records, _skipped_count} =
+          apply_pre_filtering(summary_records, action_type, validated_params)
+
+        # Update session with FILTERED count (records we'll actually process)
         updated_session =
-          case Ash.update(session, %{cases_found: session.cases_found + total_cases_for_action}) do
+          case Ash.update(session, %{cases_found: session.cases_found + length(filtered_records)}) do
             {:ok, updated} ->
               updated
 
@@ -309,10 +317,10 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
               session
           end
 
-        # Process each summary record individually with real-time feedback
-        process_summary_records_individually(
+        # Process each filtered record individually with real-time feedback
+        process_filtered_records_individually(
           updated_session,
-          summary_records,
+          filtered_records,
           action_type,
           validated_params
         )
@@ -323,13 +331,43 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
     end
   end
 
-  defp process_summary_records_individually(
+  defp apply_pre_filtering(summary_records, action_type, validated_params) do
+    # Only apply pre-filtering for enforcement notices (not court cases/cautions)
+    should_filter =
+      action_type == :enforcement_notice and
+        not Map.get(validated_params, :process_all_records, false)
+
+    if should_filter do
+      filtered_records = filter_existing_notices(summary_records, validated_params)
+      skipped_count = length(summary_records) - length(filtered_records)
+
+      Logger.info(
+        "EA: Pre-filter results - #{skipped_count} existing, #{length(filtered_records)} new enforcement notices to process"
+      )
+
+      {filtered_records, skipped_count}
+    else
+      if action_type == :enforcement_notice do
+        Logger.info(
+          "EA: Process ALL records enabled - processing all #{length(summary_records)} enforcement notices"
+        )
+      else
+        Logger.debug(
+          "EA: Processing #{length(summary_records)} #{action_type} records (pre-filtering only applies to enforcement notices)"
+        )
+      end
+
+      {summary_records, 0}
+    end
+  end
+
+  defp process_filtered_records_individually(
          session,
-         summary_records,
+         filtered_records,
          action_type,
          validated_params
        ) do
-    Logger.debug("EA: Processing #{length(summary_records)} summary records individually")
+    Logger.debug("EA: Processing #{length(filtered_records)} filtered records for #{action_type}")
 
     actor = Map.get(validated_params, :actor)
 
@@ -343,9 +381,9 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
       current_session: session
     }
 
-    # Process each summary record individually and save immediately
+    # Process each filtered summary record individually and save immediately
     final_state =
-      Enum.reduce(summary_records, initial_state, fn summary_record, acc ->
+      Enum.reduce(filtered_records, initial_state, fn summary_record, acc ->
         Logger.debug("EA: Processing case #{summary_record.ea_record_id} individually")
 
         # Fetch detail record (Stage 2)
@@ -592,6 +630,37 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
       {:error, reason} ->
         Logger.error("EA: Failed to update final session processing: #{inspect(reason)}")
         session
+    end
+  end
+
+  defp filter_existing_notices(summary_records, validated_params) do
+    regulator_ids = Enum.map(summary_records, & &1.ea_record_id)
+    actor = Map.get(validated_params, :actor)
+
+    case EhsEnforcement.Enforcement.check_existing_notice_regulator_ids(
+           regulator_ids,
+           :environment_agency,
+           actor
+         ) do
+      %{existing: existing_ids, existing_count: existing_count, new_count: new_count} ->
+        Logger.info(
+          "EA: Pre-filter results - #{existing_count} existing, #{new_count} new enforcement notices"
+        )
+
+        # Return only new records
+        new_records =
+          Enum.reject(summary_records, fn record ->
+            record.ea_record_id in existing_ids
+          end)
+
+        new_records
+
+      {:error, reason} ->
+        Logger.warning(
+          "EA: Pre-filtering failed: #{inspect(reason)} - processing all records as fallback"
+        )
+
+        summary_records
     end
   end
 

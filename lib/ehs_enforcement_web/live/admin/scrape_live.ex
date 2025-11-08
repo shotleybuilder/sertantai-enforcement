@@ -1469,6 +1469,27 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
       </div>
     </div>
 
+    <%= if @enforcement_type == :notice do %>
+      <div class="mb-6">
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            name="process_all_records"
+            id="process_all_records"
+            value="true"
+            checked={@form_params["process_all_records"] == "true"}
+            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label for="process_all_records" class="ml-2 block text-sm text-gray-700">
+            Process ALL records (including existing)
+            <span class="block text-xs text-gray-500 mt-0.5">
+              Enable when data model has changed. Default skips existing notices for faster incremental scrapes.
+            </span>
+          </label>
+        </div>
+      </div>
+    <% end %>
+
     <%= if @enforcement_type == :case do %>
       <div class="mb-6">
         <label class="block text-sm font-medium text-gray-700 mb-2">

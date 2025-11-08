@@ -46,11 +46,21 @@ defmodule EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy do
   def validate_params(params) do
     with {:ok, date_from} <- validate_date_from(params[:date_from] || params["date_from"]),
          {:ok, date_to} <- validate_date_to(params[:date_to] || params["date_to"], date_from) do
+      # Extract process_all_records parameter (defaults to false if not provided)
+      # Checkbox value comes as "true" string from form
+      process_all_records =
+        case params[:process_all_records] || params["process_all_records"] do
+          "true" -> true
+          true -> true
+          _ -> false
+        end
+
       {:ok,
        %{
          date_from: date_from,
          date_to: date_to,
-         action_types: @enforcement_notice_action_type
+         action_types: @enforcement_notice_action_type,
+         process_all_records: process_all_records
        }}
     end
   end
