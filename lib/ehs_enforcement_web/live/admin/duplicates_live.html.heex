@@ -217,7 +217,7 @@
                                 <dt class="text-sm font-medium text-gray-500">Fine</dt>
                                 <dd class="text-sm text-gray-900">
                                   <%= if record.offence_fine do %>
-                                    £{:erlang.float_to_binary(record.offence_fine, decimals: 2)}
+                                    £<%= Decimal.round(record.offence_fine, 2) %>
                                   <% else %>
                                     —
                                   <% end %>
