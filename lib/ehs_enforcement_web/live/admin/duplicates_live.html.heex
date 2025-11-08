@@ -304,12 +304,12 @@
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Type</dt>
                                 <dd class="text-sm text-gray-900">
-                                  {record.offender_type || "—"}
+                                  {if record.business_type, do: record.business_type |> to_string() |> String.replace("_", " ") |> String.capitalize(), else: "—"}
                                 </dd>
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Location</dt>
-                                <dd class="text-sm text-gray-900">{record.location || "—"}</dd>
+                                <dd class="text-sm text-gray-900">{record.town || record.address || "—"}</dd>
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Total Cases</dt>
