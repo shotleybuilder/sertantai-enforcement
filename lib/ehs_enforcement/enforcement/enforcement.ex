@@ -8,6 +8,7 @@ defmodule EhsEnforcement.Enforcement do
   use Ash.Domain, extensions: [AshPhoenix]
 
   require Ash.Query
+  require Logger
 
   # Cache configuration for common filter combinations
   # 5 minutes in milliseconds
@@ -728,8 +729,6 @@ defmodule EhsEnforcement.Enforcement do
   """
   def check_existing_notice_regulator_ids(regulator_ids, agency_code, actor \\ nil)
       when is_list(regulator_ids) and is_atom(agency_code) do
-    require Logger
-
     # Performance warning for very large batches
     if length(regulator_ids) > 500 do
       Logger.warning(
