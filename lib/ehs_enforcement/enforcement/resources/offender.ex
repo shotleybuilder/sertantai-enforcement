@@ -119,7 +119,7 @@ defmodule EhsEnforcement.Enforcement.Offender do
   end
 
   actions do
-    defaults([:read])
+    defaults([:read, :destroy])
 
     create :create do
       primary?(true)
@@ -215,6 +215,185 @@ defmodule EhsEnforcement.Enforcement.Offender do
             ilike(postcode, "%" <> ^arg(:query) <> "%")
         )
       )
+    end
+
+    update :sync_and_merge_duplicates do
+      require_atomic?(false)
+      accept([])
+
+      argument :duplicate_ids, {:array, :uuid} do
+        allow_nil? false
+        description("IDs of duplicate offenders to merge into this one (ALL orphans deleted after merge)")
+      end
+
+      change(fn changeset, _context ->
+        require Logger
+        master_id = changeset.data.id
+        duplicate_ids = Ash.Changeset.get_argument(changeset, :duplicate_ids)
+
+        Logger.info("Starting merge: master=#{master_id}, duplicates=#{inspect(duplicate_ids)}")
+
+        # 1. Fetch Companies House canonical data
+        company_number = changeset.data.company_registration_number
+
+        companies_house_data =
+          if company_number do
+            case EhsEnforcement.Integrations.CompaniesHouse.lookup_company(company_number) do
+              {:ok, profile} ->
+                # 2. Validate name similarity (>= 0.9)
+                canonical_name = profile["company_name"]
+                similarity = String.jaro_distance(
+                  normalize_company_name(changeset.data.name),
+                  normalize_company_name(canonical_name)
+                )
+
+                Logger.info("Companies House validation: similarity=#{similarity}")
+
+                # Temporarily lowered threshold to 0.7 for dev data cleanup
+                # TODO: Restore to 0.9 for production or make this configurable
+                if similarity < 0.7 do
+                  raise "Companies House validation failed: name similarity #{similarity} below 0.7 threshold"
+                end
+
+                # Extract address components
+                address_components =
+                  EhsEnforcement.Integrations.CompaniesHouse.extract_address_components(profile)
+
+                %{
+                  name: canonical_name,
+                  address: address_components[:address],
+                  town: address_components[:town],
+                  county: address_components[:county],
+                  postcode: address_components[:postcode]
+                }
+
+              {:error, reason} ->
+                Logger.warning("Companies House lookup failed: #{inspect(reason)} - proceeding without validation")
+                # Company not found (dissolved, bad number, etc) - proceed without Companies House data
+                %{}
+            end
+          else
+            Logger.warning("No company number - skipping Companies House validation")
+            %{}
+          end
+
+        # 3. Apply Companies House data to master record
+        changeset =
+          Enum.reduce(companies_house_data, changeset, fn {field, value}, acc ->
+            if value do
+              Ash.Changeset.force_change_attribute(acc, field, value)
+            else
+              acc
+            end
+          end)
+
+        # 4. Load all duplicate offenders to get their data
+        duplicates =
+          Enum.map(duplicate_ids, fn id ->
+            case Ash.get(EhsEnforcement.Enforcement.Offender, id) do
+              {:ok, offender} -> offender
+              {:error, error} ->
+                Logger.error("Failed to load duplicate #{id}: #{inspect(error)}")
+                raise "Failed to load duplicate offender: #{inspect(error)}"
+            end
+          end)
+
+        Logger.warning("Note: Using direct database queries for foreign key migration")
+
+        # 5. Migrate foreign keys from all duplicates to master using Ecto
+        # (Ash doesn't have bulk update API for this pattern)
+        import Ecto.Query
+
+        # Convert UUIDs to binary format for Ecto
+        master_binary = Ecto.UUID.dump!(master_id)
+
+        Enum.each(duplicate_ids, fn duplicate_id ->
+          duplicate_binary = Ecto.UUID.dump!(duplicate_id)
+
+          # Update Cases
+          {cases_updated, _} =
+            EhsEnforcement.Repo.update_all(
+              from(c in "cases", where: c.offender_id == ^duplicate_binary),
+              set: [offender_id: master_binary, updated_at: DateTime.utc_now()]
+            )
+
+          # Update Notices
+          {notices_updated, _} =
+            EhsEnforcement.Repo.update_all(
+              from(n in "notices", where: n.offender_id == ^duplicate_binary),
+              set: [offender_id: master_binary, updated_at: DateTime.utc_now()]
+            )
+
+          Logger.info(
+            "Migrated #{cases_updated} cases and #{notices_updated} notices from #{duplicate_id} to #{master_id}"
+          )
+        end)
+
+        # 6. Recalculate statistics from actual data (don't trust existing totals)
+        require Ash.Query
+
+        # Count cases
+        total_cases =
+          EhsEnforcement.Enforcement.Case
+          |> Ash.Query.filter(offender_id == ^master_id)
+          |> Ash.count!()
+
+        # Count notices
+        total_notices =
+          EhsEnforcement.Enforcement.Notice
+          |> Ash.Query.filter(offender_id == ^master_id)
+          |> Ash.count!()
+
+        # Sum fines from cases
+        total_fines =
+          EhsEnforcement.Enforcement.Case
+          |> Ash.Query.filter(offender_id == ^master_id)
+          |> Ash.Query.select([:offence_fine])
+          |> Ash.read!()
+          |> Enum.reduce(Decimal.new(0), fn case_record, acc ->
+            Decimal.add(acc, case_record.offence_fine || Decimal.new(0))
+          end)
+
+        Logger.info("Recalculated stats: cases=#{total_cases}, notices=#{total_notices}, fines=#{total_fines}")
+
+        # 7. Merge array fields (agencies, industry_sectors) from duplicates
+        all_agencies =
+          [changeset.data.agencies | Enum.map(duplicates, & &1.agencies)]
+          |> List.flatten()
+          |> Enum.uniq()
+
+        all_industry_sectors =
+          [changeset.data.industry_sectors | Enum.map(duplicates, & &1.industry_sectors)]
+          |> List.flatten()
+          |> Enum.uniq()
+
+        # Apply all updates to master record
+        changeset
+        |> Ash.Changeset.force_change_attribute(:total_cases, total_cases)
+        |> Ash.Changeset.force_change_attribute(:total_notices, total_notices)
+        |> Ash.Changeset.force_change_attribute(:total_fines, total_fines)
+        |> Ash.Changeset.force_change_attribute(:agencies, all_agencies)
+        |> Ash.Changeset.force_change_attribute(:industry_sectors, all_industry_sectors)
+        |> Ash.Changeset.after_action(fn _changeset, result ->
+          # 8. Delete ALL duplicate records after successful merge
+          Enum.each(duplicate_ids, fn duplicate_id ->
+            case Ash.get(EhsEnforcement.Enforcement.Offender, duplicate_id) do
+              {:ok, duplicate} ->
+                case Ash.destroy(duplicate) do
+                  :ok ->
+                    Logger.info("Deleted duplicate offender: #{duplicate_id}")
+                  {:error, error} ->
+                    Logger.error("Failed to delete duplicate #{duplicate_id}: #{inspect(error)}")
+                    raise "Failed to delete duplicate: #{inspect(error)}"
+                end
+              {:error, error} ->
+                Logger.error("Failed to load duplicate #{duplicate_id}: #{inspect(error)}")
+            end
+          end)
+
+          {:ok, result}
+        end)
+      end)
     end
   end
 

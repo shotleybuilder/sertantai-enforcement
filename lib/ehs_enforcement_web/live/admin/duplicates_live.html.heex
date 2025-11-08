@@ -66,7 +66,11 @@
               >
                 {label}
                 <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  {length(get_duplicates_for_tab(assigns, tab))}
+                  <%= if tab == :offenders do %>
+                    {length(@company_number_duplicates)}
+                  <% else %>
+                    {length(get_duplicates_for_tab(assigns, tab))}
+                  <% end %>
                 </span>
               </button>
             <% end %>
@@ -75,6 +79,126 @@
         
 <!-- Tab Content -->
         <div class="p-6">
+          <%= if @active_tab == :offenders && length(@company_number_duplicates) > 0 do %>
+            <!-- Company Number Duplicates Section -->
+            <div class="mb-8">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-lg font-medium text-gray-900">Company Number Duplicates</h3>
+                  <p class="text-sm text-gray-500 mt-1">
+                    Offenders with duplicate Companies House registration numbers
+                  </p>
+                </div>
+                <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                  {length(@company_number_duplicates)} groups
+                </span>
+              </div>
+
+              <%= for group <- @company_number_duplicates do %>
+                <div class="mb-6 bg-white border border-gray-200 rounded-lg p-4">
+                  <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-md font-medium text-gray-900">
+                      Company #{group.company_number}
+                    </h4>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      {group.count} duplicates
+                    </span>
+                  </div>
+
+                  <div class="space-y-3">
+                    <%= for offender <- group.offenders do %>
+                      <div class={[
+                        "border rounded-lg p-4 transition-all duration-200",
+                        if(@selected_master_id == offender.id,
+                          do: "border-blue-500 bg-blue-50 ring-2 ring-blue-200",
+                          else: "border-gray-200"
+                        )
+                      ]}>
+                        <div class="flex items-start justify-between">
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center space-x-2 mb-2">
+                              <h5 class="text-sm font-medium text-gray-900">
+                                {offender.name}
+                              </h5>
+                              <%= if @selected_master_id == offender.id do %>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  Master
+                                </span>
+                              <% end %>
+                            </div>
+                            <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                              <div>
+                                <dt class="text-gray-500">Location</dt>
+                                <dd class="text-gray-900">{offender.town || offender.address || "—"}</dd>
+                              </div>
+                              <div>
+                                <dt class="text-gray-500">Postcode</dt>
+                                <dd class="text-gray-900">{offender.postcode || "—"}</dd>
+                              </div>
+                              <div>
+                                <dt class="text-gray-500">Total Cases</dt>
+                                <dd class="text-gray-900">{offender.total_cases || 0}</dd>
+                              </div>
+                              <div>
+                                <dt class="text-gray-500">Total Notices</dt>
+                                <dd class="text-gray-900">{offender.total_notices || 0}</dd>
+                              </div>
+                            </dl>
+                          </div>
+
+                          <div class="flex flex-col space-y-2 ml-4">
+                            <button
+                              type="button"
+                              phx-click="select_master"
+                              phx-value-id={offender.id}
+                              class={[
+                                "inline-flex items-center px-3 py-1.5 border text-xs font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500",
+                                if(@selected_master_id == offender.id,
+                                  do: "border-blue-600 text-blue-700 bg-blue-50",
+                                  else: "border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                                )
+                              ]}
+                            >
+                              <%= if @selected_master_id == offender.id do %>
+                                <.icon name="hero-check" class="h-3 w-3 mr-1" /> Selected
+                              <% else %>
+                                Select as Master
+                              <% end %>
+                            </button>
+
+                            <button
+                              type="button"
+                              phx-click="sync_and_merge"
+                              phx-value-id={offender.id}
+                              phx-value-duplicates={Jason.encode!(Enum.map(group.offenders, & &1.id) -- [offender.id])}
+                              disabled={@selected_master_id != offender.id}
+                              class={[
+                                "inline-flex items-center px-3 py-1.5 border text-xs font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2",
+                                if(@selected_master_id == offender.id,
+                                  do: "border-transparent text-white bg-green-600 hover:bg-green-700 focus:ring-green-500",
+                                  else: "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
+                                )
+                              ]}
+                            >
+                              <.icon name="hero-arrow-path" class="h-3 w-3 mr-1" /> Sync & Merge
+                            </button>
+
+                            <.link
+                              navigate={~p"/offenders/#{offender.id}"}
+                              class="text-blue-600 hover:text-blue-800 text-xs text-center"
+                            >
+                              View →
+                            </.link>
+                          </div>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
           <%= if length(get_current_duplicates(assigns)) == 0 do %>
             <div class="text-center py-8">
               <.icon name="hero-check-circle" class="h-12 w-12 text-green-500 mx-auto mb-4" />
@@ -458,6 +582,150 @@
                 {String.capitalize(@action_confirmation.action)}
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Merge Preview Modal -->
+  <%= if @merge_preview do %>
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-10 mx-auto p-6 border max-w-3xl shadow-lg rounded-md bg-white">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-medium text-gray-900">Merge Preview</h3>
+            <button
+              type="button"
+              phx-click="cancel_merge"
+              class="text-gray-400 hover:text-gray-600"
+            >
+              <.icon name="hero-x-mark" class="h-6 w-6" />
+            </button>
+          </div>
+
+          <%= if @merge_preview.validation do %>
+            <% similarity = @merge_preview.validation.similarity %>
+            <% {bg_class, border_class, text_class, icon_name, title, message} = get_validation_display(similarity) %>
+
+            <div class={"border-l-4 p-4 mb-6 #{bg_class} #{border_class}"}>
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <.icon name={icon_name} class={"h-5 w-5 #{text_class}"} />
+                </div>
+                <div class="ml-3 flex-1">
+                  <h4 class={"text-sm font-medium #{text_class}"}>{title}</h4>
+                  <p class={"mt-1 text-sm #{text_class}"}>{message}</p>
+                  <p class="mt-2 text-xs text-gray-600">
+                    Similarity Score: {Float.round(similarity * 100, 1)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          <% end %>
+
+          <%= if @merge_preview.companies_house_data do %>
+            <div class="mb-6">
+              <h4 class="text-sm font-medium text-gray-900 mb-3">Companies House Data</h4>
+              <div class="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-gray-500">Company Name:</span>
+                  <span class="text-gray-900 font-medium">{@merge_preview.companies_house_data.name}</span>
+                </div>
+                <%= if Map.get(@merge_preview.companies_house_data, :status) do %>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Status:</span>
+                    <span class={[
+                      "font-medium",
+                      if(@merge_preview.companies_house_data.status == "active",
+                        do: "text-green-700",
+                        else: "text-gray-700"
+                      )
+                    ]}>
+                      {String.capitalize(@merge_preview.companies_house_data.status)}
+                    </span>
+                  </div>
+                <% end %>
+                <%= if Map.get(@merge_preview.companies_house_data, :address) do %>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Address:</span>
+                    <span class="text-gray-900">{@merge_preview.companies_house_data.address}</span>
+                  </div>
+                <% end %>
+                <%= if Map.get(@merge_preview.companies_house_data, :postcode) do %>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Postcode:</span>
+                    <span class="text-gray-900">{@merge_preview.companies_house_data.postcode}</span>
+                  </div>
+                <% end %>
+              </div>
+              <a
+                href={"https://find-and-update.company-information.service.gov.uk/company/#{Map.get(@merge_preview, :company_number, "")}"}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="mt-2 inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+              >
+                <.icon name="hero-arrow-top-right-on-square" class="h-4 w-4 mr-1" />
+                View on Companies House website
+              </a>
+            </div>
+          <% end %>
+
+          <%= if @merge_preview.duplicates_info do %>
+            <div class="mb-6">
+              <h4 class="text-sm font-medium text-gray-900 mb-3">Records to be Merged</h4>
+              <div class="space-y-2">
+                <%= for dup <- @merge_preview.duplicates_info do %>
+                  <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                    <div class="font-medium text-gray-900">{dup.name}</div>
+                    <div class="text-gray-500 text-xs mt-1">
+                      {dup.location} • {dup.total_cases} cases, {dup.total_notices} notices
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <%= if @merge_preview.merge_preview do %>
+            <div class="mb-6">
+              <h4 class="text-sm font-medium text-gray-900 mb-3">After Merge</h4>
+              <div class="bg-blue-50 rounded-lg p-4 space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-blue-700">Total Cases:</span>
+                  <span class="text-blue-900 font-medium">{@merge_preview.merge_preview.total_cases}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-blue-700">Total Notices:</span>
+                  <span class="text-blue-900 font-medium">{@merge_preview.merge_preview.total_notices}</span>
+                </div>
+                <%= if @merge_preview.merge_preview.total_fines do %>
+                  <div class="flex justify-between">
+                    <span class="text-blue-700">Total Fines:</span>
+                    <span class="text-blue-900 font-medium">
+                      £{Decimal.round(@merge_preview.merge_preview.total_fines, 2)}
+                    </span>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <div class="flex items-center justify-end space-x-3 pt-4 border-t">
+            <button
+              type="button"
+              phx-click="cancel_merge"
+              class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              phx-click="execute_merge"
+              class="px-4 py-2 bg-green-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+            >
+              Accept & Merge
+            </button>
           </div>
         </div>
       </div>

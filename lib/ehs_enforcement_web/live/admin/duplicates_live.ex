@@ -15,8 +15,11 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
      |> assign(:case_duplicates, [])
      |> assign(:notice_duplicates, [])
      |> assign(:offender_duplicates, [])
+     |> assign(:company_number_duplicates, [])
      |> assign(:current_group_index, 0)
      |> assign(:selected_records, MapSet.new())
+     |> assign(:selected_master_id, nil)
+     |> assign(:merge_preview, nil)
      |> assign(:action_confirmation, nil)
      |> load_all_duplicates()}
   end
@@ -126,7 +129,92 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
      |> assign(:loading, false)}
   end
 
+  @impl true
+  def handle_event("select_master", %{"id" => id}, socket) do
+    {:noreply, assign(socket, :selected_master_id, id)}
+  end
+
+  @impl true
+  def handle_event("sync_and_merge", %{"id" => master_id, "duplicates" => duplicate_ids_json}, socket) do
+    duplicate_ids = Jason.decode!(duplicate_ids_json)
+
+    # Call preview function to get validation and merge preview
+    case EhsEnforcement.Enforcement.preview_offender_merge(master_id, duplicate_ids) do
+      {:ok, preview} ->
+        {:noreply,
+         socket
+         |> assign(:merge_preview, Map.put(preview, :master_id, master_id))
+         |> assign(:merge_preview, Map.put(socket.assigns.merge_preview, :duplicate_ids, duplicate_ids))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, "Preview failed: #{inspect(reason)}")}
+    end
+  end
+
+  @impl true
+  def handle_event("execute_merge", _params, socket) do
+    case socket.assigns.merge_preview do
+      %{master_id: master_id, duplicate_ids: duplicate_ids} ->
+        case EhsEnforcement.Enforcement.sync_and_merge_offenders(master_id, duplicate_ids) do
+          {:ok, _merged} ->
+            {:noreply,
+             socket
+             |> assign(:merge_preview, nil)
+             |> assign(:selected_master_id, nil)
+             |> put_flash(:info, "Successfully merged offenders!")
+             |> assign(:loading, true)
+             |> load_active_tab_duplicates()
+             |> assign(:loading, false)}
+
+          {:error, reason} ->
+            {:noreply, put_flash(socket, :error, "Merge failed: #{inspect(reason)}")}
+        end
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "No merge preview available")}
+    end
+  end
+
+  @impl true
+  def handle_event("cancel_merge", _params, socket) do
+    {:noreply, assign(socket, :merge_preview, nil)}
+  end
+
   # Template helper functions
+
+  defp get_validation_display(similarity) do
+    cond do
+      similarity >= 0.9 ->
+        {
+          "bg-green-50",
+          "border-green-200",
+          "text-green-800",
+          "hero-check-circle",
+          "Excellent Match!",
+          "Everything looks perfect. The company name matches Companies House records with high confidence."
+        }
+
+      similarity >= 0.7 ->
+        {
+          "bg-yellow-50",
+          "border-yellow-200",
+          "text-yellow-800",
+          "hero-exclamation-triangle",
+          "Warning: Possible Name Change",
+          "The company name similarity is lower than ideal. This could indicate a company rename or name variation. Please verify the Companies House details before proceeding."
+        }
+
+      true ->
+        {
+          "bg-red-50",
+          "border-red-200",
+          "text-red-800",
+          "hero-x-circle",
+          "Danger: Low Match Confidence",
+          "The validation confidence is very low. Please carefully verify this is the correct company before merging."
+        }
+    end
+  end
 
   defp get_current_duplicates(assigns) do
     case assigns.active_tab do
@@ -195,12 +283,17 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
           end
 
         :offenders ->
-          case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_offenders(current_user) do
-            {:ok, duplicates} ->
-              assign(socket, :offender_duplicates, Enum.take(duplicates, 20))
+          # Load company number duplicates (new merge functionality)
+          case EhsEnforcement.Enforcement.find_duplicate_offenders_by_company_number() do
+            {:ok, company_duplicates} ->
+              socket
+              |> assign(:company_number_duplicates, company_duplicates)
+              |> assign(:offender_duplicates, [])
 
             {:error, _} ->
-              assign(socket, :offender_duplicates, [])
+              socket
+              |> assign(:company_number_duplicates, [])
+              |> assign(:offender_duplicates, [])
           end
       end
     catch

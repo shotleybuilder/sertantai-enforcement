@@ -1577,4 +1577,292 @@ defmodule EhsEnforcement.Enforcement do
       }
     end)
   end
+
+  # ============================================================================
+  # Offender Deduplication & Merge Functions
+  # ============================================================================
+
+  @doc """
+  Find offenders with duplicate company registration numbers.
+
+  Returns grouped duplicates by company registration number.
+
+  ## Returns
+  List of maps with:
+  - `:company_number` - The duplicated company registration number
+  - `:offenders` - List of offender records with this number
+  - `:count` - Number of duplicate records
+
+  ## Examples
+      iex> find_duplicate_offenders_by_company_number()
+      {:ok, [
+        %{company_number: "01999508", offenders: [offender1, offender2], count: 2},
+        %{company_number: "03353423", offenders: [offender3, offender4], count: 2}
+      ]}
+  """
+  def find_duplicate_offenders_by_company_number do
+    # Query for all offenders with company registration numbers
+    query =
+      EhsEnforcement.Enforcement.Offender
+      |> Ash.Query.filter(
+        not is_nil(company_registration_number) and company_registration_number != ""
+      )
+      |> Ash.Query.load([:cases, :notices])
+
+    case Ash.read(query) do
+      {:ok, offenders} ->
+        # Group by company number and filter for duplicates
+        duplicates =
+          offenders
+          |> Enum.group_by(& &1.company_registration_number)
+          |> Enum.filter(fn {_number, group} -> length(group) > 1 end)
+          |> Enum.map(fn {company_number, group} ->
+            %{
+              company_number: company_number,
+              offenders: group,
+              count: length(group)
+            }
+          end)
+          |> Enum.sort_by(& &1.company_number)
+
+        {:ok, duplicates}
+
+      {:error, error} ->
+        Logger.error("Failed to find duplicate offenders: #{inspect(error)}")
+        {:error, error}
+    end
+  end
+
+  @doc """
+  Preview what a merge operation would do before executing it.
+
+  Validates offender against Companies House and returns preview data showing:
+  - Companies House validation results
+  - Data that would be applied to master
+  - Statistics after merge
+  - Records that would be deleted
+
+  ## Parameters
+  - `master_id` - UUID of the offender to keep (master record)
+  - `duplicate_ids` - List of UUIDs of offenders to merge into master
+
+  ## Returns
+  `{:ok, preview_map}` with:
+  - `:validation` - %{valid: bool, similarity: float, canonical_name: string, status: string}
+  - `:companies_house_data` - %{name:, address:, town:, county:, postcode:}
+  - `:merge_preview` - %{total_cases:, total_notices:, total_fines:, agencies:, industry_sectors:}
+  - `:duplicates_info` - List of %{id:, name:, location:, cases:, notices:} for records to be deleted
+
+  ## Examples
+      iex> preview_offender_merge(master_id, [duplicate_id])
+      {:ok, %{
+        validation: %{valid: true, similarity: 1.0, canonical_name: "...", status: "active"},
+        companies_house_data: %{name: "...", address: "...", ...},
+        merge_preview: %{total_cases: 5, total_notices: 3, total_fines: #Decimal<57000>},
+        duplicates_info: [%{id: "...", name: "...", location: "...", cases: 2, notices: 1}]
+      }}
+  """
+  def preview_offender_merge(master_id, duplicate_ids)
+      when is_binary(master_id) and is_list(duplicate_ids) do
+    # Load master offender
+    case Ash.get(EhsEnforcement.Enforcement.Offender, master_id, load: [:cases, :notices]) do
+      {:ok, master} ->
+        # Load duplicate offenders
+        case load_offenders(duplicate_ids) do
+          {:ok, duplicates} ->
+            # Validate with Companies House if company number present
+            validation_result =
+              if master.company_registration_number do
+                validate_with_companies_house(master)
+              else
+                {:ok,
+                 %{
+                   valid: true,
+                   similarity: nil,
+                   canonical_name: nil,
+                   status: "no_company_number",
+                   companies_house_data: %{}
+                 }}
+              end
+
+            case validation_result do
+              {:ok, validation_data} ->
+                # Calculate merge preview
+                merge_preview = calculate_merge_preview(master, duplicates)
+                duplicates_info = summarize_duplicates(duplicates)
+
+                {:ok,
+                 %{
+                   validation: Map.delete(validation_data, :companies_house_data),
+                   companies_house_data: validation_data.companies_house_data,
+                   merge_preview: merge_preview,
+                   duplicates_info: duplicates_info
+                 }}
+
+              {:error, reason} ->
+                {:error, reason}
+            end
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+
+      {:error, %Ash.Error.Query.NotFound{}} ->
+        {:error, :master_not_found}
+
+      {:error, error} ->
+        Logger.error("Failed to load master offender: #{inspect(error)}")
+        {:error, error}
+    end
+  end
+
+  @doc """
+  Execute the merge operation to combine duplicate offenders.
+
+  Calls the sync_and_merge_duplicates Ash action on the master record.
+
+  ## Parameters
+  - `master_id` - UUID of the offender to keep
+  - `duplicate_ids` - List of UUIDs of offenders to merge and delete
+
+  ## Returns
+  - `{:ok, merged_offender}` - Successfully merged offender with updated data
+  - `{:error, reason}` - Merge failed (transaction rolled back)
+
+  ## Examples
+      iex> sync_and_merge_offenders(master_id, [duplicate_id1, duplicate_id2])
+      {:ok, %Offender{name: "WRG WASTE SERVICES LIMITED", total_cases: 5, ...}}
+  """
+  def sync_and_merge_offenders(master_id, duplicate_ids)
+      when is_binary(master_id) and is_list(duplicate_ids) do
+    Logger.info("Executing merge: master=#{master_id}, duplicates=#{inspect(duplicate_ids)}")
+
+    # Load master offender
+    case Ash.get(EhsEnforcement.Enforcement.Offender, master_id) do
+      {:ok, master} ->
+        # Execute the merge action
+        master
+        |> Ash.Changeset.for_update(:sync_and_merge_duplicates, %{duplicate_ids: duplicate_ids})
+        |> Ash.update()
+
+      {:error, %Ash.Error.Query.NotFound{}} ->
+        {:error, :master_not_found}
+
+      {:error, error} ->
+        Logger.error("Failed to load master offender: #{inspect(error)}")
+        {:error, error}
+    end
+  end
+
+  # Private helper functions for offender merge
+
+  defp load_offenders(ids) do
+    results =
+      Enum.reduce_while(ids, [], fn id, acc ->
+        case Ash.get(EhsEnforcement.Enforcement.Offender, id, load: [:cases, :notices]) do
+          {:ok, offender} -> {:cont, [offender | acc]}
+          {:error, error} -> {:halt, {:error, {id, error}}}
+        end
+      end)
+
+    case results do
+      {:error, reason} -> {:error, reason}
+      offenders -> {:ok, Enum.reverse(offenders)}
+    end
+  end
+
+  defp validate_with_companies_house(master) do
+    alias EhsEnforcement.Integrations.CompaniesHouse
+
+    case CompaniesHouse.lookup_company(master.company_registration_number) do
+      {:ok, profile} ->
+        canonical_name = profile["company_name"]
+
+        similarity =
+          String.jaro_distance(
+            EhsEnforcement.Enforcement.Offender.normalize_company_name(master.name),
+            EhsEnforcement.Enforcement.Offender.normalize_company_name(canonical_name)
+          )
+
+        address_components = CompaniesHouse.extract_address_components(profile)
+
+        {:ok,
+         %{
+           valid: similarity >= 0.9,
+           similarity: similarity,
+           canonical_name: canonical_name,
+           status: profile["company_status"],
+           companies_house_data: %{
+             name: canonical_name,
+             address: address_components[:address],
+             town: address_components[:town],
+             county: address_components[:county],
+             postcode: address_components[:postcode]
+           }
+         }}
+
+      {:error, reason} ->
+        {:error, {:companies_house_lookup_failed, reason}}
+    end
+  end
+
+  defp calculate_merge_preview(master, duplicates) do
+    # Calculate total cases and notices after merge
+    all_offenders = [master | duplicates]
+
+    total_cases =
+      all_offenders
+      |> Enum.map(fn o -> length(o.cases || []) end)
+      |> Enum.sum()
+
+    total_notices =
+      all_offenders
+      |> Enum.map(fn o -> length(o.notices || []) end)
+      |> Enum.sum()
+
+    # Calculate total fines from all cases
+    total_fines =
+      all_offenders
+      |> Enum.flat_map(fn o -> o.cases || [] end)
+      |> Enum.reduce(Decimal.new(0), fn case_record, acc ->
+        Decimal.add(acc, case_record.offence_fine || Decimal.new(0))
+      end)
+
+    # Merge array fields
+    all_agencies =
+      all_offenders
+      |> Enum.flat_map(fn o -> o.agencies || [] end)
+      |> Enum.uniq()
+
+    all_industry_sectors =
+      all_offenders
+      |> Enum.flat_map(fn o -> o.industry_sectors || [] end)
+      |> Enum.uniq()
+
+    %{
+      total_cases: total_cases,
+      total_notices: total_notices,
+      total_fines: total_fines,
+      agencies: all_agencies,
+      industry_sectors: all_industry_sectors
+    }
+  end
+
+  defp summarize_duplicates(duplicates) do
+    Enum.map(duplicates, fn dup ->
+      %{
+        id: dup.id,
+        name: dup.name,
+        location: format_location(dup),
+        cases: length(dup.cases || []),
+        notices: length(dup.notices || [])
+      }
+    end)
+  end
+
+  defp format_location(offender) do
+    [offender.town, offender.county, offender.postcode]
+    |> Enum.filter(&(&1 != nil and &1 != ""))
+    |> Enum.join(", ")
+  end
 end
