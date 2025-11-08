@@ -22,6 +22,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
 
   require Logger
   alias EhsEnforcement.Configuration.ScrapingConfig
+  alias EhsEnforcement.Enforcement
   alias EhsEnforcement.Scraping.ScrapeSession
   alias EhsEnforcement.Scraping.Ea.CaseScraper
   alias EhsEnforcement.Scraping.Ea.CaseProcessor
@@ -637,9 +638,9 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
     regulator_ids = Enum.map(summary_records, & &1.ea_record_id)
     actor = Map.get(validated_params, :actor)
 
-    case EhsEnforcement.Enforcement.check_existing_notice_regulator_ids(
+    case Enforcement.check_existing_notice_regulator_ids(
            regulator_ids,
-           :environment_agency,
+           :ea,
            actor
          ) do
       %{existing: existing_ids, existing_count: existing_count, new_count: new_count} ->
