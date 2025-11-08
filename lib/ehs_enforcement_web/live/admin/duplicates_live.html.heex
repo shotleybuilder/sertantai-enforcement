@@ -66,7 +66,7 @@
               >
                 {label}
                 <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  {length(get_current_duplicates(assigns))}
+                  {length(get_duplicates_for_tab(assigns, tab))}
                 </span>
               </button>
             <% end %>

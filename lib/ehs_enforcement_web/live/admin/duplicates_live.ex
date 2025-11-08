@@ -136,6 +136,14 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
     end
   end
 
+  defp get_duplicates_for_tab(assigns, tab) do
+    case tab do
+      :cases -> assigns.case_duplicates
+      :notices -> assigns.notice_duplicates
+      :offenders -> assigns.offender_duplicates
+    end
+  end
+
   defp get_current_group(assigns) do
     current_groups = get_current_duplicates(assigns)
     current_index = assigns.current_group_index
