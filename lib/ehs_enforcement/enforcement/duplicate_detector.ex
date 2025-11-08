@@ -30,21 +30,7 @@ defmodule EhsEnforcement.Enforcement.DuplicateDetector do
             []
         end
 
-      # Strategy 2: Find cases with same offender + action date
-      offender_date_duplicates =
-        case Ash.read(query, actor: current_user) do
-          {:ok, cases} ->
-            cases
-            |> Enum.filter(fn case -> case.offender_id && case.offence_action_date end)
-            |> Enum.group_by(fn case -> {case.offender_id, case.offence_action_date} end)
-            |> Enum.filter(fn {_key, cases} -> length(cases) > 1 end)
-            |> Enum.map(fn {_key, cases} -> cases end)
-
-          {:error, _error} ->
-            []
-        end
-
-      # Strategy 3: Find cases with same offender + exact fine + costs amounts
+      # Strategy 2: Find cases with same offender + exact fine + costs amounts
       financial_duplicates =
         case Ash.read(query, actor: current_user) do
           {:ok, cases} ->
@@ -64,7 +50,7 @@ defmodule EhsEnforcement.Enforcement.DuplicateDetector do
         end
 
       # Combine all duplicate groups and remove overlaps
-      all_duplicates = regulator_id_duplicates ++ offender_date_duplicates ++ financial_duplicates
+      all_duplicates = regulator_id_duplicates ++ financial_duplicates
       unique_groups = remove_overlapping_groups(all_duplicates)
 
       {:ok, unique_groups}
@@ -98,21 +84,7 @@ defmodule EhsEnforcement.Enforcement.DuplicateDetector do
             []
         end
 
-      # Strategy 2: Find notices with same offender + action date
-      offender_date_duplicates =
-        case Ash.read(query, actor: current_user) do
-          {:ok, notices} ->
-            notices
-            |> Enum.filter(fn notice -> notice.offender_id && notice.offence_action_date end)
-            |> Enum.group_by(fn notice -> {notice.offender_id, notice.offence_action_date} end)
-            |> Enum.filter(fn {_key, notices} -> length(notices) > 1 end)
-            |> Enum.map(fn {_key, notices} -> notices end)
-
-          {:error, _error} ->
-            []
-        end
-
-      # Strategy 3: Find notices with same regulator_ref_number (if available)
+      # Strategy 2: Find notices with same regulator_ref_number (if available)
       ref_number_duplicates =
         case Ash.read(query, actor: current_user) do
           {:ok, notices} ->
@@ -129,8 +101,7 @@ defmodule EhsEnforcement.Enforcement.DuplicateDetector do
         end
 
       # Combine all duplicate groups and remove overlaps
-      all_duplicates =
-        regulator_id_duplicates ++ offender_date_duplicates ++ ref_number_duplicates
+      all_duplicates = regulator_id_duplicates ++ ref_number_duplicates
 
       unique_groups = remove_overlapping_groups(all_duplicates)
 

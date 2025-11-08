@@ -46,7 +46,8 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
      |> assign(:selected_records, MapSet.new())
      |> assign(:loading, true)
      |> load_active_tab_duplicates()
-     |> assign(:loading, false)}
+     |> assign(:loading, false)
+     |> push_patch(to: ~p"/admin/duplicates?tab=#{tab}")}
   end
 
   @impl true
