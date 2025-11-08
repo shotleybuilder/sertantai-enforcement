@@ -151,7 +151,7 @@
                               </span>
                             <% end %>
                           </div>
-                          <%= if record.url do %>
+                          <%= if Map.get(record, :url) do %>
                             <a
                               href={record.url}
                               target="_blank"
