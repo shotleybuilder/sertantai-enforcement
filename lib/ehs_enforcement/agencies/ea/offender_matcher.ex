@@ -8,23 +8,88 @@ defmodule EhsEnforcement.Agencies.Ea.OffenderMatcher do
   alias EhsEnforcement.Enforcement
 
   def find_or_create_offender(ea_case_data) do
-    # 1. Exact name match
-    case find_by_exact_name(ea_case_data.offender_name) do
+    company_number = Map.get(ea_case_data, :company_registration_number)
+
+    # 1. Try company registration number first (if available)
+    # This is the most authoritative identifier - same number = same legal entity
+    case find_by_company_number(company_number) do
       {:ok, offender} ->
+        Logger.debug(
+          "Found existing offender by company number #{company_number}: #{offender.name}"
+        )
+
         {:ok, offender}
 
       {:error, :not_found} ->
-        # 2. Fuzzy name matching using pg_trgm
-        case find_by_fuzzy_name(ea_case_data.offender_name) do
+        # 2. Fall back to exact name match
+        case find_by_exact_name(ea_case_data.offender_name) do
           {:ok, offender} ->
             {:ok, offender}
 
           {:error, :not_found} ->
-            # 3. Create new offender
-            create_ea_offender(ea_case_data)
+            # 3. Fall back to fuzzy name matching using pg_trgm
+            case find_by_fuzzy_name(ea_case_data.offender_name) do
+              {:ok, offender} ->
+                {:ok, offender}
+
+              {:error, :not_found} ->
+                # 4. Create new offender with company number
+                create_ea_offender(ea_case_data)
+            end
+        end
+
+      {:error, :invalid_company_number} ->
+        # No valid company number, skip to name matching
+        case find_by_exact_name(ea_case_data.offender_name) do
+          {:ok, offender} ->
+            {:ok, offender}
+
+          {:error, :not_found} ->
+            case find_by_fuzzy_name(ea_case_data.offender_name) do
+              {:ok, offender} ->
+                {:ok, offender}
+
+              {:error, :not_found} ->
+                create_ea_offender(ea_case_data)
+            end
         end
     end
   end
+
+  defp find_by_company_number(nil), do: {:error, :invalid_company_number}
+  defp find_by_company_number(""), do: {:error, :invalid_company_number}
+
+  defp find_by_company_number(company_number) when is_binary(company_number) do
+    # Clean the company number first
+    alias EhsEnforcement.Integrations.CompaniesHouse
+    cleaned_number = CompaniesHouse.clean_company_number(company_number)
+
+    if cleaned_number == nil or cleaned_number == "" do
+      {:error, :invalid_company_number}
+    else
+      # Query by company_registration_number using Ash
+      require Ash.Query
+
+      query =
+        Enforcement.Offender
+        |> Ash.Query.filter(company_registration_number == ^cleaned_number)
+        |> Ash.Query.limit(1)
+
+      case Ash.read(query) do
+        {:ok, [offender | _]} ->
+          {:ok, offender}
+
+        {:ok, []} ->
+          {:error, :not_found}
+
+        {:error, error} ->
+          Logger.error("Error querying by company number: #{inspect(error)}")
+          {:error, :not_found}
+      end
+    end
+  end
+
+  defp find_by_company_number(_), do: {:error, :invalid_company_number}
 
   defp find_by_exact_name(name) do
     normalized_name = normalize_company_name(name)

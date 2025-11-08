@@ -9,9 +9,23 @@ defmodule EhsEnforcement.Enforcement.Offender do
     data_layer: AshPostgres.DataLayer,
     notifiers: [Ash.Notifier.PubSub]
 
+  require Ash.Expr
+
   postgres do
     table("offenders")
     repo(EhsEnforcement.Repo)
+
+    # Define how conditional identity constraints are translated to SQL
+    identity_wheres_to_sql([
+      unique_company_number: """
+      company_registration_number IS NOT NULL AND
+      company_registration_number != ''
+      """,
+      unique_name: """
+      company_registration_number IS NULL OR
+      company_registration_number = ''
+      """
+    ])
 
     custom_indexes do
       # pg_trgm GIN indexes for fuzzy text search on offender fields
@@ -90,7 +104,18 @@ defmodule EhsEnforcement.Enforcement.Offender do
   end
 
   identities do
-    identity(:unique_name_postcode, [:normalized_name, :postcode])
+    # For companies with registration numbers (primarily EA, potentially HSE)
+    # Company registration number is authoritative - same number = same legal entity
+    # This prevents duplicates when same company operates from multiple locations
+    identity(:unique_company_number, [:company_registration_number],
+      where: expr(not is_nil(company_registration_number) and company_registration_number != "")
+    )
+
+    # For offenders without company numbers (HSE individuals, partnerships, non-UK entities)
+    # Use normalized name only (removed postcode to allow multi-location offenders)
+    identity(:unique_name, [:normalized_name],
+      where: expr(is_nil(company_registration_number) or company_registration_number == "")
+    )
   end
 
   actions do
@@ -123,15 +148,11 @@ defmodule EhsEnforcement.Enforcement.Offender do
       ])
 
       change(fn changeset, _context ->
-        case Ash.Changeset.get_attribute(changeset, :name) do
-          nil ->
-            changeset
-
-          name ->
-            # Keep original name, but add normalized version for matching
-            normalized_name = normalize_company_name(name)
-            Ash.Changeset.force_change_attribute(changeset, :normalized_name, normalized_name)
-        end
+        changeset
+        # Normalize company name for matching
+        |> normalize_name_change()
+        # Clean company registration number
+        |> clean_company_number_change()
       end)
     end
 
@@ -152,15 +173,11 @@ defmodule EhsEnforcement.Enforcement.Offender do
       ])
 
       change(fn changeset, _context ->
-        case Ash.Changeset.get_attribute(changeset, :name) do
-          nil ->
-            changeset
-
-          name ->
-            # Update normalized name when name changes
-            normalized_name = normalize_company_name(name)
-            Ash.Changeset.force_change_attribute(changeset, :normalized_name, normalized_name)
-        end
+        changeset
+        # Normalize company name for matching
+        |> normalize_name_change()
+        # Clean company registration number
+        |> clean_company_number_change()
       end)
     end
 
@@ -520,4 +537,36 @@ defmodule EhsEnforcement.Enforcement.Offender do
   end
 
   defp extract_error_message(error), do: inspect(error)
+
+  # Changeset helper functions
+
+  defp normalize_name_change(changeset) do
+    case Ash.Changeset.get_attribute(changeset, :name) do
+      nil ->
+        changeset
+
+      name ->
+        # Keep original name, but add normalized version for matching
+        normalized_name = normalize_company_name(name)
+        Ash.Changeset.force_change_attribute(changeset, :normalized_name, normalized_name)
+    end
+  end
+
+  defp clean_company_number_change(changeset) do
+    case Ash.Changeset.get_attribute(changeset, :company_registration_number) do
+      nil ->
+        changeset
+
+      number ->
+        # Clean and normalize company registration number
+        alias EhsEnforcement.Integrations.CompaniesHouse
+        cleaned = CompaniesHouse.clean_company_number(number)
+
+        Ash.Changeset.force_change_attribute(
+          changeset,
+          :company_registration_number,
+          cleaned
+        )
+    end
+  end
 end
