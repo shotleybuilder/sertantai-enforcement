@@ -100,6 +100,9 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
 
     case Ash.create(ScrapeSession, ash_session_params) do
       {:ok, session} ->
+        # Set logger metadata for this scraping session
+        Logger.metadata(session_id: session.session_id, agency: :hse)
+
         Logger.info("HSE: Created scraping session #{session.session_id}")
 
         # Store validated_params in session for execution

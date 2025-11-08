@@ -110,6 +110,15 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
 
     case Ash.create(ScrapeSession, ash_session_params) do
       {:ok, session} ->
+        # Set logger metadata for this scraping session
+        Logger.metadata(
+          session_id: session.session_id,
+          agency: :environment_agency,
+          date_from: validated_params.date_from,
+          date_to: validated_params.date_to,
+          action_types: validated_params.action_types
+        )
+
         Logger.info("EA: Created scraping session #{session.session_id}")
 
         # Store validated_params and EA-specific parameters in session

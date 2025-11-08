@@ -83,7 +83,9 @@ defmodule EhsEnforcement.Agencies.Ea.OffenderMatcher do
     |> String.replace(~r/\s+/, " ")
   end
 
-  defp extract_postcode(address) do
+  defp extract_postcode(nil), do: nil
+
+  defp extract_postcode(address) when is_binary(address) do
     # UK postcode extraction regex
     case Regex.run(~r/([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})/i, address) do
       [_, postcode] -> String.upcase(String.replace(postcode, " ", ""))
