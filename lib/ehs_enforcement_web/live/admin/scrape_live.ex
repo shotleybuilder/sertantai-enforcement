@@ -145,6 +145,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
 
         socket =
           socket
+          |> assign(:form_params, params)
           |> assign(:validation_errors, %{general: reason})
           |> put_flash(:error, "Invalid parameters: #{reason}")
 
