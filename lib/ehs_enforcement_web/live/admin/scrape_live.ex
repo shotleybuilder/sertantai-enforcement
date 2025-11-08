@@ -201,22 +201,35 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     # Merge params into existing form_params to preserve user edits
     updated_form_params = Map.merge(socket.assigns.form_params, params)
 
-    case strategy.validate_params(params) do
-      {:ok, _validated} ->
-        socket =
-          socket
-          |> assign(:form_params, updated_form_params)
-          |> assign(:validation_errors, %{})
+    # Only validate if dates appear complete (avoid validating partial input)
+    should_validate = dates_complete?(params)
 
-        {:noreply, socket}
+    if should_validate do
+      case strategy.validate_params(params) do
+        {:ok, _validated} ->
+          socket =
+            socket
+            |> assign(:form_params, updated_form_params)
+            |> assign(:validation_errors, %{})
 
-      {:error, reason} ->
-        socket =
-          socket
-          |> assign(:form_params, updated_form_params)
-          |> assign(:validation_errors, %{general: reason})
+          {:noreply, socket}
 
-        {:noreply, socket}
+        {:error, reason} ->
+          socket =
+            socket
+            |> assign(:form_params, updated_form_params)
+            |> assign(:validation_errors, %{general: reason})
+
+          {:noreply, socket}
+      end
+    else
+      # Don't validate incomplete dates - just update form params
+      socket =
+        socket
+        |> assign(:form_params, updated_form_params)
+        |> assign(:validation_errors, %{})
+
+      {:noreply, socket}
     end
   end
 
@@ -819,7 +832,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Scraping Configuration</h2>
 
-            <.form for={%{}} phx-submit="start_scraping" phx-change="validate_params" phx-debounce="500">
+            <.form for={%{}} phx-submit="start_scraping">
               <!-- Agency Selection -->
               <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Agency</label>
@@ -985,6 +998,48 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   end
 
   # Private Helper Functions
+
+  # Check if date parameters are complete enough to validate
+  # Returns false if dates are clearly incomplete (user still typing)
+  defp dates_complete?(params) do
+    date_from = params["date_from"] || params[:date_from]
+    date_to = params["date_to"] || params[:date_to]
+
+    # If no dates in params, consider complete (might be HSE scraping which doesn't use dates)
+    if is_nil(date_from) and is_nil(date_to) do
+      true
+    else
+      # Check if dates look complete (YYYY-MM-DD format with all parts filled)
+      date_from_complete? = date_looks_complete?(date_from)
+      date_to_complete? = date_looks_complete?(date_to)
+
+      # Both dates should be complete before validating
+      # OR if only one is present (date_from), it should be complete
+      case {date_from, date_to} do
+        {nil, nil} -> true
+        {_from, nil} -> date_from_complete?
+        {nil, _to} -> date_to_complete?
+        {_from, _to} -> date_from_complete? and date_to_complete?
+      end
+    end
+  end
+
+  # Check if a single date string looks complete
+  # Accepts YYYY-MM-DD or DD/MM/YYYY formats
+  defp date_looks_complete?(nil), do: false
+  defp date_looks_complete?(""), do: false
+
+  defp date_looks_complete?(date) when is_binary(date) do
+    # Check for YYYY-MM-DD format (10 chars minimum)
+    # Check for DD/MM/YYYY format (10 chars minimum)
+    # Partial dates like "dd/" or "dd/mm/" should return false
+    String.length(date) >= 10 and
+      (String.match?(date, ~r/^\d{4}-\d{2}-\d{2}$/) or
+         String.match?(date, ~r/^\d{2}\/\d{2}\/\d{4}$/))
+  end
+
+  defp date_looks_complete?(%Date{}), do: true
+  defp date_looks_complete?(_), do: false
 
   defp add_reactive_data_loading(socket, _enforcement_type) do
     # No reactive data loading needed - we only show current session data
