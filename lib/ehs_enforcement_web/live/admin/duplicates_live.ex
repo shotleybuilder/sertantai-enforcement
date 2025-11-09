@@ -44,7 +44,7 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
 
         # Cancel any existing task
         if socket.assigns.detection_task do
-          Task.shutdown(socket.assigns.detection_task, :brutal_kill)
+          _ = Task.shutdown(socket.assigns.detection_task, :brutal_kill)
         end
 
         # Start async detection task
