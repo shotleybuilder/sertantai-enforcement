@@ -190,9 +190,21 @@ defmodule EhsEnforcement.Agencies.Ea.OffenderMatcherTest do
     test "batch processing with mixed data quality simulating real scraping session" do
       # Simulates an EA scraping session with varying data quality levels
       batch_data = [
-        %{offender_name: "Complete Data Ltd", offender_address: "1 Street, SW1A 1AA", company_registration_number: "12345678"},
-        %{offender_name: "No Address Ltd", offender_address: nil, company_registration_number: "87654321"},
-        %{offender_name: "No Company Number", offender_address: "2 Street, M1 1AA", company_registration_number: nil},
+        %{
+          offender_name: "Complete Data Ltd",
+          offender_address: "1 Street, SW1A 1AA",
+          company_registration_number: "12345678"
+        },
+        %{
+          offender_name: "No Address Ltd",
+          offender_address: nil,
+          company_registration_number: "87654321"
+        },
+        %{
+          offender_name: "No Company Number",
+          offender_address: "2 Street, M1 1AA",
+          company_registration_number: nil
+        },
         %{offender_name: "Minimal Data", offender_address: nil, company_registration_number: nil},
         %{offender_name: "Empty Address String", offender_address: ""}
       ]

@@ -187,7 +187,10 @@ defmodule EhsEnforcement.EnforcementTest do
         end)
 
       # Add 50 new IDs
-      new_ids = Enum.map(101..150, fn i -> "EA-2024-#{String.pad_leading(Integer.to_string(i), 4, "0")}" end)
+      new_ids =
+        Enum.map(101..150, fn i ->
+          "EA-2024-#{String.pad_leading(Integer.to_string(i), 4, "0")}"
+        end)
 
       all_ids = existing_ids ++ new_ids
 

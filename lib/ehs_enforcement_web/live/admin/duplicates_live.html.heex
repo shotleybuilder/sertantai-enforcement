@@ -129,7 +129,9 @@
                             <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                               <div>
                                 <dt class="text-gray-500">Location</dt>
-                                <dd class="text-gray-900">{offender.town || offender.address || "—"}</dd>
+                                <dd class="text-gray-900">
+                                  {offender.town || offender.address || "—"}
+                                </dd>
                               </div>
                               <div>
                                 <dt class="text-gray-500">Postcode</dt>
@@ -170,13 +172,17 @@
                               type="button"
                               phx-click="sync_and_merge"
                               phx-value-id={offender.id}
-                              phx-value-duplicates={Jason.encode!(Enum.map(group.offenders, & &1.id) -- [offender.id])}
+                              phx-value-duplicates={
+                                Jason.encode!(Enum.map(group.offenders, & &1.id) -- [offender.id])
+                              }
                               disabled={@selected_master_id != offender.id}
                               class={[
                                 "inline-flex items-center px-3 py-1.5 border text-xs font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2",
                                 if(@selected_master_id == offender.id,
-                                  do: "border-transparent text-white bg-green-600 hover:bg-green-700 focus:ring-green-500",
-                                  else: "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
+                                  do:
+                                    "border-transparent text-white bg-green-600 hover:bg-green-700 focus:ring-green-500",
+                                  else:
+                                    "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
                                 )
                               ]}
                             >
@@ -335,7 +341,7 @@
                                 <dt class="text-sm font-medium text-gray-500">Fine</dt>
                                 <dd class="text-sm text-gray-900">
                                   <%= if record.offence_fine do %>
-                                    £<%= Decimal.round(record.offence_fine, 2) %>
+                                    £{Decimal.round(record.offence_fine, 2)}
                                   <% else %>
                                     —
                                   <% end %>
@@ -437,7 +443,15 @@
                                         {String.slice(record.notice_body, 0, 100)}...
                                         <button
                                           type="button"
-                                          phx-click={JS.add_class("hidden", to: "#notice-body-#{record.id} .notice-body-truncated") |> JS.remove_class("hidden", to: "#notice-body-#{record.id} .notice-body-full")}
+                                          phx-click={
+                                            JS.add_class("hidden",
+                                              to:
+                                                "#notice-body-#{record.id} .notice-body-truncated"
+                                            )
+                                            |> JS.remove_class("hidden",
+                                              to: "#notice-body-#{record.id} .notice-body-full"
+                                            )
+                                          }
                                           class="ml-1 text-blue-600 hover:text-blue-800 font-medium"
                                         >
                                           Show more
@@ -447,7 +461,15 @@
                                         {record.notice_body}
                                         <button
                                           type="button"
-                                          phx-click={JS.remove_class("hidden", to: "#notice-body-#{record.id} .notice-body-truncated") |> JS.add_class("hidden", to: "#notice-body-#{record.id} .notice-body-full")}
+                                          phx-click={
+                                            JS.remove_class("hidden",
+                                              to:
+                                                "#notice-body-#{record.id} .notice-body-truncated"
+                                            )
+                                            |> JS.add_class("hidden",
+                                              to: "#notice-body-#{record.id} .notice-body-full"
+                                            )
+                                          }
                                           class="ml-1 text-blue-600 hover:text-blue-800 font-medium"
                                         >
                                           Show less
@@ -471,12 +493,20 @@
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Type</dt>
                                 <dd class="text-sm text-gray-900">
-                                  {if record.business_type, do: record.business_type |> to_string() |> String.replace("_", " ") |> String.capitalize(), else: "—"}
+                                  {if record.business_type,
+                                    do:
+                                      record.business_type
+                                      |> to_string()
+                                      |> String.replace("_", " ")
+                                      |> String.capitalize(),
+                                    else: "—"}
                                 </dd>
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Location</dt>
-                                <dd class="text-sm text-gray-900">{record.town || record.address || "—"}</dd>
+                                <dd class="text-sm text-gray-900">
+                                  {record.town || record.address || "—"}
+                                </dd>
                               </div>
                               <div>
                                 <dt class="text-sm font-medium text-gray-500">Total Cases</dt>
@@ -638,8 +668,8 @@
       </div>
     </div>
   <% end %>
-
-  <!-- Merge Preview Modal -->
+  
+<!-- Merge Preview Modal -->
   <%= if @merge_preview do %>
     <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div class="relative top-10 mx-auto p-6 border max-w-3xl shadow-lg rounded-md bg-white">
@@ -657,7 +687,8 @@
 
           <%= if @merge_preview.validation do %>
             <% similarity = @merge_preview.validation.similarity %>
-            <% {bg_class, border_class, text_class, icon_name, title, message} = get_validation_display(similarity) %>
+            <% {bg_class, border_class, text_class, icon_name, title, message} =
+              get_validation_display(similarity) %>
 
             <div class={"border-l-4 p-4 mb-6 #{bg_class} #{border_class}"}>
               <div class="flex items-start">
@@ -681,7 +712,9 @@
               <div class="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
                 <div class="flex justify-between">
                   <span class="text-gray-500">Company Name:</span>
-                  <span class="text-gray-900 font-medium">{@merge_preview.companies_house_data.name}</span>
+                  <span class="text-gray-900 font-medium">
+                    {@merge_preview.companies_house_data.name}
+                  </span>
                 </div>
                 <%= if Map.get(@merge_preview.companies_house_data, :status) do %>
                   <div class="flex justify-between">
@@ -700,13 +733,17 @@
                 <%= if Map.get(@merge_preview.companies_house_data, :address) do %>
                   <div class="flex justify-between">
                     <span class="text-gray-500">Address:</span>
-                    <span class="text-gray-900">{@merge_preview.companies_house_data.address}</span>
+                    <span class="text-gray-900">
+                      {@merge_preview.companies_house_data.address}
+                    </span>
                   </div>
                 <% end %>
                 <%= if Map.get(@merge_preview.companies_house_data, :postcode) do %>
                   <div class="flex justify-between">
                     <span class="text-gray-500">Postcode:</span>
-                    <span class="text-gray-900">{@merge_preview.companies_house_data.postcode}</span>
+                    <span class="text-gray-900">
+                      {@merge_preview.companies_house_data.postcode}
+                    </span>
                   </div>
                 <% end %>
               </div>
@@ -744,11 +781,15 @@
               <div class="bg-blue-50 rounded-lg p-4 space-y-2 text-sm">
                 <div class="flex justify-between">
                   <span class="text-blue-700">Total Cases:</span>
-                  <span class="text-blue-900 font-medium">{@merge_preview.merge_preview.total_cases}</span>
+                  <span class="text-blue-900 font-medium">
+                    {@merge_preview.merge_preview.total_cases}
+                  </span>
                 </div>
                 <div class="flex justify-between">
                   <span class="text-blue-700">Total Notices:</span>
-                  <span class="text-blue-900 font-medium">{@merge_preview.merge_preview.total_notices}</span>
+                  <span class="text-blue-900 font-medium">
+                    {@merge_preview.merge_preview.total_notices}
+                  </span>
                 </div>
                 <%= if @merge_preview.merge_preview.total_fines do %>
                   <div class="flex justify-between">

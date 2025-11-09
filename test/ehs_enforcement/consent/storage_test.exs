@@ -16,9 +16,10 @@ defmodule EhsEnforcement.Consent.StorageTest do
 
     test "loads consent from database for authenticated user" do
       # Create a user
-      user = create_test_user(%{
-        email: "test-consent-#{System.unique_integer([:positive])}@example.com"
-      })
+      user =
+        create_test_user(%{
+          email: "test-consent-#{System.unique_integer([:positive])}@example.com"
+        })
 
       # Create consent record in database
       consent_params = %{
@@ -29,7 +30,8 @@ defmodule EhsEnforcement.Consent.StorageTest do
         expires_at: DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
       }
 
-      {:ok, _record} = ConsentSettings
+      {:ok, _record} =
+        ConsentSettings
         |> Ash.Changeset.for_create(:create, consent_params)
         |> Ash.create()
 
@@ -53,22 +55,27 @@ defmodule EhsEnforcement.Consent.StorageTest do
     end
 
     test "prefers newer database consent over older cookie consent" do
-      user = create_test_user(%{
-        email: "test-newer-#{System.unique_integer([:positive])}@example.com"
-      })
+      user =
+        create_test_user(%{
+          email: "test-newer-#{System.unique_integer([:positive])}@example.com"
+        })
 
       # Old cookie consent (30 days ago)
       old_time = DateTime.utc_now() |> DateTime.add(-30, :day) |> DateTime.truncate(:second)
+
       cookie_consent = %{
         "terms" => "v1.0",
         "groups" => ["essential"],
         "consented_at" => old_time,
-        "expires_at" => DateTime.utc_now() |> DateTime.add(335, :day) |> DateTime.truncate(:second)
+        "expires_at" =>
+          DateTime.utc_now() |> DateTime.add(335, :day) |> DateTime.truncate(:second)
       }
 
       # Newer database consent (today)
       new_time = DateTime.utc_now() |> DateTime.truncate(:second)
-      {:ok, _record} = ConsentSettings
+
+      {:ok, _record} =
+        ConsentSettings
         |> Ash.Changeset.for_create(:create, %{
           user_id: user.id,
           terms: "v1.0",
@@ -91,15 +98,17 @@ defmodule EhsEnforcement.Consent.StorageTest do
 
   describe "put_consent/3" do
     test "saves consent to database for authenticated user" do
-      user = create_test_user(%{
-        email: "test-save-#{System.unique_integer([:positive])}@example.com"
-      })
+      user =
+        create_test_user(%{
+          email: "test-save-#{System.unique_integer([:positive])}@example.com"
+        })
 
       consent = %{
         "terms" => "v1.0",
         "groups" => ["essential", "analytics"],
         "consented_at" => DateTime.utc_now() |> DateTime.truncate(:second),
-        "expires_at" => DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
+        "expires_at" =>
+          DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
       }
 
       conn = %Plug.Conn{assigns: %{current_user: user}}
@@ -108,7 +117,8 @@ defmodule EhsEnforcement.Consent.StorageTest do
       _updated_conn = Storage.put_consent(conn, consent, opts)
 
       # Verify record was created in database
-      records = ConsentSettings
+      records =
+        ConsentSettings
         |> Ash.Query.filter(user_id == ^user.id)
         |> Ash.read!()
 
@@ -124,7 +134,8 @@ defmodule EhsEnforcement.Consent.StorageTest do
         "terms" => "v1.0",
         "groups" => ["essential"],
         "consented_at" => DateTime.utc_now() |> DateTime.truncate(:second),
-        "expires_at" => DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
+        "expires_at" =>
+          DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
       }
 
       conn = %Plug.Conn{assigns: %{current_user: nil}}
@@ -133,7 +144,8 @@ defmodule EhsEnforcement.Consent.StorageTest do
       _updated_conn = Storage.put_consent(conn, consent, opts)
 
       # Verify no records were created in database
-      records = ConsentSettings
+      records =
+        ConsentSettings
         |> Ash.Query.filter(is_nil(user_id))
         |> Ash.read!()
 
@@ -142,16 +154,18 @@ defmodule EhsEnforcement.Consent.StorageTest do
     end
 
     test "creates new consent record each time (audit trail)" do
-      user = create_test_user(%{
-        email: "test-audit-#{System.unique_integer([:positive])}@example.com"
-      })
+      user =
+        create_test_user(%{
+          email: "test-audit-#{System.unique_integer([:positive])}@example.com"
+        })
 
       # First consent
       consent1 = %{
         "terms" => "v1.0",
         "groups" => ["essential"],
         "consented_at" => DateTime.utc_now() |> DateTime.truncate(:second),
-        "expires_at" => DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
+        "expires_at" =>
+          DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
       }
 
       conn = %Plug.Conn{assigns: %{current_user: user}}
@@ -167,13 +181,15 @@ defmodule EhsEnforcement.Consent.StorageTest do
         "terms" => "v1.0",
         "groups" => ["essential", "analytics", "marketing"],
         "consented_at" => DateTime.utc_now() |> DateTime.truncate(:second),
-        "expires_at" => DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
+        "expires_at" =>
+          DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
       }
 
       Storage.put_consent(conn, consent2, opts)
 
       # Should have 2 records (audit trail)
-      records = ConsentSettings
+      records =
+        ConsentSettings
         |> Ash.Query.filter(user_id == ^user.id)
         |> Ash.Query.sort(consented_at: :asc)
         |> Ash.read!()
@@ -186,27 +202,32 @@ defmodule EhsEnforcement.Consent.StorageTest do
 
   describe "delete_consent/2" do
     test "deletes all consent records for authenticated user" do
-      user = create_test_user(%{
-        email: "test-delete-#{System.unique_integer([:positive])}@example.com"
-      })
+      user =
+        create_test_user(%{
+          email: "test-delete-#{System.unique_integer([:positive])}@example.com"
+        })
 
       # Create multiple consent records
       for groups <- [["essential"], ["essential", "analytics"]] do
-        {:ok, _} = ConsentSettings
+        {:ok, _} =
+          ConsentSettings
           |> Ash.Changeset.for_create(:create, %{
             user_id: user.id,
             terms: "v1.0",
             groups: groups,
             consented_at: DateTime.utc_now() |> DateTime.truncate(:second),
-            expires_at: DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
+            expires_at:
+              DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
           })
           |> Ash.create()
       end
 
       # Verify records exist
-      records_before = ConsentSettings
+      records_before =
+        ConsentSettings
         |> Ash.Query.filter(user_id == ^user.id)
         |> Ash.read!()
+
       assert length(records_before) == 2
 
       # Delete consent
@@ -216,9 +237,11 @@ defmodule EhsEnforcement.Consent.StorageTest do
       Storage.delete_consent(conn, opts)
 
       # Verify records deleted
-      records_after = ConsentSettings
+      records_after =
+        ConsentSettings
         |> Ash.Query.filter(user_id == ^user.id)
         |> Ash.read!()
+
       assert records_after == []
     end
 

@@ -16,7 +16,7 @@ defmodule EhsEnforcement.Enforcement.Offender do
     repo(EhsEnforcement.Repo)
 
     # Define how conditional identity constraints are translated to SQL
-    identity_wheres_to_sql([
+    identity_wheres_to_sql(
       unique_company_number: """
       company_registration_number IS NOT NULL AND
       company_registration_number != ''
@@ -25,7 +25,7 @@ defmodule EhsEnforcement.Enforcement.Offender do
       company_registration_number IS NULL OR
       company_registration_number = ''
       """
-    ])
+    )
 
     custom_indexes do
       # pg_trgm GIN indexes for fuzzy text search on offender fields
@@ -222,8 +222,11 @@ defmodule EhsEnforcement.Enforcement.Offender do
       accept([])
 
       argument :duplicate_ids, {:array, :uuid} do
-        allow_nil? false
-        description("IDs of duplicate offenders to merge into this one (ALL orphans deleted after merge)")
+        allow_nil?(false)
+
+        description(
+          "IDs of duplicate offenders to merge into this one (ALL orphans deleted after merge)"
+        )
       end
 
       change(fn changeset, _context ->
@@ -242,10 +245,12 @@ defmodule EhsEnforcement.Enforcement.Offender do
               {:ok, profile} ->
                 # 2. Validate name similarity (>= 0.9)
                 canonical_name = profile["company_name"]
-                similarity = String.jaro_distance(
-                  normalize_company_name(changeset.data.name),
-                  normalize_company_name(canonical_name)
-                )
+
+                similarity =
+                  String.jaro_distance(
+                    normalize_company_name(changeset.data.name),
+                    normalize_company_name(canonical_name)
+                  )
 
                 Logger.info("Companies House validation: similarity=#{similarity}")
 
@@ -267,7 +272,10 @@ defmodule EhsEnforcement.Enforcement.Offender do
                 }
 
               {:error, reason} ->
-                Logger.warning("Companies House lookup failed: #{inspect(reason)} - proceeding without validation")
+                Logger.warning(
+                  "Companies House lookup failed: #{inspect(reason)} - proceeding without validation"
+                )
+
                 # Company not found (dissolved, bad number, etc) - proceed without Companies House data
                 %{}
             end
@@ -290,7 +298,9 @@ defmodule EhsEnforcement.Enforcement.Offender do
         duplicates =
           Enum.map(duplicate_ids, fn id ->
             case Ash.get(EhsEnforcement.Enforcement.Offender, id) do
-              {:ok, offender} -> offender
+              {:ok, offender} ->
+                offender
+
               {:error, error} ->
                 Logger.error("Failed to load duplicate #{id}: #{inspect(error)}")
                 raise "Failed to load duplicate offender: #{inspect(error)}"
@@ -353,7 +363,9 @@ defmodule EhsEnforcement.Enforcement.Offender do
             Decimal.add(acc, case_record.offence_fine || Decimal.new(0))
           end)
 
-        Logger.info("Recalculated stats: cases=#{total_cases}, notices=#{total_notices}, fines=#{total_fines}")
+        Logger.info(
+          "Recalculated stats: cases=#{total_cases}, notices=#{total_notices}, fines=#{total_fines}"
+        )
 
         # 7. Merge array fields (agencies, industry_sectors) from duplicates
         all_agencies =
@@ -381,10 +393,12 @@ defmodule EhsEnforcement.Enforcement.Offender do
                 case Ash.destroy(duplicate) do
                   :ok ->
                     Logger.info("Deleted duplicate offender: #{duplicate_id}")
+
                   {:error, error} ->
                     Logger.error("Failed to delete duplicate #{duplicate_id}: #{inspect(error)}")
                     raise "Failed to delete duplicate: #{inspect(error)}"
                 end
+
               {:error, error} ->
                 Logger.error("Failed to load duplicate #{duplicate_id}: #{inspect(error)}")
             end

@@ -12,7 +12,9 @@ defmodule EhsEnforcement.Enforcement.Notice do
     table("notices")
     repo(EhsEnforcement.Repo)
 
-    identity_wheres_to_sql(unique_airtable_id: "airtable_id IS NOT NULL")
+    identity_wheres_to_sql(
+      unique_regulator_per_agency: "regulator_id IS NOT NULL AND regulator_id != ''"
+    )
 
     # R4.1: Data validation constraints
     check_constraints do
@@ -136,7 +138,15 @@ defmodule EhsEnforcement.Enforcement.Notice do
   end
 
   identities do
-    identity(:unique_airtable_id, [:airtable_id], where: expr(not is_nil(airtable_id)))
+    # Composite unique constraint: A notice is uniquely identified by (regulator_id, agency_id)
+    # This prevents duplicate notices from being created during scraping
+    # and ensures cross-agency IDs don't conflict (HSE uses 9-digit, EA uses 8-digit)
+    # Only applies when regulator_id is not NULL and not empty string
+    identity(
+      :unique_regulator_per_agency,
+      [:regulator_id, :agency_id],
+      where: expr(not is_nil(regulator_id) and regulator_id != "")
+    )
   end
 
   actions do

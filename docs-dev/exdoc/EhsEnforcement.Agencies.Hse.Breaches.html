@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
 
-    <script defer src="dist/sidebar_items-B0639F27.js"></script>
+    <script defer src="dist/sidebar_items-238F71B7.js"></script>
     <script defer src="docs_config.js"></script>
     <script defer src="dist/html-DPJLHKSM.js"></script>
 
@@ -251,7 +251,8 @@ Handles parsing and linking of HSE breach data to legislation records.</p>
 
       <div class="specs">
 
-          <pre translate="no"><span class="attribute">@spec</span> find_or_create_hse_legislation(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+          <pre translate="no"><span class="attribute">@spec</span> find_or_create_hse_legislation(%{title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), year: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()}</pre>
 
       </div>
 
@@ -311,7 +312,9 @@ Handles parsing and linking of HSE breach data to legislation records.</p>
 
       <div class="specs">
 
-          <pre translate="no"><span class="attribute">@spec</span> parse_hse_breach_components(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+          <pre translate="no"><span class="attribute">@spec</span> parse_hse_breach_components(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) ::
+  {:ok, %{section: nil | <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), title: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), year: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}}
+  | {:error, {:parse_error, <a href="https://hexdocs.pm/elixir/Exception.html#t:t/0">Exception.t</a>()}}</pre>
 
       </div>
 
@@ -368,7 +371,7 @@ Examples:</p><ul><li>&quot;Health and Safety at Work Act 1974 / Section 2(1)&quo
       <div class="specs">
 
           <pre translate="no"><span class="attribute">@spec</span> process_single_breach_with_deduplication(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">integer</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
-  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+  {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
 
       </div>
 

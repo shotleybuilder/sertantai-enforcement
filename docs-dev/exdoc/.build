@@ -69,6 +69,7 @@ EhsEnforcement.Integrations.Airtable.Records.html
 EhsEnforcement.Integrations.Airtable.ReqClient.html
 EhsEnforcement.Integrations.Airtable.UkAirtable.html
 EhsEnforcement.Integrations.Airtable.Url.html
+EhsEnforcement.Integrations.CompaniesHouse.html
 EhsEnforcement.Legislation.LegalRegister.html
 EhsEnforcement.Legislation.Models.html
 EhsEnforcement.Legislation.SClass.html
@@ -204,8 +205,8 @@ dist/lato-latin-700-normal-2XVSBPG4.woff2
 dist/lato-latin-ext-400-normal-N27NCBWW.woff2
 dist/lato-latin-ext-700-normal-Q2L5DVMW.woff2
 dist/remixicon-QPNJX265.woff2
-dist/search_data-F02F3A8D.js
-dist/sidebar_items-B0639F27.js
+dist/search_data-B7339772.js
+dist/sidebar_items-238F71B7.js
 index.html
 readme.html
 search.html

@@ -119,7 +119,9 @@ defmodule EhsEnforcement.Accounts.User do
         # Check if user should be admin based on GITHUB_ALLOWED_USERS
         config = Application.get_env(:ehs_enforcement, :github_admin, [])
         allowed_users = Keyword.get(config, :allowed_users, [])
-        is_admin = is_list(allowed_users) and length(allowed_users) > 0 and github_login in allowed_users
+
+        is_admin =
+          is_list(allowed_users) and length(allowed_users) > 0 and github_login in allowed_users
 
         changeset
         |> Ash.Changeset.change_attribute(:email, downcase_email(user_info["email"]))

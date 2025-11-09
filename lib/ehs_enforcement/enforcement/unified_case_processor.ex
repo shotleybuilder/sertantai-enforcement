@@ -95,7 +95,7 @@ defmodule EhsEnforcement.Enforcement.UnifiedCaseProcessor do
                 event: "scraped:updated",
                 payload: notification
               }
-          )
+            )
 
           Logger.info(
             "Successfully triggered PubSub for existing case (UI): #{existing_case.regulator_id}"

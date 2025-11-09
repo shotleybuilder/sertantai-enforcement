@@ -65,8 +65,7 @@ if config_env() == :dev do
          System.get_env("TOKEN_SIGNING_SECRET") || "dev-only-secret-change-in-production"
 
   # Companies House API configuration
-  config :ehs_enforcement, :companies_house,
-    api_key: System.get_env("COMPANIES_HOUSE_API_KEY")
+  config :ehs_enforcement, :companies_house, api_key: System.get_env("COMPANIES_HOUSE_API_KEY")
 end
 
 # ## Using releases
@@ -165,8 +164,7 @@ if config_env() == :prod do
            raise("TOKEN_SIGNING_SECRET environment variable is missing")
 
   # Companies House API configuration for production
-  config :ehs_enforcement, :companies_house,
-    api_key: System.get_env("COMPANIES_HOUSE_API_KEY")
+  config :ehs_enforcement, :companies_house, api_key: System.get_env("COMPANIES_HOUSE_API_KEY")
 
   # ## SSL Support
   #

@@ -168,76 +168,78 @@ defmodule EhsEnforcementWeb.Admin.ScrapingLive.Index do
   # Private Functions
 
   defp load_scraping_data(socket) do
-    {:ok, _pid} = Task.start_link(fn ->
-      try do
-        # Load recent cases using proper Ash query syntax
-        recent_cases =
-          Case
-          |> Ash.Query.sort(inserted_at: :desc)
-          |> Ash.Query.limit(20)
-          |> Ash.Query.load([:agency, :offender])
-          |> Ash.read!(actor: socket.assigns.current_user)
+    {:ok, _pid} =
+      Task.start_link(fn ->
+        try do
+          # Load recent cases using proper Ash query syntax
+          recent_cases =
+            Case
+            |> Ash.Query.sort(inserted_at: :desc)
+            |> Ash.Query.limit(20)
+            |> Ash.Query.load([:agency, :offender])
+            |> Ash.read!(actor: socket.assigns.current_user)
 
-        # Calculate statistics from actual case data
-        stats = calculate_case_statistics(recent_cases, socket.assigns.date_range)
+          # Calculate statistics from actual case data
+          stats = calculate_case_statistics(recent_cases, socket.assigns.date_range)
 
-        send(
-          self(),
-          {:scraping_data_loaded,
-           %{
-             recent_cases: recent_cases,
-             case_stats: stats
-           }}
-        )
-      rescue
-        error ->
-          Logger.error("Failed to load scraping data: #{inspect(error)}")
-          send(self(), {:scraping_data_error, error})
-      end
-    end)
+          send(
+            self(),
+            {:scraping_data_loaded,
+             %{
+               recent_cases: recent_cases,
+               case_stats: stats
+             }}
+          )
+        rescue
+          error ->
+            Logger.error("Failed to load scraping data: #{inspect(error)}")
+            send(self(), {:scraping_data_error, error})
+        end
+      end)
 
     socket
   end
 
   defp load_filtered_cases(socket, agency_filter) do
-    {:ok, _pid} = Task.start_link(fn ->
-      try do
-        # Build query with agency filter
-        cases_query =
-          Case
-          |> Ash.Query.sort(inserted_at: :desc)
-          |> Ash.Query.limit(50)
-          |> Ash.Query.load([:agency, :offender])
+    {:ok, _pid} =
+      Task.start_link(fn ->
+        try do
+          # Build query with agency filter
+          cases_query =
+            Case
+            |> Ash.Query.sort(inserted_at: :desc)
+            |> Ash.Query.limit(50)
+            |> Ash.Query.load([:agency, :offender])
 
-        # Apply agency filter if not "all"
-        cases_query =
-          if agency_filter != "all" do
-            agency_atom = String.to_atom(agency_filter)
-            Ash.Query.filter(cases_query, agency.code == ^agency_atom)
-          else
-            cases_query
-          end
+          # Apply agency filter if not "all"
+          cases_query =
+            if agency_filter != "all" do
+              agency_atom = String.to_atom(agency_filter)
+              Ash.Query.filter(cases_query, agency.code == ^agency_atom)
+            else
+              cases_query
+            end
 
-        # Apply date range filter
-        cases_query = apply_date_filter(cases_query, socket.assigns.date_range)
+          # Apply date range filter
+          cases_query = apply_date_filter(cases_query, socket.assigns.date_range)
 
-        filtered_cases = Ash.read!(cases_query, actor: socket.assigns.current_user)
-        stats = calculate_case_statistics(filtered_cases, socket.assigns.date_range)
+          filtered_cases = Ash.read!(cases_query, actor: socket.assigns.current_user)
+          stats = calculate_case_statistics(filtered_cases, socket.assigns.date_range)
 
-        send(
-          self(),
-          {:filtered_cases_loaded,
-           %{
-             recent_cases: filtered_cases,
-             case_stats: stats
-           }}
-        )
-      rescue
-        error ->
-          Logger.error("Failed to load filtered cases: #{inspect(error)}")
-          send(self(), {:scraping_data_error, error})
-      end
-    end)
+          send(
+            self(),
+            {:filtered_cases_loaded,
+             %{
+               recent_cases: filtered_cases,
+               case_stats: stats
+             }}
+          )
+        rescue
+          error ->
+            Logger.error("Failed to load filtered cases: #{inspect(error)}")
+            send(self(), {:scraping_data_error, error})
+        end
+      end)
 
     socket
   end

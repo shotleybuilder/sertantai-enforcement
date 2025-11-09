@@ -326,35 +326,36 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   # Private functions
 
   defp load_scraping_configurations(socket) do
-    {:ok, _pid} = Task.start_link(fn ->
-      try do
-        # Load all configurations - handle case where current_user might be nil
-        actor = socket.assigns[:current_user]
+    {:ok, _pid} =
+      Task.start_link(fn ->
+        try do
+          # Load all configurations - handle case where current_user might be nil
+          actor = socket.assigns[:current_user]
 
-        {:ok, all_configs} =
-          if actor do
-            Ash.read(ScrapingConfig, actor: actor)
-          else
-            Ash.read(ScrapingConfig)
-          end
+          {:ok, all_configs} =
+            if actor do
+              Ash.read(ScrapingConfig, actor: actor)
+            else
+              Ash.read(ScrapingConfig)
+            end
 
-        # Find active configuration
-        active_config = Enum.find(all_configs, & &1.is_active)
+          # Find active configuration
+          active_config = Enum.find(all_configs, & &1.is_active)
 
-        send(
-          self(),
-          {:config_data_loaded,
-           %{
-             active_config: active_config,
-             all_configs: all_configs
-           }}
-        )
-      rescue
-        error ->
-          Logger.error("Failed to load scraping configurations: #{inspect(error)}")
-          send(self(), {:config_data_error, error})
-      end
-    end)
+          send(
+            self(),
+            {:config_data_loaded,
+             %{
+               active_config: active_config,
+               all_configs: all_configs
+             }}
+          )
+        rescue
+          error ->
+            Logger.error("Failed to load scraping configurations: #{inspect(error)}")
+            send(self(), {:config_data_error, error})
+        end
+      end)
 
     socket
   end

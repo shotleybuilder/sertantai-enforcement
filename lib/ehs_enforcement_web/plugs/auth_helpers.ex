@@ -21,7 +21,10 @@ defmodule EhsEnforcementWeb.Plugs.AuthHelpers do
 
     # Debug logging
     Logger.debug("load_current_user: current_user = #{inspect(conn.assigns[:current_user])}")
-    Logger.debug("load_current_user: session keys = #{inspect(Map.keys(Plug.Conn.get_session(conn)))}")
+
+    Logger.debug(
+      "load_current_user: session keys = #{inspect(Map.keys(Plug.Conn.get_session(conn)))}"
+    )
 
     # The user should now be in conn.assigns.current_user
     case conn.assigns[:current_user] do
@@ -62,6 +65,7 @@ defmodule EhsEnforcementWeb.Plugs.AuthHelpers do
 
       _ ->
         Logger.debug("require_admin_user: FAILED - redirecting to /")
+
         conn
         |> put_status(:forbidden)
         |> put_flash(:error, "Admin privileges required")

@@ -286,8 +286,8 @@
                     <span class="text-gray-400">0</span>
                   <% end %>
                 </td>
-
-                <!-- Actions -->
+                
+<!-- Actions -->
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <%= if session.status in [:pending, :running] do %>
                     <button
@@ -297,7 +297,12 @@
                       data-confirm="Are you sure you want to stop this session? This action cannot be undone."
                       class="inline-flex items-center px-2 py-1 border border-red-300 shadow-sm text-xs font-medium rounded text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
-                      <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        class="h-3 w-3 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           stroke-linecap="round"
                           stroke-linejoin="round"

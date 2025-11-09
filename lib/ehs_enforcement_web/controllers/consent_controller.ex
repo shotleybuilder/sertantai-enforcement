@@ -22,6 +22,7 @@ defmodule EhsEnforcementWeb.ConsentController do
       resource: EhsEnforcement.Consent.ConsentSettings,
       user_id_key: :current_user
     ]
+
     conn = Storage.put_consent(conn, consent, storage_opts)
 
     # Redirect back to the referring page or home
@@ -61,14 +62,18 @@ defmodule EhsEnforcementWeb.ConsentController do
       nil ->
         # Extract path from referer header (it returns full URL, we need just the path)
         case get_req_header(conn, "referer") |> List.first() do
-          nil -> "/"
+          nil ->
+            "/"
+
           referer_url ->
             case URI.parse(referer_url) do
               %URI{path: path} when is_binary(path) -> path
               _ -> "/"
             end
         end
-      redirect_to -> redirect_to
+
+      redirect_to ->
+        redirect_to
     end
   end
 end

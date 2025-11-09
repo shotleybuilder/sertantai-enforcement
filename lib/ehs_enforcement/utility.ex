@@ -250,7 +250,8 @@ defmodule EhsEnforcement.Utility do
 
   @spec split_name(String.t()) ::
           {:error, String.t()}
-          | {String.t() | {integer(), integer()}, String.t() | {integer(), integer()}, String.t() | {integer(), integer()}}
+          | {String.t() | {integer(), integer()}, String.t() | {integer(), integer()},
+             String.t() | {integer(), integer()}}
   def split_name(name) do
     # UK_TLA_type-code_year_number
     case Regex.run(~r/([a-z]*?)_(\d{4})_(.*)$/, name) do
