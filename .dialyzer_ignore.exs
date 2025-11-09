@@ -66,5 +66,8 @@
 
   # Legislation taxa - contract and guard issues in legacy tax-classification code
   {"lib/ehs_enforcement/legislation/taxa/lat_taxa.ex", :invalid_contract},
-  {"lib/ehs_enforcement/legislation/taxa/lat_taxa.ex", :exact_eq}
+  {"lib/ehs_enforcement/legislation/taxa/lat_taxa.ex", :exact_eq},
+
+  # DuplicatesLive - Task.shutdown return value intentionally ignored when canceling tasks
+  {"lib/ehs_enforcement_web/live/admin/duplicates_live.ex", :unmatched_return}
 ]
