@@ -162,15 +162,28 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 | `total_cases` | `integer` | NOT NULL, DEFAULT 0 | Total court cases count |
 | `total_notices` | `integer` | NOT NULL, DEFAULT 0 | Total notices count |
 | `total_fines` | `decimal` | NOT NULL, DEFAULT 0 | Total fine amounts |
+| `company_registration_number` | `text` | NULLABLE | Companies House registration number (UK only) |
+| `company_registration_validated` | `boolean` | DEFAULT false | Whether Companies House validation succeeded |
+| `company_validation_confidence` | `decimal` | NULLABLE | Similarity score from Companies House match (0-1) |
+| `company_validation_date` | `timestamp` | NULLABLE | When Companies House validation was performed |
 | `inserted_at` | `timestamp` | NOT NULL | Record creation time |
 | `updated_at` | `timestamp` | NOT NULL | Record update time |
 
 **Indexes**:
 - `offenders_unique_name_postcode_index` (UNIQUE on `[:normalized_name, :postcode]`)
+- `offenders_unique_company_number_index` (UNIQUE on `company_registration_number` WHERE `company_registration_number IS NOT NULL`)
 
-**Ash Identity**: `unique_name_postcode` on `[:normalized_name, :postcode]`
+**Ash Identities**:
+- `unique_name_postcode` on `[:normalized_name, :postcode]`
+- `unique_company_number` on `[:company_registration_number]` WHERE `not is_nil(company_registration_number)`
 
 **Ash Constraints**: `business_type` must be one of `[:limited_company, :individual, :partnership, :plc, :other]`
+
+**Companies House Integration (Nov 2025)**:
+- Offender deduplication uses Companies House API for UK company validation
+- `company_registration_number` prevents duplicates via unique constraint
+- `company_validation_confidence` stores similarity match score (threshold: 0.9 for production)
+- Merge preview UI shows validation before executing duplicate merges
 
 **Relationships**:
 - `has_many :cases` → `cases.offender_id`
@@ -215,7 +228,7 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 
 **Indexes**:
 - `cases_unique_case_reference_index` (UNIQUE on `case_reference` WHERE `case_reference IS NOT NULL`)
-- `cases_unique_case_per_agency_index` (UNIQUE COMPOSITE on `[agency_id, regulator_id]`)
+- `cases_unique_case_per_agency_index` (UNIQUE COMPOSITE on `[agency_id, regulator_id]` WHERE `regulator_id IS NOT NULL`)
 - `cases_offence_action_date_index` on `offence_action_date` (dashboard metrics)
 - `cases_agency_id_index` on `agency_id` (filtering performance)
 - `cases_agency_date_index` (COMPOSITE on `[:agency_id, :offence_action_date]`)
@@ -225,13 +238,22 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 
 **Ash Identities**:
 - `unique_case_reference` on `[:case_reference]` WHERE `not is_nil(case_reference)`
-- `unique_case_per_agency` on `[:agency_id, :regulator_id]`
+- `unique_case_per_agency` on `[:agency_id, :regulator_id]` WHERE `not is_nil(regulator_id)`
 
-**Schema Changes (Oct 2025)**:
-- Renamed `airtable_id` → `case_reference` to better reflect multi-agency usage
-- Added composite unique constraint on `[agency_id, regulator_id]` for cross-agency uniqueness
-- Added EA-specific fields for Environment Agency enforcement data
-- Re-added `offence_breaches` field for backward compatibility with processing
+**Schema Changes (Oct-Nov 2025)**:
+- Renamed `airtable_id` → `case_reference` to better reflect multi-agency usage (Oct 2025)
+- Added composite unique constraint on `[agency_id, regulator_id]` for cross-agency uniqueness (Oct 2025)
+- Added EA-specific fields for Environment Agency enforcement data (Oct 2025)
+- Re-added `offence_breaches` field for backward compatibility with processing (Oct 2025)
+
+**Deduplication History (Nov 2025)**:
+- **Issue #10**: Removed 543 corrupt HSE cases with EA-pattern regulator_ids
+  - Cases had 3-4 digit IDs (EA pattern) instead of 8-digit HSE pattern
+  - All corrupt cases had empty data (no fines, costs, action types)
+  - Verified via manual checks against agency websites
+- **Composite Constraint**: `(agency_id, regulator_id)` prevents cross-agency duplicates
+- **Duplicate Detector**: Updated to respect agency boundaries (removed aggressive financial matching strategy)
+- **Result**: 0 true duplicates remaining in database
 
 **Foreign Keys**:
 - `cases_agency_id_fkey`: `agency_id` → `agencies.id`
@@ -281,6 +303,7 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 
 **Indexes**:
 - `notices_unique_airtable_id_index` (UNIQUE on `airtable_id` WHERE `airtable_id IS NOT NULL`)
+- `notices_unique_regulator_per_agency_index` (UNIQUE COMPOSITE on `[:regulator_id, :agency_id]` WHERE `regulator_id IS NOT NULL AND regulator_id != ''`)
 - `notices_offence_action_date_index` on `offence_action_date` (dashboard metrics)
 - `notices_agency_id_index` on `agency_id` (filtering performance)
 - `notices_agency_date_index` (COMPOSITE on `[:agency_id, :offence_action_date]`)
@@ -295,7 +318,19 @@ The EHS Enforcement application uses PostgreSQL as its primary database with Ash
 - Added EA-specific fields for Environment Agency enforcement notices
 - Re-added `offence_breaches` field for backward compatibility with processing
 
-**Ash Identity**: `unique_airtable_id` on `[:airtable_id]` WHERE `not is_nil(airtable_id)`
+**Deduplication History (Nov 2025)**:
+- **Issue #4**: Removed 1,693 duplicate notices from production database
+  - 1,693 HSE notices incorrectly created with EA regulator_id values
+  - Cross-agency contamination: 48 HSE notices with EA IDs (same pattern as case duplicates)
+  - All duplicates had correct EA counterparts with complete data
+  - SQL bulk cleanup strategy used for efficient removal
+- **Composite Constraint**: `(regulator_id, agency_id)` prevents cross-agency duplicates
+- **Duplicate Detector**: Updated to respect agency boundaries and regulator_id format patterns
+- **Result**: 0 true duplicates remaining in database after cleanup
+
+**Ash Identities**:
+- `unique_airtable_id` on `[:airtable_id]` WHERE `not is_nil(airtable_id)`
+- `unique_regulator_per_agency` on `[:regulator_id, :agency_id]` WHERE `expr(not is_nil(regulator_id) and regulator_id != "")`
 
 **Foreign Keys**:
 - `notices_agency_id_fkey`: `agency_id` → `agencies.id`
