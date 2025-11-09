@@ -439,19 +439,52 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
         socket
       end
 
-    # Reload duplicates asynchronously after deletion
-    task =
-      Task.async(fn ->
-        load_duplicates_for_tab(socket.assigns.active_tab, socket.assigns.current_user)
+    # Optimize: Update cache immediately instead of full database reload
+    # Get successfully deleted IDs
+    deleted_ids =
+      results
+      |> Enum.filter(&match?({:ok, _}, &1))
+      |> Enum.map(fn {:ok, id} -> id end)
+      |> MapSet.new()
+
+    # Update duplicates list by removing deleted records and empty groups
+    updated_duplicates =
+      get_current_duplicates(socket.assigns)
+      |> Enum.map(fn group ->
+        # Remove deleted records from this group
+        Enum.reject(group, fn record -> MapSet.member?(deleted_ids, record.id) end)
       end)
+      |> Enum.reject(fn group ->
+        # Remove groups that now have < 2 records (no longer duplicates)
+        length(group) < 2
+      end)
+
+    # Update the appropriate duplicates list based on active tab
+    socket =
+      case socket.assigns.active_tab do
+        :cases ->
+          assign(socket, :case_duplicates, updated_duplicates)
+
+        :notices ->
+          assign(socket, :notice_duplicates, updated_duplicates)
+
+        :offenders ->
+          assign(socket, :offender_duplicates, updated_duplicates)
+      end
+
+    # Adjust current group index if needed (if we deleted the last group)
+    new_index =
+      if socket.assigns.current_group_index >= length(updated_duplicates) do
+        max(0, length(updated_duplicates) - 1)
+      else
+        socket.assigns.current_group_index
+      end
 
     {:noreply,
      socket
      |> assign(:action_confirmation, nil)
      |> assign(:selected_records, MapSet.new())
-     |> assign(:current_group_index, 0)
-     |> assign(:loading, true)
-     |> assign(:detection_task, task)}
+     |> assign(:current_group_index, new_index)}
   end
 
   defp execute_merge_action(socket, _record_ids) do
