@@ -7,40 +7,26 @@ defmodule EhsEnforcement.Enforcement.DuplicateDetector do
   require Ash.Query
 
   @doc """
-  Find duplicate cases using multiple strategies.
+  Find duplicate cases based on regulator_id + agency_id.
+
+  A true duplicate is defined as cases with the same regulator_id within the same agency.
+  This matches the unique constraint: (regulator_id, agency_id).
   """
   def find_duplicate_cases(current_user) do
     try do
       # Load cases with offender and agency relationships for display in UI
       query = Case |> Ash.Query.load([:offender, :agency])
 
-      # Strategy 1: Find cases with exact regulator_id matches
-      regulator_id_duplicates =
+      # Find cases with same regulator_id within the same agency
+      duplicates =
         case Ash.read(query, actor: current_user) do
           {:ok, cases} ->
             cases
             |> Enum.filter(fn case ->
-              case.regulator_id && String.trim(case.regulator_id) != ""
-            end)
-            |> Enum.group_by(fn case -> String.trim(case.regulator_id) end)
-            |> Enum.filter(fn {_regulator_id, cases} -> length(cases) > 1 end)
-            |> Enum.map(fn {_regulator_id, cases} -> cases end)
-
-          {:error, _error} ->
-            []
-        end
-
-      # Strategy 2: Find cases with same offender + exact fine + costs amounts
-      financial_duplicates =
-        case Ash.read(query, actor: current_user) do
-          {:ok, cases} ->
-            cases
-            |> Enum.filter(fn case ->
-              case.offender_id && case.offence_fine && case.offence_costs &&
-                Decimal.compare(case.offence_fine, Decimal.new(0)) == :gt
+              case.regulator_id && String.trim(case.regulator_id) != "" && case.agency_id
             end)
             |> Enum.group_by(fn case ->
-              {case.offender_id, case.offence_fine, case.offence_costs}
+              {case.agency_id, String.trim(case.regulator_id)}
             end)
             |> Enum.filter(fn {_key, cases} -> length(cases) > 1 end)
             |> Enum.map(fn {_key, cases} -> cases end)
@@ -49,11 +35,7 @@ defmodule EhsEnforcement.Enforcement.DuplicateDetector do
             []
         end
 
-      # Combine all duplicate groups and remove overlaps
-      all_duplicates = regulator_id_duplicates ++ financial_duplicates
-      unique_groups = remove_overlapping_groups(all_duplicates)
-
-      {:ok, unique_groups}
+      {:ok, duplicates}
     rescue
       error ->
         {:error, error}
