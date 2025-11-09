@@ -11,7 +11,6 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
 
   require Logger
 
-  alias EhsEnforcement.Enforcement
   alias EhsEnforcement.Utility
   alias EhsEnforcement.Scraping.RateLimiter
   alias EhsEnforcement.Scraping.Shared.MonetaryParser

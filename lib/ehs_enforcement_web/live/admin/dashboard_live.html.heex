@@ -720,6 +720,32 @@
                 </svg>
               </div>
             </a>
+            <a
+              href={~p"/admin/offenders/reviews"}
+              class="w-full text-left bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 px-4 py-3 rounded-md transition-colors block border border-emerald-200"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-semibold text-gray-900">
+                  🏢 Review Companies House Matches
+                </span>
+                <svg
+                  class="w-4 h-4 text-emerald-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+              <p class="mt-1 text-xs text-gray-600">
+                Approve medium-confidence company matches
+              </p>
+            </a>
             <button
               phx-click="check_offender_duplicates"
               class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors"

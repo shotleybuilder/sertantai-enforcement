@@ -92,6 +92,24 @@ defmodule EhsEnforcement.Enforcement do
       define(:search_offence_description, action: :search_description, args: [:search_term])
       define(:bulk_create_offences, action: :bulk_create)
     end
+
+    resource EhsEnforcement.Enforcement.OffenderMatchReview do
+      define(:list_reviews, action: :read)
+      define(:get_review, action: :read, get_by: [:id])
+      define(:create_review, action: :create)
+
+      define(:approve_match,
+        action: :approve_match,
+        args: [:reviewed_by_id, :selected_company_number]
+      )
+
+      define(:skip_match, action: :skip_match, args: [:reviewed_by_id])
+      define(:flag_for_later, action: :flag_for_later, args: [:reviewed_by_id])
+      define(:pending_reviews, action: :pending_reviews)
+      define(:reviews_by_offender, action: :by_offender, args: [:offender_id])
+      define(:reviews_by_status, action: :by_status, args: [:status])
+      define(:reviews_by_user, action: :reviewed_by_user, args: [:user_id])
+    end
   end
 
   forms do

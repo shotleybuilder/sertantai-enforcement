@@ -101,7 +101,7 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
 
   Uses a hybrid 3-tier matching strategy:
   - High confidence: Auto-match and return company_registration_number
-  - Medium confidence: Log for manual review (future UI feature)
+  - Medium confidence: Return candidates for manual review
   - Low confidence: Skip matching
 
   ## Parameters
@@ -110,8 +110,9 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
 
   ## Returns
 
-  - `{:ok, enhanced_attrs}` - Attrs with company_registration_number added if matched
-  - `{:ok, original_attrs}` - Original attrs if no high-confidence match
+  - `{:ok, enhanced_attrs}` - Attrs with company_registration_number added if high-confidence match
+  - `{:ok, original_attrs, :needs_review, candidates}` - Medium confidence, needs manual review
+  - `{:ok, original_attrs}` - No match or low confidence
   - `{:error, reason}` - Error during matching (original attrs still usable)
 
   ## High Confidence Criteria
@@ -242,6 +243,112 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
     end
   end
 
+  defp prepare_candidates_for_review(active_companies) do
+    # Take top 3 candidates and format for review record
+    active_companies
+    |> Enum.take(3)
+    |> Enum.map(fn candidate ->
+      %{
+        "company_number" => candidate.company_number,
+        "company_name" => candidate.company_name,
+        "company_status" => candidate.company_status,
+        "company_type" => candidate.company_type,
+        "address" => format_candidate_address(candidate),
+        "similarity_score" => calculate_similarity_score(candidate)
+      }
+    end)
+  end
+
+  defp format_candidate_address(candidate) do
+    # Companies House API provides address as a map
+    address = candidate.address
+
+    [
+      address["address_line_1"],
+      address["address_line_2"],
+      address["locality"],
+      address["region"],
+      address["postal_code"]
+    ]
+    |> Enum.filter(&(&1 != nil and &1 != ""))
+    |> Enum.join(", ")
+  end
+
+  defp calculate_similarity_score(_candidate) do
+    # Placeholder - actual similarity will be calculated based on offender name
+    # This will be properly calculated in create_medium_confidence_review/3
+    0.85
+  end
+
+  @doc """
+  Creates a review record for medium-confidence Companies House matches.
+
+  This function should be called AFTER the offender has been created.
+
+  ## Parameters
+
+  - `offender` - The created offender Ash struct
+  - `candidates` - List of candidate company maps from prepare_candidates_for_review/1
+
+  ## Returns
+
+  - `{:ok, review}` - Successfully created review record
+  - `{:error, reason}` - Failed to create review record
+
+  ## Examples
+
+      iex> offender = %Offender{id: "uuid", name: "Example Ltd"}
+      iex> candidates = [%{"company_number" => "12345678", ...}, ...]
+      iex> OffenderBuilder.create_medium_confidence_review(offender, candidates)
+      {:ok, %OffenderMatchReview{...}}
+  """
+  def create_medium_confidence_review(offender, candidates) when is_list(candidates) do
+    # Calculate confidence score from candidates (use highest similarity)
+    confidence_score =
+      candidates
+      |> Enum.map(fn candidate ->
+        similarity =
+          calculate_name_similarity(offender.name, candidate["company_name"])
+
+        Map.put(candidate, "similarity_score", similarity)
+      end)
+      |> Enum.max_by(fn candidate -> candidate["similarity_score"] end)
+      |> Map.get("similarity_score")
+
+    # Update candidates with actual similarity scores
+    updated_candidates =
+      Enum.map(candidates, fn candidate ->
+        similarity = calculate_name_similarity(offender.name, candidate["company_name"])
+        Map.put(candidate, "similarity_score", similarity)
+      end)
+
+    # Create review record
+    review_attrs = %{
+      offender_id: offender.id,
+      searched_at: DateTime.utc_now(),
+      candidate_companies: updated_candidates,
+      confidence_score: confidence_score,
+      status: :pending
+    }
+
+    case EhsEnforcement.Enforcement.create_review(review_attrs) do
+      {:ok, review} ->
+        Logger.info(
+          "Created review record for offender #{offender.name} (#{offender.id}) " <>
+            "with #{length(candidates)} candidates, confidence=#{Float.round(confidence_score, 3)}"
+        )
+
+        {:ok, review}
+
+      {:error, error} ->
+        Logger.error(
+          "Failed to create review record for offender #{offender.id}: #{inspect(error)}"
+        )
+
+        {:error, error}
+    end
+  end
+
   defp evaluate_match_candidates(companies, offender_attrs) do
     company_name = offender_attrs[:name]
 
@@ -259,14 +366,17 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
         check_high_confidence_match(candidate, offender_attrs)
 
       count when count in 2..3 ->
-        # Medium confidence - log for future manual review
+        # Medium confidence - create review record for manual review
         Logger.info(
           "Medium confidence: #{count} active companies found for #{company_name}. " <>
+            "Creating review record. " <>
             "Candidates: #{inspect(Enum.map(active_companies, & &1.company_number))}"
         )
 
-        # For Phase 1, we don't auto-match medium confidence
-        {:ok, offender_attrs}
+        # Phase 2: Create review record instead of just logging
+        # Return original attrs without company_registration_number
+        # Review record will be created AFTER offender is created (see create_medium_confidence_review/2)
+        {:ok, offender_attrs, :needs_review, prepare_candidates_for_review(active_companies)}
 
       count ->
         # Low confidence - too many matches

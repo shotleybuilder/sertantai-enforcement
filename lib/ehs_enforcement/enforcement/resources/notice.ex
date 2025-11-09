@@ -203,8 +203,34 @@ defmodule EhsEnforcement.Enforcement.Notice do
             case EhsEnforcement.Enforcement.get_agency_by_code(agency_code) do
               {:ok, agency} when not is_nil(agency) ->
                 # Find or create offender
-                case EhsEnforcement.Enforcement.Offender.find_or_create_offender(offender_attrs) do
+                # Extract review candidates if present (from Companies House matching)
+                {clean_offender_attrs, review_candidates} =
+                  Map.pop(offender_attrs, :__review_candidates__)
+
+                case EhsEnforcement.Enforcement.Offender.find_or_create_offender(
+                       clean_offender_attrs || offender_attrs
+                     ) do
                   {:ok, offender} ->
+                    # If we have review candidates, create a review record
+                    if review_candidates && is_list(review_candidates) do
+                      case EhsEnforcement.Agencies.Hse.OffenderBuilder.create_medium_confidence_review(
+                             offender,
+                             review_candidates
+                           ) do
+                        {:ok, _review} ->
+                          # Successfully created review record
+                          :ok
+
+                        {:error, review_error} ->
+                          # Log error but don't fail notice creation
+                          require Logger
+
+                          Logger.error(
+                            "Failed to create review record for offender #{offender.id}: #{inspect(review_error)}"
+                          )
+                      end
+                    end
+
                     changeset
                     |> Ash.Changeset.force_change_attribute(:agency_id, agency.id)
                     |> Ash.Changeset.force_change_attribute(:offender_id, offender.id)
