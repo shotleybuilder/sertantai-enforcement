@@ -338,6 +338,16 @@
                                 </dd>
                               </div>
                               <div>
+                                <dt class="text-sm font-medium text-gray-500">Created At</dt>
+                                <dd class="text-sm text-gray-900">
+                                  <%= if record.inserted_at do %>
+                                    {Calendar.strftime(record.inserted_at, "%Y-%m-%d %H:%M")}
+                                  <% else %>
+                                    —
+                                  <% end %>
+                                </dd>
+                              </div>
+                              <div>
                                 <dt class="text-sm font-medium text-gray-500">Fine</dt>
                                 <dd class="text-sm text-gray-900">
                                   <%= if record.offence_fine do %>
@@ -347,12 +357,52 @@
                                   <% end %>
                                 </dd>
                               </div>
+
+                              <%!-- Source URL: Display as clickable text for easy verification --%>
+                              <%= if Map.get(record, :url) do %>
+                                <div class="sm:col-span-2">
+                                  <dt class="text-sm font-medium text-gray-500">Source URL</dt>
+                                  <dd class="text-sm">
+                                    <a
+                                      href={record.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      class="text-blue-600 hover:text-blue-800 hover:underline break-all"
+                                    >
+                                      {record.url}
+                                    </a>
+                                  </dd>
+                                </div>
+                              <% end %>
+
+                              <%!-- Breaches: Expandable text for full comparison --%>
                               <div class="sm:col-span-2">
                                 <dt class="text-sm font-medium text-gray-500">Breaches</dt>
                                 <dd class="text-sm text-gray-900">
-                                  {String.slice(record.offence_breaches || "—", 0, 100)}
-                                  {if String.length(record.offence_breaches || "") > 100,
-                                    do: "..."}
+                                  <%= if String.length(record.offence_breaches || "") > 100 do %>
+                                    <div id={"breaches-#{record.id}"}>
+                                      <div class="breaches-truncated">
+                                        {String.slice(record.offence_breaches, 0, 100)}...
+                                        <button type="button"
+                                          phx-click={JS.add_class("hidden", to: "#breaches-#{record.id} .breaches-truncated")
+                                                     |> JS.remove_class("hidden", to: "#breaches-#{record.id} .breaches-full")}
+                                          class="ml-1 text-blue-600 hover:text-blue-800 font-medium">
+                                          Show more
+                                        </button>
+                                      </div>
+                                      <div class="breaches-full hidden">
+                                        {record.offence_breaches}
+                                        <button type="button"
+                                          phx-click={JS.remove_class("hidden", to: "#breaches-#{record.id} .breaches-truncated")
+                                                     |> JS.add_class("hidden", to: "#breaches-#{record.id} .breaches-full")}
+                                          class="ml-1 text-blue-600 hover:text-blue-800 font-medium">
+                                          Show less
+                                        </button>
+                                      </div>
+                                    </div>
+                                  <% else %>
+                                    {record.offence_breaches || "—"}
+                                  <% end %>
                                 </dd>
                               </div>
                             </dl>
