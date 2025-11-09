@@ -142,7 +142,15 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
   Returns {:ok, boolean} or {:error, reason}
   """
   def case_exists?(regulator_id) do
-    case Enforcement.list_cases(filter: [regulator_id: regulator_id], page: [limit: 1]) do
+    alias EhsEnforcement.Enforcement.Case
+    require Ash.Query
+
+    query =
+      Case
+      |> Ash.Query.filter(regulator_id == ^regulator_id)
+      |> Ash.Query.limit(1)
+
+    case Ash.read(query) do
       {:ok, []} -> {:ok, false}
       {:ok, [_case]} -> {:ok, true}
       {:error, reason} -> {:error, reason}

@@ -21,38 +21,11 @@ defmodule EhsEnforcement.Scraping.Ea.CaseScraperTest do
       assert function_exported?(CaseScraper, :fetch_detail_record_individual, 2)
     end
 
-    test "collect_summary_records_for_action_type/4 accepts correct parameters" do
-      date_from = ~D[2025-08-01]
-      date_to = ~D[2025-08-02]
-      action_type = :court_case
-      opts = [timeout_ms: 30_000]
-
-      # Should not crash with parameter errors (will fail with HTTP errors)
-      result =
-        CaseScraper.collect_summary_records_for_action_type(date_from, date_to, action_type, opts)
-
-      # Should return {:ok, list} or {:error, reason} - not crash
-      assert match?({:ok, _}, result) or match?({:error, _}, result)
-    end
-
-    test "fetch_detail_record_individual/2 accepts correct parameters" do
-      summary_record = %EaSummaryRecord{
-        ea_record_id: "test123",
-        offender_name: "Test Company",
-        action_date: ~D[2025-08-01],
-        action_type: :court_case,
-        detail_url: "https://example.com/test",
-        scraped_at: DateTime.utc_now()
-      }
-
-      opts = [detail_delay_ms: 1000, timeout_ms: 30_000]
-
-      # Should not crash with parameter errors (will fail with HTTP errors)
-      result = CaseScraper.fetch_detail_record_individual(summary_record, opts)
-
-      # Should return {:ok, detail} or {:error, reason} - not crash
-      assert match?({:ok, _}, result) or match?({:error, _}, result)
-    end
+    # NOTE: Tests that make HTTP calls to external APIs have been removed
+    # These tests were anti-patterns that hit real websites:
+    # - collect_summary_records_for_action_type/4 was calling EA website
+    # - fetch_detail_record_individual/2 was making HTTP requests
+    # Integration tests with mocked HTTP should be in test/integration/ instead
   end
 
   describe "EA scraper data structures" do
