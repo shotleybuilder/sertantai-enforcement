@@ -35,7 +35,21 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
         _ -> socket.assigns.active_tab
       end
 
-    {:noreply, assign(socket, :active_tab, active_tab)}
+    # Only reload if tab actually changed
+    socket =
+      if active_tab != socket.assigns.active_tab do
+        socket
+        |> assign(:active_tab, active_tab)
+        |> assign(:current_group_index, 0)
+        |> assign(:selected_records, MapSet.new())
+        |> assign(:loading, true)
+        |> load_active_tab_duplicates()
+        |> assign(:loading, false)
+      else
+        assign(socket, :active_tab, active_tab)
+      end
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -342,12 +356,26 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
         socket
       end
 
-    {:noreply,
-     socket
-     |> assign(:action_confirmation, nil)
-     |> assign(:selected_records, MapSet.new())
-     |> assign(:loading, true)
-     |> load_all_duplicates()}
+    socket =
+      socket
+      |> assign(:action_confirmation, nil)
+      |> assign(:selected_records, MapSet.new())
+      |> assign(:loading, true)
+      |> load_all_duplicates()
+
+    # Adjust current_group_index to stay within valid range after deletion
+    current_duplicates = get_current_duplicates(socket.assigns)
+    total_groups = length(current_duplicates)
+    current_index = socket.assigns.current_group_index
+
+    socket =
+      if current_index >= total_groups and total_groups > 0 do
+        assign(socket, :current_group_index, total_groups - 1)
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   defp execute_merge_action(socket, _record_ids) do
