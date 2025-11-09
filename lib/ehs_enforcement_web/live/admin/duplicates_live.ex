@@ -149,7 +149,11 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
   end
 
   @impl true
-  def handle_event("sync_and_merge", %{"id" => master_id, "duplicates" => duplicate_ids_json}, socket) do
+  def handle_event(
+        "sync_and_merge",
+        %{"id" => master_id, "duplicates" => duplicate_ids_json},
+        socket
+      ) do
     duplicate_ids = Jason.decode!(duplicate_ids_json)
 
     # Call preview function to get validation and merge preview
@@ -158,7 +162,10 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
         {:noreply,
          socket
          |> assign(:merge_preview, Map.put(preview, :master_id, master_id))
-         |> assign(:merge_preview, Map.put(socket.assigns.merge_preview, :duplicate_ids, duplicate_ids))}
+         |> assign(
+           :merge_preview,
+           Map.put(socket.assigns.merge_preview, :duplicate_ids, duplicate_ids)
+         )}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, "Preview failed: #{inspect(reason)}")}
@@ -322,25 +329,50 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
   end
 
   defp execute_delete_action(socket, record_ids) do
+    require Logger
     current_user = socket.assigns.current_user
     resource = get_resource_for_tab(socket.assigns.active_tab)
+    resource_name = resource |> Module.split() |> List.last()
+
+    Logger.info(
+      "Duplicate deletion: Attempting to delete #{length(record_ids)} #{resource_name} records for user #{current_user.email}"
+    )
 
     results =
       Enum.map(record_ids, fn record_id ->
         case Ash.get(resource, record_id, actor: current_user) do
           {:ok, record} ->
             case Ash.destroy(record, actor: current_user) do
-              :ok -> {:ok, record_id}
-              {:error, error} -> {:error, {record_id, error}}
+              :ok ->
+                Logger.info(
+                  "Duplicate deletion: Successfully deleted #{resource_name} #{record_id}"
+                )
+
+                {:ok, record_id}
+
+              {:error, error} ->
+                Logger.error(
+                  "Duplicate deletion: Failed to delete #{resource_name} #{record_id}: #{inspect(error)}"
+                )
+
+                {:error, {record_id, error}}
             end
 
           {:error, error} ->
+            Logger.error(
+              "Duplicate deletion: Failed to fetch #{resource_name} #{record_id}: #{inspect(error)}"
+            )
+
             {:error, {record_id, error}}
         end
       end)
 
     successes = Enum.count(results, fn result -> match?({:ok, _}, result) end)
     failures = Enum.count(results, fn result -> match?({:error, _}, result) end)
+
+    Logger.info(
+      "Duplicate deletion: Completed - #{successes} succeeded, #{failures} failed (#{resource_name})"
+    )
 
     socket =
       if successes > 0 do
@@ -396,5 +428,4 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
       :offenders -> Offender
     end
   end
-
 end
