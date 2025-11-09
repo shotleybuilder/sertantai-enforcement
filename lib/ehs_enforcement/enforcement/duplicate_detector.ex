@@ -43,24 +43,29 @@ defmodule EhsEnforcement.Enforcement.DuplicateDetector do
   end
 
   @doc """
-  Find duplicate notices using multiple strategies.
+  Find duplicate notices based on regulator_id + agency_id.
+
+  A true duplicate is defined as notices with the same regulator_id within the same agency.
+  This matches the unique constraint: (regulator_id, agency_id).
   """
   def find_duplicate_notices(current_user) do
     try do
       # Load notices with offender and agency relationships for display in UI
       query = Notice |> Ash.Query.load([:offender, :agency])
 
-      # Strategy 1: Find notices with exact regulator_id matches
+      # Strategy 1: Find notices with same regulator_id within the same agency
       regulator_id_duplicates =
         case Ash.read(query, actor: current_user) do
           {:ok, notices} ->
             notices
             |> Enum.filter(fn notice ->
-              notice.regulator_id && String.trim(notice.regulator_id) != ""
+              notice.regulator_id && String.trim(notice.regulator_id) != "" && notice.agency_id
             end)
-            |> Enum.group_by(fn notice -> String.trim(notice.regulator_id) end)
-            |> Enum.filter(fn {_regulator_id, notices} -> length(notices) > 1 end)
-            |> Enum.map(fn {_regulator_id, notices} -> notices end)
+            |> Enum.group_by(fn notice ->
+              {notice.agency_id, String.trim(notice.regulator_id)}
+            end)
+            |> Enum.filter(fn {_key, notices} -> length(notices) > 1 end)
+            |> Enum.map(fn {_key, notices} -> notices end)
 
           {:error, _error} ->
             []
