@@ -317,7 +317,17 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
   # Private functions
 
   defp build_offender_attrs(%ScrapedCase{} = scraped_case) do
-    OffenderBuilder.build_offender_attrs(scraped_case, :case)
+    base_attrs = OffenderBuilder.build_offender_attrs(scraped_case, :case)
+
+    # Attempt to match Companies House registration number
+    case OffenderBuilder.match_companies_house_number(base_attrs) do
+      {:ok, enhanced_attrs} ->
+        enhanced_attrs
+
+      {:error, _reason} ->
+        # On error, fall back to base attrs (error already logged)
+        base_attrs
+    end
   end
 
   defp build_regulator_url(regulator_id) do

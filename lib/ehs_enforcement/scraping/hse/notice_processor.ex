@@ -206,7 +206,17 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
   # Private Functions
 
   defp build_offender_attrs(notice_data) do
-    OffenderBuilder.build_offender_attrs(notice_data, :notice)
+    base_attrs = OffenderBuilder.build_offender_attrs(notice_data, :notice)
+
+    # Attempt to match Companies House registration number
+    case OffenderBuilder.match_companies_house_number(base_attrs) do
+      {:ok, enhanced_attrs} ->
+        enhanced_attrs
+
+      {:error, _reason} ->
+        # On error, fall back to base attrs (error already logged)
+        base_attrs
+    end
   end
 
   defp build_regulator_url(regulator_id) when is_binary(regulator_id) do

@@ -24,10 +24,19 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
 
   Both data types are transformed into a consistent offender attributes map
   suitable for use with `EhsEnforcement.Enforcement.Offender.find_or_create_offender/1`.
+
+  ## Companies House Matching
+
+  HSE data does not include Companies House registration numbers directly.
+  This module provides `match_companies_house_number/1` to automatically
+  search and match companies using the Companies House API.
   """
+
+  require Logger
 
   alias EhsEnforcement.Scraping.Shared.BusinessTypeDetector
   alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
+  alias EhsEnforcement.Integrations.CompaniesHouse
 
   @doc """
   Builds offender attributes from HSE case or notice data.
@@ -85,6 +94,55 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
 
   def build_offender_attrs(data, :notice) when is_map(data) do
     build_notice_offender_attrs(data)
+  end
+
+  @doc """
+  Attempts to match an HSE offender to a Companies House registration number.
+
+  Uses a hybrid 3-tier matching strategy:
+  - High confidence: Auto-match and return company_registration_number
+  - Medium confidence: Log for manual review (future UI feature)
+  - Low confidence: Skip matching
+
+  ## Parameters
+
+  - `offender_attrs` - Map of offender attributes from `build_offender_attrs/2`
+
+  ## Returns
+
+  - `{:ok, enhanced_attrs}` - Attrs with company_registration_number added if matched
+  - `{:ok, original_attrs}` - Original attrs if no high-confidence match
+  - `{:error, reason}` - Error during matching (original attrs still usable)
+
+  ## High Confidence Criteria
+
+  - Exactly 1 active company found in search results
+  - Name similarity ≥ 0.90 (stricter than default 0.85)
+  - Business type matches (if determinable)
+  - Company status is "active"
+
+  ## Examples
+
+      iex> attrs = %{name: "Ford Windows Limited", business_type: :limited_company}
+      iex> OffenderBuilder.match_companies_house_number(attrs)
+      {:ok, %{name: "Ford Windows Limited", business_type: :limited_company,
+              company_registration_number: "03353423"}}
+
+      iex> attrs = %{name: "John Smith", business_type: :individual}
+      iex> OffenderBuilder.match_companies_house_number(attrs)
+      {:ok, %{name: "John Smith", business_type: :individual}}
+      # Skips matching for individuals
+  """
+  def match_companies_house_number(offender_attrs) when is_map(offender_attrs) do
+    # Skip matching for individuals and sole traders
+    case offender_attrs[:business_type] do
+      :individual ->
+        Logger.debug("Skipping Companies House match for individual: #{offender_attrs[:name]}")
+        {:ok, offender_attrs}
+
+      _other ->
+        perform_companies_house_match(offender_attrs)
+    end
   end
 
   # Private Functions
@@ -151,6 +209,168 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
       "CORP" -> :limited_company
       "SOLE" -> :individual
       _ -> :other
+    end
+  end
+
+  # Companies House Matching Private Functions
+
+  defp perform_companies_house_match(offender_attrs) do
+    company_name = offender_attrs[:name]
+
+    if company_name == nil or company_name == "" do
+      Logger.warning("Cannot match Companies House: missing company name")
+      {:ok, offender_attrs}
+    else
+      Logger.info("Searching Companies House for: #{company_name}")
+
+      case CompaniesHouse.search_companies(company_name, items_per_page: 5) do
+        {:ok, companies} ->
+          evaluate_match_candidates(companies, offender_attrs)
+
+        {:error, :rate_limited} ->
+          Logger.warning(
+            "Companies House rate limit reached, skipping match for: #{company_name}"
+          )
+
+          {:error, :rate_limited}
+
+        {:error, reason} ->
+          Logger.warning("Companies House search failed for #{company_name}: #{inspect(reason)}")
+
+          {:error, reason}
+      end
+    end
+  end
+
+  defp evaluate_match_candidates(companies, offender_attrs) do
+    company_name = offender_attrs[:name]
+
+    # Filter to active companies only
+    active_companies = Enum.filter(companies, &(&1.company_status == "active"))
+
+    case length(active_companies) do
+      0 ->
+        Logger.info("No active companies found for: #{company_name}")
+        {:ok, offender_attrs}
+
+      1 ->
+        # Exactly one active company - check if high confidence match
+        [candidate] = active_companies
+        check_high_confidence_match(candidate, offender_attrs)
+
+      count when count in 2..3 ->
+        # Medium confidence - log for future manual review
+        Logger.info(
+          "Medium confidence: #{count} active companies found for #{company_name}. " <>
+            "Candidates: #{inspect(Enum.map(active_companies, & &1.company_number))}"
+        )
+
+        # For Phase 1, we don't auto-match medium confidence
+        {:ok, offender_attrs}
+
+      count ->
+        # Low confidence - too many matches
+        Logger.info(
+          "Low confidence: #{count} active companies found for #{company_name}, skipping"
+        )
+
+        {:ok, offender_attrs}
+    end
+  end
+
+  defp check_high_confidence_match(candidate, offender_attrs) do
+    company_name = offender_attrs[:name]
+    business_type = offender_attrs[:business_type]
+
+    # Calculate similarity score
+    similarity = calculate_name_similarity(company_name, candidate.company_name)
+
+    # Check business type compatibility
+    type_matches = business_type_compatible?(business_type, candidate.company_type)
+
+    # High confidence threshold: similarity >= 0.90 AND types compatible
+    is_high_confidence = similarity >= 0.90 and type_matches
+
+    if is_high_confidence do
+      Logger.info(
+        "HIGH CONFIDENCE MATCH for #{company_name}: " <>
+          "company_number=#{candidate.company_number}, " <>
+          "canonical_name=#{candidate.company_name}, " <>
+          "similarity=#{Float.round(similarity, 3)}, " <>
+          "type_match=#{type_matches}"
+      )
+
+      enhanced_attrs =
+        Map.put(offender_attrs, :company_registration_number, candidate.company_number)
+
+      {:ok, enhanced_attrs}
+    else
+      Logger.info(
+        "Match below high confidence threshold for #{company_name}: " <>
+          "similarity=#{Float.round(similarity, 3)} (need ≥0.90), " <>
+          "type_match=#{type_matches}, " <>
+          "candidate=#{candidate.company_name}"
+      )
+
+      {:ok, offender_attrs}
+    end
+  end
+
+  defp calculate_name_similarity(name1, name2) do
+    # Normalize both names for comparison
+    norm1 = normalize_company_name(name1)
+    norm2 = normalize_company_name(name2)
+
+    # Use Jaro-Winkler distance
+    String.jaro_distance(norm1, norm2)
+  end
+
+  defp normalize_company_name(name) do
+    name
+    |> String.trim()
+    |> String.downcase()
+    # Remove common punctuation
+    |> String.replace(~r/[\.,:;!@#$%^&*()]+/, "")
+    # Normalize company suffixes
+    |> String.replace(~r/\s+(limited|ltd\.?)$/i, " limited")
+    |> String.replace(~r/\s+(plc|p\.l\.c\.?)$/i, " plc")
+    |> String.replace(~r/\s+(llp|l\.l\.p\.?)$/i, " llp")
+    # Replace multiple spaces with single space
+    |> String.replace(~r/\s+/, " ")
+    |> String.trim()
+  end
+
+  defp business_type_compatible?(_offender_type, companies_house_type)
+       when is_nil(companies_house_type) do
+    # If Companies House doesn't specify type, accept the match
+    true
+  end
+
+  defp business_type_compatible?(offender_type, companies_house_type) do
+    # Map our business types to Companies House company types
+    # See: https://developer-specs.company-information.service.gov.uk/companies-house-public-data-api/resources/companysearch?v=latest
+    case offender_type do
+      :limited_company ->
+        companies_house_type in [
+          "ltd",
+          "private-limited-guarant-nsc-limited-exemption",
+          "private-limited-guarant-nsc",
+          "private-limited-shares-section-30-exemption"
+        ]
+
+      :plc ->
+        companies_house_type in ["plc", "public-limited-company"]
+
+      :partnership ->
+        companies_house_type in ["llp", "limited-partnership", "scottish-partnership"]
+
+      :other ->
+        # Accept any type for "other" category
+        true
+
+      _ ->
+        # Unknown offender type, be permissive
+        true
     end
   end
 end
