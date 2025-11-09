@@ -21,11 +21,13 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
      |> assign(:selected_master_id, nil)
      |> assign(:merge_preview, nil)
      |> assign(:action_confirmation, nil)
-     |> load_all_duplicates()}
+     |> assign(:detection_task, nil)}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
+    require Logger
+
     # Allow navigation with a specific tab (e.g., /admin/duplicates?tab=notices)
     active_tab =
       case params["tab"] do
@@ -38,13 +40,25 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
     # Only reload if tab actually changed
     socket =
       if active_tab != socket.assigns.active_tab do
+        Logger.info("Duplicate detection: Tab changed to #{active_tab}, starting async detection")
+
+        # Cancel any existing task
+        if socket.assigns.detection_task do
+          Task.shutdown(socket.assigns.detection_task, :brutal_kill)
+        end
+
+        # Start async detection task
+        task =
+          Task.async(fn ->
+            load_duplicates_for_tab(active_tab, socket.assigns.current_user)
+          end)
+
         socket
         |> assign(:active_tab, active_tab)
         |> assign(:current_group_index, 0)
         |> assign(:selected_records, MapSet.new())
         |> assign(:loading, true)
-        |> load_active_tab_duplicates()
-        |> assign(:loading, false)
+        |> assign(:detection_task, task)
       else
         assign(socket, :active_tab, active_tab)
       end
@@ -54,17 +68,8 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
 
   @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
-    active_tab = String.to_existing_atom(tab)
-
-    {:noreply,
-     socket
-     |> assign(:active_tab, active_tab)
-     |> assign(:current_group_index, 0)
-     |> assign(:selected_records, MapSet.new())
-     |> assign(:loading, true)
-     |> load_active_tab_duplicates()
-     |> assign(:loading, false)
-     |> push_patch(to: ~p"/admin/duplicates?tab=#{tab}")}
+    # Use push_patch to trigger handle_params which has the async logic
+    {:noreply, push_patch(socket, to: ~p"/admin/duplicates?tab=#{tab}")}
   end
 
   @impl true
@@ -135,12 +140,17 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
 
   @impl true
   def handle_event("refresh_duplicates", _params, socket) do
+    # Start async reload
+    task =
+      Task.async(fn ->
+        load_duplicates_for_tab(socket.assigns.active_tab, socket.assigns.current_user)
+      end)
+
     {:noreply,
      socket
      |> assign(:loading, true)
      |> assign(:selected_records, MapSet.new())
-     |> load_active_tab_duplicates()
-     |> assign(:loading, false)}
+     |> assign(:detection_task, task)}
   end
 
   @impl true
@@ -178,14 +188,19 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
       %{master_id: master_id, duplicate_ids: duplicate_ids} ->
         case EhsEnforcement.Enforcement.sync_and_merge_offenders(master_id, duplicate_ids) do
           {:ok, _merged} ->
+            # Reload duplicates asynchronously after merge
+            task =
+              Task.async(fn ->
+                load_duplicates_for_tab(socket.assigns.active_tab, socket.assigns.current_user)
+              end)
+
             {:noreply,
              socket
              |> assign(:merge_preview, nil)
              |> assign(:selected_master_id, nil)
              |> put_flash(:info, "Successfully merged offenders!")
              |> assign(:loading, true)
-             |> load_active_tab_duplicates()
-             |> assign(:loading, false)}
+             |> assign(:detection_task, task)}
 
           {:error, reason} ->
             {:noreply, put_flash(socket, :error, "Merge failed: #{inspect(reason)}")}
@@ -199,6 +214,60 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
   @impl true
   def handle_event("cancel_merge", _params, socket) do
     {:noreply, assign(socket, :merge_preview, nil)}
+  end
+
+  # Handle async task completion
+  @impl true
+  def handle_info({ref, result}, socket) do
+    require Logger
+    # Task completed successfully
+    Process.demonitor(ref, [:flush])
+
+    socket =
+      case result do
+        {:ok, duplicates, tab} ->
+          Logger.info(
+            "Duplicate detection: Completed for #{tab} - found #{length(duplicates)} groups"
+          )
+
+          case tab do
+            :cases ->
+              assign(socket, :case_duplicates, duplicates)
+
+            :notices ->
+              assign(socket, :notice_duplicates, duplicates)
+
+            :offenders ->
+              socket
+              |> assign(:company_number_duplicates, duplicates)
+              |> assign(:offender_duplicates, [])
+          end
+          |> assign(:loading, false)
+          |> assign(:detection_task, nil)
+
+        {:error, reason, tab} ->
+          Logger.error("Duplicate detection: Failed for #{tab} - #{inspect(reason)}")
+
+          socket
+          |> assign(:loading, false)
+          |> assign(:detection_task, nil)
+          |> put_flash(:error, "Failed to load duplicates: #{inspect(reason)}")
+      end
+
+    {:noreply, socket}
+  end
+
+  # Handle task DOWN message (task crashed)
+  @impl true
+  def handle_info({:DOWN, _ref, :process, _pid, reason}, socket) do
+    require Logger
+    Logger.error("Duplicate detection: Task crashed - #{inspect(reason)}")
+
+    {:noreply,
+     socket
+     |> assign(:loading, false)
+     |> assign(:detection_task, nil)
+     |> put_flash(:error, "Duplicate detection failed unexpectedly")}
   end
 
   # Template helper functions
@@ -266,65 +335,40 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
 
   # Private functions
 
-  defp load_all_duplicates(socket) do
-    # Load duplicates synchronously to avoid timeout issues
-    # Start with empty state and load on demand
-    socket
-    |> assign(:case_duplicates, [])
-    |> assign(:notice_duplicates, [])
-    |> assign(:offender_duplicates, [])
-    |> assign(:loading, false)
-    |> load_active_tab_duplicates()
-  end
-
-  defp load_active_tab_duplicates(socket) do
-    # Only load duplicates for the active tab to improve performance
-    current_user = socket.assigns.current_user
-    active_tab = socket.assigns.active_tab
-
+  # Run duplicate detection in background task (does not block LiveView)
+  defp load_duplicates_for_tab(tab, current_user) do
     try do
-      case active_tab do
+      case tab do
         :cases ->
           case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_cases(current_user) do
             {:ok, duplicates} ->
-              # Reduced limit
-              assign(socket, :case_duplicates, Enum.take(duplicates, 20))
+              {:ok, duplicates, :cases}
 
-            {:error, _} ->
-              assign(socket, :case_duplicates, [])
+            {:error, reason} ->
+              {:error, reason, :cases}
           end
 
         :notices ->
           case EhsEnforcement.Enforcement.DuplicateDetector.find_duplicate_notices(current_user) do
             {:ok, duplicates} ->
-              assign(socket, :notice_duplicates, Enum.take(duplicates, 20))
+              {:ok, duplicates, :notices}
 
-            {:error, _} ->
-              assign(socket, :notice_duplicates, [])
+            {:error, reason} ->
+              {:error, reason, :notices}
           end
 
         :offenders ->
-          # Load company number duplicates (new merge functionality)
           case EhsEnforcement.Enforcement.find_duplicate_offenders_by_company_number() do
             {:ok, company_duplicates} ->
-              socket
-              |> assign(:company_number_duplicates, company_duplicates)
-              |> assign(:offender_duplicates, [])
+              {:ok, company_duplicates, :offenders}
 
-            {:error, _} ->
-              socket
-              |> assign(:company_number_duplicates, [])
-              |> assign(:offender_duplicates, [])
+            {:error, reason} ->
+              {:error, reason, :offenders}
           end
       end
     catch
       :exit, {:timeout, _} ->
-        socket
-        |> assign(:loading, false)
-        |> put_flash(
-          :error,
-          "Duplicate detection timed out. Please try again with a smaller dataset."
-        )
+        {:error, :timeout, tab}
     end
   end
 
@@ -388,26 +432,19 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
         socket
       end
 
-    socket =
-      socket
-      |> assign(:action_confirmation, nil)
-      |> assign(:selected_records, MapSet.new())
-      |> assign(:loading, true)
-      |> load_all_duplicates()
+    # Reload duplicates asynchronously after deletion
+    task =
+      Task.async(fn ->
+        load_duplicates_for_tab(socket.assigns.active_tab, socket.assigns.current_user)
+      end)
 
-    # Adjust current_group_index to stay within valid range after deletion
-    current_duplicates = get_current_duplicates(socket.assigns)
-    total_groups = length(current_duplicates)
-    current_index = socket.assigns.current_group_index
-
-    socket =
-      if current_index >= total_groups and total_groups > 0 do
-        assign(socket, :current_group_index, total_groups - 1)
-      else
-        socket
-      end
-
-    {:noreply, socket}
+    {:noreply,
+     socket
+     |> assign(:action_confirmation, nil)
+     |> assign(:selected_records, MapSet.new())
+     |> assign(:current_group_index, 0)
+     |> assign(:loading, true)
+     |> assign(:detection_task, task)}
   end
 
   defp execute_merge_action(socket, _record_ids) do
