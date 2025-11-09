@@ -37,10 +37,17 @@ defmodule EhsEnforcementWeb.Admin.DuplicatesLive do
         _ -> socket.assigns.active_tab
       end
 
-    # Only reload if tab actually changed
+    # Determine if we need to load duplicates
+    # Load if: (1) tab changed OR (2) initial load (no task and loading=true)
+    needs_load =
+      active_tab != socket.assigns.active_tab or
+        (is_nil(socket.assigns.detection_task) and socket.assigns.loading)
+
     socket =
-      if active_tab != socket.assigns.active_tab do
-        Logger.info("Duplicate detection: Tab changed to #{active_tab}, starting async detection")
+      if needs_load do
+        Logger.info(
+          "Duplicate detection: Loading #{active_tab} duplicates (tab_changed: #{active_tab != socket.assigns.active_tab}, initial_load: #{is_nil(socket.assigns.detection_task) and socket.assigns.loading})"
+        )
 
         # Cancel any existing task
         if socket.assigns.detection_task do
