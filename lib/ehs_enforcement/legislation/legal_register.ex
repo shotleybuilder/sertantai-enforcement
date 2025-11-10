@@ -158,7 +158,6 @@ defmodule EhsEnforcement.Legislation.LegalRegister do
     old_style_number
     Year
 
-
     Tags
     md_description
 

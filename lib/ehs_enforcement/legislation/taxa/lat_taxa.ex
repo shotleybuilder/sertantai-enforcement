@@ -316,13 +316,13 @@ defmodule EhsEnforcement.Legislation.Taxa.LATTaxa do
 
   def pre_process(records, blacklist) do
     Enum.reduce(records, [], fn %{Text: text} = record, acc ->
-      Enum.reduce(blacklist, text, fn regex, aText ->
-        case Regex.run(~r/#{regex}/m, aText) do
+      Enum.reduce(blacklist, text, fn regex, amended_text ->
+        case Regex.run(~r/#{regex}/m, amended_text) do
           nil ->
-            aText
+            amended_text
 
           _ ->
-            Regex.replace(~r/#{regex}/m, aText, "")
+            Regex.replace(~r/#{regex}/m, amended_text, "")
         end
       end)
       |> (&Map.put(record, :Text, &1)).()

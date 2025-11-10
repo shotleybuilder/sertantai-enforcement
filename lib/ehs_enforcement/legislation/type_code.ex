@@ -52,12 +52,12 @@ end
 defmodule EhsEnforcement.Legislation.SClass do
   defstruct occupational_personal_safety: "Occupational / Personal Safety"
 
-  def sClass(sClass) when is_atom(sClass) do
-    case Map.get(%__MODULE__{}, sClass) do
-      nil -> {:error, "No result for #{sClass}"}
+  def s_class(s_class) when is_atom(s_class) do
+    case Map.get(%__MODULE__{}, s_class) do
+      nil -> {:error, "No result for #{s_class}"}
       result -> {:ok, [result]}
     end
   end
 
-  def sClass(sClass) when is_binary(sClass), do: {:ok, sClass}
+  def s_class(s_class) when is_binary(s_class), do: {:ok, s_class}
 end

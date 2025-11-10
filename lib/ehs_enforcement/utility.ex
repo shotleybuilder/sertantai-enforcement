@@ -362,7 +362,7 @@ defmodule EhsEnforcement.Utility do
     cols
   end
 
-  def upcaseFirst(<<first::utf8, rest::binary>>), do: String.upcase(<<first::utf8>>) <> rest
+  def upcase_first(<<first::utf8, rest::binary>>), do: String.upcase(<<first::utf8>>) <> rest
 
   def upcase_first_from_upcase_phrase(string),
     do: string |> String.split(" ") |> Enum.map(&upcase_first_from_upcase/1) |> Enum.join(" ")

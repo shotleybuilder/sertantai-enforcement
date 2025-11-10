@@ -507,7 +507,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
 
   # Handle ProcessingLog creation - this fires for batch summary stats
   # NOTE: We do NOT load and display records from ProcessingLog because:
-  # 1. Real-time PubSub broadcasts (:record_scraped, :notice:created, :case:created) already add records with correct status
+  # 1. Real-time PubSub broadcasts (:record_scraped, :notice:created, :case:created)
+  #    already add records with correct status
   # 2. scraped_items data doesn't include processing status (created/updated/existing)
   # 3. Loading records here would create duplicates in the UI
   @impl true
