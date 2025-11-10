@@ -264,8 +264,11 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   end
 
   @impl true
-  def handle_event("select_database", %{"database" => database}, socket) do
+  def handle_event("select_database", params, socket) do
     agency = socket.assigns.agency
+
+    # Extract database value from params (name varies by agency: database_hse, database_ea)
+    database = params["database"] || params["database_#{agency}"]
 
     # Derive enforcement type from database
     enforcement_type = derive_enforcement_type(agency, database)
@@ -502,7 +505,11 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     {:noreply, socket}
   end
 
-  # Handle ProcessingLog creation - this fires for ALL scraped records (created, updated, existing)
+  # Handle ProcessingLog creation - this fires for batch summary stats
+  # NOTE: We do NOT load and display records from ProcessingLog because:
+  # 1. Real-time PubSub broadcasts (:record_scraped, :notice:created, :case:created) already add records with correct status
+  # 2. scraped_items data doesn't include processing status (created/updated/existing)
+  # 3. Loading records here would create duplicates in the UI
   @impl true
   def handle_info(
         %Phoenix.Socket.Broadcast{
@@ -511,43 +518,14 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
         },
         socket
       ) do
-    Logger.info("🔔 Received processing_log:created broadcast")
+    Logger.debug("🔔 Received processing_log:created broadcast (batch summary)")
 
-    Logger.info(
-      "🔔 ProcessingLog data: items_found=#{notification.data.items_found}, items_created=#{notification.data.items_created}, items_existing=#{notification.data.items_existing}"
+    Logger.debug(
+      "🔔 ProcessingLog stats: items_found=#{notification.data.items_found}, items_created=#{notification.data.items_created}, items_existing=#{notification.data.items_existing}"
     )
 
-    socket =
-      if socket.assigns.scraping_session_started_at do
-        # ProcessingLog contains scraped_items array with regulator_ids
-        # Load full records for each scraped item
-        scraped_items = notification.data.scraped_items || []
-
-        Logger.info("🔔 Processing #{length(scraped_items)} scraped items")
-
-        # Load full records based on enforcement type
-        loaded_records =
-          case socket.assigns.enforcement_type do
-            :notice ->
-              load_notices_from_scraped_items(scraped_items, socket.assigns.current_user)
-
-            :case ->
-              load_cases_from_scraped_items(scraped_items, socket.assigns.current_user)
-          end
-
-        Logger.info("🔔 Loaded #{length(loaded_records)} full records")
-
-        # Add all loaded records to scraped_records
-        updated_scraped_records = loaded_records ++ socket.assigns.scraped_records
-
-        # Keep only the most recent 100 records
-        updated_scraped_records = Enum.take(updated_scraped_records, 100)
-
-        assign(socket, scraped_records: updated_scraped_records)
-      else
-        socket
-      end
-
+    # ProcessingLog is just for batch summary statistics
+    # Real-time record display is handled by :record_scraped, :notice:created, :case:created broadcasts
     {:noreply, socket}
   end
 
@@ -865,14 +843,14 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
                   {database_label(@agency)}
                 </label>
                 <select
-                  name="database"
-                  id="database"
+                  name={"database_#{@agency}"}
+                  id={"database-#{@agency}"}
                   phx-change="select_database"
                   disabled={@scraping_active}
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <%= for option <- database_options(@agency) do %>
-                    <option value={option.value} selected={@database == option.value}>
+                    <option value={option.value} selected={option.value == @database}>
                       {option.label}
                     </option>
                   <% end %>
@@ -1534,57 +1512,5 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
     ~H"""
     <ProgressComponent.unified_progress_component agency={@agency} progress={@progress} />
     """
-  end
-
-  # Load notices from ProcessingLog scraped_items
-  defp load_notices_from_scraped_items(scraped_items, actor) do
-    # Extract regulator_ids from scraped_items
-    regulator_ids = Enum.map(scraped_items, & &1["regulator_id"]) |> Enum.filter(& &1)
-
-    if Enum.empty?(regulator_ids) do
-      []
-    else
-      # Load all notices with these regulator_ids
-      query_opts = if actor, do: [actor: actor], else: []
-
-      {:ok, notices} =
-        Notice
-        |> Ash.Query.filter(regulator_id in ^regulator_ids)
-        |> Ash.Query.load([:agency, :offender])
-        |> Ash.read(query_opts)
-
-      # Mark all as :existing since they came from ProcessingLog (already processed)
-      Enum.map(notices, &Map.put(&1, :processing_status, :existing))
-    end
-  rescue
-    error ->
-      Logger.error("Failed to load notices from scraped_items: #{inspect(error)}")
-      []
-  end
-
-  # Load cases from ProcessingLog scraped_items
-  defp load_cases_from_scraped_items(scraped_items, actor) do
-    # Extract regulator_ids from scraped_items
-    regulator_ids = Enum.map(scraped_items, & &1["regulator_id"]) |> Enum.filter(& &1)
-
-    if Enum.empty?(regulator_ids) do
-      []
-    else
-      # Load all cases with these regulator_ids
-      query_opts = if actor, do: [actor: actor], else: []
-
-      {:ok, cases} =
-        Case
-        |> Ash.Query.filter(regulator_id in ^regulator_ids)
-        |> Ash.Query.load([:agency, :offender])
-        |> Ash.read(query_opts)
-
-      # Mark all as :existing since they came from ProcessingLog (already processed)
-      Enum.map(cases, &Map.put(&1, :processing_status, :existing))
-    end
-  rescue
-    error ->
-      Logger.error("Failed to load cases from scraped_items: #{inspect(error)}")
-      []
   end
 end
