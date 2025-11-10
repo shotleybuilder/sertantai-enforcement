@@ -23,7 +23,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticePrefilteringTest do
         "email" => "admin@test.com",
         "name" => "Admin User",
         "login" => "admin",
-        "id" => 12347,
+        "id" => 12_347,
         "avatar_url" => "https://github.com/images/avatars/admin",
         "html_url" => "https://github.com/admin"
       }
@@ -211,7 +211,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticePrefilteringTest do
         "email" => "perf@test.com",
         "name" => "Perf Test User",
         "login" => "perftest",
-        "id" => 99999,
+        "id" => 99_999,
         "avatar_url" => "https://github.com/images/avatars/perftest",
         "html_url" => "https://github.com/perftest"
       }

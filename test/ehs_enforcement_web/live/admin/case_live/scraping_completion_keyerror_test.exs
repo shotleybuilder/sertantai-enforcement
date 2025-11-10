@@ -20,7 +20,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapingCompletionKeyErrorTest do
         "email" => "completion-test-admin@test.com",
         "name" => "Completion Test Admin",
         "login" => "completionadmin",
-        "id" => 88888,
+        "id" => 88_888,
         "avatar_url" => "https://github.com/images/avatars/completionadmin",
         "html_url" => "https://github.com/completionadmin"
       }

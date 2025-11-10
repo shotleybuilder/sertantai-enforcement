@@ -149,12 +149,12 @@ defmodule EhsEnforcementWeb.Components.ReportsActionCard do
         minutes = div(diff_in_seconds, 60)
         "#{minutes} min ago"
 
-      diff_in_seconds < 86400 ->
+      diff_in_seconds < 86_400 ->
         hours = div(diff_in_seconds, 3600)
         "#{hours} hours ago"
 
       diff_in_seconds < 604_800 ->
-        days = div(diff_in_seconds, 86400)
+        days = div(diff_in_seconds, 86_400)
         "#{days} days ago"
 
       true ->

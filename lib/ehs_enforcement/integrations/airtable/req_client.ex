@@ -262,7 +262,7 @@ defmodule EhsEnforcement.Integrations.Airtable.ReqClient do
           {:error,
            %{
              code: String.t(),
-             details: %{original_error: map(), timeout: 30000},
+             details: %{original_error: map(), timeout: 30_000},
              message: String.t(),
              type: :network_error | :timeout
            }}

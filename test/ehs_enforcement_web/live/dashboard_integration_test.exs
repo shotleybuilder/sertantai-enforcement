@@ -207,7 +207,7 @@ defmodule EhsEnforcementWeb.DashboardIntegrationTest do
         |> Enum.map(fn id ->
           case :binary.match(timeline, id) do
             {pos, _} -> {id, pos}
-            :nomatch -> {id, 99999}
+            :nomatch -> {id, 99_999}
           end
         end)
         |> Enum.sort_by(fn {_, pos} -> pos end)

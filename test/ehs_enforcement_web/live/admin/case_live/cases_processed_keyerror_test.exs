@@ -18,7 +18,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.CasesProcessedKeyErrorTest do
         "email" => "keyerror-test-admin@test.com",
         "name" => "KeyError Test Admin",
         "login" => "keyerroradmin",
-        "id" => 99999,
+        "id" => 99_999,
         "avatar_url" => "https://github.com/images/avatars/keyerroradmin",
         "html_url" => "https://github.com/keyerroradmin"
       }

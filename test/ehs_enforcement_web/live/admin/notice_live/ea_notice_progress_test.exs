@@ -19,7 +19,7 @@ defmodule EhsEnforcementWeb.Admin.NoticeLive.EaNoticeProgressTest do
         "email" => "ea-notice-progress-admin@test.com",
         "name" => "EA Notice Progress Admin",
         "login" => "eanoticeprogressadmin",
-        "id" => 12346,
+        "id" => 12_346,
         "avatar_url" => "https://github.com/images/avatars/eanoticeprogressadmin",
         "html_url" => "https://github.com/eanoticeprogressadmin"
       }

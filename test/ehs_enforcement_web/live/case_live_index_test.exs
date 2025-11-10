@@ -141,14 +141,14 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       hse_002_position =
         case :binary.match(case_table, "HSE-2024-002") do
           {pos, _} -> pos
-          :nomatch -> 99999
+          :nomatch -> 99_999
         end
 
       # Older case (HSE-2024-001, Jan 15) should appear last
       hse_001_position =
         case :binary.match(case_table, "HSE-2024-001") do
           {pos, _} -> pos
-          :nomatch -> 99999
+          :nomatch -> 99_999
         end
 
       assert hse_002_position < hse_001_position, "Cases should be ordered by date descending"

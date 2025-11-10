@@ -183,7 +183,7 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
       assert ea_case_2004_created.id != ea_case_2005_created.id,
              "BUG REPRODUCED: 2004 case updated 2005 case instead of creating new case!"
 
-      assert Decimal.equal?(ea_case_2004_created.offence_fine, Decimal.new(10500)),
+      assert Decimal.equal?(ea_case_2004_created.offence_fine, Decimal.new(10_500)),
              "EA 2004 case has wrong fine: #{ea_case_2004_created.offence_fine}"
 
       # Verify HSE case wasn't touched
@@ -284,7 +284,7 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
       company_registration_number: nil,
       industry_sector: "Construction",
       # This is the correct fine for 2004 case
-      total_fine: Decimal.new(10500),
+      total_fine: Decimal.new(10_500),
       offence_description: "Breach of health and safety regulations",
       # SAME as 2005 case - this is the bug!
       case_reference: "7/H/2005/257487/02",

@@ -19,7 +19,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
         "email" => "ea-progress-admin@test.com",
         "name" => "EA Progress Admin",
         "login" => "eaprogressadmin",
-        "id" => 12345,
+        "id" => 12_345,
         "avatar_url" => "https://github.com/images/avatars/eaprogressadmin",
         "html_url" => "https://github.com/eaprogressadmin"
       }

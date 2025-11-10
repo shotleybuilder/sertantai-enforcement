@@ -21,7 +21,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         "email" => "regular@test.com",
         "name" => "Regular User",
         "login" => "regular",
-        "id" => 12346,
+        "id" => 12_346,
         "avatar_url" => "https://github.com/images/avatars/regular",
         "html_url" => "https://github.com/regular"
       }
@@ -46,7 +46,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         "email" => "admin@test.com",
         "name" => "Admin User",
         "login" => "admin",
-        "id" => 12347,
+        "id" => 12_347,
         "avatar_url" => "https://github.com/images/avatars/admin",
         "html_url" => "https://github.com/admin"
       }
@@ -431,7 +431,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         "email" => "stale-admin@test.com",
         "name" => "Stale Admin",
         "login" => "staleadmin",
-        "id" => 12348,
+        "id" => 12_348,
         "avatar_url" => "https://github.com/images/avatars/staleadmin",
         "html_url" => "https://github.com/staleadmin"
       }
@@ -483,7 +483,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         "email" => "legacy-admin@test.com",
         "name" => "Legacy Admin",
         "login" => "legacyadmin",
-        "id" => 12349,
+        "id" => 12_349,
         "avatar_url" => "https://github.com/images/avatars/legacyadmin",
         "html_url" => "https://github.com/legacyadmin"
       }
@@ -534,7 +534,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         "email" => "demoted@test.com",
         "name" => "Demoted User",
         "login" => "demoted",
-        "id" => 12350,
+        "id" => 12_350,
         "avatar_url" => "https://github.com/images/avatars/demoted",
         "html_url" => "https://github.com/demoted"
       }

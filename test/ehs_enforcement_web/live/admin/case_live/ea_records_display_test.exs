@@ -23,7 +23,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaRecordsDisplayTest do
         "email" => "records-test-admin@test.com",
         "name" => "Records Test Admin",
         "login" => "recordsadmin",
-        "id" => 77777,
+        "id" => 77_777,
         "avatar_url" => "https://github.com/images/avatars/recordsadmin",
         "html_url" => "https://github.com/recordsadmin"
       }

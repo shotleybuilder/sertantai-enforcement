@@ -26,7 +26,7 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
         "email" => "admin@test.com",
         "name" => "Admin User",
         "login" => "admin",
-        "id" => 12347,
+        "id" => 12_347,
         "avatar_url" => "https://github.com/images/avatars/admin",
         "html_url" => "https://github.com/admin"
       }

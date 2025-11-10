@@ -313,9 +313,9 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressUnitTest do
     test "handles large numbers correctly" do
       progress = %{
         status: :running,
-        cases_found: 50000,
-        cases_created: 25000,
-        cases_updated: 15000,
+        cases_found: 50_000,
+        cases_created: 25_000,
+        cases_updated: 15_000,
         cases_exist_total: 8000
       }
 
