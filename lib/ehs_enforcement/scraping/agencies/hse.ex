@@ -50,6 +50,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
       database: database || config.hse_database,
       enforcement_type: enforcement_type,
       stop_on_existing: Keyword.get(opts, :stop_on_existing, true),
+      process_all_records: Keyword.get(opts, :process_all_records, false),
       actor: actor,
       scrape_type: Keyword.get(opts, :scrape_type, :manual),
 
@@ -284,10 +285,35 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
               "📋 HSE: Found #{length(notices)} notice references on page #{session.current_page}"
             )
 
+            # Pre-filter existing notices if process_all_records is false (default)
+            validated_params = Map.get(session, :validated_params, %{})
+            process_all = Map.get(validated_params, :process_all_records, false)
+
+            notices_to_process =
+              if process_all do
+                Logger.info(
+                  "📋 HSE: Processing ALL #{length(notices)} notices (process_all_records=true)"
+                )
+
+                notices
+              else
+                Logger.info(
+                  "📋 HSE: Pre-filtering existing notices from #{length(notices)} total..."
+                )
+
+                filtered = filter_existing_notices(notices, validated_params)
+
+                Logger.info(
+                  "📋 HSE: Will process #{length(filtered)} new notices (skipped #{length(notices) - length(filtered)} existing)"
+                )
+
+                filtered
+              end
+
             Logger.info("📋 HSE: About to process notices serially...")
 
             # Process notices serially
-            result = process_notices_serially(session, notices)
+            result = process_notices_serially(session, notices_to_process)
             Logger.info("✅ HSE: Finished processing notices for page #{session.current_page}")
 
             Logger.info(
@@ -847,6 +873,36 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
       {:error, reason} ->
         Logger.error("❌ HSE: Failed to update ScrapeSession: #{inspect(reason)}")
         session
+    end
+  end
+
+  # Pre-filtering helper for notice scraping optimization
+  defp filter_existing_notices(notices, validated_params) do
+    regulator_ids = Enum.map(notices, & &1.regulator_id)
+    actor = Map.get(validated_params, :actor)
+
+    case EhsEnforcement.Enforcement.check_existing_notice_regulator_ids(
+           regulator_ids,
+           :hse,
+           actor
+         ) do
+      %{existing: existing_ids, existing_count: existing_count, new_count: new_count} ->
+        Logger.info(
+          "HSE: Pre-filter results - #{existing_count} existing, #{new_count} new notices (from #{length(notices)} total)"
+        )
+
+        # Return only new notices
+        new_notices =
+          Enum.reject(notices, fn notice ->
+            notice.regulator_id in existing_ids
+          end)
+
+        new_notices
+
+      _error ->
+        # If pre-filter check fails, process all notices (fallback to old behavior)
+        Logger.warning("HSE: Pre-filter check failed, processing all #{length(notices)} notices")
+        notices
     end
   end
 end
