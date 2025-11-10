@@ -7,7 +7,7 @@ defmodule EhsEnforcement.Utility do
   Utility function to time the parser.
   Arose when rm_header was taking 5 seconds!  Faster now :)
   """
-  def parse_timer() do
+  def parse_timer do
     # {:ok, binary} = File.read(Path.absname(Legl.original())) # TODO: Fix this reference
     # {t, binary} = :timer.tc(UK, :rm_header, [binary])
     # display_time("rm_header", t)
@@ -25,7 +25,7 @@ defmodule EhsEnforcement.Utility do
     IO.puts("#{f} takes #{t} microseconds or #{t / 1_000_000} seconds")
   end
 
-  def todays_date() do
+  def todays_date do
     DateTime.utc_now()
     |> (&"#{&1.day}/#{&1.month}/#{&1.year}").()
   end
@@ -323,7 +323,7 @@ defmodule EhsEnforcement.Utility do
   @doc """
   %{"1": "A", "2": "B", ...}
   """
-  def alphabet_map() do
+  def alphabet_map do
     Enum.reduce(
       Enum.zip(1..24, String.split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "", trim: true)),
       %{},
@@ -334,7 +334,7 @@ defmodule EhsEnforcement.Utility do
   @doc """
   %{"A": 1, "B": 2, ...}
   """
-  def alphabet_to_numeric_map_base() do
+  def alphabet_to_numeric_map_base do
     Enum.reduce(
       Enum.zip(String.split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "", trim: true), 1..26),
       %{},
@@ -345,7 +345,7 @@ defmodule EhsEnforcement.Utility do
   @doc """
   %{"A" => 65, "B" => 66, ...}
   """
-  def alphabet_to_numeric_map() do
+  def alphabet_to_numeric_map do
     Enum.reduce(
       Enum.zip(String.split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "", trim: true), 65..(65 + 25)),
       %{},
@@ -357,7 +357,7 @@ defmodule EhsEnforcement.Utility do
   @doc """
   Columns on screen
   """
-  def cols() do
+  def cols do
     {_, cols} = :io.columns()
     cols
   end
@@ -426,7 +426,7 @@ defmodule EhsEnforcement.Utility do
   @doc """
   Function to return the members
   """
-  def delta_lists() do
+  def delta_lists do
     x = ExPrompt.get("Old List")
     y = ExPrompt.get("New List")
 

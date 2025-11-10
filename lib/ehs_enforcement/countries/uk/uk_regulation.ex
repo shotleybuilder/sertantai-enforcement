@@ -70,7 +70,7 @@ defmodule UK.Regulation do
         end)
       )
 
-  def fields(), do: @fields
+  def fields, do: @fields
 
-  def number_fields(), do: @number_fields
+  def number_fields, do: @number_fields
 end

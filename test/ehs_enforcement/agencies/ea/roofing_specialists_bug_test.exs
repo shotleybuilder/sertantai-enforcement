@@ -240,7 +240,7 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
 
   # Helper functions to build EA cases matching production data
 
-  defp build_ea_case_2005() do
+  defp build_ea_case_2005 do
     %CaseScraper.EaDetailRecord{
       ea_record_id: "10257487",
       offender_name: "A & F ROOFING SPECIALISTS LIMITED",
@@ -271,7 +271,7 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
     }
   end
 
-  defp build_ea_case_2004() do
+  defp build_ea_case_2004 do
     %CaseScraper.EaDetailRecord{
       ea_record_id: "10241073",
       offender_name: "A & F ROOFING SPECIALISTS LIMITED",

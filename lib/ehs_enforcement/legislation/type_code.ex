@@ -19,7 +19,7 @@ defmodule EhsEnforcement.Legislation.TypeCode do
             w: ["asc", "anaw", "mwa", "wsi"],
             o: ["ukcm", "ukla", "asc", "ukmo", "apgb", "aep"]
 
-  def type_codes() do
+  def type_codes do
     ~w[ukpga uksi asp ssi asc uksi nia apni nisi nisr nisro anaw mwa wsi ukla eur eudr eudn]
   end
 

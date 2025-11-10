@@ -57,7 +57,7 @@ defmodule EhsEnforcement.Legislation.Models do
 
   def hs_model, do: @hs_model
 
-  def hs_bases() do
+  def hs_bases do
     Enum.map(
       @hs_model,
       fn {family, [base: base, si_codes: _]} ->
@@ -66,7 +66,7 @@ defmodule EhsEnforcement.Legislation.Models do
     )
   end
 
-  def hs_si_code_family() do
+  def hs_si_code_family do
     Enum.reduce(
       @hs_model,
       %{},
@@ -296,7 +296,7 @@ defmodule EhsEnforcement.Legislation.Models do
 
   def e_model, do: @e_model
 
-  def e_bases() do
+  def e_bases do
     Enum.map(
       @e_model,
       fn {family, [base: base, si_codes: _]} ->
@@ -305,7 +305,7 @@ defmodule EhsEnforcement.Legislation.Models do
     )
   end
 
-  def e_si_code_family() do
+  def e_si_code_family do
     Enum.reduce(
       @e_model,
       %{},
@@ -315,7 +315,7 @@ defmodule EhsEnforcement.Legislation.Models do
     )
   end
 
-  def ehs_si_code_family() do
+  def ehs_si_code_family do
     Map.merge(hs_si_code_family(), e_si_code_family())
   end
 

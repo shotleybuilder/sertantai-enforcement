@@ -35,7 +35,7 @@ defmodule EhsEnforcement.Integrations.Airtable.AtBasesLegl do
     |> String.replace("+", "")
   end
 
-  defp base_ids() do
+  defp base_ids do
     %{
       # UK
       # 🖤 EHS -  🇬🇧️ UK

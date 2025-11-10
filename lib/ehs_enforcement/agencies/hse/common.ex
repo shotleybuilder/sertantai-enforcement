@@ -3,7 +3,7 @@ defmodule EhsEnforcement.Agencies.Hse.Common do
 
   """
 
-  def pages_picker() do
+  def pages_picker do
     page_number = ExPrompt.get("Page number(s)?")
 
     case String.split(page_number, ",") do
@@ -13,7 +13,7 @@ defmodule EhsEnforcement.Agencies.Hse.Common do
     end
   end
 
-  def country_picker() do
+  def country_picker do
     case ExPrompt.choose("Country?", ["England", "Scotland", "Wales", "Northern Ireland"]) do
       -1 -> IO.puts("Invalid selection.")
       0 -> "England"
