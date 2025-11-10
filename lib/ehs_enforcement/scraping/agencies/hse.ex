@@ -25,6 +25,8 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
   alias EhsEnforcement.Scraping.ScrapeSession
   alias EhsEnforcement.Scraping.Hse.CaseScraper
   alias EhsEnforcement.Scraping.Hse.CaseProcessor
+  alias EhsEnforcement.Scraping.Hse.NoticeScraper
+  alias EhsEnforcement.Scraping.Hse.NoticeProcessor
   alias EhsEnforcement.Scraping.ProcessingLog
 
   @impl true
@@ -36,6 +38,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
     max_pages = Keyword.get(opts, :max_pages)
     database = Keyword.get(opts, :database)
     actor = Keyword.get(opts, :actor)
+    enforcement_type = Keyword.get(opts, :enforcement_type, :case)
 
     # Load configuration for defaults if max_pages or database not provided
     config = load_scraping_config(opts)
@@ -45,6 +48,7 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
       start_page: validate_page_number(start_page),
       max_pages: max_pages || config.max_pages_per_session,
       database: database || config.hse_database,
+      enforcement_type: enforcement_type,
       stop_on_existing: Keyword.get(opts, :stop_on_existing, true),
       actor: actor,
       scrape_type: Keyword.get(opts, :scrape_type, :manual),
@@ -204,7 +208,11 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
   # HSE scraping execution logic (extracted from ScrapeCoordinator)
 
   defp execute_hse_scraping_session(session) do
-    Logger.debug("HSE: Starting execution of scraping session: #{session.session_id}")
+    Logger.info("🚀 HSE: Starting execution of scraping session: #{session.session_id}")
+
+    Logger.info(
+      "🚀 HSE: Initial state - pages_processed: #{session.pages_processed}, current_page: #{session.current_page}, status: #{session.status}"
+    )
 
     session
     |> process_pages_until_complete()
@@ -212,45 +220,111 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
   end
 
   defp process_pages_until_complete(session) do
-    if should_continue_scraping?(session) do
+    continue? = should_continue_scraping?(session)
+
+    Logger.info(
+      "🔄 HSE: Loop iteration - should_continue?: #{continue?}, pages_processed: #{session.pages_processed}/#{session.max_pages}, status: #{session.status}"
+    )
+
+    if continue? do
+      Logger.info("✅ HSE: Continuing to process page #{session.current_page}")
+
       session
       |> process_current_page()
       |> advance_to_next_page()
       |> process_pages_until_complete()
     else
+      Logger.warning(
+        "⛔ HSE: Stopping scraping loop - pages_processed: #{session.pages_processed}, status: #{session.status}"
+      )
+
       session
     end
   end
 
   defp process_current_page(session) do
-    Logger.debug("HSE: Processing page #{session.current_page} for session #{session.session_id}")
+    Logger.info(
+      "📄 HSE: ENTERING process_current_page - page #{session.current_page}, session #{session.session_id}"
+    )
 
-    # Get basic cases from the page
-    case CaseScraper.scrape_page_basic(session.current_page, database: session.database) do
-      {:ok, basic_cases} ->
-        Logger.info(
-          "HSE: Found #{length(basic_cases)} case references on page #{session.current_page}"
-        )
+    Logger.info(
+      "📄 HSE: Session state - pages_processed: #{session.pages_processed}, cases_found: #{session.cases_found}, cases_created: #{session.cases_created}"
+    )
 
-        # Process cases serially with additional URI requests
-        process_cases_serially(session, basic_cases)
+    Logger.debug(
+      "HSE: session.database value: #{inspect(session.database)} (type: #{inspect(is_binary(session.database))})"
+    )
 
-      {:error, reason} ->
-        Logger.error("HSE: Failed to scrape page #{session.current_page}: #{inspect(reason)}")
+    # Route to correct scraper based on database type
+    case session.database do
+      "notices" ->
+        # Get notices from the page (notices use country parameter, default to England)
+        # NoticeScraper.get_hse_notices returns a list directly, or {:error, reason}
+        case NoticeScraper.get_hse_notices(page_number: session.current_page, country: "England") do
+          {:error, reason} ->
+            Logger.error("HSE: Failed to scrape page #{session.current_page}: #{inspect(reason)}")
 
-        # Update session with error using Ash.update
-        error_params = %{errors_count: session.errors_count + 1}
+            # Update session with error using Ash.update
+            error_params = %{errors_count: session.errors_count + 1}
 
-        case Ash.update(session, error_params) do
-          {:ok, updated_session} ->
-            updated_session
+            case Ash.update(session, error_params) do
+              {:ok, updated_session} ->
+                updated_session
 
-          {:error, update_reason} ->
-            Logger.error(
-              "HSE: Failed to update ScrapeSession with error: #{inspect(update_reason)}"
+              {:error, update_reason} ->
+                Logger.error(
+                  "HSE: Failed to update ScrapeSession with error: #{inspect(update_reason)}"
+                )
+
+                session
+            end
+
+          notices when is_list(notices) ->
+            Logger.info(
+              "📋 HSE: Found #{length(notices)} notice references on page #{session.current_page}"
             )
 
-            session
+            Logger.info("📋 HSE: About to process notices serially...")
+
+            # Process notices serially
+            result = process_notices_serially(session, notices)
+            Logger.info("✅ HSE: Finished processing notices for page #{session.current_page}")
+
+            Logger.info(
+              "✅ HSE: Result session state - pages_processed: #{result.pages_processed}, cases_found: #{result.cases_found}, cases_created: #{result.cases_created}"
+            )
+
+            result
+        end
+
+      _ ->
+        # Get basic cases from the page (convictions, appeals)
+        case CaseScraper.scrape_page_basic(session.current_page, database: session.database) do
+          {:ok, basic_cases} ->
+            Logger.info(
+              "HSE: Found #{length(basic_cases)} case references on page #{session.current_page}"
+            )
+
+            # Process cases serially with additional URI requests
+            process_cases_serially(session, basic_cases)
+
+          {:error, reason} ->
+            Logger.error("HSE: Failed to scrape page #{session.current_page}: #{inspect(reason)}")
+
+            # Update session with error using Ash.update
+            error_params = %{errors_count: session.errors_count + 1}
+
+            case Ash.update(session, error_params) do
+              {:ok, updated_session} ->
+                updated_session
+
+              {:error, update_reason} ->
+                Logger.error(
+                  "HSE: Failed to update ScrapeSession with error: #{inspect(update_reason)}"
+                )
+
+                session
+            end
         end
     end
   end
@@ -263,121 +337,240 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
     validated_params = Map.get(session, :validated_params, %{})
     actor = Map.get(validated_params, :actor)
 
-    # Track results for session updates
-    results = %{
-      cases_created: 0,
-      cases_existing: 0,
-      cases_errors: 0,
-      processed_cases: []
+    # Track both session and results through the reduction
+    initial_state = {
+      session,
+      %{
+        cases_created: 0,
+        cases_existing: 0,
+        cases_errors: 0,
+        processed_cases: []
+      }
     }
 
-    # Process each case serially with full data enrichment
-    final_results =
-      Enum.reduce(basic_cases, results, fn basic_case, acc ->
+    # Process each case serially with incremental session updates
+    {final_session, final_results} =
+      Enum.reduce(basic_cases, initial_state, fn basic_case, {current_session, acc} ->
         if basic_case.regulator_id && basic_case.regulator_id != "" do
-          process_single_case_with_details(session, basic_case, actor, acc)
+          # Get case details
+          enriched_case =
+            case get_case_details(basic_case, current_session.database) do
+              {:ok, case_with_details} ->
+                Logger.debug("HSE: Fetched details for case #{basic_case.regulator_id}")
+                case_with_details
+
+              {:error, reason} ->
+                Logger.warning(
+                  "HSE: Failed to fetch details for case #{basic_case.regulator_id}: #{inspect(reason)}"
+                )
+
+                basic_case
+            end
+
+          # Process and create the case
+          case CaseProcessor.process_and_create_case(enriched_case, actor) do
+            {:ok, case_record} ->
+              Logger.info("HSE: Created case: #{case_record.regulator_id}")
+
+              # Update session IMMEDIATELY after creating case
+              updated_session = update_session_incremental(current_session, :created)
+
+              updated_acc = %{
+                acc
+                | cases_created: acc.cases_created + 1,
+                  processed_cases: [enriched_case | acc.processed_cases]
+              }
+
+              {updated_session, updated_acc}
+
+            {:error, %Ash.Error.Invalid{errors: errors}} ->
+              if duplicate_error?(errors) do
+                Logger.info("HSE: Case already exists: #{enriched_case.regulator_id}")
+
+                # Find and update existing case with last_synced_at
+                case find_and_update_existing_case(enriched_case, actor) do
+                  {:ok, updated_case} ->
+                    Logger.info("HSE: Updated existing case: #{updated_case.regulator_id}")
+
+                  {:error, find_error} ->
+                    Logger.warning(
+                      "HSE: Failed to find/update existing case: #{inspect(find_error)}"
+                    )
+                end
+
+                # Update session with existing status
+                updated_session = update_session_incremental(current_session, :existing)
+
+                updated_acc = %{
+                  acc
+                  | cases_existing: acc.cases_existing + 1,
+                    processed_cases: [enriched_case | acc.processed_cases]
+                }
+
+                {updated_session, updated_acc}
+              else
+                Logger.warning(
+                  "HSE: Error creating case #{enriched_case.regulator_id}: #{inspect(errors)}"
+                )
+
+                # Update session with error
+                updated_session = update_session_incremental(current_session, :error)
+
+                updated_acc = %{
+                  acc
+                  | cases_errors: acc.cases_errors + 1,
+                    processed_cases: [enriched_case | acc.processed_cases]
+                }
+
+                {updated_session, updated_acc}
+              end
+
+            {:error, reason} ->
+              Logger.warning(
+                "HSE: Error processing case #{enriched_case.regulator_id}: #{inspect(reason)}"
+              )
+
+              # Update session with error
+              updated_session = update_session_incremental(current_session, :error)
+
+              updated_acc = %{
+                acc
+                | cases_errors: acc.cases_errors + 1,
+                  processed_cases: [enriched_case | acc.processed_cases]
+              }
+
+              {updated_session, updated_acc}
+          end
         else
           Logger.warning("HSE: Skipping case without regulator_id")
-          acc
+          {current_session, acc}
         end
       end)
 
     # Create processing log for the completed page
-    create_page_processing_log(session, final_results.processed_cases, final_results)
+    create_page_processing_log(final_session, final_results.processed_cases, final_results)
 
-    # Update session with final page results
-    update_session_with_page_results(session, final_results)
-  end
-
-  defp process_single_case_with_details(session, basic_case, actor, acc) do
-    Logger.debug(
-      "HSE: Processing case #{basic_case.regulator_id} with additional detail fetching"
-    )
-
-    # Step 1: Get case details from additional URI
-    enriched_case =
-      case get_case_details(basic_case, session.database) do
-        {:ok, case_with_details} ->
-          Logger.debug("HSE: Fetched details for case #{basic_case.regulator_id}")
-          case_with_details
-
-        {:error, reason} ->
-          Logger.warning(
-            "HSE: Failed to fetch details for case #{basic_case.regulator_id}: #{inspect(reason)}"
-          )
-
-          basic_case
-      end
-
-    # Step 2: Process and create the fully enriched case
-    case CaseProcessor.process_and_create_case(enriched_case, actor) do
-      {:ok, case_record} ->
-        Logger.info("HSE: Created case: #{case_record.regulator_id}")
-
-        %{
-          acc
-          | cases_created: acc.cases_created + 1,
-            processed_cases: [enriched_case | acc.processed_cases]
-        }
-
-      {:error, %Ash.Error.Invalid{errors: errors}} ->
-        if duplicate_error?(errors) do
-          Logger.info("HSE: Case already exists: #{enriched_case.regulator_id}")
-
-          # Find and update existing case with last_synced_at
-          case find_and_update_existing_case(enriched_case, actor) do
-            {:ok, updated_case} ->
-              Logger.info("HSE: Updated existing case: #{updated_case.regulator_id}")
-
-            {:error, find_error} ->
-              Logger.warning("HSE: Failed to find/update existing case: #{inspect(find_error)}")
-          end
-
-          %{
-            acc
-            | cases_existing: acc.cases_existing + 1,
-              processed_cases: [enriched_case | acc.processed_cases]
-          }
-        else
-          Logger.warning(
-            "HSE: Error creating case #{enriched_case.regulator_id}: #{inspect(errors)}"
-          )
-
-          %{
-            acc
-            | cases_errors: acc.cases_errors + 1,
-              processed_cases: [enriched_case | acc.processed_cases]
-          }
-        end
-
-      {:error, reason} ->
-        Logger.warning(
-          "HSE: Error processing case #{enriched_case.regulator_id}: #{inspect(reason)}"
-        )
-
-        %{
-          acc
-          | cases_errors: acc.cases_errors + 1,
-            processed_cases: [enriched_case | acc.processed_cases]
-        }
-    end
+    # Update session with page completion (increments pages_processed)
+    update_session_with_page_results(final_session, final_results)
   end
 
   defp advance_to_next_page(session) do
+    Logger.info(
+      "⏭️  HSE: ENTERING advance_to_next_page - current_page: #{session.current_page}, pages_processed: #{session.pages_processed}"
+    )
+
     # Update session to next page using Ash.update
+    # NOTE: pages_processed is now incremented in update_session_with_page_results
     update_params = %{
-      current_page: session.current_page + 1,
-      pages_processed: session.pages_processed + 1
+      current_page: session.current_page + 1
     }
+
+    Logger.info(
+      "⏭️  HSE: Updating session - new current_page will be: #{session.current_page + 1}"
+    )
+
+    # Preserve validated_params across updates
+    validated_params = Map.get(session, :validated_params)
 
     case Ash.update(session, update_params) do
       {:ok, updated_session} ->
-        updated_session
+        Logger.info("✅ HSE: Successfully advanced to page #{updated_session.current_page}")
+
+        # Re-attach validated_params to preserve across pipeline
+        if validated_params do
+          Map.put(updated_session, :validated_params, validated_params)
+        else
+          updated_session
+        end
 
       {:error, reason} ->
-        Logger.error("HSE: Failed to advance page: #{inspect(reason)}")
+        Logger.error("❌ HSE: Failed to advance page: #{inspect(reason)}")
         session
     end
+  end
+
+  # Notice processing functions (similar to case processing but using NoticeProcessor)
+
+  defp process_notices_serially(session, notices) do
+    Logger.debug(
+      "HSE: Processing #{length(notices)} notices serially for session #{session.session_id}"
+    )
+
+    validated_params = Map.get(session, :validated_params, %{})
+    actor = Map.get(validated_params, :actor)
+
+    # Track both session and results through the reduction
+    initial_state = {
+      session,
+      %{
+        cases_created: 0,
+        cases_existing: 0,
+        cases_errors: 0,
+        processed_cases: []
+      }
+    }
+
+    # Process each notice serially with incremental session updates
+    {final_session, final_results} =
+      Enum.reduce(notices, initial_state, fn notice, {current_session, acc} ->
+        if notice.regulator_id && notice.regulator_id != "" do
+          # Process the notice
+          enriched_notice = enrich_notice_with_details(notice)
+
+          case NoticeProcessor.process_and_create_notice(enriched_notice, actor) do
+            {:ok, _notice} ->
+              Logger.info("HSE: Created/updated notice #{enriched_notice.regulator_id}")
+
+              # Update session IMMEDIATELY after processing this record
+              updated_session = update_session_incremental(current_session, :created)
+
+              # Update accumulator
+              updated_acc = %{acc | cases_created: acc.cases_created + 1}
+
+              updated_acc = %{
+                updated_acc
+                | processed_cases: [enriched_notice | acc.processed_cases]
+              }
+
+              {updated_session, updated_acc}
+
+            {:error, reason} ->
+              Logger.error(
+                "HSE: Failed to process notice #{notice.regulator_id}: #{inspect(reason)}"
+              )
+
+              # Update session with error
+              updated_session = update_session_incremental(current_session, :error)
+
+              # Update accumulator
+              updated_acc = %{acc | cases_errors: acc.cases_errors + 1}
+
+              {updated_session, updated_acc}
+          end
+        else
+          Logger.warning("HSE: Skipping notice without regulator_id")
+          {current_session, acc}
+        end
+      end)
+
+    # Create processing log for the completed page
+    create_page_processing_log(final_session, final_results.processed_cases, final_results)
+
+    # Update session with page completion (increments pages_processed)
+    update_session_with_page_results(final_session, final_results)
+  end
+
+  defp enrich_notice_with_details(notice) do
+    # Fetch notice details
+    details = NoticeScraper.get_notice_details(notice.regulator_id)
+
+    # Fetch notice breaches
+    breaches = NoticeScraper.get_notice_breaches(notice.regulator_id)
+
+    # Merge all data together
+    notice
+    |> Map.merge(details)
+    |> Map.merge(breaches)
   end
 
   defp finalize_session(session) do
@@ -512,13 +705,14 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
 
   defp create_page_processing_log(session, scraped_cases, results) do
     # Create summary of scraped cases for UI display
+    # Note: Notices don't have offence_fine, so use Map.get with nil default
     case_summary =
       Enum.map(scraped_cases, fn case_data ->
         %{
           regulator_id: case_data.regulator_id,
           offender_name: case_data.offender_name,
           case_date: case_data.offence_action_date,
-          fine_amount: case_data.offence_fine
+          fine_amount: Map.get(case_data, :offence_fine, nil)
         }
       end)
 
@@ -544,32 +738,114 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
     end
   end
 
+  # Updates session incrementally after processing each individual record.
+  #
+  # This function is called after EACH notice/case is processed to provide
+  # real-time progress updates to the UI via PubSub.
+  #
+  # Parameters:
+  # - `session` - Current ScrapeSession
+  # - `result_type` - `:created`, `:existing`, or `:error`
+  #
+  # Returns: Updated session with incremented counters or original session on error
+  defp update_session_incremental(session, result_type) do
+    update_params =
+      case result_type do
+        :created ->
+          %{
+            cases_found: session.cases_found + 1,
+            cases_created: session.cases_created + 1,
+            cases_processed: session.cases_processed + 1
+          }
+
+        :existing ->
+          %{
+            cases_found: session.cases_found + 1,
+            cases_exist_total: session.cases_exist_total + 1,
+            cases_processed: session.cases_processed + 1
+          }
+
+        :error ->
+          %{
+            cases_found: session.cases_found + 1,
+            errors_count: session.errors_count + 1,
+            cases_processed: session.cases_processed + 1
+          }
+      end
+
+    # Preserve validated_params
+    validated_params = Map.get(session, :validated_params)
+
+    case Ash.update(session, update_params) do
+      {:ok, updated_session} ->
+        Logger.debug(
+          "📊 HSE: Updated session incrementally - cases_found: #{updated_session.cases_found}, cases_created: #{updated_session.cases_created}, result: #{result_type}"
+        )
+
+        # Ash PubSub will broadcast "scrape_session:updated" automatically
+
+        if validated_params do
+          Map.put(updated_session, :validated_params, validated_params)
+        else
+          updated_session
+        end
+
+      {:error, reason} ->
+        Logger.error("❌ HSE: Failed incremental update: #{inspect(reason)}")
+        # Return original session on failure
+        session
+    end
+  end
+
   defp update_session_with_page_results(session, results) do
     total_cases = results.cases_created + results.cases_existing + results.cases_errors
+
+    Logger.info("💾 HSE: ENTERING update_session_with_page_results")
+
+    Logger.info(
+      "💾 HSE: Page results - created: #{results.cases_created}, existing: #{results.cases_existing}, errors: #{results.cases_errors}, total: #{total_cases}"
+    )
+
+    Logger.info(
+      "💾 HSE: Current session - cases_processed: #{session.cases_processed}, cases_created: #{session.cases_created}, cases_exist_total: #{session.cases_exist_total}"
+    )
 
     # Check if we should stop because all cases on this page already exist
     should_stop_all_exist = results.cases_existing == total_cases and total_cases > 0
 
+    # NOTE: cases_found, cases_created, cases_exist_total, cases_processed, and errors_count
+    # are now updated incrementally per record. We only need to increment pages_processed here.
     update_params = %{
-      cases_processed: session.cases_processed + total_cases,
-      cases_created: session.cases_created + results.cases_created,
-      cases_exist_total: session.cases_exist_total + results.cases_existing,
-      errors_count: session.errors_count + results.cases_errors,
+      pages_processed: session.pages_processed + 1,
       status: if(should_stop_all_exist, do: :completed, else: session.status)
     }
 
+    Logger.info("💾 HSE: Update params - #{inspect(update_params)}")
+
+    # Preserve validated_params across updates
+    validated_params = Map.get(session, :validated_params)
+
     case Ash.update(session, update_params) do
       {:ok, updated_session} ->
+        Logger.info(
+          "✅ HSE: Successfully updated session - new cases_processed: #{updated_session.cases_processed}, cases_found: #{updated_session.cases_found}, cases_created: #{updated_session.cases_created}"
+        )
+
         if should_stop_all_exist do
           Logger.info(
-            "HSE: Stopping scraping - all #{total_cases} cases on page #{session.current_page} already exist"
+            "⛔ HSE: Stopping scraping - all #{total_cases} cases on page #{session.current_page} already exist"
           )
         end
 
-        updated_session
+        # Re-attach validated_params to preserve across pipeline
+        if validated_params do
+          Map.put(updated_session, :validated_params, validated_params)
+        else
+          updated_session
+        end
 
       {:error, reason} ->
-        Logger.error("HSE: Failed to update ScrapeSession: #{inspect(reason)}")
+        Logger.error("❌ HSE: Failed to update ScrapeSession: #{inspect(reason)}")
         session
     end
   end

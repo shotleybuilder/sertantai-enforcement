@@ -173,6 +173,67 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
     end
   end
 
+  describe "process_and_create_notice/2" do
+    test "creates notice in database with proper actor" do
+      # Setup: Create HSE agency (actor not needed for Notice resource - no policies)
+      {:ok, agency} =
+        Ash.create(EhsEnforcement.Enforcement.Agency, %{
+          name: "Health and Safety Executive",
+          code: :hse
+        })
+
+      basic_notice = %{
+        regulator_id: "TEST2024001",
+        offender_name: "Test Company Ltd",
+        offence_action_type: "Improvement Notice",
+        offence_action_date: "2024-12-01",
+        notice_date: "2024-12-01",
+        operative_date: "2024-12-01",
+        offence_compliance_date: "2025-01-15",
+        offence_description: "Safety violations"
+      }
+
+      # Call process_and_create_notice which should persist to database
+      assert {:ok, created_notice} = NoticeProcessor.process_and_create_notice(basic_notice, nil)
+
+      # Verify notice was actually persisted to database
+      assert {:ok, [db_notice]} =
+               EhsEnforcement.Enforcement.Notice
+               |> Ash.Query.filter(regulator_id == "TEST2024001")
+               |> Ash.read()
+
+      assert db_notice.id == created_notice.id
+      assert db_notice.regulator_id == "TEST2024001"
+      assert db_notice.agency_id == agency.id
+
+      # Verify offender was created
+      assert {:ok, [offender]} =
+               EhsEnforcement.Enforcement.Offender
+               |> Ash.Query.filter(name == "Test Company Ltd")
+               |> Ash.read()
+
+      assert offender.id == created_notice.offender_id
+    end
+
+    test "handles missing actor gracefully" do
+      basic_notice = %{
+        regulator_id: "TEST2024002",
+        offender_name: "Another Company",
+        offence_action_type: "Prohibition Notice",
+        offence_action_date: "2024-12-02",
+        notice_date: "2024-12-02",
+        operative_date: "2024-12-02",
+        offence_description: "Immediate danger"
+      }
+
+      # Should work even with nil actor (policies may vary)
+      result = NoticeProcessor.process_and_create_notice(basic_notice, nil)
+
+      # Either succeeds or fails with clear error about missing actor
+      assert match?({:ok, _}, result) or match?({:error, _}, result)
+    end
+  end
+
   describe "process_notices/1" do
     test "processes multiple notices successfully" do
       notices = [

@@ -579,7 +579,10 @@ defmodule EhsEnforcement.Enforcement.Offender do
     require Logger
     Logger.info("Creating offender: #{attrs[:name]} (#{attrs[:postcode] || "no postcode"})")
 
-    case EhsEnforcement.Enforcement.create_offender(attrs) do
+    # Remove metadata fields that shouldn't be passed to Ash.create
+    {_review_candidates, clean_attrs} = Map.pop(attrs, :__review_candidates__)
+
+    case EhsEnforcement.Enforcement.create_offender(clean_attrs) do
       {:ok, offender} ->
         Logger.info("✅ Created offender: #{offender.name} (ID: #{offender.id})")
         {:ok, offender}
