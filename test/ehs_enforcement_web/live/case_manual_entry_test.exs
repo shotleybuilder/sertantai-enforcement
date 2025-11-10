@@ -358,7 +358,7 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       case_count_after = Enforcement.count_cases!()
       assert case_count_after == case_count_before + 1
 
-      # Verify case data  
+      # Verify case data
       {:ok, cases} =
         EhsEnforcement.Enforcement.Case
         |> Ash.Query.filter(regulator_id == "HSE-MANUAL-001")

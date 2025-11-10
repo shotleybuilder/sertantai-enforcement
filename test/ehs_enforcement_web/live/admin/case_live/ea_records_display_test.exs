@@ -7,7 +7,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaRecordsDisplayTest do
   in the Records table below the progress component.
 
   The bug was that LiveView was subscribing to wrong PubSub topics:
-  - Wrong: "ea_case_processing_log:created" 
+  - Wrong: "ea_case_processing_log:created"
   - Correct: "processing_log:created"
   """
 
@@ -111,7 +111,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaRecordsDisplayTest do
       # Should show the case statistics
       # items_found
       assert has_element?(view, "span", "3")
-      # items_created  
+      # items_created
       assert has_element?(view, "span", "1")
       # items_existing
       assert has_element?(view, "span", "2")
@@ -150,7 +150,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaRecordsDisplayTest do
       {:ok, _hse_log} = Ash.create(ProcessingLog, hse_log_params)
       Process.sleep(50)
 
-      # Create EA processing log  
+      # Create EA processing log
       ea_log_params = %{
         session_id: "test-ea-session-789",
         agency: :ea,

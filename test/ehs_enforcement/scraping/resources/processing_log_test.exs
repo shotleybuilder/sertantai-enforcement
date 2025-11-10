@@ -237,7 +237,7 @@ defmodule EhsEnforcement.Scraping.ProcessingLogTest do
         batch_or_page: 5,
         # was cases_scraped
         items_found: 25,
-        # was cases_created  
+        # was cases_created
         items_created: 18,
         # was existing_count
         items_existing: 4,
@@ -273,7 +273,7 @@ defmodule EhsEnforcement.Scraping.ProcessingLogTest do
         items_found: 12,
         # was cases_created
         items_created: 8,
-        # was cases_existing  
+        # was cases_existing
         items_existing: 3,
         # was cases_failed
         items_failed: 1,
@@ -406,7 +406,7 @@ defmodule EhsEnforcement.Scraping.ProcessingLogTest do
     test "field mapping matches specification exactly" do
       # Verify the field mapping from CASE_SCRAPING_REVIEW.md is correct
 
-      # HSE field mapping  
+      # HSE field mapping
       # cases_scraped -> items_found ✓
       # cases_skipped -> items_failed ✓
       # existing_count -> items_existing ✓
@@ -414,7 +414,7 @@ defmodule EhsEnforcement.Scraping.ProcessingLogTest do
       # scraped_cases -> scraped_items ✓
 
       # EA field mapping
-      # cases_found -> items_found ✓  
+      # cases_found -> items_found ✓
       # cases_failed -> items_failed ✓
       # cases_existing -> items_existing ✓
       # batch_number -> batch_or_page ✓

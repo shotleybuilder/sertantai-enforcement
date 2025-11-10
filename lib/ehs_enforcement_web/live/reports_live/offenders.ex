@@ -139,7 +139,7 @@ defmodule EhsEnforcementWeb.ReportsLive.Offenders do
         "\"#{industry}\",#{stats.count},#{Decimal.to_string(stats.total_fines)},#{Decimal.to_string(stats.avg_fines)}"
       end)
 
-    # Top offenders CSV  
+    # Top offenders CSV
     top_offenders_header = "Top Offender Name,Total Fines,Total Cases,Total Notices,Industry"
 
     top_offender_rows =

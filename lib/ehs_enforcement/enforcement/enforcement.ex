@@ -129,12 +129,12 @@ defmodule EhsEnforcement.Enforcement do
 
   ## Agency Functions
   - `list_agencies/1` - List all agencies with options
-  - `get_agency/2` - Get agency by ID  
+  - `get_agency/2` - Get agency by ID
   - `create_agency/2` - Create new agency
   - `update_agency/3` - Update existing agency
   - `get_agency_by_code/2` - Get agency by code
 
-  ## Offender Functions  
+  ## Offender Functions
   - `list_offenders/1` - List all offenders with basic options (code interface)
   - `list_offenders_with_filters/1` - List offenders with complex filtering (custom function)
   - `list_offenders_with_filters_cached!/1` - Cached version for performance
@@ -184,7 +184,7 @@ defmodule EhsEnforcement.Enforcement do
   - `search_legislation_title/2` - Fuzzy search legislation titles
 
   ## Offence Functions (Unified Violation/Breach Support)
-  - `list_offences/1` - List all offences with options  
+  - `list_offences/1` - List all offences with options
   - `get_offence/2` - Get offence by ID
   - `create_offence/2` - Create new offence
   - `update_offence/3` - Update existing offence
@@ -508,7 +508,7 @@ defmodule EhsEnforcement.Enforcement do
         filters -> build_optimized_notice_filter(query, filters)
       end
 
-    # Apply sort if provided  
+    # Apply sort if provided
     query =
       case opts[:sort] do
         nil -> Ash.Query.sort(query, offence_action_date: :desc)
@@ -811,7 +811,7 @@ defmodule EhsEnforcement.Enforcement do
   ## Examples
       iex> fuzzy_search_cases("construction", limit: 10)
       [%Case{regulator_id: "HSE-2024-123", computed_breaches_summary: "Construction (Design and Management) Regulations 2015"}]
-      
+
       iex> fuzzy_search_cases("acme corp", similarity_threshold: 0.4)
       [%Case{offender: %{name: "ACME Construction Ltd"}}]
   """
@@ -1276,7 +1276,7 @@ defmodule EhsEnforcement.Enforcement do
       Query performance metrics
       Function: #{function_name}
       Query time: #{query_time_ms}ms
-      Result count: #{result_count}  
+      Result count: #{result_count}
       Filters: #{filter_summary}
       """)
     end
@@ -1358,7 +1358,7 @@ defmodule EhsEnforcement.Enforcement do
   ## Examples
       iex> find_or_create_legislation("Health and Safety at Work Act 1974", 1974, 37)
       {:ok, %Legislation{legislation_title: "Health and Safety at Work etc. Act", ...}}
-      
+
       iex> find_or_create_legislation("COSHH REGULATIONS 2002")
       {:ok, %Legislation{legislation_title: "Control of Substances Hazardous to Health Regulations", ...}}
   """

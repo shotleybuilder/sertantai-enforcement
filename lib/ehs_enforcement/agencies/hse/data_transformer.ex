@@ -1,6 +1,6 @@
 defmodule EhsEnforcement.Agencies.Hse.DataTransformer do
   @moduledoc """
-  Transforms raw HSE enforcement data into standardized format compatible 
+  Transforms raw HSE enforcement data into standardized format compatible
   with Ash Case and Notice resource structures.
 
   Handles both case and notice data from HSE scrapers, providing consistent
@@ -19,7 +19,7 @@ defmodule EhsEnforcement.Agencies.Hse.DataTransformer do
       regulator_id: hse_case_data.regulator_id,
       agency_code: :hse,
 
-      # Company information  
+      # Company information
       offender_name: clean_company_name(hse_case_data.offender_name),
       address: normalize_address(hse_case_data.offender_address),
       local_authority: hse_case_data.offender_local_authority,

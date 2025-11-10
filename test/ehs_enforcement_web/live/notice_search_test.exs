@@ -439,7 +439,7 @@ defmodule EhsEnforcementWeb.NoticeSearchTest do
         view |> element("button", "Next") |> render_click()
         html = render(view)
 
-        # Search should be preserved across pages  
+        # Search should be preserved across pages
         assert html =~ "HSE" or html =~ "search"
       else
         # If no pagination, test still passes

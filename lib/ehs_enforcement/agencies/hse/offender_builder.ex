@@ -142,7 +142,18 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
         {:ok, offender_attrs}
 
       _other ->
-        perform_companies_house_match(offender_attrs)
+        # Check if offender already has a pending review to avoid duplicate API calls
+        case check_existing_review(offender_attrs) do
+          {:existing_review, _review} ->
+            Logger.info(
+              "Skipping Companies House API call - review already exists for: #{offender_attrs[:name]}"
+            )
+
+            {:ok, offender_attrs}
+
+          :no_review ->
+            perform_companies_house_match(offender_attrs)
+        end
     end
   end
 
@@ -215,6 +226,53 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
 
   # Companies House Matching Private Functions
 
+  defp check_existing_review(offender_attrs) do
+    company_name = offender_attrs[:name]
+
+    if company_name == nil or company_name == "" do
+      :no_review
+    else
+      # Try to find existing offender by name (same logic as find_or_create_offender)
+      normalized_name = String.trim(company_name)
+
+      case EhsEnforcement.Enforcement.get_offender_by_name_and_postcode(
+             normalized_name,
+             offender_attrs[:postcode]
+           ) do
+        {:ok, offender} ->
+          # Offender exists, check if review record exists
+          check_review_for_offender(offender)
+
+        {:error, %Ash.Error.Query.NotFound{}} ->
+          # No offender found, so no review either
+          :no_review
+
+        {:error, _other} ->
+          # Other errors, treat as no review
+          :no_review
+      end
+    end
+  end
+
+  defp check_review_for_offender(offender) do
+    # Check if a review record exists for this offender
+    case Ash.read(EhsEnforcement.Enforcement.OffenderMatchReview,
+           filter: [offender_id: offender.id]
+         ) do
+      {:ok, [review | _]} ->
+        # Review exists
+        {:existing_review, review}
+
+      {:ok, []} ->
+        # No review found
+        :no_review
+
+      {:error, _error} ->
+        # Error reading reviews, treat as no review to be safe
+        :no_review
+    end
+  end
+
   defp perform_companies_house_match(offender_attrs) do
     company_name = offender_attrs[:name]
 
@@ -260,18 +318,29 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
   end
 
   defp format_candidate_address(candidate) do
-    # Companies House API provides address as a map
-    address = candidate.address
+    # Companies House search API provides address_snippet (string)
+    # Full address map is only available from company detail API
+    cond do
+      Map.has_key?(candidate, :address_snippet) ->
+        candidate.address_snippet
 
-    [
-      address["address_line_1"],
-      address["address_line_2"],
-      address["locality"],
-      address["region"],
-      address["postal_code"]
-    ]
-    |> Enum.filter(&(&1 != nil and &1 != ""))
-    |> Enum.join(", ")
+      Map.has_key?(candidate, :address) ->
+        # If we have full address details (from company lookup API)
+        address = candidate.address
+
+        [
+          address["address_line_1"],
+          address["address_line_2"],
+          address["locality"],
+          address["region"],
+          address["postal_code"]
+        ]
+        |> Enum.filter(&(&1 != nil and &1 != ""))
+        |> Enum.join(", ")
+
+      true ->
+        "Address not available"
+    end
   end
 
   defp calculate_similarity_score(_candidate) do
@@ -334,16 +403,26 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
     case EhsEnforcement.Enforcement.create_review(review_attrs) do
       {:ok, review} ->
         Logger.info(
-          "Created review record for offender #{offender.name} (#{offender.id}) " <>
+          "✓ Created review record for offender #{offender.name} (#{offender.id}) " <>
             "with #{length(candidates)} candidates, confidence=#{Float.round(confidence_score, 3)}"
         )
 
         {:ok, review}
 
       {:error, error} ->
-        Logger.error(
-          "Failed to create review record for offender #{offender.id}: #{inspect(error)}"
-        )
+        # Check if this is a duplicate constraint violation
+        error_message = inspect(error)
+
+        if String.contains?(error_message, "unique constraint") or
+             String.contains?(error_message, "offender_match_reviews_offender_id_index") do
+          Logger.info(
+            "⊘ Skipped duplicate review - record already exists for offender #{offender.name} (#{offender.id})"
+          )
+        else
+          Logger.error(
+            "✗ Failed to create review record for offender #{offender.name} (#{offender.id}): #{error_message}"
+          )
+        end
 
         {:error, error}
     end
@@ -366,10 +445,10 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
         check_high_confidence_match(candidate, offender_attrs)
 
       count when count in 2..3 ->
-        # Medium confidence - create review record for manual review
+        # Medium confidence - review record will be created after offender is persisted
         Logger.info(
           "Medium confidence: #{count} active companies found for #{company_name}. " <>
-            "Creating review record. " <>
+            "Will create review record after offender is created. " <>
             "Candidates: #{inspect(Enum.map(active_companies, & &1.company_number))}"
         )
 
@@ -435,7 +514,9 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
     String.jaro_distance(norm1, norm2)
   end
 
-  defp normalize_company_name(name) do
+  defp normalize_company_name(nil), do: ""
+
+  defp normalize_company_name(name) when is_binary(name) do
     name
     |> String.trim()
     |> String.downcase()
@@ -449,6 +530,9 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
     |> String.replace(~r/\s+/, " ")
     |> String.trim()
   end
+
+  # Fallback for unexpected types (integers, atoms, etc.)
+  defp normalize_company_name(name), do: to_string(name) |> normalize_company_name()
 
   defp business_type_compatible?(_offender_type, companies_house_type)
        when is_nil(companies_house_type) do

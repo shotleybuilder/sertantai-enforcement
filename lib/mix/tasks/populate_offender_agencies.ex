@@ -7,7 +7,7 @@ defmodule Mix.Tasks.PopulateOffenderAgencies do
 
   Usage:
     mix populate_offender_agencies
-    
+
   Options:
     --dry-run    Show what would be updated without making changes
     --limit N    Only process first N offenders (for testing)
@@ -130,7 +130,7 @@ defmodule Mix.Tasks.PopulateOffenderAgencies do
           []
       end
 
-    # Get agencies from notices  
+    # Get agencies from notices
     notice_agencies =
       case Ash.read(EhsEnforcement.Enforcement.Notice) do
         {:ok, notices} ->

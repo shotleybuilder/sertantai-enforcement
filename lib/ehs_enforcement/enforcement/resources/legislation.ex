@@ -70,7 +70,7 @@ defmodule EhsEnforcement.Enforcement.Legislation do
   end
 
   identities do
-    # Prevent duplicates even with nil values  
+    # Prevent duplicates even with nil values
     identity :unique_legislation, [:legislation_title, :legislation_year, :legislation_number] do
       # Treat multiple nil values as duplicates
       nils_distinct?(false)

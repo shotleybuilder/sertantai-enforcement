@@ -67,7 +67,7 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
       # Should show enforcement metrics
       # total_cases
       assert html =~ "6"
-      # total_notices  
+      # total_notices
       assert html =~ "9"
       # formatted total_fines (compact format)
       assert html =~ "£350.0K"
@@ -91,7 +91,7 @@ defmodule EhsEnforcementWeb.Components.OffenderCardTest do
 
       new_html = render_component(&OffenderCardComponent.render/1, %{offender: new_offender})
 
-      # Low risk offender (1 case, £12k fines)  
+      # Low risk offender (1 case, £12k fines)
       assert new_html =~ "Low Risk"
       assert new_html =~ ~r/risk-low|bg-green|text-green/
     end

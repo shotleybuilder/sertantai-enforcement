@@ -42,7 +42,7 @@ defmodule EhsEnforcementWeb.DashboardCaseNoticeCountTest do
       today = Date.utc_today()
       # 5 days ago
       recent_date1 = Date.add(today, -5)
-      # 10 days ago  
+      # 10 days ago
       recent_date2 = Date.add(today, -10)
       # 15 days ago
       recent_date3 = Date.add(today, -15)
@@ -219,7 +219,7 @@ defmodule EhsEnforcementWeb.DashboardCaseNoticeCountTest do
     } do
       {:ok, view, _html} = live(conn, "/dashboard")
 
-      # Click the "Notices" filter button  
+      # Click the "Notices" filter button
       view |> element("button", "Notices") |> render_click()
 
       html = render(view)

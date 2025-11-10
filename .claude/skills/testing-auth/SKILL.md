@@ -541,6 +541,14 @@ end
 
 ---
 
+## Related Skills
+
+For specific testing patterns, also see:
+
+- **OAuth Testing**: `.claude/skills/testing-oauth-auth/` - Creating OAuth test users with proper tokens
+- **Element Testing**: `.claude/skills/testing-liveview-elements/` - Element-based testing to avoid HTML truncation
+- **Test Setup**: `.claude/skills/testing-liveview-setup/` - Complete test file structure and organization
+
 ## Related Documentation
 
 - Phoenix.LiveViewTest: Testing LiveViews

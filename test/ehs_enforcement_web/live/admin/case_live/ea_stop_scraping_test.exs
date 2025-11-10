@@ -124,7 +124,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaStopScrapingTest do
       # Try to stop scraping when nothing is running (should not crash)
       result = render_click(view, "stop_scraping")
 
-      # Should handle gracefully 
+      # Should handle gracefully
       assert Process.alive?(view.pid), "LiveView should not crash"
       assert is_binary(result), "Should return HTML response"
     end

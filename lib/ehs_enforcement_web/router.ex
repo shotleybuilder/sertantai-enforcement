@@ -49,7 +49,7 @@ defmodule EhsEnforcementWeb.Router do
     reset_route(auth_routes_prefix: "/auth")
   end
 
-  # Public routes - no authentication required  
+  # Public routes - no authentication required
   scope "/", EhsEnforcementWeb do
     pipe_through :browser
 
@@ -112,7 +112,7 @@ defmodule EhsEnforcementWeb.Router do
       on_mount: [
         AshAuthentication.Phoenix.LiveSession
       ] do
-      # Admin Case Management Routes  
+      # Admin Case Management Routes
       # Redirect /admin/cases to the main cases page since we removed the separate admin index
       get "/admin/cases", PageController, :redirect_to_cases
       live "/admin/cases/:id/edit", Admin.CaseLive.Edit, :edit

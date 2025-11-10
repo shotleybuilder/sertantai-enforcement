@@ -149,15 +149,15 @@ defmodule EhsEnforcement.Enforcement.Case do
                 fragment(
                   "COALESCE(
         (SELECT string_agg(
-          CONCAT(l.legislation_title, 
-                 CASE WHEN o.legislation_part IS NOT NULL 
-                      THEN CONCAT(' / ', o.legislation_part) 
-                      ELSE '' END), 
+          CONCAT(l.legislation_title,
+                 CASE WHEN o.legislation_part IS NOT NULL
+                      THEN CONCAT(' / ', o.legislation_part)
+                      ELSE '' END),
           '; ' ORDER BY o.sequence_number
         )
         FROM offences o
-        JOIN legislation l ON l.id = o.legislation_id  
-        WHERE o.case_id = ?), 
+        JOIN legislation l ON l.id = o.legislation_id
+        WHERE o.case_id = ?),
         '')",
                   id
                 )
@@ -835,7 +835,7 @@ defmodule EhsEnforcement.Enforcement.Case do
           []
       end
 
-    # Get agencies from notices  
+    # Get agencies from notices
     notice_agencies =
       case EhsEnforcement.Enforcement.list_notices() do
         {:ok, notices} ->

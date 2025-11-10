@@ -7,7 +7,7 @@ defmodule EhsEnforcementWeb.NoticeFilterComponentTest do
   # This test file is for a component that doesn't exist yet.
   # The NoticeFilter functionality is part of the NoticeLive.Index LiveView
   # and should be tested in notice_live_index_test.exs instead.
-  # 
+  #
   # Keeping a minimal placeholder test to ensure the module compiles.
 
   describe "placeholder tests" do

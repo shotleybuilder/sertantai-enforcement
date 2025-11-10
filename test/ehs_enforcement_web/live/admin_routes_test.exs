@@ -41,7 +41,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
           action: :register_with_github
         )
 
-      # Create admin user with OAuth2 registration to generate tokens  
+      # Create admin user with OAuth2 registration to generate tokens
       admin_user_info = %{
         "email" => "admin@test.com",
         "name" => "Admin User",
@@ -309,7 +309,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
       html = render(view)
 
       # Should show some indication that scraping was triggered
-      # Either "Running" status or error message  
+      # Either "Running" status or error message
       assert html =~ "Running" or html =~ "idle" or html =~ "stopped" or html =~ "error"
 
       # Phase 14 expectations: Look for the debug messages that should be present

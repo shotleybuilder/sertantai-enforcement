@@ -17,7 +17,7 @@ defmodule EhsEnforcementWeb.ReportsLiveTest do
       assert html =~ "Generate Report"
       assert html =~ "Create custom reports with filtering options"
 
-      # Check for export data card  
+      # Check for export data card
       assert html =~ "Export Data"
       assert html =~ "Export filtered data in multiple formats"
     end

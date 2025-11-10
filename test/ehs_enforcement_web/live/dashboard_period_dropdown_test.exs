@@ -119,7 +119,7 @@ defmodule EhsEnforcementWeb.DashboardPeriodDropdownTest do
       view |> form("form", %{"period" => "year"}) |> render_change()
       updated_html = render(view)
 
-      # Period card should update to "365 days" 
+      # Period card should update to "365 days"
       assert updated_html =~ "365 days"
       # Should no longer show month
       refute updated_html =~ "30 days"

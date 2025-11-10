@@ -201,7 +201,7 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
       assert html =~ "ENFORCEMENT CASES"
       refute html =~ "[ADMIN] > Add New Case"
 
-      # Notices management card should not show admin actions  
+      # Notices management card should not show admin actions
       assert html =~ "ENFORCEMENT NOTICES"
       refute html =~ "[ADMIN] > Add New Notice"
     end

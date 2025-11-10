@@ -294,7 +294,7 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessorTest do
 
       result = NoticeProcessor.process_notices(notices)
 
-      # Should return processed notices successfully 
+      # Should return processed notices successfully
       assert {:ok, processed_notices} = result
       assert length(processed_notices) == 2
     end

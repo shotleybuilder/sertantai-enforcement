@@ -176,7 +176,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.CasesProcessedKeyErrorTest do
         database: "ea_enforcement",
         # Total expected cases from EA search
         cases_found: 6,
-        # Cases processed so far 
+        # Cases processed so far
         cases_processed: 2,
         cases_created: 1,
         cases_exist_total: 1,

@@ -76,7 +76,7 @@ defmodule EhsEnforcementWeb.DashboardIntegrationTest do
             breach: "Multiple safety violations"
           },
 
-          # Environment Agency cases  
+          # Environment Agency cases
           %{
             agency: ea,
             offender: Enum.at(offenders, 2),
@@ -391,7 +391,7 @@ defmodule EhsEnforcementWeb.DashboardIntegrationTest do
           agency
         end)
 
-      # Add more offenders  
+      # Add more offenders
       additional_offenders =
         Enum.map(1..20, fn i ->
           {:ok, offender} =

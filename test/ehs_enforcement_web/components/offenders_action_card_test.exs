@@ -77,7 +77,7 @@ defmodule EhsEnforcementWeb.Components.OffendersActionCardTest do
 
       # Should show 3 repeat offenders (those with more than 1 total enforcement action)
       # - repeat_offender: 3 cases + 2 notices = 5 total (repeat)
-      # - high_fine_offender: 2 cases + 1 notice = 3 total (repeat)  
+      # - high_fine_offender: 2 cases + 1 notice = 3 total (repeat)
       # - low_offender: 1 case + 0 notices = 1 total (not repeat)
       # - no_fines_offender: 0 cases + 1 notice = 1 total (not repeat)
 

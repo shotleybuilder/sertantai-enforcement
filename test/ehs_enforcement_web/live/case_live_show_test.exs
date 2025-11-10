@@ -199,7 +199,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       # Timeline should include key dates
       # First notice date
       assert html =~ "2024-01-15"
-      # Second notice date  
+      # Second notice date
       assert html =~ "2024-01-20"
       # Offense action date
       assert html =~ "2024-02-15"
@@ -645,7 +645,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       # Should show all 10 notices
       assert html =~ "10 notices" or html =~ "10 Notices"
 
-      # Should show all 5 breaches  
+      # Should show all 5 breaches
       assert html =~ "5 breaches" or html =~ "5 Breaches"
 
       # Should handle pagination or limiting if implemented

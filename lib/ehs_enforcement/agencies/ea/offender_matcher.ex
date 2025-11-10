@@ -167,7 +167,7 @@ defmodule EhsEnforcement.Agencies.Ea.OffenderMatcher do
   defp infer_business_activity(_ea_case_data) do
     # TODO: Infer business activity from agency function and offence type
     # e.g., "Water Quality" -> "Water Treatment/Supply"
-    # e.g., "Waste" -> "Waste Management" 
+    # e.g., "Waste" -> "Waste Management"
     nil
   end
 end

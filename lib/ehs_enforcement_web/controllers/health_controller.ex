@@ -13,7 +13,7 @@ defmodule EhsEnforcementWeb.HealthController do
       environment: Application.get_env(:ehs_enforcement, :environment, :unknown)
     }
 
-    # Check database connectivity  
+    # Check database connectivity
     case check_database() do
       :ok ->
         :telemetry.execute([:ehs_enforcement, :health_check], %{success: 1})

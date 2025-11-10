@@ -159,7 +159,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapingCompletionKeyErrorTest do
         pages_processed: 1,
         # Higher than initial progress
         cases_found: 6,
-        # Higher than initial progress 
+        # Higher than initial progress
         cases_processed: 5,
         cases_created: 2,
         cases_updated: 0,

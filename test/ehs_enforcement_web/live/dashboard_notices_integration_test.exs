@@ -166,7 +166,7 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
         |> put_session(:current_user, regular_user)
         |> live("/dashboard")
 
-      # Since the button is hidden for non-admin users, we test that 
+      # Since the button is hidden for non-admin users, we test that
       # the event handler would still work correctly if called directly
       # This tests the admin privilege checking logic
       try do

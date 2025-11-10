@@ -740,7 +740,7 @@ defmodule EhsEnforcementWeb.CaseLive.Index do
 
   defp build_sort_options(sort_by, sort_dir) do
     case {sort_by, sort_dir} do
-      # TODO: Re-enable offender sorting when Ash 3.5.x belongs_to relationship 
+      # TODO: Re-enable offender sorting when Ash 3.5.x belongs_to relationship
       # sorting bug is fixed (KeyError: key :constraints not found)
       # {:offender_name, dir} ->
       #   [offender: [name: dir]]

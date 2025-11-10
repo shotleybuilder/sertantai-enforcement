@@ -15,7 +15,7 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
 
   describe "EA duplicate regulator_id handling" do
     setup do
-      # Create OAuth2 admin user 
+      # Create OAuth2 admin user
       user_info = %{
         "email" => "ea-duplicate-test@example.com",
         "name" => "EA Duplicate Test Admin",

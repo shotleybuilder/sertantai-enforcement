@@ -6,7 +6,7 @@ defmodule EhsEnforcementWeb.NoticeTimelineComponentTest do
     test "placeholder test for future notice timeline functionality" do
       # This test file is for a component that doesn't exist yet.
       # The Notice resource is not yet implemented in the application.
-      # 
+      #
       # Once the Notice resource is implemented with proper Ash actions,
       # this file should be updated to test the NoticeTimeline component
       # similar to the EnforcementTimelineComponent tests.

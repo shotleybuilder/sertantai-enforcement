@@ -137,7 +137,7 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinatorTest do
     end
   end
 
-  # Note: Full integration tests with actual scraping would require 
+  # Note: Full integration tests with actual scraping would require
   # mocking HTTP requests. For now we test the session management logic.
 
   describe "scrape_page_range/3" do

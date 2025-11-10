@@ -107,7 +107,7 @@ defmodule EhsEnforcement.Config.ConfigIntegrationTest do
       ConfigManager.set_config("dev_settings", "database", dev_config["database"])
       ConfigManager.set_config("dev_settings", "sync", dev_config["sync"])
 
-      # Test production environment configuration  
+      # Test production environment configuration
       prod_config = %{
         "database" => %{
           "pool_size" => 50,

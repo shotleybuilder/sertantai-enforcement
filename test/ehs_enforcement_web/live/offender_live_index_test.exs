@@ -362,7 +362,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
 
     test "handles empty offender list gracefully", %{conn: conn} do
       # Test with no offenders by using a fresh database state
-      # Clear the database via repo 
+      # Clear the database via repo
       EhsEnforcement.Repo.delete_all(EhsEnforcement.Enforcement.Offender)
 
       {:ok, view, html} = live(conn, "/offenders")

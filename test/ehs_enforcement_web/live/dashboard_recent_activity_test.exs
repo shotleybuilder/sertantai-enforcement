@@ -133,7 +133,7 @@ defmodule EhsEnforcementWeb.DashboardRecentActivityTest do
       if notice_count > 0 do
         {:ok, view, _html} = live(conn, "/dashboard")
 
-        # Click the "Notices" filter button  
+        # Click the "Notices" filter button
         view |> element("button[phx-value-type='notices']", "Notices") |> render_click()
 
         html = render(view)

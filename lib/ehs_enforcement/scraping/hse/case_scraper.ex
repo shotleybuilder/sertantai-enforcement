@@ -407,7 +407,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
           {:error, _} -> acc
         end
 
-      # Multiple breaches link  
+      # Multiple breaches link
       [
         {"td", _, [{"a", [{"href", breaches_url}], ["Breaches involved in this Case"]} | _]}
       ],
@@ -442,7 +442,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
 
         Map.merge(acc, Map.merge(breach_data, related_data))
 
-      # Breaches + Related cases  
+      # Breaches + Related cases
       [
         {"td", _,
          [

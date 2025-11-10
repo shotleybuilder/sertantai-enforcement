@@ -166,7 +166,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       assert has_element?(hse_card, ":fl-contains('1 Case')")
       assert has_element?(hse_card, ":fl-contains('£5,000')")
 
-      # EA should show 1 case, £3,000 total  
+      # EA should show 1 case, £3,000 total
       assert has_element?(ea_card, ":fl-contains('1 Case')")
       assert has_element?(ea_card, ":fl-contains('£3,000')")
     end
@@ -493,7 +493,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       # Fine total
       assert hse_content =~ "3,000" or hse_content =~ "3000"
 
-      # EA statistics (1 case, £5,000 total)  
+      # EA statistics (1 case, £5,000 total)
       ea_card = element(view, "[data-testid='agency-card']:has(h3:fl-contains('EA'))")
       ea_content = render(ea_card)
 

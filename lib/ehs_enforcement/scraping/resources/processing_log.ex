@@ -43,7 +43,7 @@ defmodule EhsEnforcement.Scraping.ProcessingLog do
     attribute(:items_found, :integer, default: 0)
     # cases_created (same for both)
     attribute(:items_created, :integer, default: 0)
-    # existing_count/cases_existing  
+    # existing_count/cases_existing
     attribute(:items_existing, :integer, default: 0)
     # cases_skipped/cases_failed
     attribute(:items_failed, :integer, default: 0)

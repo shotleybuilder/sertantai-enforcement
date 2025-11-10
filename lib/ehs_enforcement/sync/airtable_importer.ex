@@ -46,7 +46,7 @@ defmodule EhsEnforcement.Sync.AirtableImporter do
     # Import cases
     case_results = import_cases_batch(cases)
 
-    # Import notices  
+    # Import notices
     notice_results = import_notices_batch(notices)
 
     # Log results

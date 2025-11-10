@@ -4,10 +4,13 @@ ExUnit.start(
   # Limit concurrent test files to prevent resource exhaustion
   # With 8 CPU cores, default would be 16, but DB-heavy tests need more connections each
   # Temporarily reduced to 2 for Phase 2C verification (from 4)
+  # Background: Each test case uses multiple DB connections (main process + Sandbox.allow for async operations)
+  # This prevents "connection not available" errors and connection pool exhaustion
+  # Increase back to 4 once auth-related test failures are fully resolved
   max_cases: 2,
 
   # Increase timeout for heavy operations (metrics refresh, complex queries)
-  # 2 minutes
+  # 2 minutes - necessary for dashboard metric calculations and large data operations
   timeout: 120_000,
 
   # Exclude slow and integration tests by default for faster development cycles
@@ -17,7 +20,7 @@ ExUnit.start(
   exclude: [:integration, :slow]
 )
 
+# Configure Ecto SQL Sandbox for test isolation
+# Each test runs in a transaction that's rolled back after completion
+# This ensures tests don't interfere with each other's data
 Ecto.Adapters.SQL.Sandbox.mode(EhsEnforcement.Repo, :manual)
-
-# Configure mock Airtable client for tests
-Application.put_env(:ehs_enforcement, :airtable_client, EhsEnforcement.Test.AirtableMockClient)

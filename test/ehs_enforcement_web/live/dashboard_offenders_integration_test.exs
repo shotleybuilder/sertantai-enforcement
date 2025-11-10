@@ -168,7 +168,7 @@ defmodule EhsEnforcementWeb.DashboardOffendersIntegrationTest do
       assert browse_html =~ "bg-indigo-600"
       assert browse_html =~ "text-white"
 
-      # Search should be secondary button  
+      # Search should be secondary button
       search_button = element(view, "button[phx-click='search_offenders']")
       search_html = render(search_button)
       assert search_html =~ "bg-white"
@@ -190,7 +190,7 @@ defmodule EhsEnforcementWeb.DashboardOffendersIntegrationTest do
     test "offenders card displays in correct grid position", %{conn: conn} do
       {:ok, _view, html} = live(conn, "/dashboard")
 
-      # Should contain the offenders card  
+      # Should contain the offenders card
       assert html =~ "OFFENDER DATABASE"
 
       # Should be third card (after cases and notices)

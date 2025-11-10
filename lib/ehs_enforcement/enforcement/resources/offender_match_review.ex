@@ -48,11 +48,12 @@ defmodule EhsEnforcement.Enforcement.OffenderMatchReview do
     repo(EhsEnforcement.Repo)
 
     custom_indexes do
+      # Unique constraint: only one review per offender
+      # Prevents duplicate review records for the same offender
+      index([:offender_id], unique: true, name: "offender_match_reviews_offender_id_index")
+
       # Index for finding pending reviews
       index([:status], where: "status = 'pending'")
-
-      # Index for finding reviews by offender
-      index([:offender_id])
 
       # Index for finding reviews by reviewer
       index([:reviewed_by_id], where: "reviewed_by_id IS NOT NULL")

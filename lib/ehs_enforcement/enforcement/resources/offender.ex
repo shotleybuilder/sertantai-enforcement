@@ -690,7 +690,7 @@ defmodule EhsEnforcement.Enforcement.Offender do
   defp get_name(%{name: name}), do: name
   defp get_name(candidate), do: Map.get(candidate, :name, "")
 
-  # Get postcode from candidate (works with both Offender structs and plain maps)  
+  # Get postcode from candidate (works with both Offender structs and plain maps)
   defp get_postcode(%{postcode: postcode}), do: postcode
   defp get_postcode(candidate), do: Map.get(candidate, :postcode)
 
