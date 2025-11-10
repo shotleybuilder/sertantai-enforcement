@@ -802,9 +802,6 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
         </div>
       </div>
       
-    <!-- Flash Messages -->
-      <.flash_group flash={@flash} />
-      
     <!-- 2-Column Grid Layout -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column: Scraping Configuration (2/3 width) -->

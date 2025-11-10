@@ -158,11 +158,11 @@ defmodule EhsEnforcementWeb.CoreComponents do
       <.flash kind={:info} title={gettext("Success!")} flash={@flash} />
       <.flash kind={:error} title={gettext("Error!")} flash={@flash} />
       <.flash
-        id="client-error"
+        id="client-error-connection"
         kind={:error}
         title={gettext("We can't find the internet")}
-        phx-disconnected={show(".phx-client-error #client-error")}
-        phx-connected={hide("#client-error")}
+        phx-disconnected={show(".phx-client-error #client-error-connection")}
+        phx-connected={hide("#client-error-connection")}
         hidden
       >
         {gettext("Attempting to reconnect")}
@@ -170,11 +170,11 @@ defmodule EhsEnforcementWeb.CoreComponents do
       </.flash>
 
       <.flash
-        id="server-error"
+        id="server-error-connection"
         kind={:error}
         title={gettext("Something went wrong!")}
-        phx-disconnected={show(".phx-server-error #server-error")}
-        phx-connected={hide("#server-error")}
+        phx-disconnected={show(".phx-server-error #server-error-connection")}
+        phx-connected={hide("#server-error-connection")}
         hidden
       >
         {gettext("Hang in there while we get back on track")}
