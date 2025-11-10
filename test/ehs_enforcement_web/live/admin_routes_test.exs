@@ -87,8 +87,8 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         |> Phoenix.ConnTest.init_test_session(%{})
         |> AshAuthentication.Plug.Helpers.store_in_session(user)
 
-      # Test /admin/cases/scrape route
-      {:ok, view, html} = live(conn, "/admin/cases/scrape")
+      # Test /admin/scrape route
+      {:ok, view, html} = live(conn, "/admin/scrape")
 
       # Should render the scrape page, not redirect
       assert html =~ "Manual HSE case scraping" or
@@ -110,12 +110,12 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         |> AshAuthentication.Plug.Helpers.store_in_session(user)
 
       # Should redirect non-admin users
-      assert_admin_redirect(conn, "/admin/cases/scrape", to: "/")
+      assert_admin_redirect(conn, "/admin/scrape", to: "/")
     end
 
     test "admin routes redirect unauthenticated users to sign-in", %{conn: conn} do
       # Should redirect unauthenticated users
-      assert_admin_redirect(conn, "/admin/cases/scrape", to: "/sign-in")
+      assert_admin_redirect(conn, "/admin/scrape", to: "/sign-in")
     end
 
     test "admin config routes are accessible to admin users", %{conn: conn, admin_user: user} do
@@ -172,7 +172,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
           enabled: true
         })
 
-      {:ok, view, _html} = live(context.conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(context.conn, "/admin/scrape")
 
       %{view: view, agency: hse_agency, admin_user: context.user}
     end
@@ -469,7 +469,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         |> AshAuthentication.Plug.Helpers.store_in_session(admin_user)
 
       # Should still allow access (admin refresh happens in background)
-      {:ok, view, html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, html} = live(conn, "/admin/scrape")
 
       assert html =~ "Manual HSE case scraping" or
                html =~ "Admin interface for manual HSE case scraping"
@@ -520,7 +520,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         |> AshAuthentication.Plug.Helpers.store_in_session(admin_user)
 
       # Should handle gracefully
-      {:ok, view, html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, html} = live(conn, "/admin/scrape")
 
       assert html =~ "Manual HSE case scraping" or
                html =~ "Admin interface for manual HSE case scraping"
@@ -572,7 +572,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         |> AshAuthentication.Plug.Helpers.store_in_session(admin_user)
 
       # First access should work
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
       assert Process.alive?(view.pid)
 
       # Simulate user being demoted (in real app this would trigger redirect)

@@ -62,7 +62,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
     end
 
     test "shows EA progress component when EA agency is selected", %{conn: conn} do
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Change to EA agency
       view
@@ -87,7 +87,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
     end
 
     test "shows HSE progress component when HSE agency is selected", %{conn: conn} do
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # HSE should be selected by default
       html = render(view)
@@ -114,7 +114,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
       admin_user: admin_user
     } do
       conn = conn |> assign(:current_user, admin_user)
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Start with HSE (default)
       html = render(view)
@@ -147,7 +147,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
       admin_user: admin_user
     } do
       conn = conn |> assign(:current_user, admin_user)
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA
       html =
@@ -193,7 +193,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
       admin_user: admin_user
     } do
       conn = conn |> assign(:current_user, admin_user)
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA
       view
@@ -244,7 +244,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
 
     test "EA progress reaches 100% when completed", %{conn: conn, admin_user: admin_user} do
       conn = conn |> assign(:current_user, admin_user)
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA
       view
@@ -275,7 +275,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
 
     test "EA progress handles edge cases correctly", %{conn: conn, admin_user: admin_user} do
       conn = conn |> assign(:current_user, admin_user)
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA
       view
@@ -324,7 +324,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
 
     test "EA progress shows appropriate status messages", %{conn: conn, admin_user: admin_user} do
       conn = conn |> assign(:current_user, admin_user)
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA
       view
@@ -370,7 +370,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
       ea_agency: ea_agency
     } do
       conn = conn |> assign(:current_user, admin_user)
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA and simulate starting scraping session
       view
@@ -433,7 +433,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
       ea_agency: ea_agency
     } do
       conn = conn |> assign(:current_user, admin_user)
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA and simulate starting scraping session
       view
@@ -516,7 +516,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
       ea_agency: ea_agency
     } do
       conn = conn |> assign(:current_user, admin_user)
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA but DON'T start scraping session
       view
@@ -559,7 +559,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
       ea_agency: ea_agency
     } do
       conn = conn |> assign(:current_user, admin_user)
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Create HSE agency
       {:ok, hse_agency} =

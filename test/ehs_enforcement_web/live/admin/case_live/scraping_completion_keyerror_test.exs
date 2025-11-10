@@ -64,7 +64,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapingCompletionKeyErrorTest do
 
     test "completion handler includes cases_processed in progress map", %{conn: conn} do
       # Mount the scraping LiveView
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Set the LiveView to scraping_active = true to simulate active scraping
       # This is needed because the completion handler only works when scraping is active
@@ -120,7 +120,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapingCompletionKeyErrorTest do
 
     test "completion progress map includes all required fields", %{conn: conn} do
       # Test that the manually constructed progress map in completion handler includes cases_processed
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Simulate active scraping state
       send(view.pid, {:set_scraping_active, true})
@@ -184,7 +184,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.ScrapingCompletionKeyErrorTest do
 
     test "completion handler without session result preserves current progress", %{conn: conn} do
       # Test the else branch of the completion handler
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Simulate active scraping with progress containing cases_processed
       send(view.pid, {:set_scraping_active, true})

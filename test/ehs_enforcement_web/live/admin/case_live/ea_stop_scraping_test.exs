@@ -59,7 +59,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaStopScrapingTest do
 
     test "Stop Scraping button should actually stop EA scraping task", %{conn: conn} do
       # Visit the case scraping page
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Create EA agency in test database
       {:ok, _ea_agency} =
@@ -119,7 +119,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaStopScrapingTest do
 
     test "Stop Scraping handles case when no scraping is running", %{conn: conn} do
       # Visit the case scraping page
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Try to stop scraping when nothing is running (should not crash)
       result = render_click(view, "stop_scraping")

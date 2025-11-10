@@ -64,7 +64,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaRecordsDisplayTest do
 
     test "EA processing logs appear in Records table via PubSub", %{conn: conn} do
       # Mount the scraping LiveView
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Verify initially empty
       assert has_element?(view, "h1", "Case Scraping")
@@ -124,7 +124,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaRecordsDisplayTest do
     end
 
     test "Records table distinguishes between HSE pages and EA batches", %{conn: conn} do
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Create HSE processing log
       hse_log_params = %{

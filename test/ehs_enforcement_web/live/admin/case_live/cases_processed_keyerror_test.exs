@@ -62,7 +62,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.CasesProcessedKeyErrorTest do
 
     test "progress component handles cases_processed field in PubSub updates", %{conn: conn} do
       # Mount the scraping LiveView
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Create a mock ScrapeSession that represents what comes from the database
       # This simulates the exact data structure from the real error log
@@ -121,7 +121,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.CasesProcessedKeyErrorTest do
 
     test "handle_scrape_session_update includes cases_processed in progress map", %{conn: conn} do
       # This test checks the specific function that was missing cases_processed
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Create mock session data with all required fields
       session_data = %{
@@ -166,7 +166,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.CasesProcessedKeyErrorTest do
 
     test "EA progress percentage calculation with cases_processed field", %{conn: conn} do
       # Test the specific calculation that was failing
-      {:ok, view, _html} = live(conn, "/admin/cases/scrape")
+      {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Simulate EA scraping progress with realistic data
       session_data = %EhsEnforcement.Scraping.ScrapeSession{
