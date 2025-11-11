@@ -40,26 +40,35 @@ This is a **methodical, file-by-file approach** to achieving a 100% passing test
 
 ## Progress Tracker
 
-**Completed**: 0/98 (0%)
+**Completed**: 6/98 (6%)
 **Last Updated**: 2025-11-11
+
+**Status by Category**:
+- Agency Logic: 6/11 PASS (55%)
+- Enforcement Domain: Not tested yet
+- Scraping: Not tested yet
+- Utility: Not tested yet
+- Components: Not tested yet
+- Controllers: Not tested yet
+- LiveViews: Not tested yet
 
 ---
 
 ## Test Files Checklist
 
-### Agency Logic Tests (11 files)
+### Agency Logic Tests (11 files) - 6/11 PASSING ✓
 
-- [ ] `test/ehs_enforcement/agencies/ea/case_scraper_test.exs`
-- [ ] `test/ehs_enforcement/agencies/ea/data_transformer_test.exs`
-- [ ] `test/ehs_enforcement/agencies/ea/duplicate_handling_test.exs`
-- [ ] `test/ehs_enforcement/agencies/ea/offender_matcher_test.exs`
-- [ ] `test/ehs_enforcement/agencies/ea/roofing_specialists_bug_test.exs`
-- [ ] `test/ehs_enforcement/agencies/hse/breaches_deduplication_test.exs`
-- [ ] `test/ehs_enforcement/agencies/hse/cases_test.exs`
-- [ ] `test/ehs_enforcement/agencies/hse/offender_builder_test.exs`
-- [ ] `test/ehs_enforcement/countries/uk/legl_enforcement/hse_notices_test.exs`
-- [ ] `test/ehs_enforcement/consent/storage_test.exs`
-- [ ] `test/ehs_enforcement/config/config_integration_test.exs`
+- [ ] `test/ehs_enforcement/agencies/ea/case_scraper_test.exs` ❌ 1 failure
+- [ ] `test/ehs_enforcement/agencies/ea/data_transformer_test.exs` ❌ 1 failure
+- [ ] `test/ehs_enforcement/agencies/ea/duplicate_handling_test.exs` ❌ 4 failures
+- [x] `test/ehs_enforcement/agencies/ea/offender_matcher_test.exs` ✅ PASS
+- [x] `test/ehs_enforcement/agencies/ea/roofing_specialists_bug_test.exs` ✅ PASS
+- [ ] `test/ehs_enforcement/agencies/hse/breaches_deduplication_test.exs` ❌ 5 failures
+- [ ] `test/ehs_enforcement/agencies/hse/cases_test.exs` ❌ 2 failures
+- [x] `test/ehs_enforcement/agencies/hse/offender_builder_test.exs` ✅ PASS
+- [x] `test/ehs_enforcement/countries/uk/legl_enforcement/hse_notices_test.exs` ✅ PASS
+- [x] `test/ehs_enforcement/consent/storage_test.exs` ✅ PASS
+- [x] `test/ehs_enforcement/config/config_integration_test.exs` ✅ PASS
 
 ### Enforcement Domain Tests (9 files)
 
@@ -218,9 +227,15 @@ This is a **methodical, file-by-file approach** to achieving a 100% passing test
 ## Progress Log
 
 ### 2025-11-11
-- Created TEST_CLEANUP_PLAN_II.md
-- Listed all 98 test files
-- Starting file-by-file approach
+
+**Initial Baseline Testing**:
+- Created TEST_CLEANUP_PLAN_II.md with all 98 test files
+- Tested Agency Logic files (11 total)
+- **Results**: 6/11 PASS (55%)
+  - ✅ PASS: offender_matcher, roofing_specialists_bug, offender_builder, hse_notices, storage, config_integration
+  - ❌ FAIL: case_scraper (1), data_transformer (1), duplicate_handling (4), breaches_deduplication (5), cases (2)
+- **Total failures in category**: 13 test failures across 5 files
+- **Progress**: 6/98 files passing (6%)
 
 ---
 
