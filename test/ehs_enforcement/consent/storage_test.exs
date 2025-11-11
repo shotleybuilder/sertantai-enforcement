@@ -1,8 +1,8 @@
 defmodule EhsEnforcement.Consent.StorageTest do
   use EhsEnforcement.DataCase
 
-  alias EhsEnforcement.Consent.Storage
   alias EhsEnforcement.Consent.ConsentSettings
+  alias EhsEnforcement.Consent.Storage
   import EhsEnforcementWeb.ConnCase, only: [create_test_user: 1]
   require Ash.Query
 

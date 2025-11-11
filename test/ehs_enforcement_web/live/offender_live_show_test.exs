@@ -145,7 +145,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "renders offender detail page with basic information", %{conn: conn, offender: offender} do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       assert html =~ offender.name
       assert html =~ "Manchester City Council"
@@ -155,7 +155,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "displays enforcement statistics summary", %{conn: conn, offender: offender} do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Should show aggregated statistics
       # total_cases
@@ -216,7 +216,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
       offender: offender,
       recent_case: recent_case
     } do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Should show case details
       assert html =~ recent_case.regulator_id
@@ -234,7 +234,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
       offender: offender,
       improvement_notice: improvement_notice
     } do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Should show notice details
       assert html =~ improvement_notice.regulator_id
@@ -293,7 +293,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "shows industry context and peer comparison", %{conn: conn, offender: offender} do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Should show industry analysis
       assert html =~ "Industry Context"
@@ -333,7 +333,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
           total_fines: Decimal.new("45000")
         })
 
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Should show related offenders section
       assert html =~ "Related Offenders"
@@ -347,7 +347,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
       conn: conn,
       offender: offender
     } do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Should show risk assessment
       assert html =~ "Risk Assessment"
@@ -361,7 +361,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "filters timeline by enforcement type", %{conn: conn, offender: offender} do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Filter to show only cases
       view
@@ -376,7 +376,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "filters timeline by agency", %{conn: conn, offender: offender} do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Filter to show only HSE enforcement actions
       view
@@ -391,7 +391,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "filters timeline by date range", %{conn: conn, offender: offender} do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Filter to show only 2024 actions
       view
@@ -416,7 +416,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "displays loading states for timeline data", %{conn: conn, offender: offender} do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Trigger timeline reload
       view
@@ -454,7 +454,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
       offender: offender,
       hse_agency: hse_agency
     } do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Simulate new case creation
       {:ok, new_case} =
@@ -481,7 +481,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
       offender: offender,
       hse_agency: hse_agency
     } do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Simulate new notice creation
       {:ok, new_notice} =
@@ -538,7 +538,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "supports keyboard navigation for timeline items", %{conn: conn, offender: offender} do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Timeline items should be focusable
       assert has_element?(view, "[data-role='timeline-item'][tabindex='0']")
@@ -614,7 +614,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "implements pagination for timeline", %{conn: conn, offender: offender} do
-      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Should have pagination controls for large datasets
       assert has_element?(view, "[data-role='load-more']") ||

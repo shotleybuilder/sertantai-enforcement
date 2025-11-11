@@ -251,7 +251,7 @@ defmodule EhsEnforcementWeb.OffenderIntegrationTest do
       escalating_offender: escalating_offender,
       new_offender: new_offender
     } do
-      {:ok, view, html} = live(conn, "/offenders")
+      {:ok, _view, html} = live(conn, "/offenders")
 
       # High risk: 12 cases, £750k fines, 6-year history
       assert has_element?(
@@ -297,7 +297,7 @@ defmodule EhsEnforcementWeb.OffenderIntegrationTest do
       conn: conn,
       repeat_offender: repeat_offender
     } do
-      {:ok, view, html} = live(conn, "/offenders/#{repeat_offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{repeat_offender.id}")
 
       # Should detect escalating fine pattern
       assert html =~ "Escalating fines" || html =~ "Increasing penalties"
@@ -315,7 +315,7 @@ defmodule EhsEnforcementWeb.OffenderIntegrationTest do
     end
 
     test "industry and geographic analysis integration", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/offenders")
+      {:ok, _view, html} = live(conn, "/offenders")
 
       # Should show industry breakdown
       assert html =~ "Industry Analysis"
@@ -408,7 +408,7 @@ defmodule EhsEnforcementWeb.OffenderIntegrationTest do
       repeat_offender: repeat_offender,
       multi_agency_offender: multi_agency_offender
     } do
-      {:ok, view, html} = live(conn, "/offenders")
+      {:ok, _view, html} = live(conn, "/offenders")
 
       # Test complex filter combination: High-risk Manufacturing in Manchester
       view
@@ -458,7 +458,7 @@ defmodule EhsEnforcementWeb.OffenderIntegrationTest do
           offender
         end
 
-      {:ok, view, html} = live(conn, "/offenders")
+      {:ok, _view, html} = live(conn, "/offenders")
 
       # Should implement pagination
       assert has_element?(view, ".pagination") || has_element?(view, "[data-role='load-more']")
@@ -535,7 +535,7 @@ defmodule EhsEnforcementWeb.OffenderIntegrationTest do
       conn: conn,
       repeat_offender: repeat_offender
     } do
-      {:ok, view, html} = live(conn, "/offenders/#{repeat_offender.id}")
+      {:ok, _view, html} = live(conn, "/offenders/#{repeat_offender.id}")
 
       # Test timeline filtering affects summary statistics
       view

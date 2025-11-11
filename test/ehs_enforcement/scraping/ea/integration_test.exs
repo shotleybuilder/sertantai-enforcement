@@ -9,9 +9,9 @@ defmodule EhsEnforcement.Scraping.Ea.IntegrationTest do
   use EhsEnforcementWeb.ConnCase
 
   require Logger
+  alias EhsEnforcement.Enforcement.Case
   alias EhsEnforcement.Scraping.Agencies.Ea
   alias EhsEnforcement.Scraping.Ea.CaseScraper
-  alias EhsEnforcement.Enforcement.Case
 
   @moduletag :integration
 

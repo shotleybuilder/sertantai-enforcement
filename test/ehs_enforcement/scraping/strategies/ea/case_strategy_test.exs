@@ -1,8 +1,8 @@
 defmodule EhsEnforcement.Scraping.Strategies.Ea.CaseStrategyTest do
   use ExUnit.Case, async: true
 
-  alias EhsEnforcement.Scraping.Strategies.EA.CaseStrategy
   alias EhsEnforcement.Scraping.ScrapeSession
+  alias EhsEnforcement.Scraping.Strategies.EA.CaseStrategy
 
   describe "validate_params/1" do
     test "validates correct parameters with all fields" do

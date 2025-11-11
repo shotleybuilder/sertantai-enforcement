@@ -8,8 +8,8 @@ defmodule EhsEnforcement.Scraping.ScrapeRequestTest do
 
   use EhsEnforcement.DataCase, async: true
 
-  alias EhsEnforcement.Scraping.ScrapeRequest
   alias AshPhoenix.Form
+  alias EhsEnforcement.Scraping.ScrapeRequest
 
   describe "ScrapeRequest resource" do
     test "accepts start_page parameter in create action" do

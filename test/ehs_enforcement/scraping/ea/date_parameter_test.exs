@@ -13,9 +13,9 @@ defmodule EhsEnforcement.Scraping.Ea.DateParameterTest do
   require Ash.Query
   import Ash.Expr
 
-  alias EhsEnforcement.Scraping.ScrapeRequest
-  alias EhsEnforcement.Scraping.Agencies.Ea
   alias AshPhoenix.Form
+  alias EhsEnforcement.Scraping.Agencies.Ea
+  alias EhsEnforcement.Scraping.ScrapeRequest
 
   describe "EA date parameter flow" do
     setup %{conn: conn} do

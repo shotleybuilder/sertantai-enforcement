@@ -129,7 +129,7 @@ defmodule EhsEnforcementWeb.DashboardCaseNoticeCountTest do
       conn: conn,
       expected_case_count: expected_case_count
     } do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Check that Recent Cases stat shows correct count
       assert html =~ "Recent Cases"
@@ -140,7 +140,7 @@ defmodule EhsEnforcementWeb.DashboardCaseNoticeCountTest do
       conn: conn,
       expected_notice_count: expected_notice_count
     } do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Check that Recent Notices stat shows correct count
       assert html =~ "Recent Notices"
@@ -467,7 +467,7 @@ defmodule EhsEnforcementWeb.DashboardCaseNoticeCountTest do
     end
 
     test "stats section shows correct recent cases and notices counts", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should show at least 1 recent case and 1 recent notice
       assert html =~ ~r/\d+ Cases/, "Should show case count in Recent Cases stat"

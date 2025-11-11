@@ -1,7 +1,7 @@
 defmodule EhsEnforcement.Agencies.Hse.NoticesTest do
   # mix test test/ehs_enforcement/countries/uk/legl_enforcement/hse_notices_test.exs
   use ExUnit.Case, async: true
-  alias EhsEnforcement.Agencies.Hse.{Notices, Breaches}
+  alias EhsEnforcement.Agencies.Hse.{Breaches, Notices}
 
   setup do
     # Ensure modules are loaded before testing

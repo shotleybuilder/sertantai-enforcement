@@ -97,7 +97,7 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
       conn: conn,
       agencies: [hse, ea, disabled]
     } do
-      {:ok, view, html} = live(conn, "/cases/new")
+      {:ok, _view, html} = live(conn, "/cases/new")
 
       # Should show enabled agencies
       assert html =~ "Health and Safety Executive"
@@ -659,7 +659,7 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
 
   describe "Manual case entry accessibility" do
     test "includes proper form labels and structure", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/cases/new")
+      {:ok, _view, html} = live(conn, "/cases/new")
 
       # Should have proper form structure
       assert html =~ "<form"
@@ -685,7 +685,7 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
     end
 
     test "includes ARIA attributes for screen readers", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/cases/new")
+      {:ok, _view, html} = live(conn, "/cases/new")
 
       # Should have ARIA attributes
       assert html =~ "aria-label" or
@@ -699,7 +699,7 @@ defmodule EhsEnforcementWeb.CaseManualEntryTest do
     end
 
     test "provides clear visual feedback for form states", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/cases/new")
+      {:ok, _view, html} = live(conn, "/cases/new")
 
       # Should have visual indicators for required fields
       assert html =~ "*" or html =~ "required" or html =~ "red"

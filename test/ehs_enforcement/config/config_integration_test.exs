@@ -2,7 +2,7 @@ defmodule EhsEnforcement.Config.ConfigIntegrationTest do
   # async: false due to GenServer operations
   use EhsEnforcement.DataCase, async: false
 
-  alias EhsEnforcement.Config.{ConfigManager, Settings, Environment}
+  alias EhsEnforcement.Config.{ConfigManager, Environment, Settings}
   alias EhsEnforcement.{Logger, Telemetry}
 
   setup do

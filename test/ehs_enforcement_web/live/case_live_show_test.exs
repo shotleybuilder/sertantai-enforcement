@@ -94,7 +94,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "successfully mounts and displays case details", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should display page title
       assert html =~ "Case Details"
@@ -112,7 +112,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays offender information section", %{conn: conn, case: case, offender: offender} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should show offender details section
       assert html =~ "Offender Information" or html =~ "Company Details"
@@ -129,7 +129,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays agency information section", %{conn: conn, case: case, agency: agency} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should show agency details
       assert html =~ "Regulating Agency" or html =~ "Agency Information"
@@ -145,9 +145,9 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     test "does not display notices section (no direct case-notice relationship)", %{
       conn: conn,
       case: case,
-      notices: notices
+      notices: _notices
     } do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should NOT show notices section since there's no direct case-notice relationship
       refute html =~ "Related Notices"
@@ -168,8 +168,8 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
       assert html =~ "£35,000.00"
     end
 
-    test "displays regulatory breaches section", %{conn: conn, case: case, breaches: breaches} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+    test "displays regulatory breaches section", %{conn: conn, case: case, breaches: _breaches} do
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should show breaches section
       assert html =~ "Regulatory Breaches" or html =~ "Violations"
@@ -191,7 +191,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays case timeline", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should show timeline section
       assert html =~ "Case Timeline" or html =~ "Timeline"
@@ -236,7 +236,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
           last_synced_at: DateTime.utc_now()
         })
 
-      {:ok, view, html} = live(conn, "/cases/#{minimal_case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{minimal_case.id}")
 
       # Should still render successfully
       assert html =~ "Case Details"
@@ -286,7 +286,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays edit case button", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have edit button or link
       assert has_element?(view, "a[href='/cases/#{case.id}/edit']") or
@@ -295,7 +295,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays delete case button with confirmation", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have delete action
       assert has_element?(view, "button[phx-click='delete']") or
@@ -319,7 +319,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays export case data button", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have export functionality
       assert has_element?(view, "button[phx-click='export']") or
@@ -328,7 +328,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays back to cases list link", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have navigation back to cases list
       assert has_element?(view, "a[href='/cases']") or
@@ -337,7 +337,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays share case link", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have share functionality or direct link
       assert html =~ "Share" or
@@ -457,7 +457,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     test "handles malformed update messages gracefully", %{conn: conn, case: case} do
       {:ok, view, _html} = live(conn, "/cases/#{case.id}")
 
-      log =
+      _log =
         capture_log(fn ->
           # Send malformed messages
           send(view.pid, {:case_updated, "invalid-id", %{}})
@@ -502,14 +502,14 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "formats monetary values correctly", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should format large fine amount with proper comma separation
       assert html =~ "£125,000.50" or html =~ "125,000.50"
     end
 
     test "formats dates consistently", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should format date in readable format
       assert html =~ "June 15, 2024" or
@@ -519,7 +519,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "handles long text content appropriately", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should display full breach description
       assert html =~ "Multiple nuclear safety regulation violations"
@@ -532,7 +532,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays proper labels and field names", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have clear field labels
       assert html =~ "Case ID" or html =~ "Regulator ID"
@@ -559,7 +559,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
           last_synced_at: DateTime.utc_now()
         })
 
-      {:ok, view, html} = live(conn, "/cases/#{minimal_case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{minimal_case.id}")
 
       # Should handle empty/zero values appropriately
       assert html =~ "£0.00" or html =~ "No fine" or html =~ "£0"
@@ -626,7 +626,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     test "loads case details within reasonable time", %{conn: conn, case: case} do
       start_time = System.monotonic_time(:millisecond)
 
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       end_time = System.monotonic_time(:millisecond)
       load_time = end_time - start_time
@@ -640,7 +640,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "handles large numbers of related records efficiently", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should show all 10 notices
       assert html =~ "10 notices" or html =~ "10 Notices"
@@ -658,7 +658,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "provides loading states for slow operations", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have proper loading indicators for async operations
       # (This would be more relevant for operations that take time)
@@ -667,7 +667,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "implements responsive design", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have responsive CSS classes
       assert html =~ "grid" or html =~ "flex" or
@@ -676,7 +676,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "includes proper navigation elements", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have breadcrumbs or navigation
       assert html =~ "Cases" or html =~ "Home" or html =~ "Dashboard"
@@ -707,7 +707,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "includes proper semantic HTML structure", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should use semantic HTML elements
       assert html =~ "<main" or html =~ "<section" or html =~ "<article"
@@ -719,7 +719,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "includes ARIA labels and descriptions", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have ARIA attributes for complex elements
       assert html =~ "aria-label" or
@@ -728,7 +728,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "supports keyboard navigation", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Interactive elements should be keyboard accessible
       if has_element?(view, "button") do
@@ -742,7 +742,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "provides alternative text for visual elements", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Any images should have alt text
       if html =~ "<img" do
@@ -756,7 +756,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "uses proper color contrast and visual hierarchy", %{conn: conn, case: case} do
-      {:ok, view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
 
       # Should use CSS classes that provide proper contrast
       # (This is mainly verified through CSS, but we can check for class usage)

@@ -59,7 +59,7 @@ defmodule EhsEnforcementWeb.ReportsLive.OffendersTest do
     end
 
     test "displays industry analysis", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/reports/offenders")
+      {:ok, _view, html} = live(conn, "/reports/offenders")
 
       # Should show industry breakdown
       assert html =~ "Industry Analysis"
@@ -70,7 +70,7 @@ defmodule EhsEnforcementWeb.ReportsLive.OffendersTest do
     end
 
     test "identifies top offenders by fine amount", %{conn: conn, chemical: chemical} do
-      {:ok, view, html} = live(conn, "/reports/offenders")
+      {:ok, _view, html} = live(conn, "/reports/offenders")
 
       # Should show top offenders section
       assert html =~ "Top Offenders"
@@ -80,7 +80,7 @@ defmodule EhsEnforcementWeb.ReportsLive.OffendersTest do
     end
 
     test "shows repeat offender statistics", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/reports/offenders")
+      {:ok, _view, html} = live(conn, "/reports/offenders")
 
       # Should show repeat offender metrics - all test offenders have >2 enforcement actions
       assert html =~ "Repeat Offenders"
@@ -89,7 +89,7 @@ defmodule EhsEnforcementWeb.ReportsLive.OffendersTest do
     end
 
     test "exports analytics data to CSV", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/reports/offenders")
+      {:ok, view, _html} = live(conn, "/reports/offenders")
 
       # Click export button - this triggers a JS event
       view
@@ -101,7 +101,7 @@ defmodule EhsEnforcementWeb.ReportsLive.OffendersTest do
     end
 
     test "navigates back to reports dashboard", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/reports/offenders")
+      {:ok, view, _html} = live(conn, "/reports/offenders")
 
       # Should have back to reports link
       assert has_element?(view, "a[href='/reports']")

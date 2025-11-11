@@ -105,7 +105,7 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
     end
 
     test "displays case information correctly", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/cases")
+      {:ok, _view, html} = live(conn, "/cases")
 
       # Should show case regulator IDs
       assert html =~ "HSE-2024-001"
@@ -158,7 +158,7 @@ defmodule EhsEnforcementWeb.CaseLive.IndexTest do
       # Clear all test data
       Repo.delete_all(EhsEnforcement.Enforcement.Case)
 
-      {:ok, view, html} = live(conn, "/cases")
+      {:ok, _view, html} = live(conn, "/cases")
 
       # Should still render without errors
       assert html =~ "Case Management"

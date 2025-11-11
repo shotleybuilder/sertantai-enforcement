@@ -4,8 +4,8 @@ defmodule EhsEnforcementWeb.DashboardIntegrationTest do
   import ExUnit.CaptureLog
 
   alias EhsEnforcement.Enforcement
-  alias EhsEnforcement.Sync.SyncManager
   alias EhsEnforcement.Repo
+  alias EhsEnforcement.Sync.SyncManager
 
   describe "Dashboard Integration Workflow" do
     setup do
@@ -524,7 +524,7 @@ defmodule EhsEnforcementWeb.DashboardIntegrationTest do
       # Load dashboard multiple times and verify consistent data
       results =
         Enum.map(1..5, fn _ ->
-          {:ok, view, html} = live(conn, "/dashboard")
+          {:ok, _view, html} = live(conn, "/dashboard")
 
           # Extract key metrics
           case_count = (html |> String.split("Total Cases") |> length()) - 1

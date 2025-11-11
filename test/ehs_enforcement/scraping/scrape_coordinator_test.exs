@@ -4,9 +4,9 @@ defmodule EhsEnforcement.Scraping.ScrapeCoordinatorTest do
   require Ash.Query
   import Ash.Expr
 
+  alias EhsEnforcement.Enforcement
   alias EhsEnforcement.Scraping.ScrapeCoordinator
   alias EhsEnforcement.Scraping.ScrapeSession
-  alias EhsEnforcement.Enforcement
 
   describe "ScrapeSession Ash Resource" do
     test "creates new session with Ash.create" do

@@ -4,10 +4,10 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessorTest do
   require Ash.Query
   import Ash.Expr
 
-  alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
+  alias EhsEnforcement.Enforcement
   alias EhsEnforcement.Scraping.Hse.CaseProcessor
   alias EhsEnforcement.Scraping.Hse.CaseProcessor.ProcessedCase
-  alias EhsEnforcement.Enforcement
+  alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
 
   describe "process_case/1" do
     test "transforms scraped case to processed case format" do

@@ -13,7 +13,7 @@ defmodule EhsEnforcementWeb.Live.DashboardCasesIntegrationTest do
     end
 
     test "dashboard loads with cases card", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Check that the cases card is rendered
       assert html =~ "ENFORCEMENT CASES"
@@ -49,7 +49,7 @@ defmodule EhsEnforcementWeb.Live.DashboardCasesIntegrationTest do
     end
 
     test "admin user context can be tested via component", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Test that the cases card is present and functional
       assert html =~ "ENFORCEMENT CASES"
@@ -61,7 +61,7 @@ defmodule EhsEnforcementWeb.Live.DashboardCasesIntegrationTest do
     end
 
     test "non-admin user does not see add new case button", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Without admin privileges, admin actions should not be visible
       # The cases card component handles this logic internally
@@ -85,7 +85,7 @@ defmodule EhsEnforcementWeb.Live.DashboardCasesIntegrationTest do
     end
 
     test "cases card integrates properly with dashboard", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Test that the cases card component is properly integrated
       assert html =~ "ENFORCEMENT CASES"
@@ -120,7 +120,7 @@ defmodule EhsEnforcementWeb.Live.DashboardCasesIntegrationTest do
     end
 
     test "cases card metrics display correctly", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Check that metrics are displayed
       assert html =~ "Total Cases"

@@ -4,9 +4,9 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraperTest do
   require Ash.Query
   import Ash.Expr
 
+  alias EhsEnforcement.Enforcement
   alias EhsEnforcement.Scraping.Hse.CaseScraper
   alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
-  alias EhsEnforcement.Enforcement
 
   describe "case_exists?/1" do
     test "returns false when case does not exist" do

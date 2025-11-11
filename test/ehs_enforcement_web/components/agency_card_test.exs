@@ -2,8 +2,8 @@ defmodule EhsEnforcementWeb.Components.AgencyCardTest do
   use EhsEnforcementWeb.ConnCase
   import Phoenix.LiveViewTest
 
-  alias EhsEnforcementWeb.Components.AgencyCard
   alias EhsEnforcement.Enforcement
+  alias EhsEnforcementWeb.Components.AgencyCard
 
   describe "AgencyCard component" do
     setup do

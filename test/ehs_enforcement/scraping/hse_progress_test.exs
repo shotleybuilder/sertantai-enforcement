@@ -11,8 +11,8 @@ defmodule EhsEnforcement.Scraping.HseProgressTest do
 
   use EhsEnforcement.DataCase
 
-  alias EhsEnforcement.Scraping.ScrapeSession
   alias EhsEnforcement.Scraping.Agencies.Hse, as: HseAgency
+  alias EhsEnforcement.Scraping.ScrapeSession
 
   @fixture_path Path.join([__DIR__, "../..", "support", "fixtures", "hse_notices.json"])
 

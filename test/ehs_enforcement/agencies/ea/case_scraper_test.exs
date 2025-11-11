@@ -8,7 +8,7 @@ defmodule EhsEnforcement.Agencies.Ea.CaseScraperTest do
   use ExUnit.Case, async: true
 
   alias EhsEnforcement.Scraping.Ea.CaseScraper
-  alias EhsEnforcement.Scraping.Ea.CaseScraper.{EaSummaryRecord, EaDetailRecord}
+  alias EhsEnforcement.Scraping.Ea.CaseScraper.{EaDetailRecord, EaSummaryRecord}
 
   # Mock HTML response that matches the actual EA website structure
   @mock_ea_summary_html """

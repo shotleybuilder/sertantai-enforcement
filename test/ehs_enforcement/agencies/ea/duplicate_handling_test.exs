@@ -9,9 +9,9 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
   use EhsEnforcementWeb.ConnCase
 
   require Logger
-  alias EhsEnforcement.Scraping.Ea.CaseProcessor
   alias EhsEnforcement.Agencies.Ea.DataTransformer
   alias EhsEnforcement.Enforcement
+  alias EhsEnforcement.Scraping.Ea.CaseProcessor
 
   describe "EA duplicate regulator_id handling" do
     setup do

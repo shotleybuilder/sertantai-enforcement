@@ -34,10 +34,10 @@ defmodule EhsEnforcement.Agencies.Ea.RoofingSpecialistsBugTest do
   require Logger
   require Ash.Query
 
-  alias EhsEnforcement.Scraping.Ea.CaseProcessor
-  alias EhsEnforcement.Scraping.Ea.CaseScraper
   alias EhsEnforcement.Agencies.Ea.DataTransformer
   alias EhsEnforcement.Enforcement
+  alias EhsEnforcement.Scraping.Ea.CaseProcessor
+  alias EhsEnforcement.Scraping.Ea.CaseScraper
 
   describe "A & F ROOFING SPECIALISTS bug reproduction" do
     setup do

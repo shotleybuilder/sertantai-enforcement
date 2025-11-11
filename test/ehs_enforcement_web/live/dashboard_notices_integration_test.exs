@@ -54,7 +54,7 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
           offender_id: offender.id
         })
 
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Check that notices card is present and has correct content
       assert html =~ "ENFORCEMENT NOTICES"
@@ -184,7 +184,7 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
     end
 
     test "notices card displays correctly with no notices", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Check zero state
       assert html =~ "ENFORCEMENT NOTICES"
@@ -234,7 +234,7 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
       # In a real implementation, you might mock the Enforcement context
       # to return errors and verify the card shows default values
 
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should still render without crashing
       assert html =~ "ENFORCEMENT NOTICES"
@@ -244,7 +244,7 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
     end
 
     test "notices card theme is applied correctly", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Check for yellow theme classes
       assert html =~ "bg-yellow-50"
@@ -252,7 +252,7 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
     end
 
     test "notices card accessibility features are present", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Check for proper ARIA attributes
       assert html =~ ~r/role="article"/
@@ -261,7 +261,7 @@ defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
     end
 
     test "notices card integrates with dashboard 1x4 grid layout", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Check that notices card is within the dashboard card grid
       # First card

@@ -120,7 +120,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       Repo.delete_all(EhsEnforcement.Enforcement.Agency)
       Repo.delete_all(EhsEnforcement.Enforcement.Metrics)
 
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should still render without errors
       assert html =~ "EHS Enforcement Dashboard"
@@ -129,8 +129,8 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       assert html =~ "No agencies configured"
     end
 
-    test "loads recent cases with proper associations", %{conn: conn, cases: [case1, case2]} do
-      {:ok, view, html} = live(conn, "/dashboard")
+    test "loads recent cases with proper associations", %{conn: conn, cases: [_case1, _case2]} do
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should display recent cases section
       assert html =~ "Recent Activity"
@@ -150,9 +150,9 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
 
     test "calculates and displays correct statistics", %{
       conn: conn,
-      agencies: [hse_agency, ea_agency]
+      agencies: [_hse_agency, _ea_agency]
     } do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, view, _html} = live(conn, "/dashboard")
 
       # Should show statistics for each agency
       within_agency_card = fn agency_name ->
@@ -200,8 +200,8 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       %{agency: agency}
     end
 
-    test "displays agency information correctly", %{conn: conn, agency: agency} do
-      {:ok, view, html} = live(conn, "/dashboard")
+    test "displays agency information correctly", %{conn: conn, agency: _agency} do
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should show agency name and code
       assert html =~ "Health and Safety Executive"
@@ -214,7 +214,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       assert html =~ "Last Sync" or html =~ "Never"
     end
 
-    test "displays correct sync status indicators", %{conn: conn, agency: agency} do
+    test "displays correct sync status indicators", %{conn: conn, agency: _agency} do
       {:ok, view, _html} = live(conn, "/dashboard")
 
       agency_card =
@@ -227,7 +227,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       assert has_element?(agency_card, "[data-testid='sync-status']")
     end
 
-    test "shows manual sync button for each agency", %{conn: conn, agency: agency} do
+    test "shows manual sync button for each agency", %{conn: conn, agency: _agency} do
       {:ok, view, _html} = live(conn, "/dashboard")
 
       # Should have sync button for each agency
@@ -317,7 +317,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       %{agency: agency, offender: offender, cases: cases}
     end
 
-    test "displays recent cases in chronological order", %{conn: conn, cases: cases} do
+    test "displays recent cases in chronological order", %{conn: conn, cases: _cases} do
       {:ok, view, _html} = live(conn, "/dashboard")
 
       timeline = element(view, "[data-testid='recent-cases']") |> render()
@@ -352,7 +352,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
 
     test "limits recent cases to 10 items", %{conn: conn, agency: agency, offender: offender} do
       # Create 15 cases to test limit
-      additional_cases =
+      _additional_cases =
         Enum.map(5..15, fn i ->
           {:ok, case} =
             Enforcement.create_case(%{
@@ -469,7 +469,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "calculates total statistics correctly", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should show correct total case count (3 cases)
       assert html =~ "3 Total Cases" or html =~ "Total: 3"
@@ -481,7 +481,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       assert html =~ "2 Agencies"
     end
 
-    test "calculates per-agency statistics correctly", %{conn: conn, hse: hse, ea: ea} do
+    test "calculates per-agency statistics correctly", %{conn: conn, hse: _hse, ea: _ea} do
       {:ok, view, _html} = live(conn, "/dashboard")
 
       # HSE statistics (2 cases, £3,000 total)
@@ -530,7 +530,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "updates statistics when data changes", %{conn: conn, hse: hse} do
-      {:ok, view, initial_html} = live(conn, "/dashboard")
+      {:ok, _view, initial_html} = live(conn, "/dashboard")
 
       # Initial state: HSE has 2 cases
       assert initial_html =~ "2"
@@ -550,7 +550,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
         })
 
       # Trigger re-render by navigating away and back
-      {:ok, view, updated_html} = live(conn, "/dashboard")
+      {:ok, _view, _updated_html} = live(conn, "/dashboard")
 
       # Should show updated count (3 cases for HSE)
       hse_card = element(view, "[data-testid='agency-card']:has(h3:fl-contains('HSE'))")
@@ -573,7 +573,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       %{agency: agency}
     end
 
-    test "displays sync button for each agency", %{conn: conn, agency: agency} do
+    test "displays sync button for each agency", %{conn: conn, agency: _agency} do
       {:ok, view, _html} = live(conn, "/dashboard")
 
       # Should have sync button
@@ -582,7 +582,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       assert render(sync_button) =~ "Sync Now" or render(sync_button) =~ "Sync"
     end
 
-    test "handles sync button click event", %{conn: conn, agency: agency} do
+    test "handles sync button click event", %{conn: conn, agency: _agency} do
       {:ok, view, _html} = live(conn, "/dashboard")
 
       # Mock the sync operation by capturing the event
@@ -602,7 +602,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
 
     # Sync functionality removed in Phase 2 (replaced with materialized metrics)
     @tag :skip
-    test "shows sync status updates", %{conn: conn, agency: agency} do
+    test "shows sync status updates", %{conn: conn, agency: _agency} do
       {:ok, view, _html} = live(conn, "/dashboard")
 
       # Should have sync status indicator
@@ -766,7 +766,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     test "handles invalid agency codes in sync events", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/dashboard")
 
-      log =
+      _log =
         capture_log(fn ->
           # Send sync update for non-existent agency
           send(view.pid, {:sync_progress, "invalid_agency", 50})
@@ -783,7 +783,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     test "handles malformed sync messages", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/dashboard")
 
-      log =
+      _log =
         capture_log(fn ->
           # Send malformed messages
           send(view.pid, {:sync_progress, nil, nil})
@@ -945,7 +945,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "shows correct total pages calculation", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # With 25 items and page size 10, should show "of 3"
       assert html =~ "of 3"
@@ -970,7 +970,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "handles URL parameters for direct page navigation", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard?recent_activity_page=2")
+      {:ok, _view, html} = live(conn, "/dashboard?recent_activity_page=2")
 
       # Should start on page 2
       assert html =~ "Page 2"
@@ -979,7 +979,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "handles invalid page parameters gracefully", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard?recent_activity_page=999")
+      {:ok, _view, html} = live(conn, "/dashboard?recent_activity_page=999")
 
       # Should default to last valid page (page 3)
       assert html =~ "Page 3"
@@ -997,7 +997,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
       # Refresh metrics after deleting cases
       {:ok, _metrics} = EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:automation)
 
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, view, _html} = live(conn, "/dashboard")
 
       # Should not show pagination controls
       refute has_element?(view, "[data-testid='recent-activity-pagination']")
@@ -1065,7 +1065,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "displays Recent Activity table column headings", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should display all required column headings
       assert html =~ "Type"
@@ -1077,7 +1077,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "displays case/notice type distinction using offence_action_type", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should show Court Case type
       assert html =~ "Court Case"
@@ -1086,7 +1086,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "displays filter buttons for case/notice types", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, view, _html} = live(conn, "/dashboard")
 
       # Should have filter buttons
       assert has_element?(view, "button", "All Types")
@@ -1132,7 +1132,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "court cases show fine amounts, notices show N/A", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Court case should show fine amount
       assert html =~ "£25,000.00"
@@ -1141,7 +1141,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "displays agency website links with proper format", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should have links to HSE website
       assert html =~ "https://www.hse.gov.uk/prosecutions/case-123"
@@ -1153,7 +1153,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
 
   describe "DashboardLive UI responsiveness" do
     test "renders responsive layout elements", %{conn: conn} do
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should have responsive CSS classes or structure
       assert html =~ "grid" or html =~ "flex" or html =~ "col"
@@ -1209,7 +1209,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
 
       start_time = System.monotonic_time(:millisecond)
 
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       end_time = System.monotonic_time(:millisecond)
       load_time = end_time - start_time

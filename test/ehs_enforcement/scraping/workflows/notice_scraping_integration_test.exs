@@ -5,8 +5,8 @@ defmodule EhsEnforcement.Scraping.Workflows.NoticeScrapingIntegrationTest do
   import Ash.Expr
   import ExUnit.CaptureLog
 
-  alias EhsEnforcement.Scraping.{ScrapeSession, ScrapeCoordinator}
   alias EhsEnforcement.Enforcement
+  alias EhsEnforcement.Scraping.{ScrapeCoordinator, ScrapeSession}
   alias EhsEnforcement.Services.Hse.ClientNotices
 
   @moduletag :integration

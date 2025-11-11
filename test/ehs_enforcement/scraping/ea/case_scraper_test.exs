@@ -10,7 +10,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseScraperTest do
   use ExUnit.Case, async: true
 
   alias EhsEnforcement.Scraping.Ea.CaseScraper
-  alias EhsEnforcement.Scraping.Ea.CaseScraper.{EaSummaryRecord, EaDetailRecord}
+  alias EhsEnforcement.Scraping.Ea.CaseScraper.{EaDetailRecord, EaSummaryRecord}
 
   describe "EA case scraper functions" do
     test "collect_summary_records_for_action_type/4 has correct arity" do

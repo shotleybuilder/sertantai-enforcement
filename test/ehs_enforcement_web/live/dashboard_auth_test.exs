@@ -109,7 +109,7 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
       # Explicitly set current_user to nil
       conn = conn |> assign(:current_user, nil)
 
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should not crash and show sign-in option
       assert html =~ "Sign In"
@@ -132,7 +132,7 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
       user = Ash.load!(user, [:display_name])
       conn = conn |> assign(:current_user, user)
 
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Should handle gracefully
       assert html =~ "Welcome, Legacy User"
@@ -195,7 +195,7 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
 
     test "admin action cards are hidden for regular users", %{conn: conn, regular_user: user} do
       conn = conn |> assign(:current_user, user)
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Cases management card should not show admin actions
       assert html =~ "ENFORCEMENT CASES"
@@ -208,7 +208,7 @@ defmodule EhsEnforcementWeb.DashboardAuthTest do
 
     test "admin action cards are visible for admin users", %{conn: conn, admin_user: user} do
       conn = conn |> assign(:current_user, user)
-      {:ok, view, html} = live(conn, "/dashboard")
+      {:ok, _view, html} = live(conn, "/dashboard")
 
       # Cases management card should show admin actions
       assert html =~ "ENFORCEMENT CASES"
