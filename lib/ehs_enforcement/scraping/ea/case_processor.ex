@@ -13,11 +13,11 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
   require Logger
   require Ash.Query
 
-  alias EhsEnforcement.Scraping.Ea.CaseScraper.EaDetailRecord
   alias EhsEnforcement.Agencies.Ea.DataTransformer
   alias EhsEnforcement.Agencies.Ea.OffenderBuilder
   alias EhsEnforcement.Enforcement
   alias EhsEnforcement.Enforcement.UnifiedCaseProcessor
+  alias EhsEnforcement.Scraping.Ea.CaseScraper.EaDetailRecord
   alias EhsEnforcement.Scraping.Shared.EnvironmentalHelpers
 
   @behaviour EhsEnforcement.Enforcement.CaseProcessorBehaviour
@@ -99,7 +99,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
         ea_total_violation_count: detect_violation_count(ea_record),
         environmental_impact: assess_environmental_impact(ea_record),
         environmental_receptor: detect_primary_receptor(ea_record),
-        is_ea_multi_violation: is_multi_violation_case?(ea_record),
+        is_ea_multi_violation: multi_violation_case?(ea_record),
         source_metadata: build_ea_source_metadata(ea_record),
         violations_data: build_violations_data(ea_record)
       }
@@ -181,7 +181,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
     else
       {:error, reason} = error ->
         # Only log as error if it's not a duplicate case
-        unless is_duplicate_error?(reason) do
+        unless duplicate_error?(reason) do
           Logger.error(
             "❌ Failed to process and create EA case #{ea_record.ea_record_id}: #{inspect(reason)}"
           )
@@ -201,7 +201,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
         {:ok, case_record}
 
       {:error, reason} = error ->
-        unless is_duplicate_error?(reason) do
+        unless duplicate_error?(reason) do
           Logger.error("❌ Failed to create EA case from transformed data: #{inspect(reason)}")
         end
 
@@ -267,7 +267,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
 
       {:error, ash_error} ->
         # Handle duplicate by updating existing case with new EA data
-        if is_duplicate_error?(ash_error) do
+        if duplicate_error?(ash_error) do
           Logger.debug(
             "EA case already exists, checking if update needed: #{processed_case.regulator_id}"
           )
@@ -484,10 +484,10 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
   defp detect_violation_count(%EaDetailRecord{} = ea_record) do
     # For now, assume single violation per EA record
     # This could be enhanced to detect multiple case references
-    if is_multi_violation_case?(ea_record), do: length(build_violations_data(ea_record)), else: 1
+    if multi_violation_case?(ea_record), do: length(build_violations_data(ea_record)), else: 1
   end
 
-  defp is_multi_violation_case?(%EaDetailRecord{} = ea_record) do
+  defp multi_violation_case?(%EaDetailRecord{} = ea_record) do
     # Check if case reference suggests multiple violations
     # EA multi-violation cases often have numbered case references
     case_ref = ea_record.case_reference || ""
@@ -495,7 +495,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
   end
 
   defp build_violations_data(%EaDetailRecord{} = ea_record) do
-    if is_multi_violation_case?(ea_record) do
+    if multi_violation_case?(ea_record) do
       # For now, create single violation - this could be enhanced
       # to parse multiple violations from EA detail pages
       [
@@ -518,7 +518,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
 
   # Error handling helpers
 
-  defp is_duplicate_error?(%Ash.Error.Invalid{errors: errors}) do
+  defp duplicate_error?(%Ash.Error.Invalid{errors: errors}) do
     Enum.any?(errors, fn
       %{field: :regulator_id, message: message} ->
         String.contains?(message, "already been taken") or
@@ -529,7 +529,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
     end)
   end
 
-  defp is_duplicate_error?(_), do: false
+  defp duplicate_error?(_), do: false
 
   # Alternative creation method for pre-transformed data
 
@@ -558,7 +558,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
 
       {:error, ash_error} ->
         # Handle duplicate by updating existing case with new EA data
-        if is_duplicate_error?(ash_error) do
+        if duplicate_error?(ash_error) do
           Logger.debug("EA transformed case already exists, updating: #{case_attrs.regulator_id}")
 
           # Find the existing case and update it

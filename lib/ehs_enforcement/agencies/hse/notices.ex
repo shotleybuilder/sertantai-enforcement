@@ -12,10 +12,10 @@ defmodule EhsEnforcement.Agencies.Hse.Notices do
   @deprecated "Use EhsEnforcement.Scraping.Hse.NoticeProcessor instead"
   require Logger
 
-  alias EhsEnforcement.Agencies.Hse.Common
   alias EhsEnforcement.Agencies.Hse.Breaches
-  alias EhsEnforcement.Scraping.Hse.NoticeScraper
+  alias EhsEnforcement.Agencies.Hse.Common
   alias EhsEnforcement.Integrations.Airtable.Post
+  alias EhsEnforcement.Scraping.Hse.NoticeScraper
 
   defmodule HSENotice do
     @derive Jason.Encoder

@@ -203,7 +203,7 @@ defmodule EhsEnforcement.ErrorHandler do
     %{
       affected_users: context[:affected_users] || 0,
       business_impact: context[:business_impact] || :low,
-      user_facing: is_user_facing_error?(error_type) || String.contains?(operation, "dashboard"),
+      user_facing: user_facing_error?(error_type) || String.contains?(operation, "dashboard"),
       data_loss_risk: data_loss_risk,
       mitigation_steps: generate_mitigation_steps(error, context)
     }
@@ -596,9 +596,9 @@ defmodule EhsEnforcement.ErrorHandler do
     :crypto.strong_rand_bytes(8) |> Base.encode16() |> String.downcase()
   end
 
-  defp is_user_facing_error?(:validation_error), do: true
-  defp is_user_facing_error?(:business_error), do: true
-  defp is_user_facing_error?(_), do: false
+  defp user_facing_error?(:validation_error), do: true
+  defp user_facing_error?(:business_error), do: true
+  defp user_facing_error?(_), do: false
 
   defp assess_data_loss_risk(:database_error), do: :high
   defp assess_data_loss_risk(:business_error), do: :medium
@@ -652,8 +652,7 @@ defmodule EhsEnforcement.ErrorHandler do
       operation
       |> String.replace("_", " ")
       |> String.split(" ")
-      |> Enum.map(&String.capitalize/1)
-      |> Enum.join(" ")
+      |> Enum.map_join(" ", &String.capitalize/1)
 
     title = "#{agency_name} #{formatted_operation} Failed: #{error_message}"
 

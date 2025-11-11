@@ -5,8 +5,8 @@ defmodule EhsEnforcement.Agencies.Hse.Breaches do
   """
   # TODO: This module has dependencies on Legl.Countries.Uk.LeglRegister.TypeCode
   # and Legl.Services.Airtable modules that need to be updated
-  alias EhsEnforcement.Legislation.TypeCode
   alias EhsEnforcement.Integrations.Airtable, as: AT
+  alias EhsEnforcement.Legislation.TypeCode
 
   require Logger
 

@@ -31,7 +31,7 @@ defmodule EhsEnforcement.Enforcement.UnifiedCaseProcessor do
 
       {:error, ash_error} ->
         # Handle duplicate by checking if update is needed
-        if is_duplicate_error?(ash_error) do
+        if duplicate_error?(ash_error) do
           handle_duplicate_case(case_attrs, ash_error, actor)
         else
           Logger.error("Failed to create case #{case_attrs.regulator_id}: #{inspect(ash_error)}")
@@ -146,7 +146,7 @@ defmodule EhsEnforcement.Enforcement.UnifiedCaseProcessor do
   defp normalize_value(value) when is_binary(value), do: String.trim(value)
   defp normalize_value(value), do: value
 
-  defp is_duplicate_error?(%Ash.Error.Invalid{errors: errors}) do
+  defp duplicate_error?(%Ash.Error.Invalid{errors: errors}) do
     Enum.any?(errors, fn
       %{field: :regulator_id, message: message} ->
         String.contains?(message, "already been taken") or
@@ -157,5 +157,5 @@ defmodule EhsEnforcement.Enforcement.UnifiedCaseProcessor do
     end)
   end
 
-  defp is_duplicate_error?(_), do: false
+  defp duplicate_error?(_), do: false
 end

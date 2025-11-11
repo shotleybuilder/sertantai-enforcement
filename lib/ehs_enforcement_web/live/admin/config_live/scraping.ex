@@ -21,7 +21,7 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   ## Configuration Parameters
 
   - **Rate Limiting**: requests per minute, pause between pages
-  - **Timeouts**: network timeout, consecutive error thresholds  
+  - **Timeouts**: network timeout, consecutive error thresholds
   - **Batch Processing**: batch size, max pages per session
   - **Feature Flags**: manual/scheduled scraping, real-time progress
   - **Scheduling**: cron expressions for automated scraping
@@ -37,8 +37,8 @@ defmodule EhsEnforcementWeb.Admin.ConfigLive.Scraping do
   require Logger
   require Ash.Query
 
-  alias EhsEnforcement.Configuration.ScrapingConfig
   alias AshPhoenix.Form
+  alias EhsEnforcement.Configuration.ScrapingConfig
 
   # LiveView callbacks
 

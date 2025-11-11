@@ -96,9 +96,9 @@ defmodule EhsEnforcementWeb do
       # Custom components
       import EhsEnforcementWeb.Components.AgencyCard
       import EhsEnforcementWeb.Components.DashboardActionCard
-      alias EhsEnforcementWeb.OffenderTableComponent
-      alias EhsEnforcementWeb.OffenderCardComponent
       alias EhsEnforcementWeb.EnforcementTimelineComponent
+      alias EhsEnforcementWeb.OffenderCardComponent
+      alias EhsEnforcementWeb.OffenderTableComponent
 
       # Cookie consent components
       import AshCookieConsent.Components.ConsentModal

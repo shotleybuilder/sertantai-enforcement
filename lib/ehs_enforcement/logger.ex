@@ -282,8 +282,7 @@ defmodule EhsEnforcement.Logger do
       metadata
       |> Map.drop([:app, :env, :node, :pid, :timestamp, :level])
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-      |> Enum.map(fn {k, v} -> "#{k}=#{format_value(v)}" end)
-      |> Enum.join(" ")
+      |> Enum.map_join(" ", fn {k, v} -> "#{k}=#{format_value(v)}" end)
 
     if filtered_metadata == "" do
       message
@@ -307,21 +306,21 @@ defmodule EhsEnforcement.Logger do
     key_str = to_string(key)
 
     cond do
-      is_sensitive_field?(key_str) -> "***REDACTED***"
-      is_pii_field?(key_str) -> "***REDACTED***"
+      sensitive_field?(key_str) -> "***REDACTED***"
+      pii_field?(key_str) -> "***REDACTED***"
       true -> value
     end
   end
 
   defp sanitize_value(_key, value), do: value
 
-  defp is_sensitive_field?(key_str) do
+  defp sensitive_field?(key_str) do
     Enum.any?(sensitive_patterns(), fn pattern ->
       Regex.match?(pattern, key_str)
     end)
   end
 
-  defp is_pii_field?(key_str) do
+  defp pii_field?(key_str) do
     Enum.any?(pii_patterns(), fn pattern ->
       Regex.match?(pattern, key_str)
     end)
@@ -344,7 +343,7 @@ defmodule EhsEnforcement.Logger do
     stacktrace
     # Limit stacktrace depth
     |> Enum.take(5)
-    |> Enum.map(fn
+    |> Enum.map_join("\n  ", fn
       {module, function, arity, location} when is_list(location) ->
         file = Keyword.get(location, :file, "unknown")
         line = Keyword.get(location, :line, 0)
@@ -356,7 +355,6 @@ defmodule EhsEnforcement.Logger do
       entry ->
         inspect(entry)
     end)
-    |> Enum.join("\n  ")
   end
 
   defp format_stacktrace(_), do: "No stacktrace available"

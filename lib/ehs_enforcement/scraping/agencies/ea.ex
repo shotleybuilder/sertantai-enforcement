@@ -21,14 +21,14 @@ defmodule EhsEnforcement.Scraping.Agencies.Ea do
   @behaviour EhsEnforcement.Scraping.AgencyBehavior
 
   require Logger
+  alias EhsEnforcement.Agencies.Ea.DataTransformer
   alias EhsEnforcement.Configuration.ScrapingConfig
   alias EhsEnforcement.Enforcement
-  alias EhsEnforcement.Scraping.ScrapeSession
-  alias EhsEnforcement.Scraping.Ea.CaseScraper
   alias EhsEnforcement.Scraping.Ea.CaseProcessor
+  alias EhsEnforcement.Scraping.Ea.CaseScraper
   alias EhsEnforcement.Scraping.Ea.NoticeProcessor
-  alias EhsEnforcement.Agencies.Ea.DataTransformer
   alias EhsEnforcement.Scraping.ProcessingLog
+  alias EhsEnforcement.Scraping.ScrapeSession
 
   @impl true
   def validate_params(opts) do

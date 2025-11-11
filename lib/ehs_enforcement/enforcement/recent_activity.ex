@@ -150,14 +150,14 @@ defmodule EhsEnforcement.Enforcement.RecentActivity do
   @doc """
   Returns whether an activity item represents a court case.
   """
-  def is_court_case?(%{type: "Court Case"}), do: true
-  def is_court_case?(_), do: false
+  def court_case?(%{type: "Court Case"}), do: true
+  def court_case?(_), do: false
 
   @doc """
   Returns whether an activity item represents an enforcement notice.
   """
-  def is_enforcement_notice?(%{is_case: false}), do: true
-  def is_enforcement_notice?(_), do: false
+  def enforcement_notice?(%{is_case: false}), do: true
+  def enforcement_notice?(_), do: false
 
   @doc """
   Formats fine amount for display.
@@ -188,8 +188,7 @@ defmodule EhsEnforcement.Enforcement.RecentActivity do
     |> String.reverse()
     |> String.split("", trim: true)
     |> Enum.chunk_every(3)
-    |> Enum.map(&Enum.join/1)
-    |> Enum.join(",")
+    |> Enum.map_join(",", &Enum.join/1)
     |> String.reverse()
   end
 end

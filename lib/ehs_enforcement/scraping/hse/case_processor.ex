@@ -4,7 +4,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
 
   Handles:
   - Data transformation from HSE format to Ash resource format
-  - Integration with existing Breaches module for legislation linking  
+  - Integration with existing Breaches module for legislation linking
   - Offender matching/creation using existing OffenderMatcher
   - Validation and error handling following Ash patterns
   """
@@ -12,9 +12,9 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
   require Logger
   require Ash.Query
 
-  alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
   alias EhsEnforcement.Agencies.Hse.OffenderBuilder
   alias EhsEnforcement.Enforcement
+  alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
 
   @hse_agency_code :hse
 
@@ -149,7 +149,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
     else
       {:error, reason} = error ->
         # Only log as error if it's not a duplicate case
-        unless is_duplicate_error?(reason) do
+        unless duplicate_error?(reason) do
           Logger.error(
             "❌ Failed to process and create case #{scraped_case.regulator_id}: #{inspect(reason)}"
           )
@@ -194,7 +194,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
 
       {:error, ash_error} ->
         # Handle duplicate by updating existing case with new scraping data
-        if is_duplicate_error?(ash_error) do
+        if duplicate_error?(ash_error) do
           Logger.debug(
             "Case already exists, updating with :update_from_scraping: #{processed_case.regulator_id}"
           )
@@ -474,7 +474,7 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
     }
   end
 
-  defp is_duplicate_error?(%Ash.Error.Invalid{errors: errors}) do
+  defp duplicate_error?(%Ash.Error.Invalid{errors: errors}) do
     Enum.any?(errors, fn
       %{field: :regulator_id, message: message} ->
         String.contains?(message, "already been taken") or
@@ -485,5 +485,5 @@ defmodule EhsEnforcement.Scraping.Hse.CaseProcessor do
     end)
   end
 
-  defp is_duplicate_error?(_), do: false
+  defp duplicate_error?(_), do: false
 end

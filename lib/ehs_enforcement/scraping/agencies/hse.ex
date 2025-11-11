@@ -22,12 +22,12 @@ defmodule EhsEnforcement.Scraping.Agencies.Hse do
 
   require Logger
   alias EhsEnforcement.Configuration.ScrapingConfig
-  alias EhsEnforcement.Scraping.ScrapeSession
-  alias EhsEnforcement.Scraping.Hse.CaseScraper
   alias EhsEnforcement.Scraping.Hse.CaseProcessor
-  alias EhsEnforcement.Scraping.Hse.NoticeScraper
+  alias EhsEnforcement.Scraping.Hse.CaseScraper
   alias EhsEnforcement.Scraping.Hse.NoticeProcessor
+  alias EhsEnforcement.Scraping.Hse.NoticeScraper
   alias EhsEnforcement.Scraping.ProcessingLog
+  alias EhsEnforcement.Scraping.ScrapeSession
 
   @impl true
   def validate_params(opts) do

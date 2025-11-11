@@ -11,9 +11,9 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
 
   require Logger
 
-  alias EhsEnforcement.Utility
   alias EhsEnforcement.Scraping.RateLimiter
   alias EhsEnforcement.Scraping.Shared.MonetaryParser
+  alias EhsEnforcement.Utility
 
   @default_database "convictions"
   @base_url_template "https://resources.hse.gov.uk/%{database}/case/"

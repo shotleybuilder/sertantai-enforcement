@@ -726,9 +726,9 @@ defmodule EhsEnforcement.Enforcement.Offender do
   end
 
   defp extract_error_message(%Ash.Error.Invalid{errors: errors}) when is_list(errors) do
-    errors
-    |> Enum.map(fn error -> "#{error.field || "unknown"}: #{error.message || inspect(error)}" end)
-    |> Enum.join(", ")
+    Enum.map_join(errors, ", ", fn error ->
+      "#{error.field || "unknown"}: #{error.message || inspect(error)}"
+    end)
   end
 
   defp extract_error_message(error), do: inspect(error)

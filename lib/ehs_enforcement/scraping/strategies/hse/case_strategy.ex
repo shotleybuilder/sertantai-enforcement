@@ -31,8 +31,8 @@ defmodule EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy do
 
   @behaviour EhsEnforcement.Scraping.ScrapeStrategy
 
-  alias EhsEnforcement.Scraping.Hse.CaseScraper
   alias EhsEnforcement.Scraping.Hse.CaseProcessor
+  alias EhsEnforcement.Scraping.Hse.CaseScraper
   alias EhsEnforcement.Scraping.ScrapeSession
 
   @default_database "convictions"

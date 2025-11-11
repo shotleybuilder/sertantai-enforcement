@@ -12,9 +12,9 @@ defmodule EhsEnforcement.Scraping.Hse.NoticeProcessor do
   require Logger
   require Ash.Query
 
+  alias EhsEnforcement.Agencies.Hse.OffenderBuilder
   alias EhsEnforcement.Scraping.Hse.NoticeScraper
   alias EhsEnforcement.Scraping.Shared.DateParser
-  alias EhsEnforcement.Agencies.Hse.OffenderBuilder
 
   @hse_agency_code :hse
 

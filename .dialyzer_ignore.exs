@@ -69,5 +69,9 @@
   {"lib/ehs_enforcement/legislation/taxa/lat_taxa.ex", :exact_eq},
 
   # DuplicatesLive - Task.shutdown return value intentionally ignored when canceling tasks
-  {"lib/ehs_enforcement_web/live/admin/duplicates_live.ex", :unmatched_return}
+  {"lib/ehs_enforcement_web/live/admin/duplicates_live.ex", :unmatched_return},
+
+  # CSV export functions - Enum.map_join return type inference issue
+  {"lib/ehs_enforcement_web/live/case_live/show.ex", :unmatched_return},
+  {"lib/ehs_enforcement_web/live/legislation_live/show.ex", :unmatched_return}
 ]

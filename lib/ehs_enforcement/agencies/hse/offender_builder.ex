@@ -33,10 +33,9 @@ defmodule EhsEnforcement.Agencies.Hse.OffenderBuilder do
   """
 
   require Logger
-
-  alias EhsEnforcement.Scraping.Shared.BusinessTypeDetector
-  alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
   alias EhsEnforcement.Integrations.CompaniesHouse
+  alias EhsEnforcement.Scraping.Hse.CaseScraper.ScrapedCase
+  alias EhsEnforcement.Scraping.Shared.BusinessTypeDetector
 
   @doc """
   Builds offender attributes from HSE case or notice data.

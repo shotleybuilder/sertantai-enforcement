@@ -8,7 +8,7 @@ defmodule EhsEnforcement.Config.ConfigManager do
 
   use GenServer
 
-  alias EhsEnforcement.Config.{Settings, Validator, FeatureFlags}
+  alias EhsEnforcement.Config.{FeatureFlags, Settings, Validator}
   # alias EhsEnforcement.Config.Environment  # Unused alias removed
 
   # Client API

@@ -34,8 +34,8 @@ defmodule EhsEnforcement.Scraping.Strategies.EA.CaseStrategy do
 
   @behaviour EhsEnforcement.Scraping.ScrapeStrategy
 
-  alias EhsEnforcement.Scraping.Ea.CaseScraper
   alias EhsEnforcement.Scraping.Ea.CaseProcessor
+  alias EhsEnforcement.Scraping.Ea.CaseScraper
   alias EhsEnforcement.Scraping.ScrapeSession
 
   @valid_action_types [:court_case, :caution]

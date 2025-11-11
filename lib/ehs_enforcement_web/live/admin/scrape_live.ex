@@ -30,11 +30,11 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLive do
   require Logger
   require Ash.Query
 
-  alias EhsEnforcement.Scraping.ScrapeCoordinator
-  alias EhsEnforcement.Enforcement.Notice
   alias EhsEnforcement.Enforcement.Case
-  alias Phoenix.PubSub
+  alias EhsEnforcement.Enforcement.Notice
+  alias EhsEnforcement.Scraping.ScrapeCoordinator
   alias EhsEnforcementWeb.Components.ProgressComponent
+  alias Phoenix.PubSub
 
   # LiveView Callbacks
 

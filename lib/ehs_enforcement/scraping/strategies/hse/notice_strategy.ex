@@ -40,8 +40,8 @@ defmodule EhsEnforcement.Scraping.Strategies.HSE.NoticeStrategy do
 
   @behaviour EhsEnforcement.Scraping.ScrapeStrategy
 
-  alias EhsEnforcement.Scraping.Hse.NoticeScraper
   alias EhsEnforcement.Scraping.Hse.NoticeProcessor
+  alias EhsEnforcement.Scraping.Hse.NoticeScraper
   alias EhsEnforcement.Scraping.ScrapeSession
 
   @default_database "notices"

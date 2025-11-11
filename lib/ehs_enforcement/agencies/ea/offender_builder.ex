@@ -32,8 +32,8 @@ defmodule EhsEnforcement.Agencies.Ea.OffenderBuilder do
   - `:industry_sector` - EA industry classification
   """
 
-  alias EhsEnforcement.Scraping.Shared.BusinessTypeDetector
   alias EhsEnforcement.Scraping.Ea.CaseScraper.EaDetailRecord
+  alias EhsEnforcement.Scraping.Shared.BusinessTypeDetector
 
   @doc """
   Builds offender attributes from EA case or notice data.

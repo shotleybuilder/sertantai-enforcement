@@ -365,7 +365,7 @@ defmodule EhsEnforcement.Utility do
   def upcase_first(<<first::utf8, rest::binary>>), do: String.upcase(<<first::utf8>>) <> rest
 
   def upcase_first_from_upcase_phrase(string),
-    do: string |> String.split(" ") |> Enum.map(&upcase_first_from_upcase/1) |> Enum.join(" ")
+    do: string |> String.split(" ") |> Enum.map_join(" ", &upcase_first_from_upcase/1)
 
   def upcase_first_from_upcase(<<first::utf8, rest::binary>>),
     do: <<first::utf8>> <> String.downcase(rest)
@@ -485,7 +485,7 @@ defmodule EhsEnforcement.Utility do
   ## Examples
       iex> normalize_legislation_title("HEALTH AND SAFETY AT WORK ACT")
       "Health and Safety at Work Act"
-      
+
       iex> normalize_legislation_title("control of substances hazardous to health regulations")
       "Control of Substances Hazardous to Health Regulations"
   """
@@ -497,8 +497,7 @@ defmodule EhsEnforcement.Utility do
     # Convert to proper title case
     |> String.split(" ")
     |> Enum.with_index()
-    |> Enum.map(fn {word, index} -> title_case_word(word, index) end)
-    |> Enum.join(" ")
+    |> Enum.map_join(" ", fn {word, index} -> title_case_word(word, index) end)
     |> clean_common_patterns()
   end
 
@@ -539,7 +538,7 @@ defmodule EhsEnforcement.Utility do
   ## Examples
       iex> determine_legislation_type("Health and Safety at Work etc. Act")
       :act
-      
+
       iex> determine_legislation_type("Control of Substances Hazardous to Health Regulations")
       :regulation
   """
@@ -573,10 +572,10 @@ defmodule EhsEnforcement.Utility do
   ## Examples
       iex> extract_year_from_title("Health and Safety at Work Act 1974")
       1974
-      
+
       iex> extract_year_from_title("Control of Substances Hazardous to Health Regulations 2002")
       2002
-      
+
       iex> extract_year_from_title("Some Act without year")
       nil
   """

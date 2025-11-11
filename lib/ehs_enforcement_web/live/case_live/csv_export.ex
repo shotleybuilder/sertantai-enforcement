@@ -104,8 +104,7 @@ defmodule EhsEnforcementWeb.CaseLive.CSVExport do
   def generate_csv(cases) when is_list(cases) do
     csv_content =
       [@csv_headers | Enum.map(cases, &case_to_csv_row/1)]
-      |> Enum.map(&Enum.join(&1, ","))
-      |> Enum.join("\n")
+      |> Enum.map_join("\n", &Enum.join(&1, ","))
 
     {:ok, csv_content}
   end
@@ -116,8 +115,7 @@ defmodule EhsEnforcementWeb.CaseLive.CSVExport do
   def generate_detailed_csv(cases_with_notices) when is_list(cases_with_notices) do
     csv_content =
       [@detailed_csv_headers | Enum.map(cases_with_notices, &case_to_detailed_csv_row/1)]
-      |> Enum.map(&Enum.join(&1, ","))
-      |> Enum.join("\n")
+      |> Enum.map_join("\n", &Enum.join(&1, ","))
 
     {:ok, csv_content}
   end

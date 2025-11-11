@@ -202,8 +202,7 @@ defmodule EhsEnforcementWeb.CaseLive.Show do
     ]
 
     [headers, data]
-    |> Enum.map(&Enum.join(&1, ","))
-    |> Enum.join("\n")
+    Enum.map_join([headers, data], "\n", &Enum.join(&1, ","))
   end
 
   defp generate_case_summary(case_record) do

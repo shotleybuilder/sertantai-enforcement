@@ -1085,8 +1085,7 @@ defmodule EhsEnforcement.Enforcement do
         filters ->
           filters
           |> Enum.sort()
-          |> Enum.map(fn {k, v} -> "#{k}:#{cache_value(v)}" end)
-          |> Enum.join("|")
+          |> Enum.map_join("|", fn {k, v} -> "#{k}:#{cache_value(v)}" end)
       end
 
     pagination_key =
@@ -1099,9 +1098,7 @@ defmodule EhsEnforcement.Enforcement do
   end
 
   defp cache_value(value) when is_list(value) do
-    value
-    |> Enum.map(&cache_value/1)
-    |> Enum.join(",")
+    Enum.map_join(value, ",", &cache_value/1)
   end
 
   defp cache_value({key, val}), do: "#{key}=#{cache_value(val)}"
@@ -1300,15 +1297,13 @@ defmodule EhsEnforcement.Enforcement do
   defp summarize_filters(nil), do: "none"
 
   defp summarize_filters(filters) when is_map(filters) do
-    filters
-    |> Enum.map(fn
+    Enum.map_join(filters, ", ", fn
       {key, value} when is_list(value) -> "#{key}:#{length(value)}_conditions"
       {key, value} when is_binary(value) -> "#{key}:#{String.slice(value, 0, 20)}..."
       {key, %Date{}} -> "#{key}:date"
       {key, %Decimal{}} -> "#{key}:decimal"
       {key, _value} -> "#{key}:value"
     end)
-    |> Enum.join(", ")
   end
 
   defp summarize_filters(filters), do: inspect(filters, limit: 50)
