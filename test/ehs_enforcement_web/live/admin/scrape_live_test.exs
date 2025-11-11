@@ -11,6 +11,10 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
   # Real-time PubSub functionality works correctly in production but cannot be reliably tested
   # with LiveViewTest.render() which doesn't synchronously process PubSub messages
 
+  # Helper function to access LiveView assigns in tests
+  # Phoenix LiveView Testing requires using :sys.get_state/1 to access socket assigns
+  defp get_assigns(view), do: :sys.get_state(view.pid).socket.assigns
+
   describe "unified scraping interface - mounting and initialization" do
     setup [:create_admin_user]
 
@@ -31,8 +35,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     test "initializes with default HSE agency and convictions database", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
-      assert view.assigns.agency == :hse
-      assert view.assigns.database == "convictions"
+      assigns = get_assigns(view)
+      assert assigns.agency == :hse
+      assert assigns.database == "convictions"
     end
   end
 
@@ -48,9 +53,10 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       # Now select HSE
       view |> element("button[phx-value-agency='hse']") |> render_click()
 
-      assert view.assigns.agency == :hse
-      assert view.assigns.database == "convictions"
-      assert view.assigns.enforcement_type == :case
+      assigns = get_assigns(view)
+      assert assigns.agency == :hse
+      assert assigns.database == "convictions"
+      assert assigns.enforcement_type == :case
     end
 
     test "selecting EA agency sets EA and defaults to cases", %{conn: conn} do
@@ -58,26 +64,30 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
 
       view |> element("button[phx-value-agency='ea']") |> render_click()
 
-      assert view.assigns.agency == :ea
-      assert view.assigns.database == "cases"
-      assert view.assigns.enforcement_type == :case
+      assigns = get_assigns(view)
+      assert assigns.agency == :ea
+      assert assigns.database == "cases"
+      assert assigns.enforcement_type == :case
     end
 
     test "switching agencies resets database to default for new agency", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
       # Default is HSE/convictions
-      assert view.assigns.agency == :hse
-      assert view.assigns.database == "convictions"
+      assigns = get_assigns(view)
+      assert assigns.agency == :hse
+      assert assigns.database == "convictions"
 
       # Change to HSE notices
       view |> element("#database") |> render_change(%{"database" => "notices"})
-      assert view.assigns.database == "notices"
+      assigns = get_assigns(view)
+      assert assigns.database == "notices"
 
       # Switch to EA - should reset to EA's default (cases)
       view |> element("button[phx-value-agency='ea']") |> render_click()
-      assert view.assigns.agency == :ea
-      assert view.assigns.database == "cases"
+      assigns = get_assigns(view)
+      assert assigns.agency == :ea
+      assert assigns.database == "cases"
     end
   end
 
@@ -88,8 +98,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
       # Default is already convictions
-      assert view.assigns.database == "convictions"
-      assert view.assigns.enforcement_type == :case
+      assigns = get_assigns(view)
+      assert assigns.database == "convictions"
+      assert assigns.enforcement_type == :case
     end
 
     test "selecting notices database sets enforcement_type to :notice", %{conn: conn} do
@@ -97,8 +108,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
 
       view |> element("#database") |> render_change(%{"database" => "notices"})
 
-      assert view.assigns.database == "notices"
-      assert view.assigns.enforcement_type == :notice
+      assigns = get_assigns(view)
+      assert assigns.database == "notices"
+      assert assigns.enforcement_type == :notice
     end
 
     test "selecting cases database for EA sets enforcement_type to :case", %{conn: conn} do
@@ -107,8 +119,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       view |> element("button[phx-value-agency='ea']") |> render_click()
       view |> element("#database") |> render_change(%{"database" => "cases"})
 
-      assert view.assigns.database == "cases"
-      assert view.assigns.enforcement_type == :case
+      assigns = get_assigns(view)
+      assert assigns.database == "cases"
+      assert assigns.enforcement_type == :case
     end
 
     test "selecting notices database for EA sets enforcement_type to :notice", %{conn: conn} do
@@ -117,8 +130,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       view |> element("button[phx-value-agency='ea']") |> render_click()
       view |> element("#database") |> render_change(%{"database" => "notices"})
 
-      assert view.assigns.database == "notices"
-      assert view.assigns.enforcement_type == :notice
+      assigns = get_assigns(view)
+      assert assigns.database == "notices"
+      assert assigns.enforcement_type == :notice
     end
   end
 
@@ -129,8 +143,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
       # Default is HSE convictions
-      assert view.assigns.strategy == EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy
-      assert view.assigns.strategy_name == "HSE Case Strategy"
+      assigns = get_assigns(view)
+      assert assigns.strategy == EhsEnforcement.Scraping.Strategies.HSE.CaseStrategy
+      assert assigns.strategy_name == "HSE Case Scraping"
     end
 
     test "HSE notices uses HSE NoticeStrategy", %{conn: conn} do
@@ -138,8 +153,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
 
       view |> element("#database") |> render_change(%{"database" => "notices"})
 
-      assert view.assigns.strategy == EhsEnforcement.Scraping.Strategies.HSE.NoticeStrategy
-      assert view.assigns.strategy_name == "HSE Notice Strategy"
+      assigns = get_assigns(view)
+      assert assigns.strategy == EhsEnforcement.Scraping.Strategies.HSE.NoticeStrategy
+      assert assigns.strategy_name == "HSE Notice Scraping"
     end
 
     test "EA cases uses EA CaseStrategy", %{conn: conn} do
@@ -148,8 +164,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       view |> element("button[phx-value-agency='ea']") |> render_click()
       view |> element("#database") |> render_change(%{"database" => "cases"})
 
-      assert view.assigns.strategy == EhsEnforcement.Scraping.Strategies.EA.CaseStrategy
-      assert view.assigns.strategy_name == "EA Case Strategy"
+      assigns = get_assigns(view)
+      assert assigns.strategy == EhsEnforcement.Scraping.Strategies.EA.CaseStrategy
+      assert assigns.strategy_name == "EA Case Scraping"
     end
 
     test "EA notices uses EA NoticeStrategy", %{conn: conn} do
@@ -158,8 +175,9 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       view |> element("button[phx-value-agency='ea']") |> render_click()
       view |> element("#database") |> render_change(%{"database" => "notices"})
 
-      assert view.assigns.strategy == EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy
-      assert view.assigns.strategy_name == "EA Notice Strategy"
+      assigns = get_assigns(view)
+      assert assigns.strategy == EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy
+      assert assigns.strategy_name == "EA Notice Scraping"
     end
   end
 
@@ -169,7 +187,8 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     test "initializes with empty scraped_records", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
-      assert view.assigns.scraped_records == []
+      assigns = get_assigns(view)
+      assert assigns.scraped_records == []
     end
 
     test "does not display scraped records section when empty", %{conn: conn} do
