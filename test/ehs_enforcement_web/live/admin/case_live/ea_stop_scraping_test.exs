@@ -83,8 +83,8 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaStopScrapingTest do
         }
       }
 
-      # Start the scraping using the form submit event
-      render_submit(view, "submit", ea_scrape_params)
+      # Start the scraping using the form submit event (matches phx-submit="start_scraping" in template)
+      render_submit(view, "start_scraping", ea_scrape_params)
 
       # Give it a moment to start the background task
       :timer.sleep(100)
