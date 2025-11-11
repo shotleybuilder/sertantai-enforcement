@@ -361,7 +361,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "filters timeline by enforcement type", %{conn: conn, offender: offender} do
-      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Filter to show only cases
       view
@@ -376,7 +376,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "filters timeline by agency", %{conn: conn, offender: offender} do
-      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Filter to show only HSE enforcement actions
       view
@@ -391,7 +391,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "filters timeline by date range", %{conn: conn, offender: offender} do
-      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Filter to show only 2024 actions
       view

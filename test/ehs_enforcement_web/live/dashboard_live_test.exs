@@ -201,7 +201,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
     end
 
     test "displays agency information correctly", %{conn: conn, agency: _agency} do
-      {:ok, _view, html} = live(conn, "/dashboard")
+      {:ok, view, html} = live(conn, "/dashboard")
 
       # Should show agency name and code
       assert html =~ "Health and Safety Executive"
@@ -550,7 +550,7 @@ defmodule EhsEnforcementWeb.DashboardLiveTest do
         })
 
       # Trigger re-render by navigating away and back
-      {:ok, _view, _updated_html} = live(conn, "/dashboard")
+      {:ok, view, _updated_html} = live(conn, "/dashboard")
 
       # Should show updated count (3 cases for HSE)
       hse_card = element(view, "[data-testid='agency-card']:has(h3:fl-contains('HSE'))")

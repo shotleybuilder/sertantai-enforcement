@@ -168,7 +168,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       repeat_offender: repeat_offender,
       moderate_offender: moderate_offender
     } do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Filter by Manufacturing industry
       view
@@ -186,7 +186,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       repeat_offender: repeat_offender,
       moderate_offender: moderate_offender
     } do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Filter by Manchester
       view
@@ -204,7 +204,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       repeat_offender: repeat_offender,
       moderate_offender: moderate_offender
     } do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Filter by limited company
       view
