@@ -175,24 +175,11 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
   end
 
   describe "EA Progress Percentage Calculation" do
-    setup do
-      admin_user =
-        Ash.Seed.seed!(EhsEnforcement.Accounts.User, %{
-          email: "ea-calc-admin@test.com",
-          name: "EA Calc Admin",
-          github_login: "eacalcadmin",
-          is_admin: true,
-          admin_checked_at: DateTime.utc_now()
-        })
-
-      %{admin_user: admin_user}
-    end
+    setup [:register_and_log_in_admin]
 
     test "EA progress percentage calculation with case-based metrics", %{
-      conn: conn,
-      admin_user: admin_user
+      conn: conn
     } do
-      conn = conn |> assign(:current_user, admin_user)
       {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA
@@ -242,8 +229,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
       assert html =~ "45"
     end
 
-    test "EA progress reaches 100% when completed", %{conn: conn, admin_user: admin_user} do
-      conn = conn |> assign(:current_user, admin_user)
+    test "EA progress reaches 100% when completed", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA
@@ -273,8 +259,7 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
       assert html =~ "Scraping completed" or html =~ "completed"
     end
 
-    test "EA progress handles edge cases correctly", %{conn: conn, admin_user: admin_user} do
-      conn = conn |> assign(:current_user, admin_user)
+    test "EA progress handles edge cases correctly", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA
@@ -309,21 +294,9 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
   end
 
   describe "EA Progress Status Messages" do
-    setup do
-      admin_user =
-        Ash.Seed.seed!(EhsEnforcement.Accounts.User, %{
-          email: "ea-status-admin@test.com",
-          name: "EA Status Admin",
-          github_login: "eastatusadmin",
-          is_admin: true,
-          admin_checked_at: DateTime.utc_now()
-        })
+    setup [:register_and_log_in_admin]
 
-      %{admin_user: admin_user}
-    end
-
-    test "EA progress shows appropriate status messages", %{conn: conn, admin_user: admin_user} do
-      conn = conn |> assign(:current_user, admin_user)
+    test "EA progress shows appropriate status messages", %{conn: conn} do
       {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA
@@ -343,15 +316,9 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
   end
 
   describe "EA Case Table Integration" do
-    setup do
-      admin_user =
-        Ash.Seed.seed!(EhsEnforcement.Accounts.User, %{
-          email: "ea-case-table-admin@test.com",
-          name: "EA Case Table Admin",
-          github_login: "eacasetableadmin",
-          is_admin: true,
-          admin_checked_at: DateTime.utc_now()
-        })
+    setup context do
+      # Use helper to create authenticated admin
+      context = register_and_log_in_admin(context)
 
       # Create EA agency
       {:ok, ea_agency} =
@@ -361,15 +328,13 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
           enabled: true
         })
 
-      %{admin_user: admin_user, ea_agency: ea_agency}
+      Map.put(context, :ea_agency, ea_agency)
     end
 
     test "EA cases appear in scraped cases table during EA scraping", %{
       conn: conn,
-      admin_user: admin_user,
       ea_agency: ea_agency
     } do
-      conn = conn |> assign(:current_user, admin_user)
       {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA and simulate starting scraping session
@@ -429,10 +394,8 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
 
     test "EA cases are deduplicated in scraped cases table by regulator_id", %{
       conn: conn,
-      admin_user: admin_user,
       ea_agency: ea_agency
     } do
-      conn = conn |> assign(:current_user, admin_user)
       {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA and simulate starting scraping session
@@ -512,10 +475,8 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
 
     test "EA cases only appear in table during active EA scraping session", %{
       conn: conn,
-      admin_user: admin_user,
       ea_agency: ea_agency
     } do
-      conn = conn |> assign(:current_user, admin_user)
       {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Switch to EA but DON'T start scraping session
@@ -555,10 +516,8 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaProgressTest do
 
     test "mixed HSE and EA cases can appear in same scraping session", %{
       conn: conn,
-      admin_user: admin_user,
       ea_agency: ea_agency
     } do
-      conn = conn |> assign(:current_user, admin_user)
       {:ok, view, _html} = live(conn, "/admin/scrape")
 
       # Create HSE agency
