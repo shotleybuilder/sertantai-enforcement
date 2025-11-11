@@ -140,8 +140,10 @@ defmodule EhsEnforcement.Agencies.Ea.DataTransformerTest do
 
       # Should successfully transform without errors
       assert is_map(transformed)
-      # Uses case_reference when provided
-      assert transformed[:regulator_id] == "EA/CC/2025/001"
+      # regulator_id is generated hash from offender_name|action_date|action_type
+      assert transformed[:regulator_id] == "1C25892AB9A4B09D"
+      # case_reference is stored separately
+      assert transformed[:case_reference] == "EA/CC/2025/001"
       assert transformed[:offender_name] == "Test Company Ltd"
       # Normalized (trimmed)
       assert transformed[:address] == "123 Test Street"
