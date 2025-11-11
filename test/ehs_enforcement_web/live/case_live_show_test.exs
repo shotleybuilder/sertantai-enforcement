@@ -112,7 +112,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays offender information section", %{conn: conn, case: case, offender: offender} do
-      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should show offender details section
       assert html =~ "Offender Information" or html =~ "Company Details"
@@ -129,7 +129,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays agency information section", %{conn: conn, case: case, agency: agency} do
-      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should show agency details
       assert html =~ "Regulating Agency" or html =~ "Agency Information"
@@ -286,7 +286,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays edit case button", %{conn: conn, case: case} do
-      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have edit button or link
       assert has_element?(view, "a[href='/cases/#{case.id}/edit']") or
@@ -295,7 +295,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays delete case button with confirmation", %{conn: conn, case: case} do
-      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have delete action
       assert has_element?(view, "button[phx-click='delete']") or
@@ -319,7 +319,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays export case data button", %{conn: conn, case: case} do
-      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have export functionality
       assert has_element?(view, "button[phx-click='export']") or
@@ -328,7 +328,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays back to cases list link", %{conn: conn, case: case} do
-      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have navigation back to cases list
       assert has_element?(view, "a[href='/cases']") or
@@ -337,7 +337,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "displays share case link", %{conn: conn, case: case} do
-      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have share functionality or direct link
       assert html =~ "Share" or
@@ -676,7 +676,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "includes proper navigation elements", %{conn: conn, case: case} do
-      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Should have breadcrumbs or navigation
       assert html =~ "Cases" or html =~ "Home" or html =~ "Dashboard"
@@ -728,7 +728,7 @@ defmodule EhsEnforcementWeb.CaseLive.ShowTest do
     end
 
     test "supports keyboard navigation", %{conn: conn, case: case} do
-      {:ok, _view, html} = live(conn, "/cases/#{case.id}")
+      {:ok, view, html} = live(conn, "/cases/#{case.id}")
 
       # Interactive elements should be keyboard accessible
       if has_element?(view, "button") do

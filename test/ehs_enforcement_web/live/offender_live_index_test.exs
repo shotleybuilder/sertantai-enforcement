@@ -120,7 +120,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
     end
 
     test "renders offender index page", %{conn: conn} do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       assert html =~ "Offender Management"
       assert html =~ "Enforcement Offenders"
@@ -131,7 +131,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       repeat_offender: repeat_offender,
       moderate_offender: moderate_offender
     } do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Should show offender names
       assert html =~ repeat_offender.name
@@ -222,7 +222,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       repeat_offender: repeat_offender,
       minor_offender: minor_offender
     } do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Filter for repeat offenders only (multiple cases/notices)
       # For checkboxes in LiveView tests, we click the checkbox element directly
@@ -241,7 +241,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       repeat_offender: repeat_offender,
       moderate_offender: moderate_offender
     } do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Sort by total fines descending
       view
@@ -262,7 +262,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       repeat_offender: repeat_offender,
       minor_offender: minor_offender
     } do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Sort by total cases descending
       view
@@ -283,7 +283,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       repeat_offender: repeat_offender,
       moderate_offender: moderate_offender
     } do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Search for "Acme" - search is handled through the filter form
       view
@@ -301,7 +301,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       repeat_offender: repeat_offender,
       moderate_offender: moderate_offender
     } do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Search by postcode - search is handled through the filter form
       view
@@ -328,7 +328,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
           })
       end
 
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Should show pagination controls when there are many results
       rendered_html = render(view)
@@ -347,7 +347,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
     end
 
     test "navigates to offender detail view", %{conn: conn, repeat_offender: repeat_offender} do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Click on offender row
       {:ok, show_view, _html} =
@@ -365,14 +365,14 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
       # Clear the database via repo
       EhsEnforcement.Repo.delete_all(EhsEnforcement.Enforcement.Offender)
 
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       assert html =~ "No offenders found"
       assert html =~ "No enforcement data available"
     end
 
     test "displays loading states during data fetch", %{conn: conn} do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Trigger a filter change that would cause loading
       view
@@ -384,7 +384,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
     end
 
     test "exports offender data to CSV", %{conn: conn, repeat_offender: repeat_offender} do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Click export button - this triggers a JS event, not direct content
       view
@@ -438,7 +438,7 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
     end
 
     test "supports keyboard navigation", %{conn: conn, offender: offender} do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Should have focusable elements
       assert has_element?(view, "[data-offender-id='#{offender.id}'] a")
@@ -450,13 +450,13 @@ defmodule EhsEnforcementWeb.OffenderLive.IndexTest do
     test "handles database connection errors gracefully", %{conn: conn} do
       # This would require mocking the database layer
       # For now, just ensure the page doesn't crash
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       assert view.module == EhsEnforcementWeb.OffenderLive.Index
     end
 
     test "handles invalid filter parameters", %{conn: conn} do
-      {:ok, _view, html} = live(conn, "/offenders")
+      {:ok, view, html} = live(conn, "/offenders")
 
       # Try invalid sort parameter
       view

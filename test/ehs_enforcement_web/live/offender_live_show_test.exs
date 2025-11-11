@@ -416,7 +416,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "displays loading states for timeline data", %{conn: conn, offender: offender} do
-      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Trigger timeline reload
       view
@@ -454,7 +454,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
       offender: offender,
       hse_agency: hse_agency
     } do
-      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Simulate new case creation
       {:ok, new_case} =
@@ -481,7 +481,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
       offender: offender,
       hse_agency: hse_agency
     } do
-      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Simulate new notice creation
       {:ok, new_notice} =
@@ -538,7 +538,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "supports keyboard navigation for timeline items", %{conn: conn, offender: offender} do
-      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Timeline items should be focusable
       assert has_element?(view, "[data-role='timeline-item'][tabindex='0']")
@@ -614,7 +614,7 @@ defmodule EhsEnforcementWeb.OffenderLive.ShowTest do
     end
 
     test "implements pagination for timeline", %{conn: conn, offender: offender} do
-      {:ok, _view, html} = live(conn, "/offenders/#{offender.id}")
+      {:ok, view, html} = live(conn, "/offenders/#{offender.id}")
 
       # Should have pagination controls for large datasets
       assert has_element?(view, "[data-role='load-more']") ||

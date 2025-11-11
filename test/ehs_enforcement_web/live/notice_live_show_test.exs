@@ -92,7 +92,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     end
 
     test "successfully mounts and displays notice details", %{conn: conn, notice: notice} do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       assert html =~ "Notice Details"
       assert html =~ notice.regulator_id
@@ -103,7 +103,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     end
 
     test "displays complete notice information", %{conn: conn, notice: notice} do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Notice identification
       assert html =~ "HSE-NOTICE-2024-015"
@@ -126,7 +126,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
       notice: notice,
       offender: offender
     } do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Offender details
       assert html =~ offender.name
@@ -137,7 +137,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     end
 
     test "displays agency information section", %{conn: conn, notice: notice, agency: agency} do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Agency details
       assert html =~ agency.name
@@ -161,7 +161,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     end
 
     test "displays notice body with proper formatting", %{conn: conn, notice: notice} do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should display full notice body
       assert html =~ "implement and maintain adequate safety procedures"
@@ -219,7 +219,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
           # Missing optional fields
         })
 
-      {:ok, _view, html} = live(conn, "/notices/#{minimal_notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{minimal_notice.id}")
 
       assert html =~ "EA-NOTICE-2024-MIN"
       assert html =~ "Minimal Data Ltd"
@@ -239,7 +239,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
       related_notice1: related_notice1,
       related_notice2: related_notice2
     } do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should show related notices section
       assert html =~ "Related Notices" or html =~ "Other Notices"
@@ -249,7 +249,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     end
 
     test "shows chronological order of related notices", %{conn: conn, notice: notice} do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should show notices in chronological order
       # related_notice1 (Jan 5) should appear before related_notice2 (Feb 1)
@@ -274,7 +274,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
       notice: notice,
       related_case: related_case
     } do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should show related case if exists
       assert html =~ "Related Case" or html =~ "Associated Case"
@@ -307,7 +307,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
           notice_date: ~D[2024-01-01]
         })
 
-      {:ok, _view, html} = live(conn, "/notices/#{isolated_notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{isolated_notice.id}")
 
       assert html =~ "ORR-NOTICE-2024-001"
       # Should handle absence of related records gracefully
@@ -320,7 +320,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     setup :create_notice_with_relations
 
     test "calculates days until compliance deadline", %{conn: conn, notice: notice} do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should show days calculation (March 15 - current date)
       assert html =~ "days until" or html =~ "days remaining" or html =~ "days to comply"
@@ -375,7 +375,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     end
 
     test "shows compliance actions or requirements", %{conn: conn, notice: notice} do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should extract and display requirements from notice body
       assert html =~ "Requirements" or html =~ "Actions Required"
@@ -482,7 +482,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     setup :create_notice_with_relations
 
     test "formats dates consistently", %{conn: conn, notice: notice} do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should format dates in consistent format
       assert html =~ "January 15, 2024" or html =~ "15 Jan 2024" or html =~ "2024-01-15"
@@ -491,7 +491,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     end
 
     test "handles long notice body text appropriately", %{conn: conn, notice: notice} do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should display full text with proper formatting
       assert html =~ "adequate safety procedures"
@@ -503,7 +503,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     end
 
     test "displays proper labels and field names", %{conn: conn, notice: notice} do
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       # Should have clear field labels
       assert html =~ "Notice ID" or html =~ "Regulator ID"
@@ -542,7 +542,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
           # Other fields left nil
         })
 
-      {:ok, _view, html} = live(conn, "/notices/#{minimal_notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{minimal_notice.id}")
 
       assert html =~ "EA-NOTICE-MIN"
       # Should handle missing fields gracefully
@@ -556,7 +556,7 @@ defmodule EhsEnforcementWeb.NoticeLive.ShowTest do
     test "loads notice details within reasonable time", %{conn: conn, notice: notice} do
       start_time = System.monotonic_time(:millisecond)
 
-      {:ok, _view, html} = live(conn, "/notices/#{notice.id}")
+      {:ok, view, html} = live(conn, "/notices/#{notice.id}")
 
       end_time = System.monotonic_time(:millisecond)
       load_time = end_time - start_time
