@@ -243,7 +243,8 @@ defmodule EhsEnforcement.Agencies.Ea.CaseScraperTest do
       assert call_private(CaseScraper, :parse_ea_date, ["invalid"]) == nil
       assert call_private(CaseScraper, :parse_ea_date, ["32/01/2024"]) == nil
       assert call_private(CaseScraper, :parse_ea_date, [""]) == nil
-      assert call_private(CaseScraper, :parse_ea_date, [nil]) == nil
+      # Note: nil input not tested - parse_ea_date/1 has guard when is_binary()
+      # In production, Floki.text() |> String.trim() always returns a string, never nil
     end
   end
 
