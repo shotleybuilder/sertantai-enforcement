@@ -66,8 +66,8 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaRecordsDisplayTest do
       # Mount the scraping LiveView
       {:ok, view, _html} = live(conn, "/admin/scrape")
 
-      # Verify initially empty
-      assert has_element?(view, "h1", "Case Scraping")
+      # Verify page loaded with correct title
+      assert has_element?(view, "h1", "UK Enforcement Data Scraping")
 
       # Create an EA processing log (this should trigger PubSub notification)
       ea_log_params = %{

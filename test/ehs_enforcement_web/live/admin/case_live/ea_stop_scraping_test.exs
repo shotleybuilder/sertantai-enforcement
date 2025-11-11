@@ -93,11 +93,11 @@ defmodule EhsEnforcementWeb.Admin.CaseLive.EaStopScrapingTest do
       scraping_task = :sys.get_state(view.pid).socket.assigns[:scraping_task]
       current_session = :sys.get_state(view.pid).socket.assigns[:current_session]
 
-      # EA scraping should have task but no session (different architecture than HSE)
+      # EA scraping creates both task and session (same architecture as HSE)
       assert scraping_task != nil, "EA scraping task should be started"
 
-      assert current_session == nil,
-             "EA scraping should not create a session (sessionless architecture)"
+      refute current_session == nil,
+             "EA scraping creates a session via ScrapeCoordinator"
 
       # Verify the task is actually alive
       assert Process.alive?(scraping_task.pid), "Scraping task process should be alive"
