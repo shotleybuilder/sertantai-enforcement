@@ -15,6 +15,18 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
   # Phoenix LiveView Testing requires using :sys.get_state/1 to access socket assigns
   defp get_assigns(view), do: :sys.get_state(view.pid).socket.assigns
 
+  # Helper function to get agency-specific database selector
+  # UI uses dynamic IDs: #database-hse or #database-ea based on selected agency
+  defp get_database_selector(view) do
+    assigns = get_assigns(view)
+
+    case assigns.agency do
+      :hse -> "#database-hse"
+      :ea -> "#database-ea"
+      _ -> raise "Unknown agency: #{inspect(assigns.agency)}"
+    end
+  end
+
   describe "unified scraping interface - mounting and initialization" do
     setup [:create_admin_user]
 
@@ -79,7 +91,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       assert assigns.database == "convictions"
 
       # Change to HSE notices
-      view |> element("#database") |> render_change(%{"database" => "notices"})
+      view |> element(get_database_selector(view)) |> render_change(%{"database" => "notices"})
       assigns = get_assigns(view)
       assert assigns.database == "notices"
 
@@ -106,7 +118,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     test "selecting notices database sets enforcement_type to :notice", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
-      view |> element("#database") |> render_change(%{"database" => "notices"})
+      view |> element(get_database_selector(view)) |> render_change(%{"database" => "notices"})
 
       assigns = get_assigns(view)
       assert assigns.database == "notices"
@@ -117,7 +129,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
       view |> element("button[phx-value-agency='ea']") |> render_click()
-      view |> element("#database") |> render_change(%{"database" => "cases"})
+      view |> element(get_database_selector(view)) |> render_change(%{"database" => "cases"})
 
       assigns = get_assigns(view)
       assert assigns.database == "cases"
@@ -128,7 +140,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
       view |> element("button[phx-value-agency='ea']") |> render_click()
-      view |> element("#database") |> render_change(%{"database" => "notices"})
+      view |> element(get_database_selector(view)) |> render_change(%{"database" => "notices"})
 
       assigns = get_assigns(view)
       assert assigns.database == "notices"
@@ -151,7 +163,7 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
     test "HSE notices uses HSE NoticeStrategy", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
-      view |> element("#database") |> render_change(%{"database" => "notices"})
+      view |> element(get_database_selector(view)) |> render_change(%{"database" => "notices"})
 
       assigns = get_assigns(view)
       assert assigns.strategy == EhsEnforcement.Scraping.Strategies.HSE.NoticeStrategy
@@ -162,22 +174,22 @@ defmodule EhsEnforcementWeb.Admin.ScrapeLiveTest do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
       view |> element("button[phx-value-agency='ea']") |> render_click()
-      view |> element("#database") |> render_change(%{"database" => "cases"})
+      view |> element(get_database_selector(view)) |> render_change(%{"database" => "cases"})
 
       assigns = get_assigns(view)
       assert assigns.strategy == EhsEnforcement.Scraping.Strategies.EA.CaseStrategy
-      assert assigns.strategy_name == "EA Case Scraping"
+      assert assigns.strategy_name == "Environment Agency Case Scraping"
     end
 
     test "EA notices uses EA NoticeStrategy", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/scrape")
 
       view |> element("button[phx-value-agency='ea']") |> render_click()
-      view |> element("#database") |> render_change(%{"database" => "notices"})
+      view |> element(get_database_selector(view)) |> render_change(%{"database" => "notices"})
 
       assigns = get_assigns(view)
       assert assigns.strategy == EhsEnforcement.Scraping.Strategies.EA.NoticeStrategy
-      assert assigns.strategy_name == "EA Notice Scraping"
+      assert assigns.strategy_name == "Environment Agency Notice Scraping"
     end
   end
 
