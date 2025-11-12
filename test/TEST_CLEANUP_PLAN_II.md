@@ -40,13 +40,14 @@ This is a **methodical, file-by-file approach** to achieving a 100% passing test
 
 ## Progress Tracker
 
-**Completed**: 6/98 (6%)
+**Completed**: 21/98 (21%)
+**Excluded/Broken**: 2 files (hit live APIs)
 **Last Updated**: 2025-11-11
 
 **Status by Category**:
-- Agency Logic: 6/11 PASS (55%)
-- Enforcement Domain: Not tested yet
-- Scraping: Not tested yet
+- Agency Logic: 8/11 PASS (73%)
+- Enforcement Domain: 3/9 PASS (33%)
+- Scraping: 10/18 PASS (56%) - 2 files excluded (live API calls)
 - Utility: Not tested yet
 - Components: Not tested yet
 - Controllers: Not tested yet
@@ -56,10 +57,10 @@ This is a **methodical, file-by-file approach** to achieving a 100% passing test
 
 ## Test Files Checklist
 
-### Agency Logic Tests (11 files) - 6/11 PASSING ✓
+### Agency Logic Tests (11 files) - 8/11 PASSING ✓
 
-- [ ] `test/ehs_enforcement/agencies/ea/case_scraper_test.exs` ❌ 1 failure
-- [ ] `test/ehs_enforcement/agencies/ea/data_transformer_test.exs` ❌ 1 failure
+- [x] `test/ehs_enforcement/agencies/ea/case_scraper_test.exs` ✅ PASS
+- [x] `test/ehs_enforcement/agencies/ea/data_transformer_test.exs` ✅ PASS
 - [ ] `test/ehs_enforcement/agencies/ea/duplicate_handling_test.exs` ❌ 4 failures
 - [x] `test/ehs_enforcement/agencies/ea/offender_matcher_test.exs` ✅ PASS
 - [x] `test/ehs_enforcement/agencies/ea/roofing_specialists_bug_test.exs` ✅ PASS
@@ -70,38 +71,38 @@ This is a **methodical, file-by-file approach** to achieving a 100% passing test
 - [x] `test/ehs_enforcement/consent/storage_test.exs` ✅ PASS
 - [x] `test/ehs_enforcement/config/config_integration_test.exs` ✅ PASS
 
-### Enforcement Domain Tests (9 files)
+### Enforcement Domain Tests (9 files) - 3/9 PASSING ✓
 
-- [ ] `test/ehs_enforcement/enforcement/agency_auto_population_test.exs`
-- [ ] `test/ehs_enforcement/enforcement/agency_test.exs`
-- [ ] `test/ehs_enforcement/enforcement/case_test.exs`
-- [ ] `test/ehs_enforcement/enforcement/enforcement_domain_test.exs`
-- [ ] `test/ehs_enforcement/enforcement/legislation_deduplication_test.exs`
-- [ ] `test/ehs_enforcement/enforcement/metrics_test.exs`
-- [ ] `test/ehs_enforcement/enforcement/offender_test.exs`
-- [ ] `test/ehs_enforcement/enforcement/workflows_integration_test.exs`
-- [ ] `test/ehs_enforcement/enforcement_test.exs`
+- [ ] `test/ehs_enforcement/enforcement/agency_auto_population_test.exs` ❌ 1 failure
+- [x] `test/ehs_enforcement/enforcement/agency_test.exs` ✅ PASS
+- [ ] `test/ehs_enforcement/enforcement/case_test.exs` ❌ 2 failures
+- [x] `test/ehs_enforcement/enforcement/enforcement_domain_test.exs` ✅ PASS
+- [ ] `test/ehs_enforcement/enforcement/legislation_deduplication_test.exs` ❌ 3 failures
+- [x] `test/ehs_enforcement/enforcement/metrics_test.exs` ✅ PASS
+- [ ] `test/ehs_enforcement/enforcement/offender_test.exs` ❌ 2 failures
+- [ ] `test/ehs_enforcement/enforcement/workflows_integration_test.exs` ❌ 6 failures
+- [ ] `test/ehs_enforcement/enforcement_test.exs` ❌ 3 failures
 
-### Scraping Tests (21 files)
+### Scraping Tests (18 files - 2 BROKEN/EXCLUDED) - 10/18 PASSING ✓
 
-- [ ] `test/ehs_enforcement/scraping/ea/case_scraper_test.exs`
-- [ ] `test/ehs_enforcement/scraping/ea/date_parameter_test.exs`
-- [ ] `test/ehs_enforcement/scraping/ea/integration_test.exs`
-- [ ] `test/ehs_enforcement/scraping/hse/case_processor_test.exs`
-- [ ] `test/ehs_enforcement/scraping/hse/case_scraper_test.exs`
-- [ ] `test/ehs_enforcement/scraping/hse/notice_prefiltering_test.exs`
-- [ ] `test/ehs_enforcement/scraping/hse/notice_processor_test.exs`
-- [ ] `test/ehs_enforcement/scraping/hse_progress_test.exs`
-- [ ] `test/ehs_enforcement/scraping/resources/processing_log_test.exs`
-- [ ] `test/ehs_enforcement/scraping/resources/scrape_session_test.exs`
-- [ ] `test/ehs_enforcement/scraping/scrape_coordinator_test.exs`
-- [ ] `test/ehs_enforcement/scraping/scrape_request_test.exs`
-- [ ] `test/ehs_enforcement/scraping/strategies/ea/case_strategy_test.exs`
-- [ ] `test/ehs_enforcement/scraping/strategies/ea/notice_strategy_test.exs`
-- [ ] `test/ehs_enforcement/scraping/strategies/hse/case_strategy_test.exs`
-- [ ] `test/ehs_enforcement/scraping/strategies/hse/notice_strategy_test.exs`
-- [ ] `test/ehs_enforcement/scraping/strategy_registry_test.exs`
-- [ ] `test/ehs_enforcement/scraping/workflows/notice_scraping_integration_test.exs`
+- [ ] `test/ehs_enforcement/scraping/ea/case_scraper_test.exs` ❌ 2 failures
+- [x] `test/ehs_enforcement/scraping/ea/date_parameter_test.exs` ✅ PASS
+- [ ] `test/ehs_enforcement/scraping/ea/integration_test.exs` ⚠️ BROKEN (hits live APIs)
+- [ ] `test/ehs_enforcement/scraping/hse/case_processor_test.exs` ❌ 4 failures
+- [x] `test/ehs_enforcement/scraping/hse/case_scraper_test.exs` ✅ PASS
+- [x] `test/ehs_enforcement/scraping/hse/notice_prefiltering_test.exs` ✅ PASS
+- [ ] `test/ehs_enforcement/scraping/hse/notice_processor_test.exs` ❌ 1 failure
+- [x] `test/ehs_enforcement/scraping/hse_progress_test.exs` ✅ PASS
+- [ ] `test/ehs_enforcement/scraping/resources/processing_log_test.exs` ❌ 15 failures
+- [x] `test/ehs_enforcement/scraping/resources/scrape_session_test.exs` ✅ PASS
+- [x] `test/ehs_enforcement/scraping/scrape_coordinator_test.exs` ✅ PASS
+- [ ] `test/ehs_enforcement/scraping/scrape_request_test.exs` ❌ 7 failures
+- [x] `test/ehs_enforcement/scraping/strategies/ea/case_strategy_test.exs` ✅ PASS
+- [x] `test/ehs_enforcement/scraping/strategies/ea/notice_strategy_test.exs` ✅ PASS
+- [x] `test/ehs_enforcement/scraping/strategies/hse/case_strategy_test.exs` ✅ PASS
+- [x] `test/ehs_enforcement/scraping/strategies/hse/notice_strategy_test.exs` ✅ PASS
+- [ ] `test/ehs_enforcement/scraping/strategy_registry_test.exs` ❌ 5 failures
+- [ ] `test/ehs_enforcement/scraping/workflows/notice_scraping_integration_test.exs` ⚠️ BROKEN (hits live APIs)
 
 ### Utility Tests (3 files)
 
@@ -239,4 +240,38 @@ This is a **methodical, file-by-file approach** to achieving a 100% passing test
 
 ---
 
-**Next Action**: Start with first file in Agency Logic Tests section
+### 2025-11-11 (Evening Session)
+
+**Agency Logic Tests - Fixes Applied**:
+- ✅ FIXED: `case_scraper_test.exs` (1 failure → PASS)
+  - Removed invalid nil assertion for parse_ea_date/1
+  - Function has guard `when is_binary()`, nil never passed in production
+- ✅ FIXED: `data_transformer_test.exs` (1 failure → PASS)
+  - Updated regulator_id expectations to match hash-based IDs
+  - Hash generated from `offender_name|action_date|action_type`
+  - case_reference now stored separately
+- ⚠️ IN PROGRESS: `duplicate_handling_test.exs` (4 failures)
+  - Updated test assertions for hash-based regulator_id
+  - **BLOCKED**: Production code bug - CaseProcessor doesn't pass case_reference field
+  - Needs investigation before proceeding
+- ❌ TODO: `breaches_deduplication_test.exs` (5 failures)
+- ❌ TODO: `cases_test.exs` (2 failures)
+
+**Enforcement Domain Tests - Baseline Established**:
+- Tested all 9 files
+- **Results**: 3/9 PASS (33%)
+- ✅ PASS: agency_test, enforcement_domain_test, metrics_test
+- ❌ FAIL: agency_auto_population (1), case (2), legislation_deduplication (3), offender (2), workflows_integration (6), enforcement (3)
+- **Total failures in category**: 17 test failures across 6 files
+- **Progress**: 11/98 files passing (11%)
+
+**Scraping Tests - Baseline Established**:
+- Tested 18 files (excluded 2 integration test files that hit live APIs)
+- **Results**: 10/18 PASS (56%)
+- ✅ PASS: date_parameter, hse/case_scraper, notice_prefiltering, hse_progress, scrape_session, scrape_coordinator, all 4 strategy tests
+- ❌ FAIL: ea/case_scraper (2), hse/case_processor (4), hse/notice_processor (1), processing_log (15), scrape_request (7), strategy_registry (5)
+- ⚠️ EXCLUDED: ea/integration_test, workflows/notice_scraping_integration_test (hit live APIs)
+- **Total failures in category**: 34 test failures across 6 files
+- **Progress**: 21/98 files passing (21%)
+
+**Next Action**: Fix failing Enforcement Domain tests starting with agency_auto_population_test.exs (1 failure)

@@ -268,12 +268,10 @@ defmodule EhsEnforcement.Enforcement.Offence do
 
       calculation(
         expr(
-          cond do
-            is_nil(legislation_part) ->
-              legislation.legislation_title
-
-            true ->
-              legislation.legislation_title <> " - " <> legislation_part
+          if is_nil(legislation_part) do
+            legislation.legislation_title
+          else
+            legislation.legislation_title <> " - " <> legislation_part
           end
         )
       )

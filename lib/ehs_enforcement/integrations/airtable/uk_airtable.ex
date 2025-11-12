@@ -46,14 +46,12 @@ defmodule EhsEnforcement.Integrations.Airtable.UkAirtable do
   """
   @spec get_records_from_at({:params, opts()}) :: {:ok, list()} | {:error, term()}
   def get_records_from_at({:params, params}) do
-    with(
-      # IO.inspect(params),
-      {:ok, {_, recordset}} <- Records.get_records({[], []}, params)
-    ) do
-      require Logger
-      Logger.info("#{Enum.count(recordset)} records returned from Airtable")
-      {:ok, recordset}
-    else
+    case Records.get_records({[], []}, params) do
+      {:ok, {_, recordset}} ->
+        require Logger
+        Logger.info("#{Enum.count(recordset)} records returned from Airtable")
+        {:ok, recordset}
+
       {:error, error} ->
         require Logger
         Logger.error("Airtable error: #{inspect(error)}")
@@ -63,23 +61,22 @@ defmodule EhsEnforcement.Integrations.Airtable.UkAirtable do
 
   @spec get_records_from_at(opts()) :: {:ok, list()} | {:error, term()}
   def get_records_from_at(%{base_id: _} = opts) do
-    with(
-      params = %{
-        base: opts.base_id,
-        table: opts.table_id,
-        options: %{
-          view: opts.view,
-          fields: opts.fields,
-          formula: opts.formula
-        }
-      },
-      # IO.inspect(params),
-      {:ok, {_, recordset}} <- Records.get_records({[], []}, params)
-    ) do
-      require Logger
-      Logger.info("#{Enum.count(recordset)} records returned from Airtable")
-      {:ok, recordset}
-    else
+    params = %{
+      base: opts.base_id,
+      table: opts.table_id,
+      options: %{
+        view: opts.view,
+        fields: opts.fields,
+        formula: opts.formula
+      }
+    }
+
+    case Records.get_records({[], []}, params) do
+      {:ok, {_, recordset}} ->
+        require Logger
+        Logger.info("#{Enum.count(recordset)} records returned from Airtable")
+        {:ok, recordset}
+
       {:error, error} ->
         require Logger
         Logger.error("Airtable error: #{inspect(error)}")
@@ -128,9 +125,7 @@ defmodule EhsEnforcement.Integrations.Airtable.UkAirtable do
       fields = Map.get(x, "fields")
       IO.puts("#{fields["Title_EN"]}")
 
-      with(:ok <- func.(file, fields)) do
-        :ok
-      end
+      func.(file, fields)
     end)
 
     {:ok, "records saved to .csv"}
@@ -144,9 +139,10 @@ defmodule EhsEnforcement.Integrations.Airtable.UkAirtable do
       [_, _, field] = opts.fields_source
       {:ok, path} = EhsEnforcement.Utility.resource_path(Map.get(fields, field))
 
-      with(:ok <- func.(name, path, opts)) do
-        :ok
-      else
+      case func.(name, path, opts) do
+        :ok ->
+          :ok
+
         {:error, :html} ->
           IO.puts(".html from #{fields["Title_EN"]}")
 

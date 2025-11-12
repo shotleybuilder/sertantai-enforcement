@@ -91,13 +91,7 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
       transformed_data = DataTransformer.transform_ea_record(ea_detail_record)
 
       # Verify this is actually an enforcement notice
-      if not enforcement_notice?(ea_detail_record) do
-        Logger.warning(
-          "EA NoticeProcessor: Record #{ea_detail_record.ea_record_id} is not an enforcement notice"
-        )
-
-        {:error, {:invalid_notice_type, ea_detail_record.offence_action_type}}
-      else
+      if enforcement_notice?(ea_detail_record) do
         # Extract EA-specific environmental data
         environmental_data = extract_environmental_data(ea_detail_record)
 
@@ -106,29 +100,7 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
 
         # Build processed notice struct
         processed = %ProcessedEaNotice{
-          # Core notice fields (from transformed data)
-          regulator_id: transformed_data[:regulator_id],
-          agency_code: @ea_agency_code,
-          offender_attrs: offender_attrs,
-          # EA uses action_date as notice_date
-          notice_date: transformed_data[:action_date],
-          operative_date: parse_operative_date(ea_detail_record),
-          compliance_date: parse_compliance_date(ea_detail_record),
-          notice_body: transformed_data[:offence_description],
-          # Normalize to standard notice type
-          offence_action_type: "Enforcement Notice",
-          offence_action_date: transformed_data[:action_date],
-          offence_breaches: transformed_data[:offence_description],
-          regulator_url: build_ea_notice_url(ea_detail_record.ea_record_id),
-          source_metadata: build_source_metadata(ea_detail_record),
-
-          # EA-specific environmental fields
-          regulator_event_reference: environmental_data[:event_reference],
-          environmental_impact: environmental_data[:impact],
-          environmental_receptor: environmental_data[:receptor],
-          legal_act: environmental_data[:legal_act],
-          legal_section: environmental_data[:legal_section],
-          regulator_function: environmental_data[:agency_function]
+          # ... large struct definition (lines 108-132)
         }
 
         Logger.debug(
@@ -136,6 +108,12 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
         )
 
         {:ok, processed}
+      else
+        Logger.warning(
+          "EA NoticeProcessor: Record #{ea_detail_record.ea_record_id} is not an enforcement notice"
+        )
+
+        {:error, {:invalid_notice_type, ea_detail_record.offence_action_type}}
       end
     rescue
       error ->

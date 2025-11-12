@@ -99,7 +99,10 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
       # First creation should succeed
       {:ok, case_record} = CaseProcessor.process_and_create_case(transformed_data, admin_user)
 
-      assert case_record.regulator_id == "EA-CREATE-TEST-001"
+      # regulator_id is now a generated hash from offender_name|action_date|action_type
+      assert case_record.regulator_id == "85A714CB6CB8CD45"
+      # EA case reference is stored separately
+      assert case_record.case_reference == "EA-CREATE-TEST-001"
       # Load the offender to check the name
       {:ok, loaded_case} = Ash.load(case_record, :offender)
       assert loaded_case.offender.name == "New EA Company Ltd"
@@ -108,14 +111,16 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
     test "handles duplicate regulator_id with no changes by returning existing case (no update)",
          %{admin_user: admin_user} do
       # This test verifies that identical scraped data doesn't trigger unnecessary updates
-      regulator_id = "EA-IDENTICAL-TEST"
+      case_reference = "EA-IDENTICAL-TEST"
+      expected_regulator_id = "B832C036D399C97E"
 
-      ea_record = build_ea_record(regulator_id, "Identical EA Company Ltd", 2000)
+      ea_record = build_ea_record(case_reference, "Identical EA Company Ltd", 2000)
       transformed_data = DataTransformer.transform_ea_record(ea_record)
 
       # Create first case
       {:ok, first_case} = CaseProcessor.process_and_create_case(transformed_data, admin_user)
-      assert first_case.regulator_id == regulator_id
+      assert first_case.regulator_id == expected_regulator_id
+      assert first_case.case_reference == case_reference
       original_updated_at = first_case.updated_at
 
       # Wait a moment to ensure timestamp difference
@@ -125,7 +130,7 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
       {:ok, second_result} = CaseProcessor.process_and_create_case(transformed_data, admin_user)
 
       # Should return the same case without updating timestamps
-      assert second_result.regulator_id == regulator_id
+      assert second_result.regulator_id == expected_regulator_id
       # Same record
       assert second_result.id == first_case.id
 
@@ -171,12 +176,13 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
     test "handles duplicate regulator_id by updating existing case when data actually changed", %{
       admin_user: admin_user
     } do
-      regulator_id = "EA-20240130-CC-1000"
+      case_reference = "EA-20240130-CC-1000"
+      expected_regulator_id = "62201C60E86EBA2F"
 
-      # First EA case
-      ea_record_1 = build_ea_record(regulator_id, "First EA Company Ltd", 2000)
-      # Second EA case with SAME regulator_id but DIFFERENT data
-      ea_record_2 = build_ea_record(regulator_id, "Updated EA Company Ltd", 5000)
+      # First EA case - same company name ensures same regulator_id hash
+      ea_record_1 = build_ea_record(case_reference, "First EA Company Ltd", 2000)
+      # Second scrape of SAME case but with DIFFERENT fine amount (data changed on EA website)
+      ea_record_2 = build_ea_record(case_reference, "First EA Company Ltd", 5000)
 
       # Transform both records
       transformed_1 = DataTransformer.transform_ea_record(ea_record_1)
@@ -184,24 +190,25 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
 
       # Create first case - should succeed
       {:ok, first_case} = CaseProcessor.process_and_create_case(transformed_1, admin_user)
-      assert first_case.regulator_id == regulator_id
+      assert first_case.regulator_id == expected_regulator_id
+      assert first_case.case_reference == case_reference
 
-      # Create second case with SAME regulator_id - this should UPDATE, not fail
-      # Currently this fails with constraint violation error, but should succeed
+      # Process same case again with updated fine - should UPDATE, not fail
       result = CaseProcessor.process_and_create_case(transformed_2, admin_user)
 
       case result do
         {:ok, updated_case} ->
           # SUCCESS! The duplicate was handled by updating the existing case instead of failing
-          assert updated_case.regulator_id == regulator_id
-
-        # The main fix worked - no constraint violation error!
+          assert updated_case.regulator_id == expected_regulator_id
+          assert updated_case.id == first_case.id
+          # Fine should be updated to new value
+          assert Decimal.eq?(updated_case.total_fine, Decimal.new(5000))
 
         {:error, %Ash.Error.Invalid{errors: errors}} ->
           # Check if this is the duplicate constraint error we're trying to fix
           duplicate_error =
             Enum.find(errors, fn error ->
-              error.field == :regulator_id and
+              error.field == :agency_id and
                 String.contains?(error.message, "already been taken")
             end)
 
@@ -222,48 +229,51 @@ defmodule EhsEnforcement.Agencies.Ea.DuplicateHandlingTest do
       admin_user: admin_user
     } do
       # Test multiple different duplicate scenarios
+      # Each tuple: {case_reference, company_name} - company name MUST be same for both attempts
       duplicates = [
-        {"EA-20240205-CC-1000", "Company A"},
-        {"71042", "Company B"},
-        {"EA-20240130-CC-1000", "Company C"}
+        {"EA-20240205-CC-1000", "Company A Ltd"},
+        {"71042", "Company B Ltd"},
+        {"EA-20240130-CC-1000", "Company C Ltd"}
       ]
 
-      # Create original cases
+      # Create original cases with initial fine amounts
       original_cases =
-        for {regulator_id, company_name} <- duplicates do
-          ea_record = build_ea_record(regulator_id, "#{company_name} Original")
+        for {case_reference, company_name} <- duplicates do
+          ea_record = build_ea_record(case_reference, company_name, 1000)
           transformed = DataTransformer.transform_ea_record(ea_record)
           {:ok, case_record} = CaseProcessor.process_and_create_case(transformed, admin_user)
           case_record
         end
 
-      # Now try to create duplicates - should all update existing cases
-      for {{regulator_id, company_name}, _original_case} <- Enum.zip(duplicates, original_cases) do
-        duplicate_record = build_ea_record(regulator_id, "#{company_name} Updated", 9999)
+      # Now process same cases again with updated fines - should all update existing cases
+      for {{case_reference, company_name}, _original_case} <- Enum.zip(duplicates, original_cases) do
+        # Same company name ensures same regulator_id hash - different fine amount
+        duplicate_record = build_ea_record(case_reference, company_name, 9999)
         transformed_duplicate = DataTransformer.transform_ea_record(duplicate_record)
 
         # This should update, not fail
         result = CaseProcessor.process_and_create_case(transformed_duplicate, admin_user)
 
         case result do
-          {:ok, _updated_case} ->
+          {:ok, updated_case} ->
             # Success - duplicate was handled correctly
-            assert true
+            assert updated_case.case_reference == case_reference
+            assert Decimal.eq?(updated_case.total_fine, Decimal.new(9999))
 
           {:error, %Ash.Error.Invalid{errors: errors}} ->
             # Check for constraint violation error
             constraint_error =
               Enum.find(errors, fn error ->
-                error.field == :regulator_id and
+                error.field == :agency_id and
                   String.contains?(error.message, "already been taken")
               end)
 
             if constraint_error do
               flunk(
-                "BUG: regulator_id #{regulator_id} caused constraint violation: #{constraint_error.message}"
+                "BUG: case_reference #{case_reference} caused constraint violation: #{constraint_error.message}"
               )
             else
-              flunk("Unexpected error for #{regulator_id}: #{inspect(errors)}")
+              flunk("Unexpected error for #{case_reference}: #{inspect(errors)}")
             end
         end
       end

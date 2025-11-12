@@ -165,7 +165,7 @@ defmodule EhsEnforcementWeb.Components.CasesActionCardTest do
         end
 
       _ ->
-        apply(EhsEnforcementWeb.Components.CasesActionCard, :admin?, [user])
+        EhsEnforcementWeb.Components.CasesActionCard.admin?(user)
     end
   end
 end

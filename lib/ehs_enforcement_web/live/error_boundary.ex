@@ -498,12 +498,10 @@ defmodule EhsEnforcementWeb.Live.ErrorBoundary do
   defp extract_error_type(%Postgrex.Error{}), do: "database"
 
   defp extract_error_type(%RuntimeError{message: message}) do
-    cond do
-      String.contains?(message, "error_") ->
-        String.replace(message, ~r/.*error_(\d+).*/, "error_\\1")
-
-      true ->
-        "runtime"
+    if String.contains?(message, "error_") do
+      String.replace(message, ~r/.*error_(\d+).*/, "error_\\1")
+    else
+      "runtime"
     end
   end
 

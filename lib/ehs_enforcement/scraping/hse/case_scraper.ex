@@ -100,9 +100,10 @@ defmodule EhsEnforcement.Scraping.Hse.CaseScraper do
   def scrape_case_details(regulator_id, database, opts) do
     Logger.debug("Fetching case details for #{regulator_id}")
 
-    with {:ok, details} <- fetch_case_details(regulator_id, database, opts) do
-      {:ok, details}
-    else
+    case fetch_case_details(regulator_id, database, opts) do
+      {:ok, details} ->
+        {:ok, details}
+
       {:error, reason} = error ->
         Logger.error("Failed to fetch case details for #{regulator_id}: #{inspect(reason)}")
         error

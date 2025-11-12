@@ -37,9 +37,10 @@ defmodule EhsEnforcement.Utility do
 
   def quote_list(list) when is_list(list) do
     Enum.map(list, fn string ->
-      cond do
-        String.contains?(string, ",") -> ~s/"#{string}"/
-        true -> string
+      if String.contains?(string, ",") do
+        ~s/"#{string}"/
+      else
+        string
       end
     end)
   end

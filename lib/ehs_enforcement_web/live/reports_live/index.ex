@@ -88,22 +88,23 @@ defmodule EhsEnforcementWeb.ReportsLive.Index do
   @impl true
   def handle_event("generate_report", _params, socket) do
     # Validate that required filters are provided
-    with :ok <- validate_filters(socket.assigns) do
-      # Generate report based on template and filters
-      case generate_filtered_report(socket.assigns) do
-        {:ok, report_data} ->
-          {:noreply,
-           socket
-           |> assign(:show_generate_modal, false)
-           |> put_flash(
-             :info,
-             "Report generated successfully with #{length(report_data)} records"
-           )}
+    case validate_filters(socket.assigns) do
+      :ok ->
+        # Generate report based on template and filters
+        case generate_filtered_report(socket.assigns) do
+          {:ok, report_data} ->
+            {:noreply,
+             socket
+             |> assign(:show_generate_modal, false)
+             |> put_flash(
+               :info,
+               "Report generated successfully with #{length(report_data)} records"
+             )}
 
-        {:error, message} ->
-          {:noreply, put_flash(socket, :error, "Report generation failed: #{message}")}
-      end
-    else
+          {:error, message} ->
+            {:noreply, put_flash(socket, :error, "Report generation failed: #{message}")}
+        end
+
       {:error, message} ->
         {:noreply, put_flash(socket, :error, message)}
     end
@@ -112,29 +113,30 @@ defmodule EhsEnforcementWeb.ReportsLive.Index do
   @impl true
   def handle_event("export_data", _params, socket) do
     # Validate that required filters are provided
-    with :ok <- validate_filters(socket.assigns) do
-      # Start export process
-      socket = assign(socket, :export_in_progress, true)
+    case validate_filters(socket.assigns) do
+      :ok ->
+        # Start export process
+        socket = assign(socket, :export_in_progress, true)
 
-      case perform_filtered_export(socket.assigns) do
-        {:ok, export_result} ->
-          {:noreply,
-           socket
-           |> assign(:export_in_progress, false)
-           |> assign(:show_export_modal, false)
-           |> assign(:last_export_result, export_result)
-           |> put_flash(
-             :info,
-             "Export completed: #{export_result.filename} (#{export_result.size})"
-           )}
+        case perform_filtered_export(socket.assigns) do
+          {:ok, export_result} ->
+            {:noreply,
+             socket
+             |> assign(:export_in_progress, false)
+             |> assign(:show_export_modal, false)
+             |> assign(:last_export_result, export_result)
+             |> put_flash(
+               :info,
+               "Export completed: #{export_result.filename} (#{export_result.size})"
+             )}
 
-        {:error, message} ->
-          {:noreply,
-           socket
-           |> assign(:export_in_progress, false)
-           |> put_flash(:error, "Export failed: #{message}")}
-      end
-    else
+          {:error, message} ->
+            {:noreply,
+             socket
+             |> assign(:export_in_progress, false)
+             |> put_flash(:error, "Export failed: #{message}")}
+        end
+
       {:error, message} ->
         {:noreply, put_flash(socket, :error, message)}
     end
