@@ -1,5 +1,6 @@
 defmodule EhsEnforcementWeb.OffenderIntegrationTest do
   use EhsEnforcementWeb.ConnCase
+  @moduletag :integration
   import Phoenix.LiveViewTest
   import ExUnit.CaptureLog
 

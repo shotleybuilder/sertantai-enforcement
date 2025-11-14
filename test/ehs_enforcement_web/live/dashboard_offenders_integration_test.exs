@@ -1,5 +1,6 @@
 defmodule EhsEnforcementWeb.DashboardOffendersIntegrationTest do
   use EhsEnforcementWeb.ConnCase
+  @moduletag :integration
   import Phoenix.LiveViewTest
 
   alias EhsEnforcement.Enforcement

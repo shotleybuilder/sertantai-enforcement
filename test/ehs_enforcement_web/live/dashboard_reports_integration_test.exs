@@ -1,5 +1,6 @@
 defmodule EhsEnforcementWeb.DashboardReportsIntegrationTest do
   use EhsEnforcementWeb.ConnCase
+  @moduletag :integration
   import Phoenix.LiveViewTest
 
   describe "dashboard reports integration" do

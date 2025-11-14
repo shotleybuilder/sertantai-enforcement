@@ -1,5 +1,6 @@
 defmodule EhsEnforcementWeb.DashboardNoticesIntegrationTest do
   use EhsEnforcementWeb.ConnCase, async: true
+  @moduletag :integration
 
   import Phoenix.LiveViewTest
 
