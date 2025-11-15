@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Development Docker Compose - Local Container Testing
 #
 # This configuration mirrors production infrastructure locally for testing
@@ -19,6 +17,7 @@ version: '3.8'
 
 services:
   # Local PostgreSQL (mirrors production shared_postgres)
+  # UPDATED: Enabled logical replication for ElectricSQL sync
   postgres:
     image: postgres:16-alpine
     container_name: ehs_dev_postgres
@@ -38,6 +37,40 @@ services:
     networks:
       - dev_network
     restart: unless-stopped
+    # Enable logical replication for ElectricSQL
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_replication_slots=10"
+      - "-c"
+      - "max_wal_senders=10"
+
+  # ElectricSQL sync service (v1.0 - HTTP Shape API for local-first sync)
+  # Consumes PostgreSQL logical replication and provides HTTP Shape API
+  electric:
+    image: electricsql/electric:latest
+    container_name: ehs_dev_electric
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ehs_enforcement_dev
+      HTTP_PORT: 3000
+      ELECTRIC_INSECURE: "true"  # Development only! Use ELECTRIC_SECRET in production
+      PG_PROXY_PASSWORD: proxy_password  # Secure in production!
+    ports:
+      - "3001:3000"  # HTTP API for Shape-based sync (using 3001 to avoid conflict with other projects)
+    networks:
+      - dev_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/v1/shape?table=_electric_metadata&offset=-1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   # Local Redis (mirrors production shared_redis)
   redis:
@@ -76,6 +109,12 @@ services:
       PHX_SERVER: "true"
       PORT: "4002"
       POOL_SIZE: "10"
+
+      # ElectricSQL sync service URL (for backend reference)
+      ELECTRIC_URL: http://electric:3000
+
+      # CORS configuration for frontend (to be added when frontend is ready)
+      FRONTEND_URL: http://localhost:5173
 
       # Security (dev keys - not for production!)
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:-dev_secret_key_base_at_least_64_chars_long_for_phoenix_security}

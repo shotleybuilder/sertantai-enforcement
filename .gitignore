@@ -36,6 +36,14 @@ ehs_enforcement-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Frontend (SvelteKit)
+/frontend/node_modules/
+/frontend/.svelte-kit/
+/frontend/build/
+/frontend/.env
+/frontend/.env.*
+!frontend/.env.example
+
 # Environment variables and secrets
 .env
 .env.*

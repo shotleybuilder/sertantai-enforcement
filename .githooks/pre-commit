@@ -1,0 +1,240 @@
+#!/bin/bash
+# Pre-commit hook for EHS Enforcement validation
+# Implements Phase 1 of shift-left CI/CD strategy
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Track overall status
+EXIT_CODE=0
+
+# Function to print colored output
+print_header() {
+    echo -e "\n${CYAN}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}  Pre-Commit Validation (Shift-Left CI/CD)${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}\n"
+}
+
+print_status() {
+    echo -e "${BLUE}[Check]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[!]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+print_info() {
+    echo -e "${CYAN}[i]${NC} $1"
+}
+
+# Function to check if we're in a Git repository
+check_git_repo() {
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        print_error "Not in a Git repository"
+        exit 1
+    fi
+}
+
+# Function to check if Mix is available
+check_mix_available() {
+    if ! command -v mix > /dev/null 2>&1; then
+        print_error "Mix command not found - Elixir not installed?"
+        print_info "Install Elixir: https://elixir-lang.org/install.html"
+        exit 1
+    fi
+}
+
+# Check 1: Code Formatting
+check_formatting() {
+    print_status "Checking code formatting..."
+
+    # Get staged .ex and .exs files
+    STAGED_EX_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ex|exs)$' || true)
+
+    if [ -z "$STAGED_EX_FILES" ]; then
+        print_info "No Elixir files staged for commit"
+        return 0
+    fi
+
+    # Check formatting only on staged files
+    FORMAT_CHECK=$(mix format --check-formatted $STAGED_EX_FILES 2>&1)
+
+    if echo "$FORMAT_CHECK" | grep -q "mix format"; then
+        print_error "Some staged files are not formatted correctly"
+        echo "$FORMAT_CHECK" | grep -v "^$"
+        print_info "Run 'mix format' to fix formatting issues"
+        print_info "Or use 'git commit --no-verify' to skip this check (not recommended)"
+        return 1
+    else
+        print_success "Code formatting is correct"
+        return 0
+    fi
+}
+
+# Check 2: Compilation
+check_compilation() {
+    print_status "Checking compilation..."
+
+    # Capture output and check exit code
+    COMPILE_OUTPUT=$(MIX_ENV=dev mix compile 2>&1)
+    COMPILE_STATUS=$?
+
+    if [ $COMPILE_STATUS -ne 0 ]; then
+        print_error "Compilation failed"
+        echo "$COMPILE_OUTPUT"
+        print_info "Fix compilation errors before committing"
+        print_info "Or use 'git commit --no-verify' to skip this check (not recommended)"
+        return 1
+    else
+        # Check for warnings (compilation succeeds but with warnings)
+        if echo "$COMPILE_OUTPUT" | grep -q "warning:"; then
+            print_warning "Compilation succeeded but has warnings"
+            echo "$COMPILE_OUTPUT" | grep "warning:"
+            print_info "Consider fixing warnings before committing"
+            # Don't fail on warnings, just notify
+        else
+            print_success "Compilation successful (no warnings)"
+        fi
+        return 0
+    fi
+}
+
+# Check 3: Credo (Static Analysis)
+check_credo() {
+    print_status "Running static analysis (mix credo)..."
+
+    # Check if Credo is available
+    if ! mix help credo > /dev/null 2>&1; then
+        print_warning "Credo not available - skipping static analysis"
+        print_info "Run 'mix deps.get' to install Credo"
+        return 0
+    fi
+
+    # Run Credo - only fail on design and consistency issues
+    CREDO_OUTPUT=$(mix credo --only design,consistency --format oneline 2>&1)
+    CREDO_STATUS=$?
+
+    if [ $CREDO_STATUS -ne 0 ]; then
+        print_error "Credo found design or consistency issues"
+        echo "$CREDO_OUTPUT"
+        print_info "Fix issues or use 'git commit --no-verify' to skip"
+        return 1
+    else
+        # Check if there are any issues
+        if echo "$CREDO_OUTPUT" | grep -q "┃"; then
+            ISSUE_COUNT=$(echo "$CREDO_OUTPUT" | grep -c "┃")
+            print_warning "Credo found $ISSUE_COUNT design/consistency issues"
+            echo "$CREDO_OUTPUT"
+            print_info "Consider addressing issues before committing"
+            # Don't fail, just notify
+        else
+            print_success "Static analysis passed (no critical issues)"
+        fi
+        return 0
+    fi
+}
+
+# Check 4: Ash Framework Migration Detection
+check_ash_codegen() {
+    print_status "Checking Ash resource migrations..."
+
+    # Check if Ash is available
+    if ! mix help ash.codegen > /dev/null 2>&1; then
+        print_warning "Ash not available - skipping migration check"
+        return 0
+    fi
+
+    # Check for pending Ash migrations
+    ASH_OUTPUT=$(mix ash.codegen --check 2>&1)
+    ASH_STATUS=$?
+
+    if [ $ASH_STATUS -ne 0 ]; then
+        # Check if it's actually a pending migration issue
+        if echo "$ASH_OUTPUT" | grep -q "would generate"; then
+            print_error "Ash resource changes detected without migrations"
+            echo "$ASH_OUTPUT"
+            print_info "Run 'mix ash.codegen' to generate required migrations"
+            print_info "Then run 'mix ash_postgres.migrate' or 'mix ash.migrate' to apply them"
+            print_info "Or use 'git commit --no-verify' to skip this check (not recommended)"
+            return 1
+        else
+            # Some other Ash error - show but don't fail
+            print_warning "Ash codegen check had issues (see output)"
+            echo "$ASH_OUTPUT"
+            return 0
+        fi
+    else
+        print_success "No pending Ash migrations"
+        return 0
+    fi
+}
+
+# Function to get list of staged files
+get_staged_files() {
+    git diff --cached --name-only --diff-filter=ACM
+}
+
+# Main execution
+main() {
+    print_header
+
+    # Initial checks
+    check_git_repo
+    check_mix_available
+
+    # Get staged files
+    STAGED_FILES=$(get_staged_files)
+
+    if [ -z "$STAGED_FILES" ]; then
+        print_warning "No files staged for commit"
+        print_info "Use 'git add <files>' to stage changes"
+        exit 0
+    fi
+
+    print_info "Running pre-commit checks on staged files..."
+    echo ""
+
+    # Run all checks
+    check_formatting || EXIT_CODE=1
+    echo ""
+
+    check_compilation || EXIT_CODE=1
+    echo ""
+
+    check_credo || EXIT_CODE=1
+    echo ""
+
+    check_ash_codegen || EXIT_CODE=1
+    echo ""
+
+    # Final result
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
+
+    if [ $EXIT_CODE -eq 0 ]; then
+        print_success "All pre-commit checks passed!"
+        echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}\n"
+        exit 0
+    else
+        print_error "Pre-commit checks failed"
+        print_info "Fix the issues above and try again"
+        print_warning "To bypass: git commit --no-verify (not recommended)"
+        echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}\n"
+        exit 1
+    fi
+}
+
+# Run main function
+main

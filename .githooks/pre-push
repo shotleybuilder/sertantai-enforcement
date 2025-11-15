@@ -1,0 +1,288 @@
+#!/bin/bash
+# Pre-push hook for comprehensive local validation
+# Implements Phase 2 of shift-left CI/CD strategy
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Track overall status
+EXIT_CODE=0
+
+# Function to print colored output
+print_header() {
+    echo -e "\n${CYAN}═══════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}  Pre-Push Validation (Shift-Left CI/CD)${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}\n"
+}
+
+print_status() {
+    echo -e "${BLUE}[Check]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[!]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+print_info() {
+    echo -e "${CYAN}[i]${NC} $1"
+}
+
+# Function to check if we're in a Git repository
+check_git_repo() {
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        print_error "Not in a Git repository"
+        exit 1
+    fi
+}
+
+# Function to check if Mix is available
+check_mix_available() {
+    if ! command -v mix > /dev/null 2>&1; then
+        print_error "Mix command not found - Elixir not installed?"
+        print_info "Install Elixir: https://elixir-lang.org/install.html"
+        exit 1
+    fi
+}
+
+# Check 1: Dialyzer (Type Checking)
+check_dialyzer() {
+    print_status "Running type checking (mix dialyzer)..."
+    print_info "This may take a few minutes on first run (building PLT)..."
+
+    # Check if Dialyzer is available
+    if ! mix help dialyzer > /dev/null 2>&1; then
+        print_warning "Dialyzer not available - skipping type checking"
+        print_info "Run 'mix deps.get' to install Dialyzer"
+        return 0
+    fi
+
+    # Run Dialyzer with GitHub format for easier reading
+    DIALYZER_OUTPUT=$(mix dialyzer --format github 2>&1)
+    DIALYZER_STATUS=$?
+
+    if [ $DIALYZER_STATUS -ne 0 ]; then
+        print_error "Dialyzer found type errors"
+        echo "$DIALYZER_OUTPUT"
+        print_info "Fix type errors or use 'git push --no-verify' to skip"
+        print_info "Add false positives to .dialyzer_ignore.exs if needed"
+        return 1
+    else
+        # Check for warnings (even if exit code is 0)
+        if echo "$DIALYZER_OUTPUT" | grep -q "warning:"; then
+            print_warning "Dialyzer completed but has warnings"
+            echo "$DIALYZER_OUTPUT" | grep "warning:"
+            print_info "Consider addressing warnings before pushing"
+            # Don't fail, just notify
+        else
+            print_success "Type checking passed (no errors)"
+        fi
+        return 0
+    fi
+}
+
+# Check 2: Sobelow (Security Analysis for Phoenix)
+check_sobelow() {
+    print_status "Running security analysis (mix sobelow)..."
+
+    # Check if Sobelow is available
+    if ! mix help sobelow > /dev/null 2>&1; then
+        print_warning "Sobelow not available - skipping security analysis"
+        print_info "Run 'mix deps.get' to install Sobelow"
+        return 0
+    fi
+
+    # Run Sobelow - exit on high severity findings
+    SOBELOW_OUTPUT=$(mix sobelow --exit 2>&1)
+    SOBELOW_STATUS=$?
+
+    if [ $SOBELOW_STATUS -ne 0 ]; then
+        print_error "Sobelow found high-severity security issues"
+        echo "$SOBELOW_OUTPUT"
+        print_info "Fix security issues or use 'git push --no-verify' to skip"
+        print_info "Add false positives to .sobelow-conf if needed"
+        return 1
+    else
+        # Check if there are any findings at all
+        if echo "$SOBELOW_OUTPUT" | grep -q "Security issues found"; then
+            print_warning "Sobelow found some security issues (non-critical)"
+            echo "$SOBELOW_OUTPUT"
+            print_info "Review and address security findings before pushing"
+            # Don't fail on lower severity, just notify
+        else
+            print_success "Security analysis passed (no high-severity issues)"
+        fi
+        return 0
+    fi
+}
+
+# Check 3: Dependency Security Audit
+check_security_audit() {
+    print_status "Running dependency security audit (mix deps.audit)..."
+
+    # Check if deps.audit is available
+    if ! mix help deps.audit > /dev/null 2>&1; then
+        print_warning "mix deps.audit not available - skipping dependency audit"
+        print_info "Add {:mix_audit, '~> 2.0', only: [:dev, :test], runtime: false} to deps"
+        return 0
+    fi
+
+    # Run security audit
+    AUDIT_OUTPUT=$(mix deps.audit 2>&1)
+    AUDIT_STATUS=$?
+
+    if [ $AUDIT_STATUS -ne 0 ]; then
+        print_error "Security vulnerabilities found in dependencies"
+        echo "$AUDIT_OUTPUT"
+        print_info "Update vulnerable dependencies or use 'git push --no-verify' to skip"
+        return 1
+    else
+        print_success "No known security vulnerabilities in dependencies"
+        return 0
+    fi
+}
+
+# Check 4: Unused Dependencies
+check_unused_deps() {
+    print_status "Checking for unused dependencies..."
+
+    # Run unused deps check
+    UNUSED_OUTPUT=$(mix deps.unlock --check-unused 2>&1)
+    UNUSED_STATUS=$?
+
+    if [ $UNUSED_STATUS -ne 0 ]; then
+        print_warning "Unused dependencies detected"
+        echo "$UNUSED_OUTPUT"
+        print_info "Consider removing unused deps to reduce bloat"
+        # Don't fail on unused deps, just warn
+        return 0
+    else
+        print_success "No unused dependencies"
+        return 0
+    fi
+}
+
+# Check 5: Usage Rules
+check_usage_rules() {
+    print_status "Checking project usage rules..."
+
+    # Check if usage_rules is available
+    if ! mix help usage_rules.check > /dev/null 2>&1; then
+        print_warning "usage_rules not available - skipping rules check"
+        print_info "Add {:usage_rules, '~> 0.1', only: [:dev]} to install usage_rules"
+        return 0
+    fi
+
+    # Run usage rules check
+    RULES_OUTPUT=$(mix usage_rules.check 2>&1)
+    RULES_STATUS=$?
+
+    if [ $RULES_STATUS -ne 0 ]; then
+        print_error "Usage rules violations found"
+        echo "$RULES_OUTPUT"
+        print_info "Fix violations or update usage-rules.md if rules changed"
+        print_info "Or use 'git push --no-verify' to skip (not recommended)"
+        return 1
+    else
+        print_success "All usage rules satisfied"
+        return 0
+    fi
+}
+
+# Check 6: Test Suite
+check_tests() {
+    print_status "Running test suite..."
+
+    # Run tests
+    TEST_OUTPUT=$(MIX_ENV=test mix test 2>&1)
+    TEST_STATUS=$?
+
+    if [ $TEST_STATUS -ne 0 ]; then
+        print_error "Tests failed"
+        echo "$TEST_OUTPUT"
+        print_info "Fix failing tests before pushing"
+        print_info "Or use 'git push --no-verify' to skip (not recommended)"
+        return 1
+    else
+        print_success "All tests passed"
+        return 0
+    fi
+}
+
+# Function to estimate execution time
+estimate_time() {
+    print_info "Estimated execution time:"
+    print_info "  - Dialyzer: 30s-5min (depends on PLT cache status)"
+    print_info "  - Sobelow: <10s"
+    print_info "  - Security audit: <10s"
+    print_info "  - Unused deps check: <5s"
+    print_info "  - Usage rules: <5s"
+    print_info "  - Tests: 10s-2min (depends on test count)"
+    print_info "  - Total: ~1-8 minutes"
+    echo ""
+}
+
+# Main execution
+main() {
+    print_header
+    estimate_time
+
+    # Initial checks
+    check_git_repo
+    check_mix_available
+
+    print_info "Running comprehensive pre-push validation..."
+    print_info "This is more thorough than pre-commit (takes longer)"
+    echo ""
+
+    # Run all checks
+    check_dialyzer || EXIT_CODE=1
+    echo ""
+
+    check_sobelow || EXIT_CODE=1
+    echo ""
+
+    check_security_audit || EXIT_CODE=1
+    echo ""
+
+    check_unused_deps
+    echo ""
+
+    check_usage_rules || EXIT_CODE=1
+    echo ""
+
+    check_tests || EXIT_CODE=1
+    echo ""
+
+    # Final result
+    echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
+
+    if [ $EXIT_CODE -eq 0 ]; then
+        print_success "All pre-push checks passed!"
+        print_info "Your code is ready to push to remote repository"
+        echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}\n"
+        exit 0
+    else
+        print_error "Pre-push validation failed"
+        print_info "Fix the issues above and try again"
+        print_warning "To bypass: git push --no-verify (not recommended)"
+        print_info "These checks help prevent CI failures and maintain code quality"
+        echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}\n"
+        exit 1
+    fi
+}
+
+# Run main function
+main

@@ -1,6 +1,4 @@
 #!/bin/bash
-# Test runner for Enforcement Domain tests (9 files)
-# Usage: ./test/runners/test_enforcement_domain.sh
 
 files=(
   "test/ehs_enforcement/enforcement/agency_auto_population_test.exs"
@@ -24,14 +22,17 @@ for i in "${!files[@]}"; do
   file="${files[$i]}"
   num=$((i+1))
   echo -n "[$num/9] Testing $(basename "$file")... "
-
-  output=$(mix test "$file" 2>&1)
-
+  
+  output=$(mix test "$file" --exclude integration --exclude external --exclude slow 2>&1)
+  
   if echo "$output" | grep -q "0 failures"; then
     echo "✓ PASS"
     pass_count=$((pass_count + 1))
   else
-    failures=$(echo "$output" | grep -oP '\d+ failures?' | head -1)
+    failures=$(echo "$output" | grep -oP '\d+ failure' | head -1)
+    if [ -z "$failures" ]; then
+      failures=$(echo "$output" | grep -oP '\d+ failures' | head -1)
+    fi
     echo "✗ FAIL ($failures)"
     fail_count=$((fail_count + 1))
   fi

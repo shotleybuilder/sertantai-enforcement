@@ -1,0 +1,273 @@
+# Usage Rules for Starter App
+
+This file defines usage rules for this application. These rules are enforced during development via the `usage_rules` package.
+
+See [usage_rules documentation](https://hexdocs.pm/usage_rules/readme.html) for more information.
+
+## Package: StarterApp
+
+### Core Principles
+
+1. **Multi-tenancy**: All domain resources must include `organization_id` for data isolation
+2. **Ash Framework**: Use Ash resources for domain modeling, not plain Ecto schemas
+3. **Real-time Sync**: Resources meant for frontend sync should be configured for ElectricSQL
+4. **Type Safety**: Use Dialyzer types and avoid dynamic typing where possible
+5. **Testing**: All resources and actions should have test coverage
+
+### Resource Design Guidelines
+
+#### All Domain Resources Must:
+
+```elixir
+# ✓ GOOD: Includes organization_id, uses Ash Resource, proper timestamps
+defmodule StarterApp.YourDomain.YourResource do
+  use Ash.Resource,
+    domain: StarterApp.Api,
+    data_layer: AshPostgres.DataLayer
+
+  postgres do
+    table "your_resources"
+    repo StarterApp.Repo
+  end
+
+  attributes do
+    uuid_primary_key :id
+    attribute :name, :string, allow_nil?: false
+    attribute :organization_id, :uuid, allow_nil?: false
+    create_timestamp :inserted_at
+    update_timestamp :updated_at
+  end
+
+  relationships do
+    belongs_to :organization, StarterApp.Auth.Organization
+  end
+
+  actions do
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:name, :organization_id]
+    end
+
+    update :update do
+      accept [:name]
+    end
+  end
+end
+```
+
+```elixir
+# ✗ BAD: Missing organization_id, no timestamps, plain Ecto schema
+defmodule StarterApp.YourDomain.YourResource do
+  use Ecto.Schema
+
+  schema "your_resources" do
+    field :name, :string
+  end
+end
+```
+
+#### Authentication Resources:
+
+- User and Organization resources are read-only by default
+- If implementing local auth, use password hashing (Bcrypt/Argon2)
+- JWT validation should happen at the plug level, not in resources
+- Never store plain text passwords
+
+#### ElectricSQL Integration:
+
+Resources synced to frontend must:
+1. Have `REPLICA IDENTITY FULL` enabled
+2. Have appropriate ELECTRIC GRANT statements
+3. Include `organization_id` for filtering
+4. Be added to frontend TanStack DB collections
+
+### API Design
+
+#### JSON API Endpoints:
+
+```elixir
+# ✓ GOOD: Scoped to organization, uses Ash actions
+def index(conn, %{"organization_id" => org_id}) do
+  case YourResource.by_organization(org_id) do
+    {:ok, resources} -> render(conn, "index.json", resources: resources)
+    {:error, error} -> handle_error(conn, error)
+  end
+end
+```
+
+```elixir
+# ✗ BAD: No organization scoping, direct Ecto query
+def index(conn, _params) do
+  resources = Repo.all(YourResource)
+  render(conn, "index.json", resources: resources)
+end
+```
+
+### Testing Requirements
+
+All resources must have:
+1. Basic CRUD tests
+2. Validation tests
+3. Organization isolation tests
+4. Relationship tests (if applicable)
+
+```elixir
+# ✓ GOOD: Comprehensive test coverage
+defmodule StarterApp.YourDomain.YourResourceTest do
+  use StarterApp.DataCase
+
+  describe "create/1" do
+    test "creates resource with valid data" do
+      org = create_organization()
+
+      assert {:ok, resource} =
+        YourResource
+        |> Ash.Changeset.for_create(:create, %{
+          name: "Test",
+          organization_id: org.id
+        })
+        |> Ash.create()
+
+      assert resource.name == "Test"
+      assert resource.organization_id == org.id
+    end
+
+    test "requires organization_id" do
+      assert {:error, %Ash.Error.Invalid{}} =
+        YourResource
+        |> Ash.Changeset.for_create(:create, %{name: "Test"})
+        |> Ash.create()
+    end
+
+    test "enforces organization isolation" do
+      org1 = create_organization()
+      org2 = create_organization()
+
+      resource = create_resource(organization_id: org1.id)
+
+      # Should not be accessible from different org
+      assert {:ok, []} =
+        YourResource
+        |> Ash.Query.for_read(:by_organization, %{organization_id: org2.id})
+        |> Ash.read()
+    end
+  end
+end
+```
+
+### Configuration
+
+#### Environment Variables:
+
+Required:
+- `DATABASE_URL` - PostgreSQL connection string
+- `SECRET_KEY_BASE` - Phoenix secret key base
+
+Optional:
+- `FRONTEND_URL` - CORS configuration
+- `ELECTRIC_URL` - ElectricSQL service URL
+
+#### Database Migrations:
+
+Always use Ash generators:
+```bash
+# ✓ GOOD: Ash handles the schema
+mix ash_postgres.generate_migrations --name add_feature
+
+# ✗ BAD: Manual Ecto migrations (loses Ash context)
+mix ecto.gen.migration add_feature
+```
+
+### Code Quality
+
+All code must:
+1. Pass Credo checks (no issues in strict mode)
+2. Pass Dialyzer (no warnings)
+3. Pass Sobelow security checks (no high-severity issues)
+4. Be formatted with `mix format`
+5. Have no compiler warnings
+
+Pre-commit hooks enforce:
+- Code formatting
+- Credo checks
+- Test suite passes
+
+Pre-push hooks enforce:
+- Dialyzer type checking
+- Sobelow security analysis
+- Full test suite with coverage
+
+### Frontend Integration
+
+When creating resources for frontend sync:
+
+1. **Backend**: Add ElectricSQL grants in migration
+```sql
+ALTER TABLE your_resources REPLICA IDENTITY FULL;
+ELECTRIC GRANT ALL ON your_resources TO ANYONE;
+-- Or with RLS: WHERE organization_id = auth.organization_id()
+```
+
+2. **Frontend**: Create TanStack DB collection
+```typescript
+export const collections = {
+  your_resources: {
+    schema: {
+      id: 'string',
+      name: 'string',
+      organization_id: 'string',
+      inserted_at: 'string',
+      updated_at: 'string'
+    },
+    primaryKey: 'id'
+  }
+}
+```
+
+3. **Frontend**: Set up sync
+```typescript
+syncCollection('your_resources', organizationId)
+```
+
+## Custom Rules
+
+### Forbidden Patterns
+
+❌ Direct Ecto queries bypassing Ash
+❌ Resources without `organization_id` (except Auth resources)
+❌ Storing sensitive data without encryption
+❌ Skipping validation in actions
+❌ Using `String.t()` instead of specific string constraints
+❌ Database operations in controllers (use actions/changesets)
+❌ Hard-coded organization IDs
+
+### Required Patterns
+
+✅ Use Ash Resource for all domain entities
+✅ Include organization_id in all non-auth tables
+✅ Use UUID primary keys
+✅ Include timestamps (inserted_at, updated_at)
+✅ Define explicit actions (avoid `:all` in defaults)
+✅ Use code_interface for common queries
+✅ Scope all queries by organization
+✅ Write tests for all actions
+
+## Migration from This Template
+
+When using this template for your project:
+
+1. Update this file with your project-specific rules
+2. Replace `StarterApp` namespace with your app name
+3. Add domain-specific validation rules
+4. Document your authorization patterns
+5. Add any custom macros or patterns your team uses
+
+## Enforcement
+
+Run usage rules check:
+```bash
+mix usage_rules.check
+```
+
+This is run automatically in CI and pre-commit hooks.

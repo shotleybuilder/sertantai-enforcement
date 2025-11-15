@@ -10,6 +10,7 @@ env:
   MIX_ENV: test
   ELIXIR_VERSION: '1.18.4'
   OTP_VERSION: '27.2'
+  NODE_VERSION: '20.x'
 
 jobs:
   test:
@@ -122,6 +123,10 @@ jobs:
         run: mix credo --strict
         continue-on-error: true
 
+      - name: Check Ash codegen
+        run: mix ash.codegen --check
+        continue-on-error: false
+
   security:
     name: Security Checks
     runs-on: ubuntu-latest
@@ -149,6 +154,10 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
+      - name: Run Sobelow security analysis
+        run: mix sobelow --exit
+        continue-on-error: false
+
       - name: Check for security vulnerabilities
         run: mix deps.audit
         continue-on-error: true
@@ -156,3 +165,39 @@ jobs:
       - name: Check for unused dependencies
         run: mix deps.unlock --check-unused
         continue-on-error: true
+
+  frontend:
+    name: Frontend Quality Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: TypeScript type check
+        run: npm run check
+
+      - name: Run tests
+        run: npm run test:run
+
+      - name: Build
+        run: npm run build
