@@ -164,10 +164,14 @@ defmodule EhsEnforcementWeb.Router do
     get "/health", HealthController, :check
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", EhsEnforcementWeb do
-  #   pipe_through :api
-  # end
+  # API routes for local-first frontend
+  scope "/api", EhsEnforcementWeb.Api do
+    pipe_through :api
+
+    # Agency API endpoints
+    get "/agencies", AgencyController, :index
+    post "/agencies", AgencyController, :create
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:ehs_enforcement, :dev_routes) do
