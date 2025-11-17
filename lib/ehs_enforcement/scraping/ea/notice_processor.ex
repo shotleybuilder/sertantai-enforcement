@@ -100,7 +100,27 @@ defmodule EhsEnforcement.Scraping.Ea.NoticeProcessor do
 
         # Build processed notice struct
         processed = %ProcessedEaNotice{
-          # ... large struct definition (lines 108-132)
+          # Core notice fields
+          regulator_id: transformed_data.regulator_id,
+          agency_code: @ea_agency_code,
+          offender_attrs: offender_attrs,
+          notice_date: transformed_data.action_date,
+          operative_date: parse_operative_date(ea_detail_record),
+          compliance_date: parse_compliance_date(ea_detail_record),
+          notice_body: transformed_data.offence_description,
+          offence_action_type: transformed_data.offence_action_type,
+          offence_action_date: transformed_data.action_date,
+          offence_breaches: nil,
+          regulator_url: transformed_data.regulator_url,
+          source_metadata: build_source_metadata(ea_detail_record),
+
+          # EA-specific environmental fields
+          regulator_event_reference: environmental_data.event_reference,
+          environmental_impact: environmental_data.impact,
+          environmental_receptor: environmental_data.receptor,
+          legal_act: environmental_data.legal_act,
+          legal_section: environmental_data.legal_section,
+          regulator_function: environmental_data.agency_function
         }
 
         Logger.debug(
