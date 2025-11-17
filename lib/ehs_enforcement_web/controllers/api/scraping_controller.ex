@@ -305,11 +305,14 @@ defmodule EhsEnforcementWeb.Api.ScrapingController do
 
         :environment_agency ->
           # EA uses date-based parameters (single API call, not page-based)
-          # Set dummy page values since EA doesn't use pagination
+          # Frontend sends dates in start_page/max_pages for EA (reusing form fields)
+          # Save to proper date_from/date_to fields in database
           Map.merge(base_attributes, %{
             start_page: 1,
             # EA makes single API call regardless of date range
-            max_pages: 1
+            max_pages: 1,
+            date_from: parse_date_param(params.start_page),
+            date_to: parse_date_param(params.max_pages)
           })
       end
 
@@ -444,4 +447,16 @@ defmodule EhsEnforcementWeb.Api.ScrapingController do
       updated_at: session.updated_at
     }
   end
+
+  # Parse date parameter (handles string dates for EA)
+  defp parse_date_param(nil), do: nil
+
+  defp parse_date_param(value) when is_binary(value) do
+    case Date.from_iso8601(value) do
+      {:ok, date} -> date
+      {:error, _} -> nil
+    end
+  end
+
+  defp parse_date_param(_), do: nil
 end
