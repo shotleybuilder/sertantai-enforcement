@@ -112,48 +112,32 @@ defmodule EhsEnforcementWeb.Router do
       on_mount: [
         AshAuthentication.Phoenix.LiveSession
       ] do
-      # Admin Case Management Routes
-      # Redirect /admin/cases to the main cases page since we removed the separate admin index
-      get "/admin/cases", PageController, :redirect_to_cases
-      live "/admin/cases/:id/edit", Admin.CaseLive.Edit, :edit
-
-      # Admin Notice Management Routes
-      live "/admin/notices/:id/edit", Admin.NoticeLive.Edit, :edit
-
-      # Admin Offender Management Routes
-      live "/admin/offenders/:id/edit", Admin.OffenderLive.Edit, :edit
-      live "/admin/offenders/reviews", Admin.OffenderMatchReviewLive, :index
-      live "/admin/offenders/reviews/:id", Admin.OffenderMatchReviewLive, :show
+      # ============================================================================
+      # ADMIN ROUTES MIGRATED TO SVELTE
+      # ============================================================================
+      # All admin routes have been migrated to Svelte 5 + TanStack Query.
+      # The admin section now runs on the SvelteKit frontend.
+      #
+      # LiveView routes removed (2025-11-18):
+      # - /admin - Admin dashboard
+      # - /admin/agencies - Agency management (3 routes: index, new, edit)
+      # - /admin/config - Configuration management (3 routes)
+      # - /admin/duplicates - Duplicate detection
+      # - /admin/offenders/reviews - Match review (2 routes)
+      # - /admin/cases/:id/edit - Case editing
+      # - /admin/notices/:id/edit - Notice editing
+      # - /admin/offenders/:id/edit - Offender editing
+      # - /admin/scrape - Scraping interface (3 routes)
+      #
+      # Total: 16 admin routes migrated
+      # See: frontend/src/routes/admin/ for Svelte implementations
+      # ============================================================================
 
       # Admin Legislation Management Routes
-      # TODO: Implement Admin.LegislationLive modules
+      # TODO: Implement Admin.LegislationLive modules (not yet created)
       # live "/admin/legislation", Admin.LegislationLive.Index, :index
       # live "/admin/legislation/new", Admin.LegislationLive.New, :new
       # live "/admin/legislation/:id/edit", Admin.LegislationLive.Edit, :edit
-
-      # Admin Dashboard
-      live "/admin", Admin.DashboardLive, :index
-
-      # Admin Duplicate Management
-      live "/admin/duplicates", Admin.DuplicatesLive, :index
-
-      # Admin Agency Management Routes
-      live "/admin/agencies", Admin.AgencyLive.Index, :index
-      live "/admin/agencies/new", Admin.AgencyLive.New, :new
-      live "/admin/agencies/:id/edit", Admin.AgencyLive.Edit, :edit
-
-      # Admin Configuration Management Routes
-      live "/admin/config", Admin.ConfigLive.Index, :index
-      live "/admin/config/scraping", Admin.ConfigLive.Scraping, :edit
-      live "/admin/config/scraping/new", Admin.ConfigLive.Scraping, :new
-
-      # Admin Scraping Management Routes
-      live "/admin/scrape-sessions", Admin.ScrapeSessionsLive, :index
-      live "/admin/scrape-sessions-design", Admin.ScrapeSessionsDesignLive, :index
-      live "/admin/scrape-sessions/monitor", Admin.ScrapingLive.Index, :index
-
-      # Unified Scraping Interface (Strategy Pattern)
-      live "/admin/scrape", Admin.ScrapeLive, :index
     end
   end
 
