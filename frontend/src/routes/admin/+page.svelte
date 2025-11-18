@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment'
+  import { PUBLIC_API_URL } from '$env/static/public'
   import { useAdminStats } from '$lib/query/admin'
 
   // Selected time period
@@ -528,7 +529,7 @@
             </div>
             <div class="mt-6 space-y-3">
               <a
-                href="/cases"
+                href={`${PUBLIC_API_URL}/cases`}
                 class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors block"
               >
                 <div class="flex items-center justify-between">
@@ -597,7 +598,7 @@
             </div>
             <div class="mt-6 space-y-3">
               <a
-                href="/notices"
+                href={`${PUBLIC_API_URL}/notices`}
                 class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors block"
               >
                 <div class="flex items-center justify-between">
@@ -666,7 +667,7 @@
             </div>
             <div class="mt-6 space-y-3">
               <a
-                href="/offenders"
+                href={`${PUBLIC_API_URL}/offenders`}
                 class="w-full text-left bg-gray-50 hover:bg-gray-100 px-4 py-3 rounded-md transition-colors block"
               >
                 <div class="flex items-center justify-between">
