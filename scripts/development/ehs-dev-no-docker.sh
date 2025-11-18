@@ -3,7 +3,7 @@
 # EHS Enforcement Development Environment (No Docker Fallback)
 # Use this if Docker isn't available
 
-cd /home/jason/Desktop/ehs_enforcement
+cd /home/jason/Desktop/ehs-enforcement
 
 echo "🚨 Running without Docker - using local PostgreSQL"
 echo "Make sure you have PostgreSQL running locally!"

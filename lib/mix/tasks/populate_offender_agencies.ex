@@ -91,24 +91,30 @@ defmodule Mix.Tasks.PopulateOffenderAgencies do
       agencies = get_offender_agencies(offender.id)
 
       if length(agencies) > 0 do
-        if dry_run do
-          Logger.info("#{index}. #{offender.name} would get agencies: #{inspect(agencies)}")
-        else
-          case update_offender_agencies(offender, agencies) do
-            {:ok, _updated_offender} ->
-              Logger.info("#{index}. ✅ #{offender.name} -> #{inspect(agencies)}")
-              updated_count + 1
-
-            {:error, error} ->
-              Logger.warning("#{index}. ❌ Failed to update #{offender.name}: #{inspect(error)}")
-              updated_count
-          end
-        end
+        process_offender_update(offender, agencies, index, dry_run, updated_count)
       else
         Logger.debug("#{index}. #{offender.name} (no agencies found)")
         updated_count
       end
     end)
+  end
+
+  # Handle offender agency update for dry-run or actual update
+  defp process_offender_update(offender, agencies, index, dry_run, updated_count) do
+    if dry_run do
+      Logger.info("#{index}. #{offender.name} would get agencies: #{inspect(agencies)}")
+      updated_count
+    else
+      case update_offender_agencies(offender, agencies) do
+        {:ok, _updated_offender} ->
+          Logger.info("#{index}. ✅ #{offender.name} -> #{inspect(agencies)}")
+          updated_count + 1
+
+        {:error, error} ->
+          Logger.warning("#{index}. ❌ Failed to update #{offender.name}: #{inspect(error)}")
+          updated_count
+      end
+    end
   end
 
   defp get_offender_agencies(offender_id) do

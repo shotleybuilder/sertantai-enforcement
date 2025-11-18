@@ -1,0 +1,99 @@
+#!/bin/bash
+# sertantai-enforcement Development Server Starter
+# Starts backend (Phoenix) and frontend (SvelteKit) in separate terminal tabs
+#
+# Usage:
+#   sert-enf-start          # Start servers only (assumes Docker already running)
+#   sert-enf-start --docker # Start Docker containers + servers
+
+set -e
+
+# Parse arguments
+MANAGE_DOCKER=false
+if [[ "$1" == "--docker" ]]; then
+    MANAGE_DOCKER=true
+fi
+
+# Resolve symlink to get the actual script path
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+PROJECT_ROOT="$(cd "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
+
+echo "🚀 Starting sertantai-enforcement development servers..."
+echo "📁 Project root: $PROJECT_ROOT"
+echo "📁 Frontend dir: $PROJECT_ROOT/frontend"
+echo ""
+
+# Verify PROJECT_ROOT exists
+if [ ! -d "$PROJECT_ROOT" ]; then
+    echo "❌ Error: Project root directory not found: $PROJECT_ROOT"
+    exit 1
+fi
+
+if [ ! -f "$PROJECT_ROOT/mix.exs" ]; then
+    echo "❌ Error: mix.exs not found in $PROJECT_ROOT"
+    exit 1
+fi
+
+# Check if servers are already running
+if pgrep -f "mix phx.server" > /dev/null; then
+    echo "⚠️  Phoenix backend is already running!"
+    echo "   Stop it first with: sert-enf-stop"
+    exit 1
+fi
+
+if pgrep -f "vite dev.*5173" > /dev/null; then
+    echo "⚠️  SvelteKit frontend is already running!"
+    echo "   Stop it first with: sert-enf-stop"
+    exit 1
+fi
+
+# Manage Docker containers if requested
+if [ "$MANAGE_DOCKER" = true ]; then
+    echo "🐳 Managing Docker containers..."
+    cd "$PROJECT_ROOT"
+
+    if ! docker ps | grep -q "ehs_dev_postgres"; then
+        echo "   Starting Docker services (postgres, electric, redis)..."
+        docker compose -f docker-compose.dev.yml up -d postgres electric redis
+        echo "   Waiting for services to be healthy..."
+        sleep 5
+    else
+        echo "   ✅ Docker services already running"
+    fi
+    echo ""
+else
+    # Check if Docker services are running (warning only)
+    if ! docker ps | grep -q "ehs_dev_postgres"; then
+        echo "⚠️  Docker containers not detected"
+        echo "   Tip: Use 'sert-enf-start --docker' to auto-start containers"
+        echo ""
+    fi
+fi
+
+echo "📦 Opening terminal windows..."
+
+# Open Phoenix Backend terminal
+gnome-terminal --title="sertantai-enforcement-backend" -- bash -c "cd \"$PROJECT_ROOT\" && echo '🔥 Starting Phoenix backend on port 4002...' && echo \"📁 Working directory: \$(pwd)\" && echo '' && mix phx.server" &
+
+# Wait a moment for first terminal to open
+sleep 0.5
+
+# Open SvelteKit Frontend terminal
+gnome-terminal --title="sertantai-enforcement-frontend" -- bash -c "cd \"$PROJECT_ROOT/frontend\" && echo '⚡ Starting SvelteKit frontend on port 5173...' && echo \"📁 Working directory: \$(pwd)\" && echo '' && npm run dev" &
+
+# Wait a moment
+sleep 0.5
+
+# Open Console terminal
+gnome-terminal --title="sertantai-enforcement-console" -- bash -c "cd \"$PROJECT_ROOT\" && echo '💻 sertantai-enforcement Development Console' && echo \"📁 Working directory: \$(pwd)\" && echo '' && echo '📊 Available endpoints:' && echo '   Backend:  http://localhost:4002' && echo '   Frontend: http://localhost:5173' && echo '   Electric: http://localhost:3001' && echo '' && echo '🎮 Quick commands:' && echo '   Stop servers:     sert-enf-stop' && echo '   Restart:          sert-enf-stop && sert-enf-start' && echo '   Docker logs:      docker compose -f docker-compose.dev.yml logs -f' && echo '   Phoenix console:  iex -S mix phx.server' && echo '' && read -p 'Press Enter to close...'" &
+
+echo ""
+echo "✅ Development servers starting in new terminal window!"
+echo ""
+echo "📊 URLs:"
+echo "   Backend:  http://localhost:4002"
+echo "   Frontend: http://localhost:5173"
+echo "   Electric: http://localhost:3001"
+echo ""
+echo "To stop: sert-enf-stop"
+echo ""

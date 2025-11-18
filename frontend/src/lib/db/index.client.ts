@@ -12,13 +12,14 @@
  */
 
 import { browser } from '$app/environment'
-import type { Case, Agency, Offender } from './schema'
+import type { Case, Agency, Offender, ScrapeSession } from './schema'
 import type { Collection } from '@tanstack/db'
 
 // Collection singletons (initialized lazily in browser)
 let casesCol: Collection<Case, string> | null = null
 let agenciesCol: Collection<Agency, string> | null = null
 let offendersCol: Collection<Offender, string> | null = null
+let scrapeSessionsCol: Collection<ScrapeSession, string> | null = null
 
 /**
  * Initialize collections (browser only)
@@ -28,7 +29,7 @@ async function ensureCollections() {
     throw new Error('TanStack DB collections can only be initialized in the browser')
   }
 
-  if (casesCol && agenciesCol && offendersCol) {
+  if (casesCol && agenciesCol && offendersCol && scrapeSessionsCol) {
     return // Already initialized
   }
 
@@ -51,6 +52,13 @@ async function ensureCollections() {
   offendersCol = createCollection(
     localStorageCollectionOptions<Offender, string>({
       storageKey: 'ehs-enforcement-offenders',
+      getKey: (item) => item.id,
+    })
+  )
+
+  scrapeSessionsCol = createCollection(
+    localStorageCollectionOptions<ScrapeSession, string>({
+      storageKey: 'ehs-enforcement-scrape-sessions',
       getKey: (item) => item.id,
     })
   )
@@ -78,6 +86,14 @@ export async function getAgenciesCollection(): Promise<Collection<Agency, string
 export async function getOffendersCollection(): Promise<Collection<Offender, string>> {
   await ensureCollections()
   return offendersCol!
+}
+
+/**
+ * Get scrape sessions collection (browser only)
+ */
+export async function getScrapeSessionsCollection(): Promise<Collection<ScrapeSession, string>> {
+  await ensureCollections()
+  return scrapeSessionsCol!
 }
 
 // Legacy exports for backward compatibility (will throw on server)
@@ -131,7 +147,7 @@ export function getDBStatus() {
     }
   }
 
-  const initialized = casesCol !== null && agenciesCol !== null && offendersCol !== null
+  const initialized = casesCol !== null && agenciesCol !== null && offendersCol !== null && scrapeSessionsCol !== null
 
   return {
     initialized,
@@ -140,6 +156,7 @@ export function getDBStatus() {
           cases: casesCol!.id,
           agencies: agenciesCol!.id,
           offenders: offendersCol!.id,
+          scrapeSessions: scrapeSessionsCol!.id,
         }
       : {},
     storage: 'localStorage (IndexedDB)',
@@ -164,6 +181,7 @@ export async function clearDB(): Promise<void> {
     const caseKeys = Array.from(casesCol!.getAllKeys())
     const agencyKeys = Array.from(agenciesCol!.getAllKeys())
     const offenderKeys = Array.from(offendersCol!.getAllKeys())
+    const scrapeSessionKeys = Array.from(scrapeSessionsCol!.getAllKeys())
 
     for (const key of caseKeys) {
       casesCol!.delete(key)
@@ -173,6 +191,9 @@ export async function clearDB(): Promise<void> {
     }
     for (const key of offenderKeys) {
       offendersCol!.delete(key)
+    }
+    for (const key of scrapeSessionKeys) {
+      scrapeSessionsCol!.delete(key)
     }
 
     console.log('[TanStack DB] Collections cleared')

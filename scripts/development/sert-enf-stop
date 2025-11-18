@@ -1,0 +1,59 @@
+#!/bin/bash
+# sertantai-enforcement Development Server Stopper
+# Stops backend (Phoenix) and frontend (SvelteKit) servers
+#
+# Usage:
+#   sert-enf-stop          # Stop servers only (leave Docker running)
+#   sert-enf-stop --docker # Stop servers + Docker containers
+
+set -e
+
+# Parse arguments
+MANAGE_DOCKER=false
+if [[ "$1" == "--docker" ]]; then
+    MANAGE_DOCKER=true
+fi
+
+# Resolve symlink to get the actual script path
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+PROJECT_ROOT="$(cd "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
+
+echo "🛑 Stopping sertantai-enforcement development servers..."
+
+# Kill any Phoenix processes
+if pgrep -f "mix phx.server" > /dev/null; then
+    echo "🔥 Killing Phoenix backend processes..."
+    pkill -f "mix phx.server" || true
+    echo "✅ Phoenix processes killed"
+else
+    echo "ℹ️  No Phoenix backend processes found"
+fi
+
+# Kill any Vite/npm processes for this project (port 5173)
+if pgrep -f "vite dev.*5173" > /dev/null; then
+    echo "⚡ Killing SvelteKit frontend processes..."
+    pkill -f "vite dev.*5173" || true
+    echo "✅ SvelteKit processes killed"
+else
+    echo "ℹ️  No SvelteKit frontend processes found"
+fi
+
+# Stop Docker services if requested
+if [ "$MANAGE_DOCKER" = true ]; then
+    echo ""
+    echo "🐳 Stopping Docker containers..."
+    cd "$PROJECT_ROOT"
+    docker compose -f docker-compose.dev.yml down
+    echo "✅ Docker containers stopped"
+fi
+
+echo ""
+echo "✅ All development servers stopped!"
+echo ""
+if [ "$MANAGE_DOCKER" = true ]; then
+    echo "To start again: sert-enf-start --docker"
+else
+    echo "To start again: sert-enf-start"
+    echo "Tip: Docker containers are still running. Use 'sert-enf-stop --docker' to stop them."
+fi
+echo ""

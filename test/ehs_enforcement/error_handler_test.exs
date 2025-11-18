@@ -324,8 +324,8 @@ defmodule EhsEnforcement.ErrorHandlerTest do
       trends = ErrorHandler.analyze_error_trends()
 
       assert trends.peak_hours == [9, 10, 11, 12, 13, 14, 15, 16, 17]
-      # 1 error * 15 off-hours + 5 errors * 9 business hours
-      assert trends.total_errors == 24 + 5 * 9
+      # 1 error * 15 off-hours + 5 errors * 9 business hours = 15 + 45 = 60
+      assert trends.total_errors == 15 + 5 * 9
       assert trends.hourly_average > 1.0
       assert is_list(trends.common_patterns)
     end

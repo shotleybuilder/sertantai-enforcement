@@ -198,7 +198,7 @@ docker build -t ehs-enforcement:test .
 
   1️⃣  Build the Test Image
 
-  cd /home/jason/Desktop/ehs_enforcement
+  cd /home/jason/Desktop/ehs-enforcement
   `docker build -t ehs-enforcement:test .`
 
   2️⃣  Test the Container

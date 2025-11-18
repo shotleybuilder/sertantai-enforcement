@@ -235,7 +235,7 @@ echo ""
 ### Implementation Steps (If Desired)
 
 ```bash
-cd /home/jason/Desktop/ehs_enforcement
+cd /home/jason/Desktop/ehs-enforcement
 
 # Create the scripts
 # (Copy content from above into respective files)

@@ -3,7 +3,7 @@
 # EHS Enforcement Development Starter
 # Simple version that mimics sertantai's approach
 
-cd /home/jason/Desktop/ehs_enforcement
+cd /home/jason/Desktop/ehs-enforcement
 
 echo "🐳 Starting EHS Enforcement PostgreSQL..."
 

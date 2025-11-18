@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { browser } from '$app/environment'
-  import { useAgenciesQuery } from '$lib/query/agencies'
+  import { useAgenciesQuery, useDeleteAgencyMutation } from '$lib/query/agencies'
   import { startSync, checkElectricHealth } from '$lib/electric/sync'
 
   // TanStack Query for agencies data (only in browser, not SSR)
   const agenciesQuery = browser ? useAgenciesQuery() : null
+  const deleteMutation = browser ? useDeleteAgencyMutation() : null
 
   // State
   let loading = true
@@ -37,8 +38,7 @@
   // Delete handler
   function handleDelete(id: string) {
     if (confirm('Are you sure you want to delete this agency? This action cannot be undone.')) {
-      // TODO: Implement delete mutation in Phase 5
-      console.log('Delete agency:', id)
+      deleteMutation?.mutate(id)
     }
   }
 </script>

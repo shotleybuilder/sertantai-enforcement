@@ -3,7 +3,7 @@
 # EHS Enforcement Development - Manual Docker Commands
 # Use this if docker-compose isn't installed
 
-cd /home/jason/Desktop/ehs_enforcement
+cd /home/jason/Desktop/ehs-enforcement
 
 echo "🐳 Starting PostgreSQL with manual Docker commands..."
 

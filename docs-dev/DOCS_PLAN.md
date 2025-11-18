@@ -239,7 +239,7 @@ The system uses **smart detection** to only regenerate ExDoc when necessary:
 - `scripts/**` - Utility scripts don't affect API
 
 ### View ExDoc
-- `cd /home/jason/Desktop/ehs_enforcement`
+- `cd /home/jason/Desktop/ehs-enforcement`
 - `python3 -m http.server 8080`
 
 http://localhost:8080/docs_dev/exdoc/index.html

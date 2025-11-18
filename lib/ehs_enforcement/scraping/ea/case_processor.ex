@@ -31,6 +31,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
     defstruct [
       # Core identifiers (mapped from EA data)
       :regulator_id,
+      :case_reference,
       :agency_code,
       :offender_attrs,
 
@@ -77,6 +78,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
 
       processed = %ProcessedEaCase{
         regulator_id: transformed_data.regulator_id,
+        case_reference: ea_record.case_reference,
         agency_code: @ea_agency_code,
         offender_attrs: build_ea_offender_attrs(ea_record),
         offence_result: map_ea_action_to_result(ea_record.action_type),
@@ -237,6 +239,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
     case_attrs = %{
       agency_code: processed_case.agency_code,
       regulator_id: processed_case.regulator_id,
+      case_reference: processed_case.case_reference,
       offender_attrs: processed_case.offender_attrs,
       offence_result: processed_case.offence_result,
       offence_fine: processed_case.offence_fine,
@@ -537,6 +540,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
     case_attrs = %{
       agency_code: transformed_case[:agency_code] || transformed_case.agency_code || :ea,
       regulator_id: transformed_case[:regulator_id] || transformed_case.regulator_id,
+      case_reference: transformed_case[:case_reference] || transformed_case.case_reference,
       offender_attrs: build_offender_attrs_from_transformed(transformed_case),
       offence_result: transformed_case[:offence_result] || "Regulatory Action",
       offence_fine: transformed_case[:total_fine] || Decimal.new(0),
@@ -667,6 +671,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
     %{
       agency_code: processed_case.agency_code,
       regulator_id: processed_case.regulator_id,
+      case_reference: processed_case.case_reference,
       offender_attrs: processed_case.offender_attrs,
       offence_result: processed_case.offence_result,
       offence_fine: processed_case.offence_fine,
@@ -692,6 +697,7 @@ defmodule EhsEnforcement.Scraping.Ea.CaseProcessor do
     %{
       agency_code: transformed_case[:agency_code] || transformed_case.agency_code || :ea,
       regulator_id: transformed_case[:regulator_id] || transformed_case.regulator_id,
+      case_reference: transformed_case[:case_reference] || transformed_case.case_reference,
       offender_attrs: build_offender_attrs_from_transformed(transformed_case),
       offence_result: transformed_case[:offence_result] || "Regulatory Action",
       offence_fine: transformed_case[:total_fine] || Decimal.new(0),

@@ -2,6 +2,15 @@
 
 Quick reference for running tests and accessing detailed testing skills.
 
+## 📊 Test Status Tracker
+
+See [TEST_STATUS_TRACKER.md](TEST_STATUS_TRACKER.md) for live test suite status, including:
+- Current pass/fail rates by category
+- Complete checklist of all test files with detailed status
+- Test runner scripts for baseline testing
+- Progress tracking and session logs
+- Known issues and common failure patterns
+
 ## Quick Commands
 
 ```bash
@@ -167,6 +176,29 @@ For detailed patterns and troubleshooting, refer to:
 - **ExUnit**: https://hexdocs.pm/ex_unit/ - ExUnit framework docs
 - **LiveViewTest**: https://hexdocs.pm/phoenix_live_view/Phoenix.LiveViewTest.html - LiveView testing docs
 
+## Test Runners
+
+Category-specific test runners are available in `test/runners/`:
+
+```bash
+# Run all Agency Logic tests (11 files)
+./test/runners/test_agency_logic.sh
+
+# Run all Enforcement Domain tests (9 files)
+./test/runners/test_enforcement_domain.sh
+
+# Run all Scraping tests (16 files, auto-skips 2 integration tests)
+./test/runners/test_scraping.sh
+```
+
+These runners provide baseline testing with clear PASS/FAIL reporting for each test file. The scraping runner automatically skips integration tests that would hit live APIs.
+
+**Use Cases:**
+- Baseline testing before starting work
+- Verifying fixes don't break other tests
+- Progress tracking during test cleanup
+- CI/CD baseline validation
+
 ## Test Structure
 
 Tests follow the standard Phoenix directory structure:
@@ -174,6 +206,10 @@ Tests follow the standard Phoenix directory structure:
 ```
 test/
 ├── test_helper.exs              # ExUnit configuration
+├── runners/                     # Category test runners
+│   ├── test_agency_logic.sh    # Agency Logic tests (11 files)
+│   ├── test_enforcement_domain.sh # Enforcement Domain tests (9 files)
+│   └── test_scraping.sh        # Scraping tests (16 files, excludes 2 integration)
 ├── support/                     # Test support modules
 │   ├── conn_case.ex            # LiveView test helpers
 │   ├── data_case.ex            # Database test helpers

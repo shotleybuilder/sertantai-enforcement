@@ -97,8 +97,8 @@ Add this alias to your shell for easy startup:
 
 ```bash
 echo 'ehs-dev() {
-    cd /home/jason/Desktop/ehs_enforcement
-    
+    cd /home/jason/Desktop/ehs-enforcement
+
     # Stop any existing container first to avoid conflicts
     docker compose stop postgres 2>/dev/null
     

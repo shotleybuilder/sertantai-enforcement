@@ -174,11 +174,32 @@ defmodule EhsEnforcementWeb.Router do
     # Agency API endpoints
     get "/agencies", AgencyController, :index
     post "/agencies", AgencyController, :create
+    patch "/agencies/:id", AgencyController, :update
+    delete "/agencies/:id", AgencyController, :delete
 
     # Scraping API endpoints
     post "/scraping/start", ScrapingController, :start_scraping
     delete "/scraping/stop/:session_id", ScrapingController, :stop_scraping
     patch "/scraping/sessions/:id/complete", ScrapingController, :complete_session
+
+    # Duplicates API endpoints
+    get "/duplicates", DuplicatesController, :index
+    delete "/duplicates", DuplicatesController, :delete_selected
+
+    # Match Reviews API endpoints
+    get "/match-reviews", MatchReviewsController, :index
+    get "/match-reviews/:id", MatchReviewsController, :show
+    post "/match-reviews/:id/approve", MatchReviewsController, :approve
+    post "/match-reviews/:id/skip", MatchReviewsController, :skip
+    post "/match-reviews/:id/flag", MatchReviewsController, :flag
+
+    # Edit Forms API endpoints
+    get "/cases/:id", CasesController, :show
+    patch "/cases/:id", CasesController, :update
+    get "/notices/:id", NoticesController, :show
+    patch "/notices/:id", NoticesController, :update
+    get "/offenders/:id", OffendersController, :show
+    patch "/offenders/:id", OffendersController, :update
   end
 
   # Server-Sent Events (SSE) for real-time scraping progress

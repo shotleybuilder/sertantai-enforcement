@@ -1,17 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import db, { initDB } from '$lib/db'
+  import { browser } from '$app/environment'
+  import { useCasesQuery } from '$lib/query/cases'
   import { startSync, getSyncStatus, checkElectricHealth } from '$lib/electric/sync'
-  import type { Case } from '$lib/db/schema'
 
-  // Reactive query for cases
-  // This automatically updates when the local DB changes
-  let cases = db.query((q) =>
-    q.cases
-      .all()
-      .orderBy('offence_action_date', 'desc')
-      .limit(50)
-  )
+  // TanStack Query for cases data (only in browser, not SSR)
+  const casesQuery = browser ? useCasesQuery() : null
 
   // State
   let loading = true
@@ -22,11 +16,7 @@
   // Initialize database and start sync on mount
   onMount(async () => {
     try {
-      // 1. Initialize local database
-      await initDB()
-      console.log('[Cases Page] Database initialized')
-
-      // 2. Check if Electric service is available
+      // 1. Check if Electric service is available
       electricHealthy = await checkElectricHealth()
       console.log('[Cases Page] Electric health:', electricHealthy)
 
@@ -34,13 +24,17 @@
         console.warn('[Cases Page] Electric service unavailable, working offline')
       }
 
-      // 3. Start syncing data from PostgreSQL (if Electric is available)
+      // 2. Start syncing data from PostgreSQL (if Electric is available)
+      // The sync will automatically:
+      // - Populate TanStack DB collection (persistence)
+      // - Update Svelte store (intermediate state)
+      // - Invalidate TanStack Query (triggers refetch)
       if (electricHealthy) {
-        startSync()
-        console.log('[Cases Page] Sync started')
+        await startSync()
+        console.log('[Cases Page] Sync started - TanStack Query will update automatically')
       }
 
-      // 4. Update sync status periodically
+      // 3. Update sync status periodically
       const statusInterval = setInterval(() => {
         syncStatus = getSyncStatus()
       }, 1000)
@@ -122,46 +116,46 @@
     {/if}
   </div>
 
-  <!-- Loading State -->
-  {#if loading}
+  <!-- SSR or Loading State -->
+  {#if !casesQuery || $casesQuery.isLoading || loading}
     <div class="flex items-center justify-center py-12">
       <div class="text-center">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-        <p class="text-gray-600">Initializing local database...</p>
+        <p class="text-gray-600">Loading cases from local database...</p>
       </div>
     </div>
 
-  <!-- Error State -->
-  {:else if error}
+  <!-- TanStack Query Error State -->
+  {:else if $casesQuery.isError}
     <div class="bg-red-50 border border-red-200 rounded-lg p-6">
-      <h3 class="text-red-900 font-semibold mb-2">Error</h3>
-      <p class="text-red-700">{error}</p>
+      <h3 class="text-red-900 font-semibold mb-2">Query Error</h3>
+      <p class="text-red-700">{$casesQuery.error?.message || 'Unknown error'}</p>
     </div>
 
   <!-- Empty State -->
-  {:else if !$cases || $cases.length === 0}
+  {:else if !$casesQuery.data || $casesQuery.data.length === 0}
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
       <h3 class="text-gray-900 font-semibold text-lg mb-2">No Cases Found</h3>
       <p class="text-gray-600 mb-4">
         {#if electricHealthy}
-          Waiting for data to sync from PostgreSQL...
+          Waiting for data to sync from PostgreSQL via ElectricSQL...
         {:else}
-          No cached data available. Connect to Electric service to sync data.
+          No cached data available. Electric service is offline.
         {/if}
       </p>
       <p class="text-sm text-gray-500">
-        Make sure your PostgreSQL database has case data and ElectricSQL is running.
+        Make sure your PostgreSQL database has case data and ElectricSQL is running on port 3001.
       </p>
     </div>
 
   <!-- Cases List -->
   {:else}
     <div class="mb-4 text-sm text-gray-600">
-      Showing {$cases.length} case{$cases.length !== 1 ? 's' : ''}
+      Showing {$casesQuery.data.length} case{$casesQuery.data.length !== 1 ? 's' : ''}
     </div>
 
     <div class="grid gap-4">
-      {#each $cases as case_}
+      {#each $casesQuery.data as case_}
         <div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
           <div class="flex justify-between items-start mb-3">
             <div>

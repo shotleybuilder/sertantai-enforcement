@@ -1,5 +1,9 @@
 version: '3.8'
 
+networks:
+  ehs_enforcement_network:
+    driver: bridge
+
 services:
   postgres:
     image: postgres:16
@@ -12,11 +16,40 @@ services:
       - "5434:5432"  # Use port 5434 to avoid conflict
     volumes:
       - ehs_postgres_data:/var/lib/postgresql/data
+    networks:
+      - ehs_enforcement_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+    # Enable logical replication for ElectricSQL
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_replication_slots=10"
+      - "-c"
+      - "max_wal_senders=10"
+
+  # ElectricSQL sync service (v1.0 - HTTP Shape API)
+  electric:
+    image: electricsql/electric:latest
+    container_name: ehs_enforcement_electric
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ehs_enforcement_dev
+      HTTP_PORT: 3001
+      ELECTRIC_INSECURE: "true"  # Development only!
+      PG_PROXY_PASSWORD: proxy_password  # Change in production!
+    ports:
+      - "3001:3001"  # HTTP API for Shape-based sync
+    networks:
+      - ehs_enforcement_network
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

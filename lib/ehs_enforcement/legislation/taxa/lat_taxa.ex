@@ -414,22 +414,25 @@ defmodule EhsEnforcement.Legislation.Taxa.LATTaxa do
     |> Enum.map(fn {key, record_id} ->
       agg =
         Enum.reduce(records, [], fn record, acc ->
-          case String.contains?(record."ID", key) do
-            true ->
-              case Map.get(record, source_field) do
-                v when is_list(v) -> acc ++ v
-                "" -> acc
-                v when is_binary(v) -> [v | acc]
-              end
-
-            false ->
-              acc
+          if String.contains?(record."ID", key) do
+            accumulate_field_value(record, source_field, acc)
+          else
+            acc
           end
         end)
         |> Enum.uniq()
 
       {record_id, agg}
     end)
+  end
+
+  # Extract field value and accumulate based on its type
+  defp accumulate_field_value(record, source_field, acc) do
+    case Map.get(record, source_field) do
+      v when is_list(v) -> acc ++ v
+      "" -> acc
+      v when is_binary(v) -> [v | acc]
+    end
   end
 
   @spec aggregate_result(list(), atom(), struct()) :: list()

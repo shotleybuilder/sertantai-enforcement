@@ -14,6 +14,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **For a complete overview, see [docs-dev/README.md](docs-dev/README.md)**
 
+## 🚀 QUICK START: DEVELOPMENT ENVIRONMENT
+
+**⚠️ IMPORTANT: Always use these scripts to start/stop the development environment!**
+
+### Start the Complete Development Environment
+
+```bash
+# Start all services (PostgreSQL, ElectricSQL, Phoenix, Frontend)
+./scripts/development/sert-enf-start
+```
+
+This script will:
+- Start Docker services (PostgreSQL on port 5434, ElectricSQL on port 3001)
+- Start Phoenix backend (port 4002)
+- Start Frontend dev server (port 5173)
+- Ensure all services are healthy before proceeding
+
+### Stop the Development Environment
+
+```bash
+# Stop all services gracefully
+./scripts/development/sert-enf-stop
+```
+
+This script will:
+- Stop frontend dev server
+- Stop Phoenix backend
+- Stop Docker services (PostgreSQL, ElectricSQL)
+- Clean up processes
+
+### Alternative Development Scripts
+
+If you need more control, see additional scripts in `scripts/development/`:
+- `ehs-dev.sh` - Start dev with Docker
+- `ehs-dev-no-docker.sh` - Start dev without Docker
+- `start-dev.sh` - Quick Phoenix server start
+- `docker-manual.sh` - Manual Docker management
+
+**See [scripts/README.md](scripts/README.md) for complete script documentation**
+
+---
+
 ## SESSION DOCUMENTATION
 
 When working within an active development session:

@@ -57,10 +57,10 @@ export interface Case {
  */
 export interface Agency {
   id: string
+  code: string // atom in Ash: :hse, :onr, :orr, :ea
   name: string
-  acronym: string | null
-  country: string | null
-  website: string | null
+  base_url: string | null
+  enabled: boolean
   inserted_at: string
   updated_at: string
 }
@@ -78,4 +78,48 @@ export interface Offender {
   company_number: string | null
   inserted_at: string
   updated_at: string
+}
+
+/**
+ * ScrapeSession Type
+ * Mirrors: EhsEnforcement.Scraping.ScrapeSession
+ */
+export interface ScrapeSession {
+  // Primary key
+  id: string
+  session_id: string
+
+  // Agency and database config
+  agency: 'hse' | 'environment_agency'
+  database: string
+
+  // HSE-specific parameters
+  start_page: number
+  max_pages: number
+  end_page: number | null
+
+  // EA-specific parameters
+  date_from: string | null // ISO date string
+  date_to: string | null // ISO date string
+  action_types: string[] | null
+
+  // Status tracking
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'stopped'
+
+  // Progress metrics
+  current_page: number | null
+  pages_processed: number
+  cases_found: number
+  cases_processed: number
+  cases_created: number
+  cases_created_current_page: number
+  cases_updated: number
+  cases_updated_current_page: number
+  cases_exist_total: number
+  cases_exist_current_page: number
+  errors_count: number
+
+  // Timestamps
+  inserted_at: string // ISO datetime string
+  updated_at: string // ISO datetime string
 }

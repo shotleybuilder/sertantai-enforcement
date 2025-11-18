@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { checkElectricHealth } from '$lib/electric/sync'
-  import { getDBStatus } from '$lib/db'
+  import { getDBStatus } from '$lib/db/index.client'
 
   // Status tracking
   let postgresHealthy = false

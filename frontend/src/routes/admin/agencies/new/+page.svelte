@@ -1,5 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
+  import { useCreateAgencyMutation } from '$lib/query/agencies'
+
+  // TanStack mutation for creating agencies
+  const createMutation = useCreateAgencyMutation()
 
   // Form state
   let code: 'hse' | 'onr' | 'orr' | 'ea' = 'hse'
@@ -7,50 +11,34 @@
   let baseUrl = ''
   let enabled = true
 
-  // UI state
-  let loading = false
-  let error: string | null = null
-
   // Form validation
   $: isValid = code && name.trim().length > 0
 
-  async function handleSubmit(event: Event) {
+  // Handle form submission with TanStack mutation
+  function handleSubmit(event: Event) {
     event.preventDefault()
 
     if (!isValid) {
-      error = 'Please fill in all required fields'
       return
     }
 
-    loading = true
-    error = null
-
-    try {
-      const response = await fetch('http://localhost:4002/api/agencies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    // Use TanStack mutation with optimistic updates
+    $createMutation.mutate(
+      {
+        code,
+        name: name.trim(),
+        base_url: baseUrl.trim() || null,
+        enabled,
+      },
+      {
+        onSuccess: () => {
+          // Redirect to agencies list after successful creation
+          setTimeout(() => {
+            goto('/admin/agencies')
+          }, 500) // Small delay to show success state
         },
-        body: JSON.stringify({
-          code,
-          name: name.trim(),
-          base_url: baseUrl.trim() || null,
-          enabled,
-        }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`)
       }
-
-      // Redirect to agencies list
-      goto('/admin/agencies')
-    } catch (err) {
-      console.error('Failed to create agency:', err)
-      error = err instanceof Error ? err.message : 'Failed to create agency'
-      loading = false
-    }
+    )
   }
 
   function handleCancel() {
@@ -134,8 +122,27 @@
         <div class="px-4 py-5 sm:p-6">
           <h3 class="text-lg leading-6 font-medium text-gray-900 mb-6">Agency Details</h3>
 
+          <!-- Success Message -->
+          {#if $createMutation.isSuccess}
+            <div class="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <h3 class="text-sm font-medium text-green-800">Agency Created Successfully!</h3>
+                  <div class="mt-2 text-sm text-green-700">
+                    <p>Redirecting to agencies list...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {/if}
+
           <!-- Error Message -->
-          {#if error}
+          {#if $createMutation.isError}
             <div class="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
               <div class="flex">
                 <div class="flex-shrink-0">
@@ -146,7 +153,7 @@
                 <div class="ml-3">
                   <h3 class="text-sm font-medium text-red-800">Error</h3>
                   <div class="mt-2 text-sm text-red-700">
-                    <p>{error}</p>
+                    <p>{$createMutation.error?.message || 'Failed to create agency'}</p>
                   </div>
                 </div>
               </div>
@@ -263,15 +270,20 @@
         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <button
             type="submit"
-            disabled={!isValid || loading}
+            disabled={!isValid || $createMutation.isPending || $createMutation.isSuccess}
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {#if loading}
+            {#if $createMutation.isPending}
               <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               Creating...
+            {:else if $createMutation.isSuccess}
+              <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              Created!
             {:else}
               Create Agency
             {/if}

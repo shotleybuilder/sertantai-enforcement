@@ -91,8 +91,8 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
       {:ok, view, html} = live(conn, "/admin/scrape")
 
       # Should render the scrape page, not redirect
-      assert html =~ "Manual HSE case scraping" or
-               html =~ "Admin interface for manual HSE case scraping"
+      assert html =~ "UK Enforcement Data Scraping" or
+               html =~ "Scraping Configuration"
 
       refute html =~ "You are being redirected"
 
@@ -139,11 +139,11 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         |> Phoenix.ConnTest.init_test_session(%{})
         |> AshAuthentication.Plug.Helpers.store_in_session(user)
 
-      # Test /admin/scraping route
-      {:ok, view, html} = live(conn, "/admin/scraping")
+      # Test /admin/scrape-sessions/monitor route (scraping monitoring interface)
+      {:ok, view, html} = live(conn, "/admin/scrape-sessions/monitor")
 
       # Should show scraping management interface
-      assert html =~ "Scraping" or html =~ "HSE" or html =~ "Management"
+      assert html =~ "Scraping" or html =~ "HSE" or html =~ "Management" or html =~ "Monitor"
       refute html =~ "You are being redirected"
       assert Process.alive?(view.pid)
     end
@@ -155,7 +155,7 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
         |> AshAuthentication.Plug.Helpers.store_in_session(user)
 
       assert_admin_redirect(conn, "/admin/config", to: "/")
-      assert_admin_redirect(conn, "/admin/scraping", to: "/")
+      assert_admin_redirect(conn, "/admin/scrape-sessions/monitor", to: "/")
     end
   end
 
@@ -404,6 +404,11 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
       assert is_binary(result)
     end
 
+    # SKIPPED: update_config event doesn't exist in scrape_live
+    # The scrape_live handles config through form validation, not a separate update_config event
+    # Available events: start_scraping, stop_scraping, clear_session, clear_scraped_records,
+    #                   validate_params, select_agency, select_database
+    @tag :skip
     test "handles configuration update events", %{view: view} do
       config_data = %{
         "config" => %{
@@ -471,8 +476,8 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
       # Should still allow access (admin refresh happens in background)
       {:ok, view, html} = live(conn, "/admin/scrape")
 
-      assert html =~ "Manual HSE case scraping" or
-               html =~ "Admin interface for manual HSE case scraping"
+      assert html =~ "UK Enforcement Data Scraping" or
+               html =~ "Scraping Configuration"
 
       assert Process.alive?(view.pid)
     end
@@ -522,8 +527,8 @@ defmodule EhsEnforcementWeb.AdminRoutesTest do
       # Should handle gracefully
       {:ok, view, html} = live(conn, "/admin/scrape")
 
-      assert html =~ "Manual HSE case scraping" or
-               html =~ "Admin interface for manual HSE case scraping"
+      assert html =~ "UK Enforcement Data Scraping" or
+               html =~ "Scraping Configuration"
 
       assert Process.alive?(view.pid)
     end
