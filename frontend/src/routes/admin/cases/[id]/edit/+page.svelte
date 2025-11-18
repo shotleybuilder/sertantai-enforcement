@@ -48,7 +48,7 @@
       return
     }
 
-    updateMutation?.mutate(
+    $updateMutation?.mutate(
       { id: caseId, ...formData },
       {
         onSuccess: () => {

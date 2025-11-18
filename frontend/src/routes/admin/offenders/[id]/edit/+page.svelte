@@ -46,7 +46,7 @@
       return
     }
 
-    updateMutation?.mutate(
+    $updateMutation?.mutate(
       { id: offenderId, ...formData },
       {
         onSuccess: () => {
