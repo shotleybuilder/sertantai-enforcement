@@ -168,9 +168,23 @@ defmodule EhsEnforcementWeb.Router do
   scope "/api", EhsEnforcementWeb.Api do
     pipe_through :api
 
+    # Admin API endpoints
+    get "/admin/stats", AdminController, :stats
+
     # Agency API endpoints
     get "/agencies", AgencyController, :index
     post "/agencies", AgencyController, :create
+
+    # Scraping API endpoints
+    post "/scraping/start", ScrapingController, :start_scraping
+    delete "/scraping/stop/:session_id", ScrapingController, :stop_scraping
+    patch "/scraping/sessions/:id/complete", ScrapingController, :complete_session
+  end
+
+  # Server-Sent Events (SSE) for real-time scraping progress
+  scope "/api/scraping", EhsEnforcementWeb do
+    # No pipeline - SSE controller handles its own response headers
+    get "/subscribe/:session_id", ScrapingSSEController, :subscribe
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

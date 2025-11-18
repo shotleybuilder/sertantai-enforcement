@@ -3,6 +3,11 @@
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
+/* Ensure grid-cols-6 is available */
+@theme {
+	--grid-template-columns-6: repeat(6, minmax(0, 1fr));
+}
+
 /* Custom base styles */
 @layer base {
 	html {
