@@ -14,6 +14,98 @@ Scripts for starting and managing your local development environment.
 
 ## Available Scripts
 
+### 🌟 sert-enf-start (Recommended)
+
+**Start complete development environment (Backend + Frontend + Docker)**
+
+```bash
+# Start servers only (assumes Docker already running)
+./scripts/development/sert-enf-start
+
+# Start everything including Docker
+./scripts/development/sert-enf-start --docker
+```
+
+**What it does:**
+- Checks if Docker services are running (optional)
+- Starts Docker containers if `--docker` flag used
+- Opens Phoenix backend in new terminal (port 4002)
+- Opens SvelteKit frontend in new terminal (port 5173)
+- Opens console terminal with quick commands
+
+**When to use:**
+- **Recommended for daily development**
+- Working on both backend and frontend
+- Need separate terminals for each service
+- Want quick access to logs
+
+**URLs after start:**
+- Backend: http://localhost:4002
+- Frontend: http://localhost:5173
+- Electric: http://localhost:3001
+
+---
+
+### 🔄 sert-enf-restart (New!)
+
+**Forcefully restart development servers**
+
+```bash
+# Restart servers only
+./scripts/development/sert-enf-restart
+
+# Restart servers + Docker
+./scripts/development/sert-enf-restart --docker
+
+# Force immediate kill (skip graceful shutdown)
+./scripts/development/sert-enf-restart --force
+```
+
+**What it does:**
+- Stops all Phoenix and SvelteKit processes
+- Waits for ports 4002 and 5173 to be freed (up to 10s)
+- Force kills if graceful shutdown times out
+- Optionally restarts Docker containers
+- Starts fresh servers in new terminals
+
+**When to use:**
+- **Phoenix won't stop or restart properly**
+- Port conflicts or "already running" errors
+- After significant code changes
+- Need clean slate without manual process killing
+
+**Key Features:**
+- ✅ Handles stubborn BEAM VM processes
+- ✅ Waits for ports to be freed
+- ✅ Force kill option (`--force`) for immediate restart
+- ✅ Comprehensive process cleanup
+
+---
+
+### 🛑 sert-enf-stop
+
+**Stop development servers**
+
+```bash
+# Stop servers only
+./scripts/development/sert-enf-stop
+
+# Stop servers + Docker
+./scripts/development/sert-enf-stop --docker
+```
+
+**What it does:**
+- Stops Phoenix backend processes
+- Stops SvelteKit frontend processes
+- Optionally stops Docker containers
+
+**When to use:**
+- End of development session
+- Before switching branches
+- Freeing up system resources
+
+---
+
 ### ehs-dev.sh
 
 **Start complete development environment with Docker PostgreSQL**
@@ -123,8 +215,8 @@ Scripts for starting and managing your local development environment.
 ### First Time Setup
 
 ```bash
-# 1. Start development environment
-./scripts/development/ehs-dev.sh
+# 1. Start development environment (recommended)
+./scripts/development/sert-enf-start --docker
 
 # 2. Import sample data (optional)
 ./scripts/data/airtable_import.sh dev --cases --limit 100
@@ -133,26 +225,51 @@ Scripts for starting and managing your local development environment.
 ### Daily Development
 
 ```bash
-# Start with fresh database
-./scripts/development/ehs-dev.sh
+# Recommended: Start both backend + frontend
+./scripts/development/sert-enf-start
 
-# Or just start server if DB already running
-./scripts/development/start-dev.sh
+# Or start with Docker containers
+./scripts/development/sert-enf-start --docker
+
+# Legacy: Backend only
+./scripts/development/ehs-dev.sh
+```
+
+### Restart After Code Changes
+
+```bash
+# Quick restart (most common)
+./scripts/development/sert-enf-restart
+
+# Restart with Docker
+./scripts/development/sert-enf-restart --docker
+
+# Force restart (if servers won't stop)
+./scripts/development/sert-enf-restart --force
 ```
 
 ### Troubleshooting
 
 ```bash
+# Phoenix won't stop or restart?
+./scripts/development/sert-enf-restart --force
+
+# Port conflicts or "already running" errors?
+./scripts/development/sert-enf-restart
+
 # Database won't connect?
 ./scripts/development/setup_database.sh
 
 # Need manual control?
 ./scripts/development/docker-manual.sh
 
-# Port conflict?
-# Edit scripts to use different port or kill process:
+# Check what's using a port:
 lsof -i :4002  # Find process on port 4002
-kill -9 <PID>  # Kill it
+lsof -i :5173  # Find process on port 5173
+
+# Manual force kill if needed:
+pkill -9 -f "mix phx.server"
+pkill -9 -f "vite dev.*5173"
 ```
 
 ---
