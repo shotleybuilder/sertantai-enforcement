@@ -70,14 +70,38 @@ export interface Agency {
  * Mirrors: EhsEnforcement.Enforcement.Offender
  */
 export interface Offender {
+  // Primary key
   id: string
+
+  // Core identification
   name: string
+  normalized_name: string | null
   address: string | null
-  postcode: string | null
+  local_authority: string | null
   country: string | null
-  company_number: string | null
-  inserted_at: string
-  updated_at: string
+  postcode: string | null
+  town: string | null
+  county: string | null
+
+  // Business details
+  business_type: 'limited_company' | 'individual' | 'partnership' | 'plc' | 'other' | null
+  company_registration_number: string | null
+  main_activity: string | null
+  sic_code: string | null
+  industry: string | null
+  industry_sectors: string[] | null
+
+  // Enforcement history
+  agencies: string[] | null
+  first_seen_date: string | null // ISO date string
+  last_seen_date: string | null // ISO date string
+  total_cases: number
+  total_notices: number
+  total_fines: number
+
+  // Timestamps
+  inserted_at: string // ISO datetime string
+  updated_at: string // ISO datetime string
 }
 
 /**
