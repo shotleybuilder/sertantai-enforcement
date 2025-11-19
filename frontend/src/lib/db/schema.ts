@@ -81,6 +81,51 @@ export interface Offender {
 }
 
 /**
+ * Notice Type
+ * Mirrors: EhsEnforcement.Enforcement.Notice
+ */
+export interface Notice {
+  // Primary key
+  id: string
+
+  // Core notice identification
+  airtable_id: string | null
+  regulator_id: string | null
+  regulator_ref_number: string | null
+
+  // Notice dates
+  notice_date: string | null // ISO date string
+  operative_date: string | null // ISO date string
+  compliance_date: string | null // ISO date string
+
+  // Notice details
+  notice_body: string | null
+  offence_action_type: string | null
+  offence_action_date: string | null // ISO date string
+  offence_breaches: string | null
+  url: string | null
+
+  // EA-specific fields
+  regulator_event_reference: string | null
+  environmental_impact: string | null
+  environmental_receptor: string | null
+  legal_act: string | null
+  legal_section: string | null
+  regulator_function: string | null
+
+  // Relationships (foreign keys)
+  agency_id: string
+  offender_id: string
+
+  // Metadata
+  last_synced_at: string | null // ISO datetime string
+
+  // Timestamps
+  inserted_at: string // ISO datetime string
+  updated_at: string // ISO datetime string
+}
+
+/**
  * ScrapeSession Type
  * Mirrors: EhsEnforcement.Scraping.ScrapeSession
  */
