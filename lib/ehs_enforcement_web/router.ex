@@ -152,6 +152,9 @@ defmodule EhsEnforcementWeb.Router do
   scope "/api", EhsEnforcementWeb.Api do
     pipe_through :api
 
+    # Public API endpoints
+    get "/public/dashboard/stats", DashboardController, :stats
+
     # Admin API endpoints
     get "/admin/stats", AdminController, :stats
 
