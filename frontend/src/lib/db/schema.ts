@@ -192,3 +192,22 @@ export interface ScrapeSession {
   inserted_at: string // ISO datetime string
   updated_at: string // ISO datetime string
 }
+
+/**
+ * Legislation Type
+ * Mirrors: EhsEnforcement.Enforcement.Legislation
+ */
+export interface Legislation {
+  // Primary key
+  id: string
+
+  // Core legislation details
+  legislation_title: string
+  legislation_year: number | null
+  legislation_number: number | null
+  legislation_type: 'act' | 'regulation' | 'order' | 'acop'
+
+  // Timestamps
+  created_at: string // ISO datetime string
+  updated_at: string // ISO datetime string
+}
