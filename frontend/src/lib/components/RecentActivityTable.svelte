@@ -12,8 +12,19 @@
 		type SortingState,
 		type VisibilityState,
 		type ColumnSizingState,
-		type ColumnFiltersState
+		type ColumnFiltersState,
+		type ColumnOrderState
 	} from '@tanstack/svelte-table'
+	import {
+		DndContext,
+		closestCenter,
+		PointerSensor,
+		useSensor,
+		useSensors,
+		type DragEndEvent
+	} from '@dnd-kit/core'
+	import { SortableContext, useSortable, horizontalListSortingStrategy } from '@dnd-kit/sortable'
+	import { CSS } from '@dnd-kit/utilities'
 
 	export let data: any[] = []
 
@@ -21,6 +32,7 @@
 	const VISIBILITY_STORAGE_KEY = 'dashboard_column_visibility'
 	const SIZING_STORAGE_KEY = 'dashboard_column_sizing'
 	const FILTERS_STORAGE_KEY = 'dashboard_column_filters'
+	const ORDER_STORAGE_KEY = 'dashboard_column_order'
 
 	// Column visibility state - load from localStorage
 	function loadColumnVisibility(): VisibilityState {
@@ -82,16 +94,38 @@
 		}
 	}
 
+	// Column order state - load from localStorage
+	function loadColumnOrder(): ColumnOrderState {
+		if (!browser) return []
+		try {
+			const saved = localStorage.getItem(ORDER_STORAGE_KEY)
+			return saved ? JSON.parse(saved) : []
+		} catch {
+			return []
+		}
+	}
+
+	function saveColumnOrder(state: ColumnOrderState) {
+		if (!browser) return
+		try {
+			localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(state))
+		} catch (e) {
+			console.error('Failed to save column order:', e)
+		}
+	}
+
 	let sorting = writable<SortingState>([])
 	let columnVisibility = writable<VisibilityState>(loadColumnVisibility())
 	let columnSizing = writable<ColumnSizingState>(loadColumnSizing())
 	let columnFilters = writable<ColumnFiltersState>(loadColumnFilters())
+	let columnOrder = writable<ColumnOrderState>(loadColumnOrder())
 
-	// Save to localStorage when visibility, sizing, or filters change
+	// Save to localStorage when visibility, sizing, filters, or order change
 	$: if (browser) {
 		saveColumnVisibility($columnVisibility)
 		saveColumnSizing($columnSizing)
 		saveColumnFilters($columnFilters)
+		saveColumnOrder($columnOrder)
 	}
 
 	// Column picker visibility
@@ -159,7 +193,8 @@
 			sorting: $sorting,
 			columnVisibility: $columnVisibility,
 			columnSizing: $columnSizing,
-			columnFilters: $columnFilters
+			columnFilters: $columnFilters,
+			columnOrder: $columnOrder
 		},
 		onSortingChange: (updater) => {
 			if (updater instanceof Function) {
@@ -189,6 +224,13 @@
 				columnFilters.set(updater)
 			}
 		},
+		onColumnOrderChange: (updater) => {
+			if (updater instanceof Function) {
+				columnOrder.update(updater)
+			} else {
+				columnOrder.set(updater)
+			}
+		},
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
@@ -202,7 +244,8 @@
 			sorting: $sorting,
 			columnVisibility: $columnVisibility,
 			columnSizing: $columnSizing,
-			columnFilters: $columnFilters
+			columnFilters: $columnFilters,
+			columnOrder: $columnOrder
 		}
 	}))
 
@@ -224,7 +267,33 @@
 
 	// Check if any filters are active
 	$: hasActiveFilters = $columnFilters.length > 0
+
+	// DND Kit sensors for drag and drop
+	const sensors = useSensors(useSensor(PointerSensor))
+
+	// Handle column reordering
+	function handleDragEnd(event: DragEndEvent) {
+		const { active, over } = event
+
+		if (over && active.id !== over.id) {
+			const oldIndex = $columnOrder.indexOf(active.id as string)
+			const newIndex = $columnOrder.indexOf(over.id as string)
+
+			// Reorder the column order array
+			const newColumnOrder = [...$columnOrder]
+			const [movedColumn] = newColumnOrder.splice(oldIndex, 1)
+			newColumnOrder.splice(newIndex, 0, movedColumn)
+
+			columnOrder.set(newColumnOrder)
+		}
+	}
+
+	// Initialize column order if empty
+	$: if ($columnOrder.length === 0 && columns.length > 0) {
+		columnOrder.set(columns.map((col) => col.accessorKey || col.id) as string[])
+	}
 </script>
+
 
 <div class="space-y-4">
 	<!-- Filters and Column Picker -->
@@ -384,56 +453,64 @@
 			<p>No recent activity found for this time period.</p>
 		</div>
 	{:else}
-		<div class="overflow-x-auto bg-white shadow rounded-lg">
-			<table class="min-w-full divide-y divide-gray-200">
-				<thead class="bg-gray-50">
-					{#each $table.getHeaderGroups() as headerGroup}
-						<tr>
-							{#each headerGroup.headers as header}
-								<th
-									scope="col"
-									class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative"
-									style="width: {header.getSize()}px"
-								>
-									{#if !header.isPlaceholder}
-										<div class="flex items-center gap-1">
-											<button
-												class="flex items-center gap-1 hover:text-gray-700 {header.column.getCanSort()
-													? 'cursor-pointer select-none'
-													: ''}"
-												on:click={header.column.getToggleSortingHandler()}
+		<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+			<div class="overflow-x-auto bg-white shadow rounded-lg">
+				<table class="min-w-full divide-y divide-gray-200">
+					<thead class="bg-gray-50">
+						{#each $table.getHeaderGroups() as headerGroup}
+							<tr>
+								<SortableContext items={$columnOrder} strategy={horizontalListSortingStrategy}>
+									{#each headerGroup.headers as header}
+										{#each [useSortable({ id: header.column.id })] as sortable}
+											<th
+												use:sortable.setNodeRef
+												scope="col"
+												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative"
+												style="width: {header.getSize()}px; transform: {CSS.Transform.toString(sortable.transform)}; transition: {sortable.transition}; opacity: {sortable.isDragging ? 0.5 : 1}; cursor: {sortable.isDragging ? 'grabbing' : 'grab'}"
+												{...sortable.attributes}
+												{...sortable.listeners}
 											>
-												<svelte:component
-													this={flexRender(header.column.columnDef.header, header.getContext())}
-												/>
-												{#if header.column.getCanSort()}
-													<span class="text-gray-400">
-														{{
-															asc: '↑',
-															desc: '↓'
-														}[header.column.getIsSorted()] ?? '↕'}
-													</span>
+												{#if !header.isPlaceholder}
+													<div class="flex items-center gap-1">
+														<button
+															class="flex items-center gap-1 hover:text-gray-700 {header.column.getCanSort()
+																? 'cursor-pointer select-none'
+																: ''}"
+															on:click={header.column.getToggleSortingHandler()}
+														>
+															<svelte:component
+																this={flexRender(header.column.columnDef.header, header.getContext())}
+															/>
+															{#if header.column.getCanSort()}
+																<span class="text-gray-400">
+																	{{
+																		asc: '↑',
+																		desc: '↓'
+																	}[header.column.getIsSorted()] ?? '↕'}
+																</span>
+															{/if}
+														</button>
+													</div>
+													<!-- Resize Handle -->
+													{#if header.column.getCanResize()}
+														<!-- svelte-ignore a11y-no-static-element-interactions -->
+														<div
+															on:mousedown={header.getResizeHandler()}
+															on:touchstart={header.getResizeHandler()}
+															class="absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none bg-transparent hover:bg-indigo-500 {header.column.getIsResizing()
+																? 'bg-indigo-500 opacity-100'
+																: 'opacity-0 hover:opacity-100'}"
+															style="user-select: none; touch-action: none;"
+														/>
+													{/if}
 												{/if}
-											</button>
-										</div>
-										<!-- Resize Handle -->
-										{#if header.column.getCanResize()}
-											<!-- svelte-ignore a11y-no-static-element-interactions -->
-											<div
-												on:mousedown={header.getResizeHandler()}
-												on:touchstart={header.getResizeHandler()}
-												class="absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none bg-transparent hover:bg-indigo-500 {header.column.getIsResizing()
-													? 'bg-indigo-500 opacity-100'
-													: 'opacity-0 hover:opacity-100'}"
-												style="user-select: none; touch-action: none;"
-											/>
-										{/if}
-									{/if}
-								</th>
-							{/each}
-						</tr>
-					{/each}
-				</thead>
+											</th>
+										{/each}
+									{/each}
+								</SortableContext>
+							</tr>
+						{/each}
+					</thead>
 				<tbody class="bg-white divide-y divide-gray-200">
 					{#each $table.getRowModel().rows as row}
 						<tr class="hover:bg-gray-50">
@@ -488,6 +565,7 @@
 				</tbody>
 			</table>
 		</div>
+	</DndContext>
 
 		<!-- Pagination -->
 		<div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 rounded-b-lg">
