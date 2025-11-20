@@ -126,6 +126,8 @@ defmodule EhsEnforcement.MixProject do
       # Ash Authentication
       {:ash_authentication, "~> 4.12"},
       {:ash_authentication_phoenix, "~> 2.12"},
+      # JWT token verification for Electric SQL
+      {:joken, "~> 2.6"},
       # SAT solver for Ash policies - PicoSAT for optimal performance
       {:picosat_elixir, "~> 0.2"},
       # Backup pure Elixir SAT solver (can be removed if PicoSAT works)
