@@ -6,11 +6,13 @@
 		getCoreRowModel,
 		getPaginationRowModel,
 		getSortedRowModel,
+		getFilteredRowModel,
 		flexRender,
 		type ColumnDef,
 		type SortingState,
 		type VisibilityState,
-		type ColumnSizingState
+		type ColumnSizingState,
+		type ColumnFiltersState
 	} from '@tanstack/svelte-table'
 
 	export let data: any[] = []
@@ -18,6 +20,7 @@
 	// LocalStorage keys
 	const VISIBILITY_STORAGE_KEY = 'dashboard_column_visibility'
 	const SIZING_STORAGE_KEY = 'dashboard_column_sizing'
+	const FILTERS_STORAGE_KEY = 'dashboard_column_filters'
 
 	// Column visibility state - load from localStorage
 	function loadColumnVisibility(): VisibilityState {
@@ -59,14 +62,36 @@
 		}
 	}
 
+	// Column filters state - load from localStorage
+	function loadColumnFilters(): ColumnFiltersState {
+		if (!browser) return []
+		try {
+			const saved = localStorage.getItem(FILTERS_STORAGE_KEY)
+			return saved ? JSON.parse(saved) : []
+		} catch {
+			return []
+		}
+	}
+
+	function saveColumnFilters(state: ColumnFiltersState) {
+		if (!browser) return
+		try {
+			localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(state))
+		} catch (e) {
+			console.error('Failed to save column filters:', e)
+		}
+	}
+
 	let sorting = writable<SortingState>([])
 	let columnVisibility = writable<VisibilityState>(loadColumnVisibility())
 	let columnSizing = writable<ColumnSizingState>(loadColumnSizing())
+	let columnFilters = writable<ColumnFiltersState>(loadColumnFilters())
 
-	// Save to localStorage when visibility or sizing changes
+	// Save to localStorage when visibility, sizing, or filters change
 	$: if (browser) {
 		saveColumnVisibility($columnVisibility)
 		saveColumnSizing($columnSizing)
+		saveColumnFilters($columnFilters)
 	}
 
 	// Column picker visibility
@@ -133,7 +158,8 @@
 		state: {
 			sorting: $sorting,
 			columnVisibility: $columnVisibility,
-			columnSizing: $columnSizing
+			columnSizing: $columnSizing,
+			columnFilters: $columnFilters
 		},
 		onSortingChange: (updater) => {
 			if (updater instanceof Function) {
@@ -156,8 +182,16 @@
 				columnSizing.set(updater)
 			}
 		},
+		onColumnFiltersChange: (updater) => {
+			if (updater instanceof Function) {
+				columnFilters.update(updater)
+			} else {
+				columnFilters.set(updater)
+			}
+		},
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
+		getFilteredRowModel: getFilteredRowModel(),
 		getPaginationRowModel: getPaginationRowModel()
 	})
 
@@ -167,7 +201,8 @@
 		state: {
 			sorting: $sorting,
 			columnVisibility: $columnVisibility,
-			columnSizing: $columnSizing
+			columnSizing: $columnSizing,
+			columnFilters: $columnFilters
 		}
 	}))
 
@@ -178,11 +213,102 @@
 			column.toggleVisibility(show)
 		})
 	}
+
+	// Helper to get unique values for Type filter
+	$: uniqueTypes = Array.from(new Set(data.map((row) => row.type).filter(Boolean))).sort()
+
+	// Clear all filters
+	function clearAllFilters() {
+		columnFilters.set([])
+	}
+
+	// Check if any filters are active
+	$: hasActiveFilters = $columnFilters.length > 0
 </script>
 
 <div class="space-y-4">
-	<!-- Column Visibility Picker -->
-	<div class="flex justify-end">
+	<!-- Filters and Column Picker -->
+	<div class="flex items-end justify-between gap-4">
+		<!-- Column Filters -->
+		<div class="flex-1">
+			{#if hasActiveFilters}
+				<div class="mb-1 flex justify-end">
+					<button
+						on:click={clearAllFilters}
+						class="text-xs text-indigo-600 hover:text-indigo-900"
+					>
+						Clear All Filters
+					</button>
+				</div>
+			{/if}
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+				<!-- Type Filter -->
+				<div>
+					<label for="type-filter" class="block text-xs font-medium text-gray-700 mb-1">
+						Type
+					</label>
+					<select
+						id="type-filter"
+						value={$table.getColumn('type')?.getFilterValue() ?? ''}
+						on:change={(e) => $table.getColumn('type')?.setFilterValue(e.currentTarget.value || undefined)}
+						class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+					>
+						<option value="">All Types</option>
+						{#each uniqueTypes as type}
+							<option value={type}>{type}</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Organization Filter -->
+				<div>
+					<label for="org-filter" class="block text-xs font-medium text-gray-700 mb-1">
+						Organization
+					</label>
+					<input
+						id="org-filter"
+						type="text"
+						value={$table.getColumn('organization')?.getFilterValue() ?? ''}
+						on:input={(e) => $table.getColumn('organization')?.setFilterValue(e.currentTarget.value || undefined)}
+						placeholder="Search organizations..."
+						class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+					/>
+				</div>
+
+				<!-- Fine Amount Filter -->
+				<div>
+					<label for="fine-filter" class="block text-xs font-medium text-gray-700 mb-1">
+						Fine Amount
+					</label>
+					<input
+						id="fine-filter"
+						type="text"
+						value={$table.getColumn('fine_amount')?.getFilterValue() ?? ''}
+						on:input={(e) => $table.getColumn('fine_amount')?.setFilterValue(e.currentTarget.value || undefined)}
+						placeholder="Search fines..."
+						class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+					/>
+				</div>
+
+				<!-- Description Filter -->
+				<div>
+					<label for="desc-filter" class="block text-xs font-medium text-gray-700 mb-1">
+						Description
+					</label>
+					<input
+						id="desc-filter"
+						type="text"
+						value={$table.getColumn('description')?.getFilterValue() ?? ''}
+						on:input={(e) => $table.getColumn('description')?.setFilterValue(e.currentTarget.value || undefined)}
+						placeholder="Search descriptions..."
+						class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+					/>
+				</div>
+			</div>
+		</div>
+
+		<!-- Column Visibility Picker -->
+		<div class="flex-shrink-0">
 		<div class="relative">
 			<button
 				on:click={() => (showColumnPicker = !showColumnPicker)}
@@ -248,6 +374,7 @@
 					</div>
 				</div>
 			{/if}
+		</div>
 		</div>
 	</div>
 

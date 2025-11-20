@@ -3,19 +3,14 @@
 	import { useDashboardStats } from '$lib/query/dashboard'
 	import RecentActivityTable from '$lib/components/RecentActivityTable.svelte'
 
-	// Selected time period and filters
+	// Selected time period
 	let selectedPeriod: 'week' | 'month' | 'year' = 'month'
-	let selectedActivityType: 'all' | 'cases' | 'notices' = 'all'
 
 	// Fetch dashboard stats based on selected period
 	$: dashboardStats = browser ? useDashboardStats(selectedPeriod) : null
 
-	// Filter recent activity
-	$: recentActivity =
-		$dashboardStats?.data?.recent_activity?.filter((item) => {
-			if (selectedActivityType === 'all') return true
-			return selectedActivityType === 'cases' ? item.is_case : !item.is_case
-		}) || []
+	// Recent activity data (filtering now handled by TanStack Table)
+	$: recentActivity = $dashboardStats?.data?.recent_activity || []
 </script>
 
 <svelte:head>
@@ -606,39 +601,8 @@
 
 			<!-- Recent Activity Section -->
 			<div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
-				<div class="mb-6 flex items-center justify-between">
-					<div>
-						<h3 class="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
-						<p class="mt-1 max-w-2xl text-sm text-gray-500">
-							Latest enforcement cases and notices with customizable columns
-						</p>
-					</div>
-					<div class="flex space-x-2">
-						<button
-							on:click={() => (selectedActivityType = 'all')}
-							class="px-3 py-1 text-sm rounded-md {selectedActivityType === 'all'
-								? 'bg-indigo-100 text-indigo-700'
-								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
-						>
-							All Types
-						</button>
-						<button
-							on:click={() => (selectedActivityType = 'cases')}
-							class="px-3 py-1 text-sm rounded-md {selectedActivityType === 'cases'
-								? 'bg-green-100 text-green-700'
-								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
-						>
-							Cases
-						</button>
-						<button
-							on:click={() => (selectedActivityType = 'notices')}
-							class="px-3 py-1 text-sm rounded-md {selectedActivityType === 'notices'
-								? 'bg-blue-100 text-blue-700'
-								: 'bg-gray-100 text-gray-700 hover:bg-gray-200'}"
-						>
-							Notices
-						</button>
-					</div>
+				<div class="mb-4">
+					<h3 class="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
 				</div>
 
 				<RecentActivityTable data={recentActivity} />
