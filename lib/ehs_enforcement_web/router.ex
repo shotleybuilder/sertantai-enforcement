@@ -65,8 +65,8 @@ defmodule EhsEnforcementWeb.Router do
         AshAuthentication.Phoenix.LiveSession,
         {AshCookieConsent.LiveView.Hook, :load_consent}
       ] do
-      live "/", DashboardLive, :index
-      live "/dashboard", DashboardLive, :index
+      # Landing page (/) and /dashboard are now served by Svelte frontend
+      # API endpoint: /api/public/dashboard/stats (DashboardController)
 
       # Read-only Case Management Routes
       live "/cases", CaseLive.Index, :index
