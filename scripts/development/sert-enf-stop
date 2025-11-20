@@ -20,10 +20,19 @@ PROJECT_ROOT="$(cd "$(dirname "$SCRIPT_PATH")/../.." && pwd)"
 
 echo "🛑 Stopping sertantai-enforcement development servers..."
 
-# Kill any Phoenix processes
-if pgrep -f "mix phx.server" > /dev/null; then
+# Kill sertantai-auth service
+if pgrep -f "mix phx.server.*sertantai_auth" > /dev/null; then
+    echo "🔐 Killing sertantai-auth service..."
+    pkill -f "mix phx.server.*sertantai_auth" || true
+    echo "✅ sertantai-auth service killed"
+else
+    echo "ℹ️  No sertantai-auth service found"
+fi
+
+# Kill any EHS Enforcement Phoenix processes
+if pgrep -f "mix phx.server.*ehs_enforcement" > /dev/null; then
     echo "🔥 Killing Phoenix backend processes..."
-    pkill -f "mix phx.server" || true
+    pkill -f "mix phx.server.*ehs_enforcement" || true
     echo "✅ Phoenix processes killed"
 else
     echo "ℹ️  No Phoenix backend processes found"

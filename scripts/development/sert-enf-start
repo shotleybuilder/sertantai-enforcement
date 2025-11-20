@@ -35,7 +35,13 @@ if [ ! -f "$PROJECT_ROOT/mix.exs" ]; then
 fi
 
 # Check if servers are already running
-if pgrep -f "mix phx.server" > /dev/null; then
+if pgrep -f "mix phx.server.*sertantai_auth" > /dev/null; then
+    echo "⚠️  sertantai-auth service is already running!"
+    echo "   Stop it first with: sert-enf-stop"
+    exit 1
+fi
+
+if pgrep -f "mix phx.server.*ehs_enforcement" > /dev/null; then
     echo "⚠️  Phoenix backend is already running!"
     echo "   Stop it first with: sert-enf-stop"
     exit 1
@@ -72,28 +78,39 @@ fi
 
 echo "📦 Opening terminal windows..."
 
-# Open Phoenix Backend terminal
+# Open sertantai-auth service terminal (port 4000)
+AUTH_DIR="/home/jason/Desktop/sertantai_auth"
+if [ -d "$AUTH_DIR" ]; then
+    gnome-terminal --title="sertantai-auth-service" -- bash -c "cd \"$AUTH_DIR\" && echo '🔐 Starting sertantai-auth service on port 4000...' && echo \"📁 Working directory: \$(pwd)\" && echo '' && mix phx.server" &
+    sleep 0.5
+else
+    echo "⚠️  Warning: sertantai-auth not found at $AUTH_DIR"
+    echo "   JWT authentication will not work without it!"
+fi
+
+# Open Phoenix Backend terminal (port 4002)
 gnome-terminal --title="sertantai-enforcement-backend" -- bash -c "cd \"$PROJECT_ROOT\" && echo '🔥 Starting Phoenix backend on port 4002...' && echo \"📁 Working directory: \$(pwd)\" && echo '' && mix phx.server" &
 
-# Wait a moment for first terminal to open
+# Wait a moment for backend to start
 sleep 0.5
 
-# Open SvelteKit Frontend terminal
+# Open SvelteKit Frontend terminal (port 5173)
 gnome-terminal --title="sertantai-enforcement-frontend" -- bash -c "cd \"$PROJECT_ROOT/frontend\" && echo '⚡ Starting SvelteKit frontend on port 5173...' && echo \"📁 Working directory: \$(pwd)\" && echo '' && npm run dev" &
 
 # Wait a moment
 sleep 0.5
 
 # Open Console terminal
-gnome-terminal --title="sertantai-enforcement-console" -- bash -c "cd \"$PROJECT_ROOT\" && echo '💻 sertantai-enforcement Development Console' && echo \"📁 Working directory: \$(pwd)\" && echo '' && echo '📊 Available endpoints:' && echo '   Backend:  http://localhost:4002' && echo '   Frontend: http://localhost:5173' && echo '   Electric: http://localhost:3001' && echo '' && echo '🎮 Quick commands:' && echo '   Stop servers:     sert-enf-stop' && echo '   Restart:          sert-enf-stop && sert-enf-start' && echo '   Docker logs:      docker compose -f docker-compose.dev.yml logs -f' && echo '   Phoenix console:  iex -S mix phx.server' && echo '' && read -p 'Press Enter to close...'" &
+gnome-terminal --title="sertantai-enforcement-console" -- bash -c "cd \"$PROJECT_ROOT\" && echo '💻 sertantai-enforcement Development Console' && echo \"📁 Working directory: \$(pwd)\" && echo '' && echo '📊 Available endpoints:' && echo '   Auth:     http://localhost:4000' && echo '   Backend:  http://localhost:4002' && echo '   Frontend: http://localhost:5173' && echo '   Electric: http://localhost:3001' && echo '' && echo '🎮 Quick commands:' && echo '   Stop servers:     sert-enf-stop' && echo '   Restart:          sert-enf-stop && sert-enf-start' && echo '   Docker logs:      docker compose -f docker-compose.dev.yml logs -f' && echo '   Phoenix console:  iex -S mix phx.server' && echo '' && read -p 'Press Enter to close...'" &
 
 echo ""
-echo "✅ Development servers starting in new terminal window!"
+echo "✅ Development servers starting in new terminal windows!"
 echo ""
 echo "📊 URLs:"
-echo "   Backend:  http://localhost:4002"
-echo "   Frontend: http://localhost:5173"
-echo "   Electric: http://localhost:3001"
+echo "   Auth:     http://localhost:4000  (sertantai-auth)"
+echo "   Backend:  http://localhost:4002  (ehs-enforcement)"
+echo "   Frontend: http://localhost:5173  (svelte)"
+echo "   Electric: http://localhost:3001  (sync)"
 echo ""
 echo "To stop: sert-enf-stop"
 echo ""

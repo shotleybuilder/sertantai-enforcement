@@ -10,6 +10,7 @@ This guide covers the day-to-day development workflow for the EHS Enforcement pr
 - [Database Migrations](#database-migrations)
 - [Testing Your Changes](#testing-your-changes)
 - [Git Workflow](#git-workflow)
+- [Dashboard Metrics Management](#dashboard-metrics-management)
 - [Code Review Process](#code-review-process)
 - [Debugging Tips](#debugging-tips)
 
@@ -507,6 +508,116 @@ socket = assign(socket, :large_list, temporary_assigns: [large_list: []])
 # Debounce events
 <form phx-change="validate" phx-debounce="300">
 ```
+
+## Dashboard Metrics Management
+
+### Understanding Dashboard Metrics
+
+The dashboard displays pre-calculated statistics stored in the `metrics` table. This avoids expensive real-time calculations on page load.
+
+**Metrics are calculated for:**
+- 3 time periods: week (7 days), month (30 days), year (365 days)
+- All agencies combined (Tier 1)
+- Per-agency breakdown (Tier 2)
+
+**Key Statistics:**
+- Recent cases/notices count (within time period)
+- Total cases/notices count (all time)
+- Total fines and costs
+- Active agencies count
+- Recent activity (top 100 items)
+
+### When to Refresh Metrics
+
+Metrics should be refreshed:
+- **After scraping operations** - New enforcement data has been added
+- **After data imports** - When importing from Airtable or other sources
+- **When dashboard shows outdated data** - Statistics don't match recent changes
+- **Automatically** - Weekly via cron job (Sundays at 4 AM)
+
+### Manual Metrics Refresh
+
+```bash
+# From command line (IEx)
+iex -S mix phx.server
+
+# In IEx console
+EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:admin)
+
+# Or using project_eval via Tidewave MCP
+EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:admin)
+```
+
+**What happens during refresh:**
+1. Clears all existing metrics
+2. Generates Tier 1 metrics (3 rows - all agencies combined)
+3. Generates Tier 2 metrics (N × 3 rows - per agency)
+4. Broadcasts refresh event via PubSub
+
+**Expected output:**
+- With 4 agencies: 15 metric rows (3 Tier 1 + 12 Tier 2)
+- Success message: `{:ok, [list of metrics]}`
+
+### Verify Metrics
+
+```bash
+# Check metrics table
+psql -d ehs_enforcement_dev -U postgres -c "SELECT COUNT(*) FROM metrics;"
+
+# View metrics by period
+psql -d ehs_enforcement_dev -U postgres -c "
+  SELECT period, agency_id, recent_cases_count, recent_notices_count, calculated_at
+  FROM metrics
+  ORDER BY period, agency_id
+  LIMIT 10;"
+
+# Test API endpoint
+curl "http://localhost:4002/api/public/dashboard/stats?period=month" | jq '.stats'
+```
+
+### Troubleshooting Empty Dashboard
+
+If dashboard shows zero values:
+
+1. **Check if metrics exist:**
+   ```sql
+   SELECT COUNT(*) FROM metrics;
+   ```
+
+2. **Check data in source tables:**
+   ```sql
+   SELECT COUNT(*) FROM cases;
+   SELECT COUNT(*) FROM notices;
+   SELECT MIN(offence_action_date), MAX(offence_action_date) FROM notices;
+   ```
+
+3. **Refresh metrics:**
+   ```elixir
+   EhsEnforcement.Enforcement.Metrics.refresh_all_metrics(:admin)
+   ```
+
+4. **Verify time periods:**
+   - Recent data must be within the time window (7, 30, or 365 days)
+   - Check `offence_action_date` is recent enough for selected period
+
+5. **Test API response:**
+   ```bash
+   curl "http://localhost:4002/api/public/dashboard/stats?period=year" | jq '.'
+   ```
+
+### Metrics Schema
+
+**File:** `lib/ehs_enforcement/enforcement/resources/metrics.ex`
+
+**Key Fields:**
+- `period` - :week | :month | :year
+- `agency_id` - NULL for all agencies, UUID for specific agency
+- `recent_cases_count` - Cases within time period
+- `recent_notices_count` - Notices within time period
+- `total_cases_count` - All-time case count
+- `total_notices_count` - All-time notice count
+- `recent_activity` - JSONB array of top 100 recent items
+- `calculated_at` - Timestamp of last refresh
 
 ## Common Development Tasks
 
