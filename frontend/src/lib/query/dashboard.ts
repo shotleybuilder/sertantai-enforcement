@@ -50,13 +50,19 @@ async function fetchDashboardStats(
 		params.append('agency_id', agencyId);
 	}
 
-	const response = await fetch(`${PUBLIC_API_URL}/api/public/dashboard/stats?${params}`);
+	const url = `${PUBLIC_API_URL}/api/public/dashboard/stats?${params}`;
+	console.log('[Dashboard] Fetching:', url);
+
+	const response = await fetch(url);
 
 	if (!response.ok) {
+		console.error('[Dashboard] Fetch failed:', response.statusText);
 		throw new Error(`Failed to fetch dashboard stats: ${response.statusText}`);
 	}
 
-	return response.json();
+	const data = await response.json();
+	console.log('[Dashboard] Data received:', data);
+	return data;
 }
 
 /**
