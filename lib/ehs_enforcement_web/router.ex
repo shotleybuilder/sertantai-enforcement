@@ -34,6 +34,11 @@ defmodule EhsEnforcementWeb.Router do
     plug :load_from_bearer
   end
 
+  pipeline :api_jwt_authenticated do
+    plug :accepts, ["json"]
+    plug EhsEnforcementWeb.Plugs.JwtAuth
+  end
+
   # Health check pipeline - no authentication required
   pipeline :health do
     plug :accepts, ["json"]
@@ -193,6 +198,13 @@ defmodule EhsEnforcementWeb.Router do
   scope "/api/scraping", EhsEnforcementWeb do
     # No pipeline - SSE controller handles its own response headers
     get "/subscribe/:session_id", ScrapingSSEController, :subscribe
+  end
+
+  # Electric SQL Gatekeeper - JWT authenticated
+  scope "/api/gatekeeper", EhsEnforcementWeb do
+    pipe_through :api_jwt_authenticated
+
+    post "/authorize_shape", GatekeeperController, :authorize_shape
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
