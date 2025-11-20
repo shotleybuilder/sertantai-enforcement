@@ -26,6 +26,7 @@
 		"@tailwindcss/postcss": "^4.1.17",
 		"@tailwindcss/typography": "^0.5.19",
 		"@testing-library/jest-dom": "^6.9.1",
+		"@testing-library/svelte": "^5.2.9",
 		"@typescript-eslint/eslint-plugin": "^8.46.4",
 		"@typescript-eslint/parser": "^8.46.4",
 		"@vitest/ui": "^4.0.9",
