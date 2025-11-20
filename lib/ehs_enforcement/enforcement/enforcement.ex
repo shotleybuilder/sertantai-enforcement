@@ -110,6 +110,33 @@ defmodule EhsEnforcement.Enforcement do
       define(:reviews_by_status, action: :by_status, args: [:status])
       define(:reviews_by_user, action: :reviewed_by_user, args: [:user_id])
     end
+
+    resource EhsEnforcement.Enforcement.Enrichment do
+      define(:list_enrichments, action: :read)
+      define(:get_enrichment, action: :read, get_by: [:id])
+      define(:create_enrichment, action: :create)
+      define(:update_enrichment, action: :update)
+      define(:destroy_enrichment, action: :destroy)
+      define(:get_enrichment_by_case, action: :by_case, args: [:case_id], get?: true)
+      define(:get_enrichment_by_notice, action: :by_notice, args: [:notice_id], get?: true)
+      define(:list_enrichments_by_model, action: :by_model_version, args: [:model_version])
+      define(:list_recent_enrichments, action: :recent)
+      define(:list_high_confidence_enrichments, action: :high_confidence)
+    end
+
+    resource EhsEnforcement.Enforcement.EnrichmentValidation do
+      define(:list_validations, action: :read)
+      define(:get_validation, action: :read, get_by: [:id])
+      define(:create_validation, action: :create)
+      define(:update_validation, action: :update)
+      define(:destroy_validation, action: :destroy)
+      define(:list_validations_by_enrichment, action: :by_enrichment, args: [:enrichment_id])
+      define(:list_validations_by_user, action: :by_user, args: [:user_id])
+      define(:list_validations_by_section, action: :by_section, args: [:section])
+      define(:list_high_quality_validations, action: :high_quality)
+      define(:list_validations_needing_attention, action: :needs_attention)
+      define(:list_recent_validations, action: :recent)
+    end
   end
 
   forms do
