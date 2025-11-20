@@ -9,18 +9,21 @@
 		flexRender,
 		type ColumnDef,
 		type SortingState,
-		type VisibilityState
+		type VisibilityState,
+		type ColumnSizingState
 	} from '@tanstack/svelte-table'
 
 	export let data: any[] = []
 
-	// Column visibility state - load from localStorage
-	const STORAGE_KEY = 'dashboard_column_visibility'
+	// LocalStorage keys
+	const VISIBILITY_STORAGE_KEY = 'dashboard_column_visibility'
+	const SIZING_STORAGE_KEY = 'dashboard_column_sizing'
 
+	// Column visibility state - load from localStorage
 	function loadColumnVisibility(): VisibilityState {
 		if (!browser) return {}
 		try {
-			const saved = localStorage.getItem(STORAGE_KEY)
+			const saved = localStorage.getItem(VISIBILITY_STORAGE_KEY)
 			return saved ? JSON.parse(saved) : {}
 		} catch {
 			return {}
@@ -30,18 +33,40 @@
 	function saveColumnVisibility(state: VisibilityState) {
 		if (!browser) return
 		try {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+			localStorage.setItem(VISIBILITY_STORAGE_KEY, JSON.stringify(state))
 		} catch (e) {
 			console.error('Failed to save column visibility:', e)
 		}
 	}
 
+	// Column sizing state - load from localStorage
+	function loadColumnSizing(): ColumnSizingState {
+		if (!browser) return {}
+		try {
+			const saved = localStorage.getItem(SIZING_STORAGE_KEY)
+			return saved ? JSON.parse(saved) : {}
+		} catch {
+			return {}
+		}
+	}
+
+	function saveColumnSizing(state: ColumnSizingState) {
+		if (!browser) return
+		try {
+			localStorage.setItem(SIZING_STORAGE_KEY, JSON.stringify(state))
+		} catch (e) {
+			console.error('Failed to save column sizing:', e)
+		}
+	}
+
 	let sorting = writable<SortingState>([])
 	let columnVisibility = writable<VisibilityState>(loadColumnVisibility())
+	let columnSizing = writable<ColumnSizingState>(loadColumnSizing())
 
-	// Save to localStorage when visibility changes
+	// Save to localStorage when visibility or sizing changes
 	$: if (browser) {
 		saveColumnVisibility($columnVisibility)
+		saveColumnSizing($columnSizing)
 	}
 
 	// Column picker visibility
@@ -104,9 +129,11 @@
 	const options = writable({
 		data,
 		columns,
+		columnResizeMode: 'onChange' as const,
 		state: {
 			sorting: $sorting,
-			columnVisibility: $columnVisibility
+			columnVisibility: $columnVisibility,
+			columnSizing: $columnSizing
 		},
 		onSortingChange: (updater) => {
 			if (updater instanceof Function) {
@@ -122,6 +149,13 @@
 				columnVisibility.set(updater)
 			}
 		},
+		onColumnSizingChange: (updater) => {
+			if (updater instanceof Function) {
+				columnSizing.update(updater)
+			} else {
+				columnSizing.set(updater)
+			}
+		},
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getPaginationRowModel: getPaginationRowModel()
@@ -132,7 +166,8 @@
 		data,
 		state: {
 			sorting: $sorting,
-			columnVisibility: $columnVisibility
+			columnVisibility: $columnVisibility,
+			columnSizing: $columnSizing
 		}
 	}))
 
@@ -230,28 +265,42 @@
 							{#each headerGroup.headers as header}
 								<th
 									scope="col"
-									class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+									class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative"
 									style="width: {header.getSize()}px"
 								>
 									{#if !header.isPlaceholder}
-										<button
-											class="flex items-center gap-1 hover:text-gray-700 {header.column.getCanSort()
-												? 'cursor-pointer select-none'
-												: ''}"
-											on:click={header.column.getToggleSortingHandler()}
-										>
-											<svelte:component
-												this={flexRender(header.column.columnDef.header, header.getContext())}
+										<div class="flex items-center gap-1">
+											<button
+												class="flex items-center gap-1 hover:text-gray-700 {header.column.getCanSort()
+													? 'cursor-pointer select-none'
+													: ''}"
+												on:click={header.column.getToggleSortingHandler()}
+											>
+												<svelte:component
+													this={flexRender(header.column.columnDef.header, header.getContext())}
+												/>
+												{#if header.column.getCanSort()}
+													<span class="text-gray-400">
+														{{
+															asc: '↑',
+															desc: '↓'
+														}[header.column.getIsSorted()] ?? '↕'}
+													</span>
+												{/if}
+											</button>
+										</div>
+										<!-- Resize Handle -->
+										{#if header.column.getCanResize()}
+											<!-- svelte-ignore a11y-no-static-element-interactions -->
+											<div
+												on:mousedown={header.getResizeHandler()}
+												on:touchstart={header.getResizeHandler()}
+												class="absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none bg-transparent hover:bg-indigo-500 {header.column.getIsResizing()
+													? 'bg-indigo-500 opacity-100'
+													: 'opacity-0 hover:opacity-100'}"
+												style="user-select: none; touch-action: none;"
 											/>
-											{#if header.column.getCanSort()}
-												<span class="text-gray-400">
-													{{
-														asc: '↑',
-														desc: '↓'
-													}[header.column.getIsSorted()] ?? '↕'}
-												</span>
-											{/if}
-										</button>
+										{/if}
 									{/if}
 								</th>
 							{/each}
