@@ -15,16 +15,6 @@
 		type ColumnFiltersState,
 		type ColumnOrderState
 	} from '@tanstack/svelte-table'
-	import {
-		DndContext,
-		closestCenter,
-		PointerSensor,
-		useSensor,
-		useSensors,
-		type DragEndEvent
-	} from '@dnd-kit/core'
-	import { SortableContext, useSortable, horizontalListSortingStrategy } from '@dnd-kit/sortable'
-	import { CSS } from '@dnd-kit/utilities'
 
 	export let data: any[] = []
 
@@ -268,17 +258,27 @@
 	// Check if any filters are active
 	$: hasActiveFilters = $columnFilters.length > 0
 
-	// DND Kit sensors for drag and drop
-	const sensors = useSensors(useSensor(PointerSensor))
+	// Native HTML5 drag and drop for column reordering
+	let draggedColumnId: string | null = null
 
-	// Handle column reordering
-	function handleDragEnd(event: DragEndEvent) {
-		const { active, over } = event
+	function handleDragStart(columnId: string) {
+		draggedColumnId = columnId
+	}
 
-		if (over && active.id !== over.id) {
-			const oldIndex = $columnOrder.indexOf(active.id as string)
-			const newIndex = $columnOrder.indexOf(over.id as string)
+	function handleDragOver(event: DragEvent) {
+		event.preventDefault() // Allow drop
+	}
 
+	function handleDrop(targetColumnId: string) {
+		if (!draggedColumnId || draggedColumnId === targetColumnId) {
+			draggedColumnId = null
+			return
+		}
+
+		const oldIndex = $columnOrder.indexOf(draggedColumnId)
+		const newIndex = $columnOrder.indexOf(targetColumnId)
+
+		if (oldIndex !== -1 && newIndex !== -1) {
 			// Reorder the column order array
 			const newColumnOrder = [...$columnOrder]
 			const [movedColumn] = newColumnOrder.splice(oldIndex, 1)
@@ -286,6 +286,8 @@
 
 			columnOrder.set(newColumnOrder)
 		}
+
+		draggedColumnId = null
 	}
 
 	// Initialize column order if empty
@@ -453,64 +455,61 @@
 			<p>No recent activity found for this time period.</p>
 		</div>
 	{:else}
-		<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-			<div class="overflow-x-auto bg-white shadow rounded-lg">
-				<table class="min-w-full divide-y divide-gray-200">
-					<thead class="bg-gray-50">
-						{#each $table.getHeaderGroups() as headerGroup}
-							<tr>
-								<SortableContext items={$columnOrder} strategy={horizontalListSortingStrategy}>
-									{#each headerGroup.headers as header}
-										{#each [useSortable({ id: header.column.id })] as sortable}
-											<th
-												use:sortable.setNodeRef
-												scope="col"
-												class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative"
-												style="width: {header.getSize()}px; transform: {CSS.Transform.toString(sortable.transform)}; transition: {sortable.transition}; opacity: {sortable.isDragging ? 0.5 : 1}; cursor: {sortable.isDragging ? 'grabbing' : 'grab'}"
-												{...sortable.attributes}
-												{...sortable.listeners}
+		<div class="overflow-x-auto bg-white shadow rounded-lg">
+			<table class="min-w-full divide-y divide-gray-200">
+				<thead class="bg-gray-50">
+					{#each $table.getHeaderGroups() as headerGroup}
+						<tr>
+							{#each headerGroup.headers as header}
+								<th
+									draggable="true"
+									on:dragstart={() => handleDragStart(header.column.id)}
+									on:dragover={handleDragOver}
+									on:drop|preventDefault={() => handleDrop(header.column.id)}
+									scope="col"
+									class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider relative transition-opacity"
+									class:opacity-50={draggedColumnId === header.column.id}
+									style="width: {header.getSize()}px; cursor: grab;"
+								>
+									{#if !header.isPlaceholder}
+										<div class="flex items-center gap-1">
+											<button
+												class="flex items-center gap-1 hover:text-gray-700 {header.column.getCanSort()
+													? 'cursor-pointer select-none'
+													: ''}"
+												on:click={header.column.getToggleSortingHandler()}
 											>
-												{#if !header.isPlaceholder}
-													<div class="flex items-center gap-1">
-														<button
-															class="flex items-center gap-1 hover:text-gray-700 {header.column.getCanSort()
-																? 'cursor-pointer select-none'
-																: ''}"
-															on:click={header.column.getToggleSortingHandler()}
-														>
-															<svelte:component
-																this={flexRender(header.column.columnDef.header, header.getContext())}
-															/>
-															{#if header.column.getCanSort()}
-																<span class="text-gray-400">
-																	{{
-																		asc: '↑',
-																		desc: '↓'
-																	}[header.column.getIsSorted()] ?? '↕'}
-																</span>
-															{/if}
-														</button>
-													</div>
-													<!-- Resize Handle -->
-													{#if header.column.getCanResize()}
-														<!-- svelte-ignore a11y-no-static-element-interactions -->
-														<div
-															on:mousedown={header.getResizeHandler()}
-															on:touchstart={header.getResizeHandler()}
-															class="absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none bg-transparent hover:bg-indigo-500 {header.column.getIsResizing()
-																? 'bg-indigo-500 opacity-100'
-																: 'opacity-0 hover:opacity-100'}"
-															style="user-select: none; touch-action: none;"
-														/>
-													{/if}
+												<svelte:component
+													this={flexRender(header.column.columnDef.header, header.getContext())}
+												/>
+												{#if header.column.getCanSort()}
+													<span class="text-gray-400">
+														{{
+															asc: '↑',
+															desc: '↓'
+														}[header.column.getIsSorted()] ?? '↕'}
+													</span>
 												{/if}
-											</th>
-										{/each}
-									{/each}
-								</SortableContext>
-							</tr>
-						{/each}
-					</thead>
+											</button>
+										</div>
+										<!-- Resize Handle -->
+										{#if header.column.getCanResize()}
+											<!-- svelte-ignore a11y-no-static-element-interactions -->
+											<div
+												on:mousedown={header.getResizeHandler()}
+												on:touchstart={header.getResizeHandler()}
+												class="absolute top-0 right-0 h-full w-1 cursor-col-resize select-none touch-none bg-transparent hover:bg-indigo-500 {header.column.getIsResizing()
+													? 'bg-indigo-500 opacity-100'
+													: 'opacity-0 hover:opacity-100'}"
+												style="user-select: none; touch-action: none;"
+											/>
+										{/if}
+									{/if}
+								</th>
+							{/each}
+						</tr>
+					{/each}
+				</thead>
 				<tbody class="bg-white divide-y divide-gray-200">
 					{#each $table.getRowModel().rows as row}
 						<tr class="hover:bg-gray-50">
