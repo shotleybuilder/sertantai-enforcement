@@ -476,15 +476,101 @@ const table = createSvelteTable(options)
 
 ## Column Reordering
 
-For drag-and-drop column reordering, use `@dnd-kit/core` (modern, lightweight):
+Use native HTML5 drag and drop API for column reordering (no external dependencies).
 
-```bash
-npm install @dnd-kit/core @dnd-kit/sortable
+**Add column order state:**
+
+```typescript
+import { type ColumnOrderState } from '@tanstack/svelte-table'
+
+const ORDER_STORAGE_KEY = 'your_table_column_order'
+
+function loadColumnOrder(): ColumnOrderState {
+  if (!browser) return []
+  try {
+    const saved = localStorage.getItem(ORDER_STORAGE_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch {
+    return []
+  }
+}
+
+let columnOrder = writable<ColumnOrderState>(loadColumnOrder())
+
+$: if (browser) {
+  localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify($columnOrder))
+}
+
+// Initialize column order if empty
+$: if ($columnOrder.length === 0 && columns.length > 0) {
+  columnOrder.set(columns.map((col) => col.accessorKey || col.id) as string[])
+}
 ```
 
-TanStack Table v8 provides `getHeaderGroups()` and column ordering state. Combine with `@dnd-kit/sortable` for drag-and-drop UI. See DND Kit documentation for Svelte integration patterns.
+**Add to table options:**
 
-**Note:** Avoid react-dnd due to React 18 compatibility issues.
+```typescript
+const options = writable({
+  state: {
+    columnOrder: $columnOrder
+  },
+  onColumnOrderChange: (updater) => {
+    if (updater instanceof Function) {
+      columnOrder.update(updater)
+    } else {
+      columnOrder.set(updater)
+    }
+  }
+})
+```
+
+**Implement drag and drop handlers:**
+
+```typescript
+let draggedColumnId: string | null = null
+
+function handleDragStart(columnId: string) {
+  draggedColumnId = columnId
+}
+
+function handleDragOver(event: DragEvent) {
+  event.preventDefault() // Required to allow drop
+}
+
+function handleDrop(targetColumnId: string) {
+  if (!draggedColumnId || draggedColumnId === targetColumnId) {
+    draggedColumnId = null
+    return
+  }
+
+  const oldIndex = $columnOrder.indexOf(draggedColumnId)
+  const newIndex = $columnOrder.indexOf(targetColumnId)
+
+  if (oldIndex !== -1 && newIndex !== -1) {
+    const newColumnOrder = [...$columnOrder]
+    const [movedColumn] = newColumnOrder.splice(oldIndex, 1)
+    newColumnOrder.splice(newIndex, 0, movedColumn)
+    columnOrder.set(newColumnOrder)
+  }
+
+  draggedColumnId = null
+}
+```
+
+**Make headers draggable:**
+
+```svelte
+<th
+  draggable="true"
+  on:dragstart={() => handleDragStart(header.column.id)}
+  on:dragover={handleDragOver}
+  on:drop|preventDefault={() => handleDrop(header.column.id)}
+  class:opacity-50={draggedColumnId === header.column.id}
+  style="cursor: grab;"
+>
+```
+
+**Note:** Avoid `@dnd-kit` (React-only, uses React hooks incompatible with Svelte). Native HTML5 API is simpler and requires no dependencies.
 
 ## Best Practices
 
