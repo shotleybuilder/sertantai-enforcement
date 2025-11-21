@@ -267,7 +267,7 @@
 			</div>
 
 			<!-- Dashboard Action Cards -->
-			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 mb-8">
+			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6 mb-8">
 				<!-- Enforcement Cases -->
 				<div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-l-blue-400 hover:shadow-lg transition-shadow">
 					<div class="p-5">
@@ -594,6 +594,61 @@
 							>
 								View Reports →
 							</a>
+						</div>
+					</div>
+				</div>
+
+				<!-- Unified Data View -->
+				<div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-l-cyan-400 hover:shadow-lg transition-shadow">
+					<div class="p-5">
+						<div class="flex items-center mb-4">
+							<div class="flex-shrink-0">
+								<svg
+									class="w-8 h-8 text-cyan-600"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+									/>
+								</svg>
+							</div>
+							<div class="ml-3">
+								<h3 class="text-base font-medium text-gray-900">UNIFIED DATA VIEW</h3>
+							</div>
+						</div>
+
+						<div class="space-y-3">
+							<div>
+								<div class="text-3xl font-bold text-gray-900">
+									{stats.total_cases + stats.total_notices}
+								</div>
+								<div class="text-sm text-gray-500">Total Records</div>
+							</div>
+							<div>
+								<div class="text-2xl font-semibold text-green-600">{stats.total_cases}</div>
+								<div class="text-sm text-gray-500">Cases</div>
+							</div>
+							<div>
+								<div class="text-2xl font-semibold text-blue-600">{stats.total_notices}</div>
+								<div class="text-sm text-gray-500">Notices</div>
+							</div>
+						</div>
+
+						<div class="mt-4 space-y-2">
+							<a
+								href="/data"
+								class="block w-full text-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
+							>
+								Browse All Data →
+							</a>
+							<p class="text-xs text-gray-500 text-center">
+								Flexible filtering, sorting & grouping
+							</p>
 						</div>
 					</div>
 				</div>
