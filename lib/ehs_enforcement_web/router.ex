@@ -159,6 +159,14 @@ defmodule EhsEnforcementWeb.Router do
 
     # Public API endpoints
     get "/public/dashboard/stats", DashboardController, :stats
+  end
+
+  # Unified Data API (outside Api namespace for now)
+  scope "/api", EhsEnforcementWeb do
+    pipe_through :api
+
+    # Unified data endpoint - combines Cases and Notices
+    get "/unified-data", UnifiedDataController, :index
 
     # Admin API endpoints
     get "/admin/stats", AdminController, :stats
