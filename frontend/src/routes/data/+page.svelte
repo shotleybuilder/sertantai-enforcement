@@ -29,13 +29,35 @@
 		}).format(amount)
 	}
 
+	// Icon helper for column headers
+	function getSourceIcon(sourceTable: string): string {
+		switch (sourceTable) {
+			case 'cases':
+				return '⚖️' // Scales of justice
+			case 'notices':
+				return '📄' // Document
+			case 'offenders':
+				return '👥' // People
+			case 'legislation':
+				return '📖' // Book
+			default:
+				return '📊' // Generic data icon for common fields
+		}
+	}
+
+	// Helper to create column header with icon
+	function createHeaderWithIcon(label: string, sourceTable: string): string {
+		const icon = getSourceIcon(sourceTable)
+		return `${icon} ${label}`
+	}
+
 	// Complete column definitions for unified table
 	const columns: ColumnDef<UnifiedRecord>[] = [
 		// Record Type - Always visible, grouped first
 		{
 			id: 'record_type',
 			accessorKey: 'record_type',
-			header: 'Type',
+			header: createHeaderWithIcon('Type', 'common'),
 			cell: (info) => info.getValue(),
 			size: 100,
 			enableGrouping: true,
@@ -45,21 +67,21 @@
 		// Common Fields
 		{
 			accessorKey: 'regulator_id',
-			header: 'Regulator ID',
+			header: createHeaderWithIcon('Regulator ID', 'common'),
 			cell: (info) => info.getValue() || '-',
 			size: 150,
 			meta: { sourceTable: 'common', group: 'Core' }
 		},
 		{
 			accessorKey: 'offence_action_date',
-			header: 'Action Date',
+			header: createHeaderWithIcon('Action Date', 'common'),
 			cell: (info) => formatDate(info.getValue() as string),
 			size: 120,
 			meta: { sourceTable: 'common', group: 'Core' }
 		},
 		{
 			accessorKey: 'offence_action_type',
-			header: 'Action Type',
+			header: createHeaderWithIcon('Action Type', 'common'),
 			cell: (info) => info.getValue() || '-',
 			size: 150,
 			enableGrouping: true,
@@ -67,14 +89,14 @@
 		},
 		{
 			accessorKey: 'offence_breaches',
-			header: 'Breaches',
+			header: createHeaderWithIcon('Breaches', 'common'),
 			cell: (info) => info.getValue() || '-',
 			size: 300,
 			meta: { sourceTable: 'common', group: 'Core' }
 		},
 		{
 			accessorKey: 'regulator_function',
-			header: 'Regulator Function',
+			header: createHeaderWithIcon('Regulator Function', 'common'),
 			cell: (info) => info.getValue() || '-',
 			size: 150,
 			enableGrouping: true,
@@ -82,14 +104,14 @@
 		},
 		{
 			accessorKey: 'environmental_impact',
-			header: 'Environmental Impact',
+			header: createHeaderWithIcon('Environmental Impact', 'common'),
 			cell: (info) => info.getValue() || '-',
 			size: 180,
 			meta: { sourceTable: 'common', group: 'Common' }
 		},
 		{
 			accessorKey: 'environmental_receptor',
-			header: 'Environmental Receptor',
+			header: createHeaderWithIcon('Environmental Receptor', 'common'),
 			cell: (info) => info.getValue() || '-',
 			size: 180,
 			meta: { sourceTable: 'common', group: 'Common' }
@@ -97,7 +119,7 @@
 		{
 			id: 'url',
 			accessorKey: 'url',
-			header: 'Link',
+			header: createHeaderWithIcon('Link', 'common'),
 			cell: (info) => (info.getValue() ? '🔗' : '-'),
 			size: 80,
 			enableSorting: false,
@@ -107,14 +129,14 @@
 		// Case-Specific Fields
 		{
 			accessorKey: 'case_reference',
-			header: 'Case Reference',
+			header: createHeaderWithIcon('Case Reference', 'cases'),
 			cell: (info) => info.getValue() || '-',
 			size: 150,
 			meta: { sourceTable: 'cases', group: 'Case Fields' }
 		},
 		{
 			accessorKey: 'offence_result',
-			header: 'Result',
+			header: createHeaderWithIcon('Result', 'cases'),
 			cell: (info) => info.getValue() || '-',
 			size: 120,
 			enableGrouping: true,
@@ -122,28 +144,28 @@
 		},
 		{
 			accessorKey: 'offence_fine',
-			header: 'Fine',
+			header: createHeaderWithIcon('Fine', 'cases'),
 			cell: (info) => formatCurrency(info.getValue() as number),
 			size: 120,
 			meta: { sourceTable: 'cases', group: 'Case Fields' }
 		},
 		{
 			accessorKey: 'offence_costs',
-			header: 'Costs',
+			header: createHeaderWithIcon('Costs', 'cases'),
 			cell: (info) => formatCurrency(info.getValue() as number),
 			size: 120,
 			meta: { sourceTable: 'cases', group: 'Case Fields' }
 		},
 		{
 			accessorKey: 'offence_hearing_date',
-			header: 'Hearing Date',
+			header: createHeaderWithIcon('Hearing Date', 'cases'),
 			cell: (info) => formatDate(info.getValue() as string),
 			size: 120,
 			meta: { sourceTable: 'cases', group: 'Case Fields' }
 		},
 		{
 			accessorKey: 'related_cases',
-			header: 'Related Cases',
+			header: createHeaderWithIcon('Related Cases', 'cases'),
 			cell: (info) => {
 				const val = info.getValue() as string[] | null
 				return val && val.length > 0 ? val.join(', ') : '-'
@@ -156,35 +178,35 @@
 		// Notice-Specific Fields
 		{
 			accessorKey: 'notice_date',
-			header: 'Notice Date',
+			header: createHeaderWithIcon('Notice Date', 'notices'),
 			cell: (info) => formatDate(info.getValue() as string),
 			size: 120,
 			meta: { sourceTable: 'notices', group: 'Notice Fields' }
 		},
 		{
 			accessorKey: 'notice_body',
-			header: 'Notice Body',
+			header: createHeaderWithIcon('Notice Body', 'notices'),
 			cell: (info) => info.getValue() || '-',
 			size: 300,
 			meta: { sourceTable: 'notices', group: 'Notice Fields' }
 		},
 		{
 			accessorKey: 'operative_date',
-			header: 'Operative Date',
+			header: createHeaderWithIcon('Operative Date', 'notices'),
 			cell: (info) => formatDate(info.getValue() as string),
 			size: 120,
 			meta: { sourceTable: 'notices', group: 'Notice Fields' }
 		},
 		{
 			accessorKey: 'compliance_date',
-			header: 'Compliance Date',
+			header: createHeaderWithIcon('Compliance Date', 'notices'),
 			cell: (info) => formatDate(info.getValue() as string),
 			size: 120,
 			meta: { sourceTable: 'notices', group: 'Notice Fields' }
 		},
 		{
 			accessorKey: 'regulator_ref_number',
-			header: 'Regulator Ref',
+			header: createHeaderWithIcon('Regulator Ref', 'notices'),
 			cell: (info) => info.getValue() || '-',
 			size: 150,
 			meta: { sourceTable: 'notices', group: 'Notice Fields' }
@@ -193,14 +215,14 @@
 		// Timestamps
 		{
 			accessorKey: 'inserted_at',
-			header: 'Created',
+			header: createHeaderWithIcon('Created', 'common'),
 			cell: (info) => formatDate(info.getValue() as string),
 			size: 120,
 			meta: { sourceTable: 'common', group: 'Timestamps' }
 		},
 		{
 			accessorKey: 'updated_at',
-			header: 'Updated',
+			header: createHeaderWithIcon('Updated', 'common'),
 			cell: (info) => formatDate(info.getValue() as string),
 			size: 120,
 			meta: { sourceTable: 'common', group: 'Timestamps' }
