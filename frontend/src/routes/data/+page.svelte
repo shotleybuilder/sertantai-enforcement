@@ -233,12 +233,6 @@
 	]
 </script>
 
-<style>
-	/* Left-align table headers */
-	:global(.table-kit th) {
-		text-align: left !important;
-	}
-</style>
 
 <div class="container mx-auto px-4 py-8">
 	<div class="mb-6">
@@ -293,6 +287,7 @@
 			{columns}
 			storageKey="unified_data_table"
 			persistState={true}
+			align="left"
 			features={{
 				columnVisibility: true,
 				columnResizing: true,
