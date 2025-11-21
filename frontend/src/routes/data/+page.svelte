@@ -1,15 +1,18 @@
 <script lang="ts">
+	import { browser } from '$app/environment'
 	import { TableKit } from '@shotleybuilder/svelte-table-kit'
 	import type { ColumnDef } from '@tanstack/svelte-table'
 	import { useUnifiedData, type UnifiedRecord } from '$lib/query/unified'
 
-	// Fetch unified data with default parameters
-	const unifiedData = useUnifiedData({
-		limit: 100,
-		offset: 0,
-		order_by: 'offence_action_date',
-		order: 'desc'
-	})
+	// Fetch unified data with default parameters (only in browser to avoid SSR issues)
+	$: unifiedData = browser
+		? useUnifiedData({
+				limit: 100,
+				offset: 0,
+				order_by: 'offence_action_date',
+				order: 'desc'
+		  })
+		: null
 
 	// Helper to format date
 	function formatDate(dateStr: string | null): string {
@@ -245,17 +248,17 @@
 		</p>
 	</div>
 
-	{#if $unifiedData.isLoading}
+	{#if !browser || $unifiedData?.isLoading}
 		<div class="px-4 py-12 text-center bg-white rounded-lg border border-gray-200">
 			<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
 			<p class="mt-4 text-gray-600">Loading enforcement data...</p>
 		</div>
-	{:else if $unifiedData.isError}
+	{:else if $unifiedData?.isError}
 		<div class="px-4 py-8 bg-red-50 border border-red-200 rounded-lg">
 			<h3 class="text-lg font-semibold text-red-800 mb-2">Error Loading Data</h3>
 			<p class="text-red-600">{$unifiedData.error?.message || 'Unknown error occurred'}</p>
 		</div>
-	{:else if $unifiedData.data}
+	{:else if $unifiedData?.data}
 		<!-- Stats Overview -->
 		<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
 			<div class="bg-white rounded-lg border border-gray-200 px-4 py-3">
