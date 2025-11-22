@@ -3,8 +3,9 @@
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
-/* Ensure grid-cols-6 is available */
+/* Ensure grid-cols-5 and grid-cols-6 are available */
 @theme {
+	--grid-template-columns-5: repeat(5, minmax(0, 1fr));
 	--grid-template-columns-6: repeat(6, minmax(0, 1fr));
 }
 

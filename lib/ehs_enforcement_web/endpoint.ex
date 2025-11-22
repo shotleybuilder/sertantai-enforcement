@@ -59,6 +59,10 @@ defmodule EhsEnforcementWeb.Endpoint do
 
   plug Plug.MethodOverride
   plug Plug.Head
+
+  # CORS configuration for frontend (localhost:5173)
+  plug CORSPlug, origin: ["http://localhost:5173"]
+
   plug Plug.Session, @session_options
   plug EhsEnforcementWeb.Router
 end

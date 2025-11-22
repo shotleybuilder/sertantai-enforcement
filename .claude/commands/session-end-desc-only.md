@@ -1,8 +1,6 @@
 End the current development session by:
 
-1. Check `.claude/sessions/.current-session` for the active session
-2. If no active session, inform user there's nothing to end
-3. If session exists, append a comprehensive summary including:
+1. If session exists, append a comprehensive summary including:
    - Session duration
    - Todo summary:
      * Total tasks completed/remaining
@@ -18,7 +16,5 @@ End the current development session by:
    - Lessons learned
    - What wasn't completed
    - Tips for future developers
-4. Empty the `.claude/sessions/.current-session` file (don't remove it, just clear its contents)
-5. Inform user the session has been documented
 
 The summary should be thorough enough that another developer (or AI) can understand everything that happened without reading the entire session.

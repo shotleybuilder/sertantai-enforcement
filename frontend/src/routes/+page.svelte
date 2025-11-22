@@ -1,667 +1,219 @@
 <script lang="ts">
 	import { browser } from '$app/environment'
-	import { useDashboardStats } from '$lib/query/dashboard'
-	import RecentActivityTable from '$lib/components/RecentActivityTable.svelte'
+	import { goto } from '$app/navigation'
+	import NaturalLanguageQuery from '$lib/components/NaturalLanguageQuery.svelte'
+	import { queryState } from '$lib/stores/query-state'
 
-	// Selected time period
-	let selectedPeriod: 'week' | 'month' | 'year' = 'month'
+	// Example queries to showcase the system's capabilities
+	const exampleQueries = [
+		{
+			text: "Show me HSE cases with fines over £50,000 from 2024",
+			description: "High-value prosecutions"
+		},
+		{
+			text: "Find SEPA enforcement notices from 2024",
+			description: "Scottish environmental notices"
+		},
+		{
+			text: "Cases with fines between £10k and £100k",
+			description: "Medium-range penalties"
+		},
+		{
+			text: "Show me all prosecutions by the Environment Agency",
+			description: "EA enforcement actions"
+		}
+	]
 
-	// Fetch dashboard stats based on selected period
-	$: dashboardStats = browser ? useDashboardStats(selectedPeriod) : null
+	// Handle successful query - save to store and navigate to data page
+	function handleQuerySuccess(filters: any[], sort: any | null, columns?: string[], columnOrder?: string[]) {
+		console.log('[Homepage] Query successful, navigating to /data with config:', { filters, sort, columns, columnOrder })
 
-	// Recent activity data (filtering now handled by TanStack Table)
-	$: recentActivity = $dashboardStats?.data?.recent_activity || []
+		// Save query state to store so /data page can pick it up
+		queryState.setQuery({
+			query: '', // We don't track the raw query text from homepage
+			filters: filters || [],
+			sort,
+			columns: columns || [],
+			columnOrder: columnOrder || []
+		})
+
+		// Navigate to /data page
+		goto('/data')
+	}
+
+	// Handle example query click - trigger API call and navigate
+	async function handleExampleClick(queryText: string) {
+		console.log('[Homepage] Example clicked:', queryText)
+
+		try {
+			// Call the NL query API directly
+			const response = await fetch('http://localhost:4002/api/nl-query', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ query: queryText }),
+			})
+
+			if (!response.ok) {
+				throw new Error('Failed to translate query')
+			}
+
+			const data = await response.json()
+			console.log('[Homepage] Query translated:', data)
+
+			// Save to store and navigate
+			queryState.setQuery({
+				query: queryText,
+				filters: data.filters || [],
+				sort: data.sort || null,
+				columns: data.columns || [],
+				columnOrder: data.columnOrder || []
+			})
+
+			goto('/data')
+		} catch (error) {
+			console.error('[Homepage] Query failed:', error)
+			// Still navigate to data page on error - user can manually filter
+			goto('/data')
+		}
+	}
 </script>
 
 <svelte:head>
-	<title>UK EHS Enforcement Dashboard</title>
+	<title>EHS Enforcement - UK Environmental, Health & Safety Data</title>
 	<meta
 		name="description"
-		content="UK Environmental, Health & Safety enforcement data - Cases, notices, and offender information"
+		content="Search and analyze UK enforcement data using natural language. AI-powered insights into cases, notices, and compliance."
 	/>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50">
-	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		<!-- Page Header -->
-		<div class="md:flex md:items-center md:justify-between mb-8">
-			<div class="min-w-0 flex-1">
-				<h1
-					class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight"
-				>
-					🏛️ UK EHS Enforcement Dashboard
-				</h1>
-				<p class="mt-1 text-sm text-gray-500">
-					Environmental, Health & Safety enforcement data from UK regulatory agencies
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+	<!-- Header -->
+	<header class="w-full px-6 py-4 bg-white border-b border-gray-200">
+		<div class="container mx-auto flex items-center justify-between">
+			<div class="flex items-center space-x-3">
+				<div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+					<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+					</svg>
+				</div>
+				<div>
+					<h1 class="text-xl font-bold text-gray-900">EHS Enforcement</h1>
+					<p class="text-xs text-gray-500">UK Environmental, Health & Safety Data</p>
+				</div>
+			</div>
+			<nav class="flex items-center space-x-4">
+				<a href="/dashboard" class="text-sm text-gray-600 hover:text-gray-900 transition-colors">Dashboard</a>
+				<a href="/data" class="text-sm text-gray-600 hover:text-gray-900 transition-colors">Browse Data</a>
+			</nav>
+		</div>
+	</header>
+
+	<!-- Main Content - Centered Prompt Interface -->
+	<main class="flex-1 flex flex-col items-center justify-center px-4 py-12">
+		<div class="w-full max-w-3xl space-y-8">
+			<!-- Hero Section -->
+			<div class="text-center space-y-4">
+				<h2 class="text-4xl font-bold text-gray-900 sm:text-5xl">
+					Ask about enforcement data<br />in plain English
+				</h2>
+				<p class="text-lg text-gray-600 max-w-2xl mx-auto">
+					Search thousands of UK enforcement cases and notices using natural language.
+					Our AI understands your questions and finds exactly what you're looking for.
 				</p>
 			</div>
-			<div class="mt-4 flex gap-3 md:ml-4 md:mt-0">
-				<!-- Admin Login Button -->
-				<a
-					href="http://localhost:4002/sign-in"
-					class="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
-				>
-					<svg
-						class="h-5 w-5"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke-width="1.5"
-						stroke="currentColor"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+
+			<!-- Natural Language Query Component (browser only to avoid SSR issues) -->
+			{#if browser}
+				<div class="w-full">
+					<NaturalLanguageQuery
+						onQuerySuccess={handleQuerySuccess}
+						placeholder="Ask in plain English... e.g., 'Show me HSE cases with fines over £50,000 from 2024'"
+					/>
+				</div>
+			{:else}
+				<!-- SSR Fallback - Show a placeholder -->
+				<div class="w-full">
+					<div class="relative">
+						<input
+							type="text"
+							disabled
+							placeholder="Loading search..."
+							class="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-lg bg-gray-50"
 						/>
-					</svg>
-					Admin Login
-				</a>
+					</div>
+				</div>
+			{/if}
 
-				<!-- Time Period Selector -->
-				<select
-					bind:value={selectedPeriod}
-					class="block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-				>
-					<option value="week">Last Week</option>
-					<option value="month">Last Month</option>
-					<option value="year">Last Year</option>
-				</select>
-			</div>
-		</div>
-
-		{#if !browser || $dashboardStats?.isLoading}
-			<div class="flex items-center justify-center py-12">
-				<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-			</div>
-		{:else if $dashboardStats?.isError}
-			<div class="rounded-md bg-red-50 p-4">
-				<div class="flex">
-					<div class="flex-shrink-0">
-						<svg
-							class="h-5 w-5 text-red-400"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
+			<!-- Example Queries Section -->
+			<div class="space-y-4">
+				<h3 class="text-sm font-semibold text-gray-700 text-center uppercase tracking-wide">
+					Try these examples
+				</h3>
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+					{#each exampleQueries as example}
+						<button
+							on:click={() => handleExampleClick(example.text)}
+							class="group text-left p-4 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all"
 						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
+							<div class="flex items-start space-x-3">
+								<div class="flex-shrink-0 mt-0.5">
+									<svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+									</svg>
+								</div>
+								<div class="flex-1 min-w-0">
+									<p class="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
+										{example.text}
+									</p>
+									<p class="text-xs text-gray-500 mt-1">
+										{example.description}
+									</p>
+								</div>
+							</div>
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Feature Highlights -->
+			<div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+				<div class="space-y-2">
+					<div class="inline-flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-lg">
+						<svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 						</svg>
 					</div>
-					<div class="ml-3">
-						<h3 class="text-sm font-medium text-red-800">Error loading dashboard</h3>
-						<div class="mt-2 text-sm text-red-700">
-							<p>{$dashboardStats.error.message}</p>
-						</div>
+					<h4 class="font-semibold text-gray-900">Smart Search</h4>
+					<p class="text-sm text-gray-600">AI-powered queries understand context and intent</p>
+				</div>
+				<div class="space-y-2">
+					<div class="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg">
+						<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+						</svg>
 					</div>
+					<h4 class="font-semibold text-gray-900">Comprehensive Data</h4>
+					<p class="text-sm text-gray-600">45,000+ cases and notices from UK regulators</p>
+				</div>
+				<div class="space-y-2">
+					<div class="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg">
+						<svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+						</svg>
+					</div>
+					<h4 class="font-semibold text-gray-900">Flexible Views</h4>
+					<p class="text-sm text-gray-600">Filter, sort, and group data exactly how you need</p>
 				</div>
 			</div>
-		{:else if $dashboardStats?.isSuccess}
-			{@const stats = $dashboardStats.data.stats}
+		</div>
+	</main>
 
-			<!-- Statistics Overview -->
-			<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 mb-8">
-				<!-- Active Agencies -->
-				<div class="bg-white overflow-hidden shadow rounded-lg">
-					<div class="p-5">
-						<div class="flex items-center">
-							<div class="flex-shrink-0">
-								<div class="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
-									<svg
-										class="w-5 h-5 text-white"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-										/>
-									</svg>
-								</div>
-							</div>
-							<div class="ml-5 w-0 flex-1">
-								<dl>
-									<dt class="text-sm font-medium text-gray-500 truncate">Active Agencies</dt>
-									<dd class="text-lg font-medium text-gray-900">{stats.active_agencies}</dd>
-								</dl>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Recent Cases -->
-				<div class="bg-white overflow-hidden shadow rounded-lg">
-					<div class="p-5">
-						<div class="flex items-center">
-							<div class="flex-shrink-0">
-								<div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-									<svg
-										class="w-5 h-5 text-white"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-										/>
-									</svg>
-								</div>
-							</div>
-							<div class="ml-5 w-0 flex-1">
-								<dl>
-									<dt class="text-sm font-medium text-gray-500 truncate">Recent Cases</dt>
-									<dd class="text-lg font-medium text-gray-900">{stats.recent_cases}</dd>
-									<dd class="text-xs text-gray-400">{stats.timeframe}</dd>
-								</dl>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Recent Notices -->
-				<div class="bg-white overflow-hidden shadow rounded-lg">
-					<div class="p-5">
-						<div class="flex items-center">
-							<div class="flex-shrink-0">
-								<div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-									<svg
-										class="w-5 h-5 text-white"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-										/>
-									</svg>
-								</div>
-							</div>
-							<div class="ml-5 w-0 flex-1">
-								<dl>
-									<dt class="text-sm font-medium text-gray-500 truncate">Recent Notices</dt>
-									<dd class="text-lg font-medium text-gray-900">{stats.recent_notices}</dd>
-									<dd class="text-xs text-gray-400">{stats.timeframe}</dd>
-								</dl>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Total Fines -->
-				<div class="bg-white overflow-hidden shadow rounded-lg">
-					<div class="p-5">
-						<div class="flex items-center">
-							<div class="flex-shrink-0">
-								<div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-									<svg
-										class="w-5 h-5 text-white"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-										/>
-									</svg>
-								</div>
-							</div>
-							<div class="ml-5 w-0 flex-1">
-								<dl>
-									<dt class="text-sm font-medium text-gray-500 truncate">Total Fines</dt>
-									<dd class="text-lg font-medium text-gray-900">
-										£{parseFloat(stats.total_fines).toLocaleString('en-GB')}
-									</dd>
-									<dd class="text-xs text-gray-400">{stats.timeframe}</dd>
-								</dl>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Period Indicator -->
-				<div class="bg-white overflow-hidden shadow rounded-lg">
-					<div class="p-5">
-						<div class="flex items-center">
-							<div class="flex-shrink-0">
-								<div class="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-									<svg
-										class="w-5 h-5 text-white"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-										/>
-									</svg>
-								</div>
-							</div>
-							<div class="ml-5 w-0 flex-1">
-								<dl>
-									<dt class="text-sm font-medium text-gray-500 truncate">Time Period</dt>
-									<dd class="text-lg font-medium text-gray-900">{stats.period}</dd>
-									<dd class="text-xs text-gray-400">{stats.timeframe}</dd>
-								</dl>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Dashboard Action Cards -->
-			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6 mb-8">
-				<!-- Enforcement Cases -->
-				<div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-l-blue-400 hover:shadow-lg transition-shadow">
-					<div class="p-5">
-						<div class="flex items-center mb-4">
-							<div class="flex-shrink-0">
-								<svg
-									class="w-8 h-8 text-blue-500"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
-									/>
-								</svg>
-							</div>
-							<div class="ml-3">
-								<h3 class="text-base font-medium text-gray-900">ENFORCEMENT CASES</h3>
-							</div>
-						</div>
-
-						<div class="space-y-3">
-							<div>
-								<div class="text-3xl font-bold text-gray-900">{stats.total_cases}</div>
-								<div class="text-sm text-gray-500">Total Cases</div>
-							</div>
-							<div>
-								<div class="text-2xl font-semibold text-gray-900">{stats.recent_cases}</div>
-								<div class="text-sm text-gray-500">Recent (Last 30 Days)</div>
-							</div>
-							<div>
-								<div class="text-2xl font-semibold text-gray-900">
-									£{parseFloat(stats.total_fines).toLocaleString('en-GB')}
-								</div>
-								<div class="text-sm text-gray-500">Total Fines</div>
-							</div>
-						</div>
-
-						<div class="mt-4 space-y-2">
-							<a
-								href="/cases"
-								class="block w-full text-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
-							>
-								Browse Recent →
-							</a>
-							<div class="relative">
-								<input
-									type="text"
-									placeholder="Search"
-									class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-								/>
-								<svg
-									class="absolute right-3 top-2.5 w-4 h-4 text-gray-400"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-									/>
-								</svg>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Enforcement Notices -->
-				<div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-l-yellow-400 hover:shadow-lg transition-shadow">
-					<div class="p-5">
-						<div class="flex items-center mb-4">
-							<div class="flex-shrink-0">
-								<svg
-									class="w-8 h-8 text-yellow-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-									/>
-								</svg>
-							</div>
-							<div class="ml-3">
-								<h3 class="text-base font-medium text-gray-900">ENFORCEMENT NOTICES</h3>
-							</div>
-						</div>
-
-						<div class="space-y-3">
-							<div>
-								<div class="text-3xl font-bold text-gray-900">{stats.total_notices}</div>
-								<div class="text-sm text-gray-500">Total Notices</div>
-							</div>
-							<div>
-								<div class="text-2xl font-semibold text-gray-900">{stats.recent_notices}</div>
-								<div class="text-sm text-gray-500">Recent (Last 30 Days)</div>
-							</div>
-							<div>
-								<div class="text-2xl font-semibold text-gray-900">0</div>
-								<div class="text-sm text-gray-500">Compliance Required</div>
-							</div>
-						</div>
-
-						<div class="mt-4 space-y-2">
-							<a
-								href="/notices"
-								class="block w-full text-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
-							>
-								Browse Recent →
-							</a>
-							<div class="relative">
-								<input
-									type="text"
-									placeholder="Search"
-									class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-								/>
-								<svg
-									class="absolute right-3 top-2.5 w-4 h-4 text-gray-400"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-									/>
-								</svg>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Offender Database -->
-				<div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-l-purple-400 hover:shadow-lg transition-shadow">
-					<div class="p-5">
-						<div class="flex items-center mb-4">
-							<div class="flex-shrink-0">
-								<svg
-									class="w-8 h-8 text-purple-500"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-									/>
-								</svg>
-							</div>
-							<div class="ml-3">
-								<h3 class="text-base font-medium text-gray-900">OFFENDER DATABASE</h3>
-							</div>
-						</div>
-
-						<div class="space-y-3">
-							<div>
-								<div class="text-3xl font-bold text-gray-900">0</div>
-								<div class="text-sm text-gray-500">Total Organizations</div>
-							</div>
-							<div>
-								<div class="text-2xl font-semibold text-gray-900">0 (0.0%)</div>
-								<div class="text-sm text-gray-500">Repeat Offenders</div>
-							</div>
-							<div>
-								<div class="text-2xl font-semibold text-gray-900">£0.00</div>
-								<div class="text-sm text-gray-500">Average Fine</div>
-							</div>
-						</div>
-
-						<div class="mt-4 space-y-2">
-							<a
-								href="/offenders"
-								class="block w-full text-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
-							>
-								Browse Top 50 →
-							</a>
-							<div class="relative">
-								<input
-									type="text"
-									placeholder="Search Offenders"
-									class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-								/>
-								<svg
-									class="absolute right-3 top-2.5 w-4 h-4 text-gray-400"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-									/>
-								</svg>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Legislation Database -->
-				<div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-l-amber-400 hover:shadow-lg transition-shadow">
-					<div class="p-5">
-						<div class="flex items-center mb-4">
-							<div class="flex-shrink-0">
-								<svg
-									class="w-8 h-8 text-amber-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-									/>
-								</svg>
-							</div>
-							<div class="ml-3">
-								<h3 class="text-base font-medium text-gray-900">LEGISLATION DATABASE</h3>
-							</div>
-						</div>
-
-						<div class="space-y-3">
-							<div>
-								<div class="text-3xl font-bold text-gray-900">0</div>
-								<div class="text-sm text-gray-500">Total Legislation</div>
-							</div>
-							<div>
-								<div class="text-2xl font-semibold text-gray-900">0</div>
-								<div class="text-sm text-gray-500">Recent (Last 30 Days)</div>
-								<div class="text-xs text-gray-400">(0.0%)</div>
-							</div>
-							<div>
-								<div class="text-2xl font-semibold text-gray-900">£0.00</div>
-								<div class="text-sm text-gray-500">Average Fine</div>
-							</div>
-						</div>
-
-						<div class="mt-4 space-y-2">
-							<a
-								href="/legislation"
-								class="block w-full text-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
-							>
-								Browse Recent →
-							</a>
-							<div class="relative">
-								<input
-									type="text"
-									placeholder="Search"
-									class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-								/>
-								<svg
-									class="absolute right-3 top-2.5 w-4 h-4 text-gray-400"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-									/>
-								</svg>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Reports & Analytics -->
-				<div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-l-green-400 hover:shadow-lg transition-shadow">
-					<div class="p-5">
-						<div class="flex items-center mb-4">
-							<div class="flex-shrink-0">
-								<svg
-									class="w-8 h-8 text-green-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-									/>
-								</svg>
-							</div>
-							<div class="ml-3">
-								<h3 class="text-base font-medium text-gray-900">REPORTS & ANALYTICS</h3>
-							</div>
-						</div>
-
-						<div class="space-y-3">
-							<div>
-								<div class="text-3xl font-bold text-gray-900">5</div>
-								<div class="text-sm text-gray-500">Total Reports</div>
-							</div>
-							<div class="mt-6">
-								<p class="text-sm text-gray-600">
-									Generate comprehensive analytics and insights from enforcement data
-								</p>
-							</div>
-						</div>
-
-						<div class="mt-4">
-							<a
-								href="/reports"
-								class="block w-full text-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
-							>
-								View Reports →
-							</a>
-						</div>
-					</div>
-				</div>
-
-				<!-- Unified Data View -->
-				<div class="bg-white overflow-hidden shadow rounded-lg border-l-4 border-l-cyan-400 hover:shadow-lg transition-shadow">
-					<div class="p-5">
-						<div class="flex items-center mb-4">
-							<div class="flex-shrink-0">
-								<svg
-									class="w-8 h-8 text-cyan-600"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-									/>
-								</svg>
-							</div>
-							<div class="ml-3">
-								<h3 class="text-base font-medium text-gray-900">UNIFIED DATA VIEW</h3>
-							</div>
-						</div>
-
-						<div class="space-y-3">
-							<div>
-								<div class="text-3xl font-bold text-gray-900">
-									{stats.total_cases + stats.total_notices}
-								</div>
-								<div class="text-sm text-gray-500">Total Records</div>
-							</div>
-							<div>
-								<div class="text-2xl font-semibold text-green-600">{stats.total_cases}</div>
-								<div class="text-sm text-gray-500">Cases</div>
-							</div>
-							<div>
-								<div class="text-2xl font-semibold text-blue-600">{stats.total_notices}</div>
-								<div class="text-sm text-gray-500">Notices</div>
-							</div>
-						</div>
-
-						<div class="mt-4 space-y-2">
-							<a
-								href="/data"
-								class="block w-full text-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors"
-							>
-								Browse All Data →
-							</a>
-							<p class="text-xs text-gray-500 text-center">
-								Flexible filtering, sorting & grouping
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Recent Activity Section -->
-			<div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
-				<div class="mb-4">
-					<h3 class="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
-				</div>
-
-				<RecentActivityTable data={recentActivity} />
-			</div>
-		{/if}
-	</div>
+	<!-- Footer -->
+	<footer class="w-full px-6 py-6 bg-white border-t border-gray-200">
+		<div class="container mx-auto text-center text-sm text-gray-600">
+			<p>Data sourced from HSE, Environment Agency, SEPA, and Natural Resources Wales</p>
+		</div>
+	</footer>
 </div>

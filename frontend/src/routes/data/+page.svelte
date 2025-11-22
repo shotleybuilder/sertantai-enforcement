@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { browser } from '$app/environment'
+	import { onMount } from 'svelte'
 	import { TableKit } from '@shotleybuilder/svelte-table-kit'
 	import type { ColumnDef } from '@tanstack/svelte-table'
 	import { useUnifiedData, type UnifiedRecord } from '$lib/query/unified'
 	import NaturalLanguageQuery from '$lib/components/NaturalLanguageQuery.svelte'
+	import { queryState } from '$lib/stores/query-state'
 
 	// AI-generated configuration from NL query
 	let aiFilters: any[] = []
@@ -11,6 +13,22 @@
 	let aiColumns: string[] = []
 	let aiColumnOrder: string[] = []
 	let configVersion = 0 // Track config version for reactive updates
+
+	// Check for query state from store on mount (from homepage navigation)
+	onMount(() => {
+		const currentQueryState = $queryState
+		if (currentQueryState && browser) {
+			console.log('[Data Page] Found query state from store:', currentQueryState)
+			handleQuerySuccess(
+				currentQueryState.filters,
+				currentQueryState.sort,
+				currentQueryState.columns,
+				currentQueryState.columnOrder
+			)
+			// Clear the store after consuming
+			queryState.clear()
+		}
+	})
 
 	// Handle NL query success - update AI configuration
 	function handleQuerySuccess(filters: any[], sort: any | null, columns?: string[], columnOrder?: string[]) {

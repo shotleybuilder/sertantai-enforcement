@@ -1,100 +1,46 @@
-/**
- * TanStack Query functions for Admin Dashboard
- *
- * Provides hooks for fetching admin statistics and dashboard data
- */
-
-import { createQuery } from '@tanstack/svelte-query'
-
-const API_BASE_URL = 'http://localhost:4002/api'
+import { createQuery } from '@tanstack/svelte-query';
+import { PUBLIC_API_URL } from '$env/static/public';
 
 export interface AdminStats {
-  recent_cases: number
-  recent_notices: number
-  total_cases: number
-  total_notices: number
-  total_fines: string
-  active_agencies: number
-  agency_stats: Array<{
-    agency_name: string
-    case_count: number
-    notice_count: number
-  }>
-  period: string
-  timeframe: string
-  sync_errors: number
-  data_quality_score: number
-}
-
-export interface Agency {
-  id: string
-  code: string
-  name: string
-  base_url: string | null
-  enabled: boolean
-  inserted_at: string
-  updated_at: string
-}
-
-export interface AdminDashboardData {
-  stats: AdminStats
-  agencies: Agency[]
-}
-
-export interface AdminStatsResponse {
-  success: boolean
-  data: AdminDashboardData
+	stats: {
+		data_quality_score: number;
+		active_agencies: number;
+		recent_cases: number;
+		recent_notices: number;
+		total_fines: string;
+		sync_errors: number;
+		timeframe: string;
+	};
+	agencies: Array<{
+		id: string;
+		code: string;
+		name: string;
+		enabled: boolean;
+	}>;
 }
 
 /**
- * Fetch admin dashboard statistics
+ * Fetch admin statistics for a given time period
  */
-async function fetchAdminStats(period: 'week' | 'month' | 'year' = 'month'): Promise<AdminDashboardData> {
-  const response = await fetch(`${API_BASE_URL}/admin/stats?period=${period}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+async function fetchAdminStats(period: 'week' | 'month' | 'year'): Promise<AdminStats> {
+	const response = await fetch(`${PUBLIC_API_URL}/api/admin/stats?period=${period}`);
 
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}))
-    throw new Error(data.error || data.details || `HTTP ${response.status}: ${response.statusText}`)
-  }
+	if (!response.ok) {
+		throw new Error(`Failed to fetch admin stats: ${response.statusText}`);
+	}
 
-  const result: AdminStatsResponse = await response.json()
-  return result.data
+	return response.json();
 }
 
 /**
- * Hook for fetching admin dashboard statistics
- *
- * Usage:
- * ```svelte
- * <script>
- *   import { useAdminStats } from '$lib/query/admin'
- *   const adminStats = useAdminStats('month')
- *
- *   $: if ($adminStats.isSuccess) {
- *     console.log('Stats:', $adminStats.data.stats)
- *     console.log('Agencies:', $adminStats.data.agencies)
- *   }
- * </script>
- *
- * {#if $adminStats.isPending}
- *   <p>Loading...</p>
- * {:else if $adminStats.isError}
- *   <p>Error: {$adminStats.error.message}</p>
- * {:else if $adminStats.isSuccess}
- *   <p>Total Cases: {$adminStats.data.stats.total_cases}</p>
- * {/if}
- * ```
+ * TanStack Query hook for admin statistics
+ * @param period - Time period for statistics (week, month, year)
  */
-export function useAdminStats(period: 'week' | 'month' | 'year' = 'month') {
-  return createQuery({
-    queryKey: ['admin', 'stats', period],
-    queryFn: () => fetchAdminStats(period),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: true,
-  })
+export function useAdminStats(period: 'week' | 'month' | 'year') {
+	return createQuery({
+		queryKey: ['adminStats', period],
+		queryFn: () => fetchAdminStats(period),
+		staleTime: 5 * 60 * 1000, // 5 minutes
+		gcTime: 10 * 60 * 1000 // 10 minutes
+	});
 }

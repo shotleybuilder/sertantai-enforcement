@@ -7,12 +7,6 @@ The session file should begin with:
 4. Goals section (ask user for goals if not clear)
 5. Empty progress section ready for updates
 
-After creating the file, create or update `.claude/sessions/.current-session` to track the active session filename.
-
-Confirm the session has started and remind the user they can:
-- Update it with `/project:session-update`
-- End it with `/project:session-end`
-
 - READ CLAUDE.md
-This is an Elixir Ash project.
+This is an Elixir Ash project on the backend.
 **Strictly follow Ash conventions and patterns.**

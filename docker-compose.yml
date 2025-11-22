@@ -40,11 +40,10 @@ services:
     container_name: ehs_enforcement_electric
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ehs_enforcement_dev
-      HTTP_PORT: 3001
       ELECTRIC_INSECURE: "true"  # Development only!
       PG_PROXY_PASSWORD: proxy_password  # Change in production!
     ports:
-      - "3001:3001"  # HTTP API for Shape-based sync
+      - "3001:3000"  # HTTP API for Shape-based sync (Electric runs on 3000 inside)
     networks:
       - ehs_enforcement_network
     depends_on:
