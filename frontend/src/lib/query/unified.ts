@@ -18,6 +18,8 @@ export interface UnifiedRecord {
 	environmental_receptor: string | null;
 	url: string | null;
 	agency_id: string;
+	agency_code: string;
+	agency_name: string;
 
 	// Case-specific fields (NULL for notices)
 	case_reference: string | null;

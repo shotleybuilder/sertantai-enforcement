@@ -3,6 +3,52 @@
 	import { TableKit } from '@shotleybuilder/svelte-table-kit'
 	import type { ColumnDef } from '@tanstack/svelte-table'
 	import { useUnifiedData, type UnifiedRecord } from '$lib/query/unified'
+	import NaturalLanguageQuery from '$lib/components/NaturalLanguageQuery.svelte'
+
+	// AI-generated configuration from NL query
+	let aiFilters: any[] = []
+	let aiSort: { columnId: string; direction: 'asc' | 'desc' } | null = null
+	let aiColumns: string[] = []
+	let aiColumnOrder: string[] = []
+	let configVersion = 0 // Track config version for reactive updates
+
+	// Handle NL query success - update AI configuration
+	function handleQuerySuccess(filters: any[], sort: any | null, columns?: string[], columnOrder?: string[]) {
+		console.log('[Data Page] NL Query Success:', { filters, sort, columns, columnOrder })
+		console.log('[Data Page] Filters detail:', JSON.stringify(filters, null, 2))
+		console.log('[Data Page] Sort detail:', JSON.stringify(sort, null, 2))
+
+		aiFilters = filters || []
+		aiSort = sort
+		aiColumns = columns || []
+		aiColumnOrder = columnOrder || []
+
+		// Increment version to trigger config update (v0.5.0 watches config.id)
+		configVersion++
+		console.log('[Data Page] Updated config version:', configVersion)
+	}
+
+	// Build TableKit configuration from AI (reactive - updates when configVersion changes)
+	$: hasAiConfig = aiFilters.length > 0 || aiSort !== null || aiColumns.length > 0 || aiColumnOrder.length > 0
+
+	$: tableKitConfig = hasAiConfig ? {
+		id: `ai_query_v${configVersion}`, // v0.5.0 watches this for changes
+		version: '1.0',
+		defaultFilters: aiFilters.length > 0 ? aiFilters : undefined,
+		defaultSorting: aiSort ? [{ columnId: aiSort.columnId, direction: aiSort.direction }] : undefined,
+		defaultColumnOrder: aiColumnOrder.length > 0 ? aiColumnOrder : undefined,
+		defaultVisibleColumns: aiColumns.length > 0 ? aiColumns : undefined,
+		filterLogic: 'and' as const
+	} : undefined
+
+	// Debug logging for tableKitConfig
+	$: if (browser) {
+		console.log('[Data Page] TableKit Config:', {
+			configVersion,
+			hasAiConfig,
+			config: tableKitConfig
+		})
+	}
 
 	// Fetch unified data with default parameters (only in browser to avoid SSR issues)
 	$: unifiedData = browser
@@ -67,15 +113,36 @@
 			meta: { sourceTable: 'common', group: 'Core' }
 		},
 
+		// Agency Fields
+		{
+			id: 'agency_code',
+			accessorKey: 'agency_code',
+			header: createHeaderWithIcon('Agency', 'common'),
+			cell: (info) => (info.getValue() || '-').toUpperCase(),
+			size: 100,
+			enableGrouping: true,
+			meta: { sourceTable: 'common', group: 'Core' }
+		},
+		{
+			id: 'agency_name',
+			accessorKey: 'agency_name',
+			header: createHeaderWithIcon('Agency Name', 'common'),
+			cell: (info) => info.getValue() || '-',
+			size: 200,
+			meta: { sourceTable: 'common', group: 'Common' }
+		},
+
 		// Common Fields
 		{
+			id: 'regulator_id',
 			accessorKey: 'regulator_id',
 			header: createHeaderWithIcon('Regulator ID', 'common'),
 			cell: (info) => info.getValue() || '-',
 			size: 150,
-			meta: { sourceTable: 'common', group: 'Core' }
+			meta: { sourceTable: 'common', group: 'Common' }
 		},
 		{
+			id: 'offence_action_date',
 			accessorKey: 'offence_action_date',
 			header: createHeaderWithIcon('Action Date', 'common'),
 			cell: (info) => formatDate(info.getValue() as string),
@@ -83,6 +150,7 @@
 			meta: { sourceTable: 'common', group: 'Core' }
 		},
 		{
+			id: 'offence_action_type',
 			accessorKey: 'offence_action_type',
 			header: createHeaderWithIcon('Action Type', 'common'),
 			cell: (info) => info.getValue() || '-',
@@ -91,6 +159,7 @@
 			meta: { sourceTable: 'common', group: 'Core' }
 		},
 		{
+			id: 'offence_breaches',
 			accessorKey: 'offence_breaches',
 			header: createHeaderWithIcon('Breaches', 'common'),
 			cell: (info) => info.getValue() || '-',
@@ -131,6 +200,7 @@
 
 		// Case-Specific Fields
 		{
+			id: 'case_reference',
 			accessorKey: 'case_reference',
 			header: createHeaderWithIcon('Case Reference', 'cases'),
 			cell: (info) => info.getValue() || '-',
@@ -138,6 +208,7 @@
 			meta: { sourceTable: 'cases', group: 'Case Fields' }
 		},
 		{
+			id: 'offence_result',
 			accessorKey: 'offence_result',
 			header: createHeaderWithIcon('Result', 'cases'),
 			cell: (info) => info.getValue() || '-',
@@ -146,6 +217,7 @@
 			meta: { sourceTable: 'cases', group: 'Case Fields' }
 		},
 		{
+			id: 'offence_fine',
 			accessorKey: 'offence_fine',
 			header: createHeaderWithIcon('Fine', 'cases'),
 			cell: (info) => formatCurrency(info.getValue() as number),
@@ -153,6 +225,7 @@
 			meta: { sourceTable: 'cases', group: 'Case Fields' }
 		},
 		{
+			id: 'offence_costs',
 			accessorKey: 'offence_costs',
 			header: createHeaderWithIcon('Costs', 'cases'),
 			cell: (info) => formatCurrency(info.getValue() as number),
@@ -160,6 +233,7 @@
 			meta: { sourceTable: 'cases', group: 'Case Fields' }
 		},
 		{
+			id: 'offence_hearing_date',
 			accessorKey: 'offence_hearing_date',
 			header: createHeaderWithIcon('Hearing Date', 'cases'),
 			cell: (info) => formatDate(info.getValue() as string),
@@ -242,6 +316,11 @@
 		</p>
 	</div>
 
+	<!-- Natural Language Query (browser only to avoid SSR issues) -->
+	{#if browser}
+		<NaturalLanguageQuery onQuerySuccess={handleQuerySuccess} placeholder="Ask about enforcement data in plain English..." />
+	{/if}
+
 	{#if !browser || $unifiedData?.isLoading}
 		<div class="px-4 py-12 text-center bg-white rounded-lg border border-gray-200">
 			<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -281,23 +360,26 @@
 			</div>
 		</div>
 
-		<!-- Unified Data Table -->
-		<TableKit
-			data={$unifiedData.data.data}
-			{columns}
-			storageKey="unified_data_table"
-			persistState={true}
-			align="left"
-			features={{
-				columnVisibility: true,
-				columnResizing: true,
-				columnReordering: true,
-				filtering: true,
-				sorting: true,
-				pagination: true,
-				grouping: true
-			}}
-		>
+		<!-- Unified Data Table - v0.5.0 config prop is reactive -->
+		{#if $unifiedData?.data?.data}
+			<TableKit
+				data={$unifiedData.data.data}
+				{columns}
+				config={tableKitConfig}
+				storageKey="unified_data_table_v2"
+				persistState={!hasAiConfig}
+				align="left"
+				features={{
+					columnVisibility: true,
+					columnResizing: true,
+					columnReordering: true,
+					filtering: true,
+					sorting: true,
+					sortingMode: 'control',
+					pagination: true,
+					grouping: true
+				}}
+			>
 			<svelte:fragment slot="cell" let:cell let:column>
 				{#if column === 'record_type'}
 					<span
@@ -333,5 +415,6 @@
 				{/if}
 			</svelte:fragment>
 		</TableKit>
+		{/if}
 	{/if}
 </div>

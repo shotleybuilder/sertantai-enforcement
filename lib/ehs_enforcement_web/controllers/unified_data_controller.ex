@@ -149,6 +149,8 @@ defmodule EhsEnforcementWeb.UnifiedDataController do
     query = Ash.Query.new(EhsEnforcement.Enforcement.Case)
 
     query
+    # Load agency relationship
+    |> Ash.Query.load(:agency)
     |> apply_date_filters(date_from, date_to, :offence_action_date)
     |> apply_agency_filter(agency_id)
   end
@@ -160,6 +162,8 @@ defmodule EhsEnforcementWeb.UnifiedDataController do
     query = Ash.Query.new(EhsEnforcement.Enforcement.Notice)
 
     query
+    # Load agency relationship
+    |> Ash.Query.load(:agency)
     |> apply_date_filters(date_from, date_to, :offence_action_date)
     |> apply_agency_filter(agency_id)
   end
@@ -218,6 +222,9 @@ defmodule EhsEnforcementWeb.UnifiedDataController do
       environmental_receptor: case_record.environmental_receptor,
       url: case_record.url,
       agency_id: case_record.agency_id,
+      # Agency fields (from relationship)
+      agency_code: case_record.agency.code,
+      agency_name: case_record.agency.name,
       # Notice-specific fields (NULL for cases)
       notice_date: nil,
       notice_body: nil,
@@ -250,6 +257,9 @@ defmodule EhsEnforcementWeb.UnifiedDataController do
       environmental_receptor: notice_record.environmental_receptor,
       url: notice_record.url,
       agency_id: notice_record.agency_id,
+      # Agency fields (from relationship)
+      agency_code: notice_record.agency.code,
+      agency_name: notice_record.agency.name,
       # Case-specific fields (NULL for notices)
       case_reference: nil,
       offence_result: nil,
