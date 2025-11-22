@@ -12,7 +12,7 @@ defmodule EhsEnforcementWeb.ReportsLive.Index do
   use EhsEnforcementWeb, :live_view
 
   alias EhsEnforcement.Enforcement
-  alias EhsEnforcementWeb.CaseLive.CSVExport
+  # alias EhsEnforcementWeb.CaseLive.CSVExport  # Removed - legacy LiveView deleted
 
   @impl true
   def mount(_params, _session, socket) do
@@ -323,17 +323,9 @@ defmodule EhsEnforcementWeb.ReportsLive.Index do
   end
 
   # Export functions
-  defp export_to_csv(filters) do
-    case CSVExport.export_cases(filters) do
-      {:ok, csv_content} ->
-        filename = CSVExport.generate_filename(:filtered)
-        size = format_file_size(byte_size(csv_content))
-
-        {:ok, %{filename: filename, size: size, format: "CSV", content: csv_content}}
-
-      error ->
-        error
-    end
+  defp export_to_csv(_filters) do
+    # Legacy CSVExport module removed - CSV export functionality moved to Svelte frontend
+    {:error, "CSV export has been moved to the Svelte frontend"}
   end
 
   defp export_to_excel(filters) do

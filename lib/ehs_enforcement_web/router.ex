@@ -58,6 +58,8 @@ defmodule EhsEnforcementWeb.Router do
   scope "/", EhsEnforcementWeb do
     pipe_through :browser
 
+    # Root route - redirect to cases for now (will become prompt-driven homepage in Phase 3)
+    get "/", PageController, :home
     get "/home", PageController, :home
 
     live_session :public,
@@ -68,13 +70,8 @@ defmodule EhsEnforcementWeb.Router do
       # Landing page (/) and /dashboard are now served by Svelte frontend
       # API endpoint: /api/public/dashboard/stats (DashboardController)
 
-      # Read-only Case Management Routes
-      live "/cases", CaseLive.Index, :index
-      live "/cases/:id", CaseLive.Show, :show
-
-      # Read-only Notice Management Routes
-      live "/notices", NoticeLive.Index, :index
-      live "/notices/:id", NoticeLive.Show, :show
+      # Cases and Notices routes now served by Svelte frontend
+      # API endpoints: /api/cases/:id and /api/notices/:id (for admin editing)
 
       # Read-only Offender Management Routes
       live "/offenders", OffenderLive.Index, :index
@@ -101,10 +98,6 @@ defmodule EhsEnforcementWeb.Router do
     end
 
     # Non-LiveView routes
-    get "/cases/export.csv", CaseController, :export_csv
-    get "/cases/export.xlsx", CaseController, :export_excel
-    get "/cases/export_detailed.csv", CaseController, :export_detailed_csv
-
     # Cookie consent route
     post "/consent", ConsentController, :create
   end
@@ -167,6 +160,10 @@ defmodule EhsEnforcementWeb.Router do
 
     # Unified data endpoint - combines Cases and Notices
     get "/unified-data", UnifiedDataController, :index
+
+    # Natural Language Query Translation
+    post "/nl-query", NLQueryController, :translate
+    post "/nl-query/test", NLQueryController, :test
 
     # Admin API endpoints
     get "/admin/stats", AdminController, :stats
