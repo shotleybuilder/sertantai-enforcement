@@ -26,7 +26,7 @@ defmodule EhsEnforcement.Scraping.Backfill.BackfillBreachData do
 
   ## Options
 
-  - `:database` - HSE database to use (default: "prosecution")
+  - `:database` - HSE database to use (default: "convictions")
   - `:delay_ms` - Delay between requests in ms (default: 1000)
   """
 
@@ -43,7 +43,7 @@ defmodule EhsEnforcement.Scraping.Backfill.BackfillBreachData do
   alias EhsEnforcement.Legislation.TieredMatcher
   alias EhsEnforcement.Scraping.Hse.CaseScraper
 
-  @default_database "prosecution"
+  @default_database "convictions"
   @default_delay_ms 1000
 
   @impl Oban.Worker
@@ -77,7 +77,7 @@ defmodule EhsEnforcement.Scraping.Backfill.BackfillBreachData do
 
   Options:
   - `:limit` - Maximum number of cases to enqueue (default: 100)
-  - `:database` - HSE database to use (default: "prosecution")
+  - `:database` - HSE database to use (default: "convictions")
   - `:delay_ms` - Delay between requests in ms (default: 1000)
   """
   def enqueue_batch(opts \\ []) do
@@ -180,13 +180,15 @@ defmodule EhsEnforcement.Scraping.Backfill.BackfillBreachData do
 
       {:ok, hse_agency} ->
         # Get cases without breach data
+        # Filter for regulator_ids that exist on the new HSE convictions site (4xxxxxx format)
         query =
           Enforcement.Case
           |> Ash.Query.filter(
             agency_id == ^hse_agency.id and
-              (is_nil(offence_breaches) or offence_breaches == "")
+              (is_nil(offence_breaches) or offence_breaches == "") and
+              fragment("? ~ '^4[0-9]{6}$'", regulator_id)
           )
-          |> Ash.Query.sort(regulator_id: :asc)
+          |> Ash.Query.sort(regulator_id: :desc)
 
         query =
           case limit do
@@ -292,29 +294,41 @@ defmodule EhsEnforcement.Scraping.Backfill.BackfillBreachData do
   defp maybe_append_mode(text, mode), do: "#{text} (#{mode})"
 
   defp update_case_breaches(case, breach_text) do
-    Ash.update(case, %{offence_breaches: breach_text}, action: :update)
+    Ash.update(case, %{offence_breaches: breach_text}, action: :update_from_scraping)
   end
 
   defp create_offences_from_breaches(case, breach_text) do
     # Parse breach text to extract individual breaches
     parsed_breaches = BreachParser.parse_breaches(breach_text)
 
-    if Enum.empty?(parsed_breaches) do
-      # Try parsing as single breach
-      parsed = BreachParser.parse_breach(breach_text)
+    # Check if parser found act_name, if not, try HSE format parsing
+    parsed_breaches =
+      Enum.map(parsed_breaches, fn parsed ->
+        if parsed.act_name do
+          parsed
+        else
+          # HSE format: "Act Name / Section / Subsection"
+          parse_hse_format(parsed.offence_description, parsed)
+        end
+      end)
 
-      if parsed.act_name do
-        create_single_offence(case, parsed, breach_text, 1)
-      else
-        {:ok, :no_parseable_breaches}
-      end
+    if Enum.empty?(parsed_breaches) do
+      {:ok, :no_parseable_breaches}
     else
       # Create offence for each parsed breach
       results =
         parsed_breaches
         |> Enum.with_index(1)
         |> Enum.map(fn {parsed, index} ->
-          create_single_offence(case, parsed, nil, index)
+          if parsed.act_name do
+            create_single_offence(case, parsed, parsed.offence_description, index)
+          else
+            Logger.debug(
+              "BackfillBreachData: Could not parse breach: #{parsed.offence_description}"
+            )
+
+            {:error, :unparseable}
+          end
         end)
 
       success_count = Enum.count(results, &match?({:ok, _}, &1))
@@ -327,6 +341,29 @@ defmodule EhsEnforcement.Scraping.Backfill.BackfillBreachData do
       {:ok, %{created: success_count, errors: error_count}}
     end
   end
+
+  # Parse HSE format: "Act Name / Section / Subsection"
+  defp parse_hse_format(text, parsed) when is_binary(text) do
+    case String.split(text, " / ", parts: 3) do
+      [act_name | rest] when act_name != "" ->
+        section = Enum.at(rest, 0) |> to_string() |> String.trim()
+        subsection = Enum.at(rest, 1) |> to_string() |> String.trim()
+
+        legislation_part =
+          cond do
+            section != "" && subsection != "" -> "Section #{section}(#{subsection})"
+            section != "" -> "Section #{section}"
+            true -> nil
+          end
+
+        %{parsed | act_name: String.trim(act_name), legislation_part: legislation_part}
+
+      _ ->
+        parsed
+    end
+  end
+
+  defp parse_hse_format(_, parsed), do: parsed
 
   defp create_single_offence(case, parsed, description, sequence) do
     # Find or create legislation using TieredMatcher

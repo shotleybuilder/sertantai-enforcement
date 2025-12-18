@@ -343,6 +343,7 @@ defmodule EhsEnforcement.Enforcement.Case do
         :offence_fine,
         :offence_costs,
         :offence_hearing_date,
+        :offence_breaches,
         :url,
         :related_cases
       ])
