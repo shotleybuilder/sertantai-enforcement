@@ -103,7 +103,7 @@ config :ehs_enforcement,
 # Oban configuration for background job processing
 config :ehs_enforcement, Oban,
   engine: Oban.Engines.Basic,
-  queues: [default: 10, scraping: 5, metrics: 2],
+  queues: [default: 10, scraping: 5, metrics: 2, backfill: 3],
   repo: EhsEnforcement.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
 
