@@ -6,7 +6,7 @@ defmodule EhsEnforcementWeb.Plugs.FlexibleAuth do
 
   1. **Tenant JWT Token** (Bearer Authorization header)
      - Used by tenant users from sertantai-auth
-     - Verified with SERTANTAI_SHARED_TOKEN_SECRET
+     - Verified with EdDSA (Ed25519) via JwksClient
      - Sets `:current_jwt_user_id`, `:current_org_id`, `:current_role`
 
   2. **Admin OAuth JWT Token** (Bearer Authorization header)
@@ -24,6 +24,7 @@ defmodule EhsEnforcementWeb.Plugs.FlexibleAuth do
   ```elixir
   pipeline :api_flexible do
     plug :accepts, ["json"]
+    plug EhsEnforcementWeb.LoadFromCookie
     plug EhsEnforcementWeb.Plugs.FlexibleAuth
   end
   ```
@@ -43,79 +44,85 @@ defmodule EhsEnforcementWeb.Plugs.FlexibleAuth do
   def call(conn, _opts) do
     case get_req_header(conn, "authorization") do
       ["Bearer " <> _token] ->
-        # Try JWT authentication first
         try_jwt_auth(conn)
 
       _ ->
-        # No JWT token, try session authentication
         try_session_auth(conn)
     end
   end
 
-  # Try JWT authentication - first tenant JWT, then admin OAuth JWT
+  # Try JWT authentication - first tenant EdDSA JWT, then admin OAuth JWT
   defp try_jwt_auth(conn) do
-    case get_req_header(conn, "authorization") do
-      ["Bearer " <> token] ->
-        # Try tenant JWT first (SERTANTAI_SHARED_TOKEN_SECRET)
-        case verify_tenant_jwt(token) do
-          {:ok, _claims} ->
-            # Tenant JWT verification succeeded - would need full JwtAuth logic here
-            # For now, just try OAuth JWT since tenant auth isn't the main use case
-            Logger.debug("Tenant JWT verified, but skipping full tenant auth setup")
-            try_oauth_jwt_auth(conn)
+    ["Bearer " <> token] = get_req_header(conn, "authorization")
 
-          {:error, reason} ->
-            Logger.debug("Tenant JWT verification failed: #{inspect(reason)}, trying OAuth JWT")
-            try_oauth_jwt_auth(conn)
-        end
+    case verify_tenant_jwt(token) do
+      {:ok, claims} ->
+        set_tenant_context(conn, claims)
 
-      _ ->
+      {:error, _reason} ->
+        Logger.debug("Tenant JWT verification failed, trying OAuth JWT")
         try_oauth_jwt_auth(conn)
     end
-  rescue
-    e ->
-      Logger.warning("JWT auth error: #{inspect(e)}, trying OAuth JWT")
-      try_oauth_jwt_auth(conn)
   end
 
-  # Verify tenant JWT token (quick check only, doesn't set up full context)
+  # Verify tenant JWT with EdDSA via JwksClient
   defp verify_tenant_jwt(token) do
-    secret = System.get_env("SERTANTAI_SHARED_TOKEN_SECRET")
-
-    if is_nil(secret) do
-      {:error, :no_tenant_secret}
-    else
-      signer = Joken.Signer.create("HS256", secret)
-
-      case Joken.verify(token, signer) do
-        {:ok, claims} ->
-          # Check expiration
+    with {:ok, jwk} <- EhsEnforcement.Auth.JwksClient.public_key() do
+      case JOSE.JWT.verify_strict(jwk, ["EdDSA"], token) do
+        {true, %JOSE.JWT{fields: claims}, _jws} ->
           now = System.system_time(:second)
-          exp = claims["exp"]
 
-          if exp && exp < now do
-            {:error, :token_expired}
-          else
-            {:ok, claims}
+          cond do
+            not is_integer(claims["exp"]) -> {:error, :missing_expiry}
+            claims["exp"] < now -> {:error, :token_expired}
+            true -> {:ok, claims}
           end
 
-        {:error, reason} ->
-          {:error, reason}
+        {false, _, _} ->
+          {:error, :invalid_signature}
       end
     end
   rescue
-    e ->
-      {:error, e}
+    _ -> {:error, :malformed_token}
   end
 
-  # Try admin OAuth JWT authentication (TOKEN_SIGNING_SECRET)
+  # Set up tenant context from verified EdDSA JWT claims
+  defp set_tenant_context(conn, claims) do
+    with {:ok, user_id} <- extract_user_id(claims),
+         {:ok, org_id} <- extract_org_id(claims["org_id"]),
+         {:ok, role} <- extract_role(claims["role"]) do
+      Logger.debug("Tenant EdDSA JWT auth succeeded for user: #{user_id}")
+
+      conn
+      |> assign(:current_jwt_user_id, user_id)
+      |> assign(:current_org_id, org_id)
+      |> assign(:current_role, role)
+    else
+      {:error, reason} ->
+        Logger.warning("Tenant JWT claims invalid: #{inspect(reason)}, trying OAuth JWT")
+        try_oauth_jwt_auth(conn)
+    end
+  end
+
+  defp extract_user_id(%{"sub" => "user?id=" <> user_id}), do: {:ok, user_id}
+  defp extract_user_id(%{"sub" => sub}) when is_binary(sub), do: {:ok, sub}
+  defp extract_user_id(_), do: {:error, :invalid_user_id}
+
+  defp extract_org_id(org_id) when is_binary(org_id), do: {:ok, org_id}
+  defp extract_org_id(_), do: {:error, :missing_org_id}
+
+  defp extract_role(role) when role in ["owner", "admin", "member", "viewer"],
+    do: {:ok, String.to_existing_atom(role)}
+
+  defp extract_role(_), do: {:error, :invalid_role}
+
+  # Try admin OAuth JWT authentication (TOKEN_SIGNING_SECRET) — unchanged from HS256
   defp try_oauth_jwt_auth(conn) do
     case get_req_header(conn, "authorization") do
       ["Bearer " <> token] ->
         verify_oauth_token(conn, token)
 
       _ ->
-        Logger.debug("No Bearer token, trying session auth")
         try_session_auth(conn)
     end
   end
@@ -132,7 +139,6 @@ defmodule EhsEnforcementWeb.Plugs.FlexibleAuth do
 
       case Joken.verify(token, signer) do
         {:ok, claims} ->
-          # Check expiration
           now = System.system_time(:second)
           exp = claims["exp"]
 
@@ -140,7 +146,6 @@ defmodule EhsEnforcementWeb.Plugs.FlexibleAuth do
             Logger.warning("OAuth JWT token expired")
             try_session_auth(conn)
           else
-            # Extract user ID from subject (format: "user?id=<uuid>")
             case Regex.run(~r/user\?id=([a-f0-9-]+)/, claims["sub"]) do
               [_, user_id] ->
                 load_user_from_token(conn, user_id)
@@ -167,9 +172,7 @@ defmodule EhsEnforcementWeb.Plugs.FlexibleAuth do
     case Ash.get(EhsEnforcement.Accounts.User, user_id) do
       {:ok, user} ->
         Logger.debug("Admin OAuth JWT auth succeeded for user: #{user.email}")
-
-        conn
-        |> assign(:current_user, user)
+        assign(conn, :current_user, user)
 
       {:error, reason} ->
         Logger.warning("Failed to load user #{user_id}: #{inspect(reason)}")
@@ -183,23 +186,17 @@ defmodule EhsEnforcementWeb.Plugs.FlexibleAuth do
 
   # Try session-based authentication (GitHub OAuth)
   defp try_session_auth(conn) do
-    # Load user from session using AshAuthentication
     conn = AshAuthentication.Plug.Helpers.retrieve_from_session(conn, :ehs_enforcement)
 
     case conn.assigns[:current_user] do
       nil ->
-        # No session auth either, return unauthorized
-        Logger.warning("Session auth failed: no current_user in assigns")
-
         conn
         |> put_status(:unauthorized)
         |> Phoenix.Controller.json(%{error: "Not authenticated"})
         |> halt()
 
       user ->
-        # Session auth succeeded
         Logger.debug("Session auth succeeded for user: #{inspect(user.email)}")
-
         conn
     end
   end

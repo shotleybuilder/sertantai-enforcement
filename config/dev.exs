@@ -25,6 +25,9 @@ config :ehs_enforcement, :ai_enrichment,
   timeout_ms: String.to_integer(System.get_env("AI_ENRICHMENT_TIMEOUT_MS") || "120000"),
   max_retries: String.to_integer(System.get_env("AI_ENRICHMENT_MAX_RETRIES") || "3")
 
+# Sertantai Auth service URL (JWKS endpoint for EdDSA JWT verification)
+config :ehs_enforcement, auth_url: "http://localhost:4000"
+
 # Debug Ash PubSub events
 config :ash, :pub_sub, debug?: true
 

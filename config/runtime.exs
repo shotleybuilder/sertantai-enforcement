@@ -59,10 +59,15 @@ if config_env() == :dev do
     allowed_users:
       System.get_env("GITHUB_ALLOWED_USERS", "") |> String.split(",") |> Enum.map(&String.trim/1)
 
-  # Token signing secret
+  # Token signing secret (admin OAuth — keep for GitHub OAuth admin auth)
   config :ehs_enforcement,
          :token_signing_secret,
          System.get_env("TOKEN_SIGNING_SECRET") || "dev-only-secret-change-in-production"
+
+  # Sertantai Auth service URL (JWKS endpoint for EdDSA JWT verification)
+  if auth_url = System.get_env("SERTANTAI_AUTH_URL") do
+    config :ehs_enforcement, auth_url: auth_url
+  end
 
   # Companies House API configuration
   config :ehs_enforcement, :companies_house, api_key: System.get_env("COMPANIES_HOUSE_API_KEY")
@@ -171,11 +176,17 @@ if config_env() == :prod do
     allowed_users:
       System.get_env("GITHUB_ALLOWED_USERS", "") |> String.split(",") |> Enum.map(&String.trim/1)
 
-  # Token signing secret for production
+  # Token signing secret for production (admin OAuth)
   config :ehs_enforcement,
          :token_signing_secret,
          System.get_env("TOKEN_SIGNING_SECRET") ||
            raise("TOKEN_SIGNING_SECRET environment variable is missing")
+
+  # Sertantai Auth service URL (JWKS endpoint for EdDSA JWT verification)
+  config :ehs_enforcement,
+         :auth_url,
+         System.get_env("SERTANTAI_AUTH_URL") ||
+           raise("SERTANTAI_AUTH_URL environment variable is missing")
 
   # Companies House API configuration for production
   config :ehs_enforcement, :companies_house, api_key: System.get_env("COMPANIES_HOUSE_API_KEY")

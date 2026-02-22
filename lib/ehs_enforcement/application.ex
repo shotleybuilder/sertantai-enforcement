@@ -20,8 +20,8 @@ defmodule EhsEnforcement.Application do
          Application.fetch_env!(:ehs_enforcement, :ash_domains),
          Application.fetch_env!(:ehs_enforcement, Oban)
        )},
-      # Start a worker by calling: EhsEnforcement.Worker.start_link(arg)
-      # {EhsEnforcement.Worker, arg},
+      # Fetch and cache EdDSA public key from sertantai-auth JWKS endpoint
+      EhsEnforcement.Auth.JwksClient,
       # Start to serve requests, typically the last entry
       EhsEnforcementWeb.Endpoint
     ]

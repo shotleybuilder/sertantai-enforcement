@@ -57,7 +57,14 @@ config :phoenix, :plug_init_mode, :runtime
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
-# Configure JWT signing secret for AshAuthentication tokens
+# Configure JWT signing secret for AshAuthentication tokens (admin OAuth)
 config :ehs_enforcement,
        :token_signing_secret,
        "test-jwt-signing-secret-for-authentication-tokens"
+
+# JwksClient: skip HTTP fetch in tests, use set_test_key/1 instead
+config :ehs_enforcement, test_mode: true
+
+config :ehs_enforcement,
+  auth_url: "http://localhost:4000",
+  jwks_req_plug: {Req.Test, EhsEnforcement.Auth.JwksClient}

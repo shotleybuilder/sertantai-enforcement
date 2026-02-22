@@ -1,8 +1,10 @@
 defmodule EhsEnforcementWeb.Plugs.JwtAuth do
   @moduledoc """
-  Plug to verify JWT tokens from sertantai-auth and set up request context.
+  Plug to verify EdDSA JWT tokens from sertantai-auth and set up request context.
 
-  Uses Joken to verify JWT signature with SERTANTAI_SHARED_TOKEN_SECRET.
+  Uses JOSE to verify EdDSA (Ed25519) JWT signature against the public key
+  fetched from sertantai-auth's JWKS endpoint via `EhsEnforcement.Auth.JwksClient`.
+
   Extracts user_id from 'sub' claim, org_id and role from custom claims.
   Sets up tenant context for Row-Level Security (RLS).
 
@@ -12,6 +14,7 @@ defmodule EhsEnforcementWeb.Plugs.JwtAuth do
   ```elixir
   pipeline :api_authenticated do
     plug :accepts, ["json"]
+    plug EhsEnforcementWeb.LoadFromCookie
     plug EhsEnforcementWeb.Plugs.JwtAuth
   end
   ```
@@ -26,16 +29,9 @@ defmodule EhsEnforcementWeb.Plugs.JwtAuth do
   ## Token Format
 
   Expected JWT claims:
-  - `sub`: "user?id=<uuid>" (AshAuthentication format)
+  - `sub`: "user?id=<uuid>" (AshAuthentication format) or bare UUID
   - `org_id`: "<uuid>" (organization identifier)
   - `role`: "owner" | "admin" | "member" | "viewer"
-
-  ## Security Notes
-
-  - JWT verification uses SERTANTAI_SHARED_TOKEN_SECRET (must match sertantai-auth)
-  - Sets RLS context via set_current_org_id() PostgreSQL function
-  - Does NOT load user record (EHS Enforcement has no user table in main DB)
-  - Use GitHub OAuth for admin authentication (separate concern)
   """
 
   import Plug.Conn
@@ -57,49 +53,49 @@ defmodule EhsEnforcementWeb.Plugs.JwtAuth do
   end
 
   defp verify_token_and_set_context(conn, token) do
-    secret = System.get_env("SERTANTAI_SHARED_TOKEN_SECRET")
+    case verify_token(token) do
+      {:ok, claims} ->
+        set_context(conn, claims)
 
-    if is_nil(secret) do
-      Logger.error("SERTANTAI_SHARED_TOKEN_SECRET is not configured")
+      {:error, reason} ->
+        Logger.warning("JWT verification failed: #{reason}")
 
-      conn
-      |> put_status(:internal_server_error)
-      |> Phoenix.Controller.json(%{error: "Authentication not configured"})
-      |> halt()
-    else
-      signer = Joken.Signer.create("HS256", secret)
-
-      # Verify token signature first
-      case Joken.verify(token, signer) do
-        {:ok, claims} ->
-          # Check expiration manually
-          now = System.system_time(:second)
-          exp = claims["exp"]
-
-          if exp && exp < now do
-            Logger.warning("JWT token expired")
-
-            conn
-            |> put_status(:unauthorized)
-            |> Phoenix.Controller.json(%{error: "Token expired"})
-            |> halt()
-          else
-            verify_claims_and_set_context(conn, claims)
-          end
-
-        {:error, reason} ->
-          Logger.warning("JWT verification failed: #{inspect(reason)}")
-
-          conn
-          |> put_status(:unauthorized)
-          |> Phoenix.Controller.json(%{error: "Invalid or expired token"})
-          |> halt()
-      end
+        conn
+        |> put_status(:unauthorized)
+        |> Phoenix.Controller.json(%{error: reason})
+        |> halt()
     end
   end
 
-  defp verify_claims_and_set_context(conn, claims) do
-    with {:ok, user_id} <- extract_user_id(claims["sub"]),
+  defp verify_token(token) do
+    with {:ok, jwk} <- EhsEnforcement.Auth.JwksClient.public_key() do
+      case JOSE.JWT.verify_strict(jwk, ["EdDSA"], token) do
+        {true, %JOSE.JWT{fields: claims}, _jws} ->
+          validate_claims(claims)
+
+        {false, _, _} ->
+          {:error, "Invalid token signature"}
+      end
+    else
+      {:error, :no_key} ->
+        {:error, "Auth service unavailable (no signing key)"}
+    end
+  rescue
+    _ -> {:error, "Malformed token"}
+  end
+
+  defp validate_claims(claims) do
+    now = System.system_time(:second)
+
+    cond do
+      not is_integer(claims["exp"]) -> {:error, "Token missing expiry"}
+      claims["exp"] < now -> {:error, "Token expired"}
+      true -> {:ok, claims}
+    end
+  end
+
+  defp set_context(conn, claims) do
+    with {:ok, user_id} <- extract_user_id(claims),
          {:ok, org_id} <- extract_org_id(claims["org_id"]),
          {:ok, role} <- extract_role(claims["role"]),
          :ok <- set_tenant_context(org_id) do
@@ -111,7 +107,7 @@ defmodule EhsEnforcementWeb.Plugs.JwtAuth do
       |> assign(:current_role, role)
     else
       {:error, reason} ->
-        Logger.warning("Token verification failed: #{inspect(reason)}")
+        Logger.warning("Token claims invalid: #{inspect(reason)}")
 
         conn
         |> put_status(:unauthorized)
@@ -120,70 +116,30 @@ defmodule EhsEnforcementWeb.Plugs.JwtAuth do
     end
   end
 
-  # Extract user ID from AshAuthentication 'sub' claim
-  # Format: "user?id=<uuid>"
-  defp extract_user_id("user?id=" <> user_id) when is_binary(user_id) do
-    {:ok, user_id}
-  end
+  # Parse AshAuthentication's "user?id=<uuid>" format or bare UUID
+  defp extract_user_id(%{"sub" => "user?id=" <> user_id}), do: {:ok, user_id}
+  defp extract_user_id(%{"sub" => sub}) when is_binary(sub), do: {:ok, sub}
 
-  defp extract_user_id(sub) do
-    Logger.warning("Invalid sub claim format: #{inspect(sub)}")
+  defp extract_user_id(_claims) do
+    Logger.warning("Missing or invalid sub claim")
     {:error, "invalid_user_id"}
   end
 
-  # Extract organization ID from custom 'org_id' claim
-  defp extract_org_id(org_id) when is_binary(org_id) do
-    {:ok, org_id}
-  end
+  defp extract_org_id(org_id) when is_binary(org_id), do: {:ok, org_id}
+  defp extract_org_id(nil), do: {:error, "missing_org_id"}
+  defp extract_org_id(_), do: {:error, "invalid_org_id"}
 
-  defp extract_org_id(nil) do
-    Logger.warning("Missing org_id claim in token")
-    {:error, "missing_org_id"}
-  end
+  defp extract_role(role) when role in ["owner", "admin", "member", "viewer"],
+    do: {:ok, String.to_existing_atom(role)}
 
-  defp extract_org_id(org_id) do
-    Logger.warning("Invalid org_id claim format: #{inspect(org_id)}")
-    {:error, "invalid_org_id"}
-  end
-
-  # Extract role from custom 'role' claim
-  # Convert string to atom
-  defp extract_role(role) when is_binary(role) do
-    role_atom =
-      case role do
-        "owner" -> :owner
-        "admin" -> :admin
-        "member" -> :member
-        "viewer" -> :viewer
-        other -> String.to_existing_atom(other)
-      end
-
-    {:ok, role_atom}
-  rescue
-    ArgumentError ->
-      Logger.warning("Invalid role: #{inspect(role)}")
-      {:error, "invalid_role"}
-  end
-
-  defp extract_role(nil) do
-    Logger.warning("Missing role claim in token")
-    {:error, "missing_role"}
-  end
-
-  defp extract_role(role) do
-    Logger.warning("Invalid role claim format: #{inspect(role)}")
-    {:error, "invalid_role"}
-  end
+  defp extract_role(nil), do: {:error, "missing_role"}
+  defp extract_role(_), do: {:error, "invalid_role"}
 
   # Set tenant context in database session for RLS policies
-  # This calls the set_current_org_id() PostgreSQL function
-  # Note: org_id is guaranteed to be a binary string by extract_org_id/1
   defp set_tenant_context(org_id) when is_binary(org_id) do
-    # Convert UUID string to Ecto.UUID type for PostgreSQL
     with {:ok, uuid_binary} <- Ecto.UUID.dump(org_id),
          query = "SELECT set_current_org_id($1::uuid)",
          {:ok, _result} <- Ecto.Adapters.SQL.query(EhsEnforcement.Repo, query, [uuid_binary]) do
-      Logger.debug("Tenant context set: #{org_id}")
       :ok
     else
       :error ->

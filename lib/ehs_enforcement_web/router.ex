@@ -47,6 +47,7 @@ defmodule EhsEnforcementWeb.Router do
 
   pipeline :api_jwt_authenticated do
     plug :accepts, ["json"]
+    plug EhsEnforcementWeb.LoadFromCookie
     plug EhsEnforcementWeb.Plugs.JwtAuth
   end
 
@@ -55,6 +56,7 @@ defmodule EhsEnforcementWeb.Router do
     plug :accepts, ["json"]
     plug :fetch_session
     plug :fetch_cookies
+    plug EhsEnforcementWeb.LoadFromCookie
     plug EhsEnforcementWeb.Plugs.FlexibleAuth
   end
 
