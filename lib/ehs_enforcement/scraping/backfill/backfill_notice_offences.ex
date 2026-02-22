@@ -210,10 +210,9 @@ defmodule EhsEnforcement.Scraping.Backfill.BackfillNoticeOffences do
 
   # Find or create legislation using TieredMatcher
   defp find_or_create_legislation(parsed, notice) do
-    # Build data for TieredMatcher - it expects :title not :act_name
+    # Build data for TieredMatcher - it expects :title, :year, :number, :type_code, :url, :type
     legislation_data = %{
-      title: parsed.act_name,
-      section: parsed.section
+      title: parsed.act_name
     }
 
     case TieredMatcher.find_or_create(legislation_data) do

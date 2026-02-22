@@ -55,8 +55,8 @@ defmodule EhsEnforcementWeb.GatekeeperController do
     Logger.info("Gatekeeper request - User: #{user_id}, Org: #{org_id}, Table: #{table}")
 
     with :ok <- validate_table(table),
-         :ok <- authorize_table_access(table, role),
-         {:ok, shape_token} <- generate_shape_token(conn, table, org_id, where) do
+         :ok <- authorize_table_access(table, role) do
+      {:ok, shape_token} = generate_shape_token(conn, table, org_id, where)
       Logger.debug("Shape token generated for table: #{table}, org: #{org_id}")
       json(conn, %{token: shape_token})
     else
@@ -69,13 +69,6 @@ defmodule EhsEnforcementWeb.GatekeeperController do
         conn
         |> put_status(:forbidden)
         |> json(%{error: "Forbidden", message: "Access to this table is not allowed"})
-
-      {:error, reason} ->
-        Logger.error("Gatekeeper authorization failed: #{inspect(reason)}")
-
-        conn
-        |> put_status(:internal_server_error)
-        |> json(%{error: "Internal Server Error", message: "Failed to generate shape token"})
     end
   end
 

@@ -129,8 +129,16 @@ defmodule EhsEnforcementWeb.Plugs.JwtAuth do
   defp extract_org_id(nil), do: {:error, "missing_org_id"}
   defp extract_org_id(_), do: {:error, "invalid_org_id"}
 
-  defp extract_role(role) when role in ["owner", "admin", "member", "viewer"],
-    do: {:ok, String.to_existing_atom(role)}
+  # Ensure role atoms exist at compile time for String.to_existing_atom/1
+  @valid_roles %{
+    "owner" => :owner,
+    "admin" => :admin,
+    "member" => :member,
+    "viewer" => :viewer
+  }
+
+  defp extract_role(role) when is_map_key(@valid_roles, role),
+    do: {:ok, @valid_roles[role]}
 
   defp extract_role(nil), do: {:error, "missing_role"}
   defp extract_role(_), do: {:error, "invalid_role"}
