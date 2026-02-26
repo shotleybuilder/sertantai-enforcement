@@ -59,6 +59,11 @@ BUILD_DIR="frontend/build"
 SITE_URL="https://enforcement.sertantai.com"
 ELECTRIC_URL="${SITE_URL}/electric"
 
+# Hub dependency (enforcement depends on hub for auth/shared services)
+HUB_CONTAINER="sertantai_hub_app"
+HUB_COMPOSE_SERVICE="sertantai-hub"
+HUB_HEALTH_URL="http://localhost:4006/health"
+
 # Parse command line options
 DEPLOY_FRONTEND=true
 DEPLOY_BACKEND=true
@@ -68,6 +73,7 @@ ELECTRIC_CLEAR_CACHE=false
 RUN_MIGRATIONS=false
 CHECK_ONLY=false
 FOLLOW_LOGS=false
+CHECK_HUB=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -115,6 +121,10 @@ while [[ $# -gt 0 ]]; do
             FOLLOW_LOGS=true
             shift
             ;;
+        --check-hub)
+            CHECK_HUB=true
+            shift
+            ;;
         --help)
             echo "Usage: $0 [options]"
             echo ""
@@ -128,7 +138,12 @@ while [[ $# -gt 0 ]]; do
             echo "  --migrate          Run database migrations"
             echo "  --check-only       Only check status, don't deploy"
             echo "  --logs             Follow logs after deployment"
+            echo "  --check-hub        Check hub service health before deploying"
             echo "  --help             Show this help message"
+            echo ""
+            echo "Hub Dependency:"
+            echo "  sertantai-enforcement depends on sertantai-hub for auth and shared services."
+            echo "  Use --check-hub to verify hub is healthy before deploying."
             echo ""
             echo "Production Details:"
             echo "  Server:        ${SERVER}"
@@ -197,6 +212,24 @@ echo -e "${GREEN}✓ SSH connection OK${NC}"
 echo ""
 
 # ============================================================
+# HUB DEPENDENCY FUNCTIONS
+# ============================================================
+check_hub_health() {
+    local HUB_STATUS
+    HUB_STATUS=$(ssh "${SERVER}" "docker inspect --format='{{.State.Health.Status}}' ${HUB_CONTAINER}" 2>/dev/null || echo "not_found")
+    if [ "$HUB_STATUS" = "healthy" ]; then
+        echo -e "${GREEN}✓ Hub service is healthy${NC}"
+        return 0
+    elif [ "$HUB_STATUS" = "not_found" ]; then
+        echo -e "${RED}✗ Hub container not found (${HUB_CONTAINER})${NC}"
+        return 1
+    else
+        echo -e "${YELLOW}⚠ Hub health status: ${HUB_STATUS}${NC}"
+        return 1
+    fi
+}
+
+# ============================================================
 # CHECK-ONLY MODE
 # ============================================================
 if [ "$CHECK_ONLY" = true ]; then
@@ -238,6 +271,10 @@ if [ "$CHECK_ONLY" = true ]; then
         echo ""
     fi
 
+    echo -e "${BLUE}Hub Dependency:${NC}"
+    check_hub_health || true
+    echo ""
+
     if [ "$DEPLOY_BACKEND" = true ]; then
         echo -e "${BLUE}Recent Backend Logs:${NC}"
         ssh "${SERVER}" "cd ${DEPLOY_PATH} && docker compose logs --tail=15 ${SERVICE_NAME}" 2>/dev/null || echo "  No logs available"
@@ -252,6 +289,25 @@ fi
 FRONTEND_SUCCESS=true
 BACKEND_SUCCESS=true
 ELECTRIC_SUCCESS=true
+
+# ============================================================
+# HUB DEPENDENCY CHECK (before deploy)
+# ============================================================
+if [ "$CHECK_HUB" = true ]; then
+    echo -e "${BLUE}Checking hub dependency...${NC}"
+    if ! check_hub_health; then
+        echo -e "${RED}✗ Hub is not healthy — enforcement deployment may have issues${NC}"
+        echo -e "${YELLOW}  Deploy hub first: cd ~/Desktop/sertantai-hub && ./scripts/deployment/deploy-prod.sh --backend${NC}"
+        echo ""
+        read -p "Continue anyway? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}Deployment cancelled${NC}"
+            exit 0
+        fi
+    fi
+    echo ""
+fi
 
 # ============================================================
 # DEPLOY FRONTEND
